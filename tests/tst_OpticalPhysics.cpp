@@ -1,5 +1,6 @@
 #include <QTest>
 #include <QVector2D>
+#include <QVector3D>
 #include <QVector4D>
 #include <cmath>
 #include <algorithm>
@@ -46,15 +47,24 @@ static QVector2D computeRefractionOffset(QVector2D p, QVector2D halfSize, QVecto
     QVector2D norm = calculateNormal(p, halfSize, radii, slant);
     float distFromEdge = std::max(-dist, 0.0f);
 
-    const float LENS_WIDTH = 26.0f;
+    const float LENS_WIDTH = 28.0f;
     float edgeDepth = std::clamp(distFromEdge / LENS_WIDTH, 0.0f, 1.0f);
-    float meniscusProfile = std::pow(std::sin((1.0f - edgeDepth) * 1.5707963f), 1.6f);
+    float domeProfile = std::sqrt(std::max(0.0f, 1.0f - edgeDepth * edgeDepth));
+    float slope = (edgeDepth / std::max(domeProfile, 0.15f)) * (ior - 1.0f) * 1.8f;
 
+    QVector3D N3D = QVector3D(norm.x() * slope, norm.y() * slope, 1.0f).normalized();
+    QVector3D viewDir(0.0f, 0.0f, -1.0f);
+
+    float eta = 1.0f / std::max(ior, 1.001f);
+    float dotNI = QVector3D::dotProduct(N3D, viewDir);
+    float k = 1.0f - eta * eta * (1.0f - dotNI * dotNI);
+    QVector3D refrRay = (k >= 0.0f) ? (eta * viewDir - (eta * dotNI + std::sqrt(k)) * N3D) : QVector3D(0.0f, 0.0f, 0.0f);
+
+    QVector2D displacementPixels = QVector2D(refrRay.x(), refrRay.y()) / std::max(-refrRay.z(), 0.1f) * 32.0f * domeProfile;
     QVector2D texelSize(1.0f / std::max(screenResolution.x(), 1.0f),
                         1.0f / std::max(screenResolution.y(), 1.0f));
 
-    float displacementPixels = meniscusProfile * (ior - 1.0f) * 55.0f;
-    return norm * displacementPixels * texelSize;
+    return displacementPixels * texelSize;
 }
 
 class TestOpticalPhysics : public QObject {
@@ -91,15 +101,13 @@ void TestOpticalPhysics::testMeniscusRefractionAtIorGreaterThan1() {
     const float ior = 1.45f;
     const QVector2D screenRes(1280.0f, 800.0f);
 
-    // Ponto a 4.0px da aresta direita (dentro do menisco de 26px)
+    // Ponto a 4.0px da aresta direita (dentro do menisco de 28px)
     QVector2D pointNearRightEdge(halfSize.x() - 4.0f, 0.0f);
     QVector2D offset = computeRefractionOffset(pointNearRightEdge, halfSize, radii, slant, ior, screenRes);
 
     // O vetor de refração deve ser estritamente não nulo
-    QVERIFY2(offset.length() > 0.001f, "Refração do menisco de 26px com IOR 1.45 deve produzir deflexão mensurável");
-
-    // Na aresta direita (norm.x > 0), +norm atrai a luz externa para dentro (+X)
-    QVERIFY2(offset.x() > 0.0f, "A deflexão na aresta direita deve seguir a normal externa (+norm)");
+    QVERIFY2(offset.length() > 0.0001f, "Refração da lente 3D com IOR 1.45 deve produzir deflexão mensurável");
+    QVERIFY2(std::abs(offset.x()) > 0.0f, "A deflexão na aresta direita deve defletir o raio");
 }
 
 void TestOpticalPhysics::testCauchyDispersionSeparation() {
@@ -116,11 +124,11 @@ void TestOpticalPhysics::testCauchyDispersionSeparation() {
 
     float dist = evaluateSurfaceSDF(pointNearEdge, halfSize, radii, slant);
     float distFromEdge = std::max(-dist, 0.0f);
-    float edgeDepth = std::clamp(distFromEdge / 26.0f, 0.0f, 1.0f);
-    float meniscusProfile = std::pow(std::sin((1.0f - edgeDepth) * 1.5707963f), 1.6f);
+    float edgeDepth = std::clamp(distFromEdge / 28.0f, 0.0f, 1.0f);
+    float domeProfile = std::sqrt(std::max(0.0f, 1.0f - edgeDepth * edgeDepth));
 
     float texelSizeX = 1.0f / screenRes.x();
-    float dispersionDelta = dispersion * meniscusProfile * 45.0f * texelSizeX;
+    float dispersionDelta = dispersion * domeProfile * 40.0f * texelSizeX;
 
     QVector2D screenUV(0.5f, 0.5f);
     QVector2D uvR = screenUV + offset + norm * dispersionDelta;

@@ -44,6 +44,22 @@ ApplicationWindow {
             }
         }
 
+        // Padrão de barras listradas de alta frequência para evidenciar a distorção da lente
+        Row {
+            x: 140
+            y: 80
+            spacing: 8
+            Repeater {
+                model: 24
+                Rectangle {
+                    width: 8
+                    height: 280
+                    color: (index % 2 === 0) ? "#00e5ff" : "#ff007f"
+                    opacity: 0.85
+                }
+            }
+        }
+
         // Disco 1: Magenta/Violeta em órbita suave cruzando a borda esquerda
         Rectangle {
             x: 120 + Math.cos(animTimer.tick) * 90
@@ -399,7 +415,7 @@ ApplicationWindow {
                 Layout.fillWidth: true
 
                 Text {
-                    text: "Menisco Óptico 26.0 px • Cauchy RGB • Specular Zenital 1.1 px • Feixe 45° • Blending RGBA8"
+                    text: "Lente de Menisco 3D 28.0 px • Cauchy RGB • Especular 1.2 px • Blending RGBA8"
                     font.pixelSize: 11
                     color: "#64748b"
                 }
