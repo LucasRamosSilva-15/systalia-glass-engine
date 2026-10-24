@@ -8,10 +8,10 @@ ApplicationWindow {
     width: 1280
     height: 800
     visible: true
-    title: qsTr("Systalia Glass Engine (SGE) — Etapa 1.2: Primeiro Quad Vulkan")
+    title: qsTr("Systalia Glass Engine (SGE) — Etapa 1.3: Recorte SDF Squircle G2")
     color: "#080b10"
 
-    // Fundo com elementos gráficos geométricos para verificação de transparência e oclusão
+    // Fundo com elementos gráficos geométricos para verificação de transparência e corte SDF
     Item {
         id: backgroundScene
         anchors.fill: parent
@@ -81,22 +81,31 @@ ApplicationWindow {
         }
     }
 
-    // Placa de Vidro Vulkan nativo perfeitamente centralizada via anchors.centerIn
+    // Placa de Vidro Vulkan nativo com recorte analítico SDF G2 Squircle de 4ª ordem
     SystaliaGlassItem {
         id: glassChassis
         width: 860
         height: 580
         anchors.centerIn: parent
         surfaceOpacity: 0.85
-        radii: Qt.vector4d(24.0, 24.0, 24.0, 24.0)
 
-        // Conteúdo visual interno repousando rigorosamente sobre a placa de vidro
+        // Propriedades reativas controladas pelo painel
+        property real rTL: 24.0
+        property real rTR: 24.0
+        property real rBL: 24.0
+        property real rBR: 24.0
+        property real currentSlant: 0.0
+
+        radii: Qt.vector4d(rTL, rTR, rBL, rBR)
+        slant: currentSlant
+
+        // Conteúdo interativo integrado
         ColumnLayout {
             anchors.fill: parent
-            anchors.margins: 16
+            anchors.margins: 20
             spacing: 12
 
-            // Barra de Título Superior
+            // 1. Barra de Título Superior
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 10
@@ -109,7 +118,7 @@ ApplicationWindow {
                 }
 
                 Text {
-                    text: "SYSTALIA GLASS ENGINE (SGE) — VALO GLASS RHI QUAD"
+                    text: "SYSTALIA GLASS ENGINE — RECORTE SQUIRCLE SDF G2 (4ª ORDEM)"
                     font.bold: true
                     font.pixelSize: 13
                     font.letterSpacing: 1.5
@@ -119,7 +128,7 @@ ApplicationWindow {
                 Item { Layout.fillWidth: true }
 
                 Rectangle {
-                    width: 80
+                    width: 90
                     height: 22
                     radius: 4
                     color: "#0a2540"
@@ -128,7 +137,7 @@ ApplicationWindow {
 
                     Text {
                         anchors.centerIn: parent
-                        text: "VK RHI 1.4"
+                        text: "SDF G2 ACTIVE"
                         font.pixelSize: 10
                         font.bold: true
                         color: "#00e5ff"
@@ -142,33 +151,124 @@ ApplicationWindow {
                 color: "#1e3a5f"
             }
 
-            Item { Layout.fillHeight: true }
+            // 2. Barra de Presets Rápidos
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 12
 
-            // Centro do Conteúdo
-            Text {
-                Layout.alignment: Qt.AlignHCenter
-                text: "PLACA DE VIDRO PERFEITAMENTE CENTRALIZADA"
-                font.bold: true
-                font.pixelSize: 18
-                font.letterSpacing: 1.2
-                color: "#38bdf8"
+                Text {
+                    text: "Presets de Curvatura:"
+                    font.bold: true
+                    font.pixelSize: 12
+                    color: "#38bdf8"
+                }
+
+                Button {
+                    text: "Simétrico 24"
+                    onClicked: {
+                        glassChassis.rTL = 24.0;
+                        glassChassis.rTR = 24.0;
+                        glassChassis.rBL = 24.0;
+                        glassChassis.rBR = 24.0;
+                        glassChassis.currentSlant = 0.0;
+                    }
+                }
+
+                Button {
+                    text: "Domo 48 (Slant 0.35)"
+                    onClicked: {
+                        glassChassis.rTL = 48.0;
+                        glassChassis.rTR = 48.0;
+                        glassChassis.rBL = 12.0;
+                        glassChassis.rBR = 12.0;
+                        glassChassis.currentSlant = 0.35;
+                    }
+                }
+
+                Button {
+                    text: "Assimétrico (42, 8, 8, 42)"
+                    onClicked: {
+                        glassChassis.rTL = 42.0;
+                        glassChassis.rTR = 8.0;
+                        glassChassis.rBL = 8.0;
+                        glassChassis.rBR = 42.0;
+                        glassChassis.currentSlant = 0.0;
+                    }
+                }
             }
 
-            Text {
-                Layout.alignment: Qt.AlignHCenter
-                text: "Geometria local QRectF(0.0, 0.0, 860, 580) • Coordenadas Sincronizadas com o SceneGraph"
-                font.pixelSize: 12
-                color: "#94a3b8"
+            Rectangle {
+                Layout.fillWidth: true
+                height: 1
+                color: "#132338"
+            }
+
+            // 3. Painel de Sliders Interativos (Tempo Real a 60+ FPS)
+            GridLayout {
+                Layout.fillWidth: true
+                columns: 3
+                rowSpacing: 8
+                columnSpacing: 16
+
+                // Raio Top-Left
+                Text { text: "Raio Superior Esquerdo (r_tl):"; color: "#94a3b8"; font.pixelSize: 12 }
+                Slider {
+                    Layout.fillWidth: true
+                    from: 0.0; to: 64.0
+                    value: glassChassis.rTL
+                    onMoved: glassChassis.rTL = value
+                }
+                Text { text: Math.round(glassChassis.rTL) + " px"; color: "#00e5ff"; font.pixelSize: 12; Layout.preferredWidth: 50 }
+
+                // Raio Top-Right
+                Text { text: "Raio Superior Direito (r_tr):"; color: "#94a3b8"; font.pixelSize: 12 }
+                Slider {
+                    Layout.fillWidth: true
+                    from: 0.0; to: 64.0
+                    value: glassChassis.rTR
+                    onMoved: glassChassis.rTR = value
+                }
+                Text { text: Math.round(glassChassis.rTR) + " px"; color: "#00e5ff"; font.pixelSize: 12; Layout.preferredWidth: 50 }
+
+                // Raio Bottom-Left
+                Text { text: "Raio Inferior Esquerdo (r_bl):"; color: "#94a3b8"; font.pixelSize: 12 }
+                Slider {
+                    Layout.fillWidth: true
+                    from: 0.0; to: 64.0
+                    value: glassChassis.rBL
+                    onMoved: glassChassis.rBL = value
+                }
+                Text { text: Math.round(glassChassis.rBL) + " px"; color: "#00e5ff"; font.pixelSize: 12; Layout.preferredWidth: 50 }
+
+                // Raio Bottom-Right
+                Text { text: "Raio Inferior Direito (r_br):"; color: "#94a3b8"; font.pixelSize: 12 }
+                Slider {
+                    Layout.fillWidth: true
+                    from: 0.0; to: 64.0
+                    value: glassChassis.rBR
+                    onMoved: glassChassis.rBR = value
+                }
+                Text { text: Math.round(glassChassis.rBR) + " px"; color: "#00e5ff"; font.pixelSize: 12; Layout.preferredWidth: 50 }
+
+                // Slant (Inclinação)
+                Text { text: "Inclinação Lateral (Slant):"; color: "#94a3b8"; font.pixelSize: 12 }
+                Slider {
+                    Layout.fillWidth: true
+                    from: -1.0; to: 1.0
+                    value: glassChassis.currentSlant
+                    onMoved: glassChassis.currentSlant = value
+                }
+                Text { text: glassChassis.currentSlant.toFixed(2); color: "#00e5ff"; font.pixelSize: 12; Layout.preferredWidth: 50 }
             }
 
             Item { Layout.fillHeight: true }
 
-            // Rodapé Informativo
+            // 4. Rodapé Técnico
             RowLayout {
                 Layout.fillWidth: true
 
                 Text {
-                    text: "Dimensões: 860 × 580 px | Opacidade: 85% | Alinhamento Local: (0,0)"
+                    text: "SDF Squircle G2 • Subpixel AA: fwidth(dist) • Descarte: alpha <= 0.001"
                     font.pixelSize: 11
                     color: "#64748b"
                 }
@@ -176,7 +276,7 @@ ApplicationWindow {
                 Item { Layout.fillWidth: true }
 
                 Text {
-                    text: "Vulkan Pipeline: Active"
+                    text: "Curvatura Contínua: Ativa"
                     font.pixelSize: 11
                     font.bold: true
                     color: "#10b981"

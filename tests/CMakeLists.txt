@@ -25,3 +25,14 @@ target_link_libraries(tst_item_geometry PRIVATE
     sge_shaders
 )
 add_test(NAME tst_item_geometry COMMAND tst_item_geometry)
+
+# Teste 3: Propriedades Analíticas do SDF Squircle G2
+qt_add_executable(tst_sdf_geometry
+    tst_SdfGeometry.cpp
+)
+target_link_libraries(tst_sdf_geometry PRIVATE
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Test
+)
+add_test(NAME tst_sdf_geometry COMMAND tst_sdf_geometry)
