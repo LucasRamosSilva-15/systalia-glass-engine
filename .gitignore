@@ -1,2 +1,10 @@
-/build
-/dist
+build/
+dist/
+.cache/
+.vscode/
+.idea/
+*.user
+compile_commands.json
+*.kdev4
+.directory
+CMakeUserPresets.json
