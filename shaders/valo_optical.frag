@@ -75,34 +75,36 @@ void main() {
         discard;
     }
 
-    // 2. Normais Analíticas do Menisco de Borda (7.0px para evitar Rubber Ring)
+    // 2. Geometria da Lente do Menisco Óptico ("Liquid Glass" de 20.0px)
     vec2 norm = calculateNormal(p, halfSize, u_Radii, u_Slant);
     float distFromEdge = max(-dist, 0.0);
 
-    const float MENISCUS_MAX = 7.0;
-    float meniscusFactor = clamp(1.0 - (distFromEdge / MENISCUS_MAX), 0.0, 1.0);
-    float meniscusProfile = smoothstep(0.0, 1.0, meniscusFactor);
+    const float LENS_WIDTH = 20.0;
+    float edgeDepth = clamp(distFromEdge / LENS_WIDTH, 0.0, 1.0);
+    // Perfil fluido de gota de menisco líquido
+    float meniscusProfile = sin((1.0 - edgeDepth) * 1.5707963);
 
-    // 3. Vetor de Refração Composto (Domo Convexo + Menisco Tangencial)
-    vec2 p_norm = p / max(halfSize, vec2(1.0));
-    vec2 bodyRefraction = p_norm * (u_Ior - 1.0) * 0.14;
-    vec2 meniscusRefraction = norm * (meniscusProfile * (u_Ior - 1.0) * 0.10);
-    vec2 refractionOffset = bodyRefraction + meniscusRefraction;
+    // 3. Vetor de Refração Snelliana Pixel-Accurate
+    vec2 texelSize = 1.0 / max(u_ScreenResolution, vec2(1.0));
+    // Deslocamento para dentro da geometria escalonado pelo IOR
+    float displacementMagnitude = pow(meniscusProfile, 2.2) * (u_Ior - 1.0) * 35.0;
+    vec2 refrOffset = -norm * displacementMagnitude * texelSize;
 
-    // 4. Amostragem em Screen-Space com Dispersão Espectral de Cauchy
+    // 4. Coordenadas de Screen-Space e Dispersão Cromática de Cauchy Pronunciada na Borda
     vec2 res = max(u_ScreenResolution, vec2(1.0));
     vec2 screenUV = clamp(gl_FragCoord.xy / res, vec2(0.0), vec2(1.0));
 
-    vec2 refrUV_R = clamp(screenUV + refractionOffset * (1.0 - u_ChromaticDispersion * 2.0), vec2(0.001), vec2(0.999));
-    vec2 refrUV_G = clamp(screenUV + refractionOffset, vec2(0.001), vec2(0.999));
-    vec2 refrUV_B = clamp(screenUV + refractionOffset * (1.0 + u_ChromaticDispersion * 2.0), vec2(0.001), vec2(0.999));
+    float dispersionOffset = u_ChromaticDispersion * meniscusProfile * 30.0 * texelSize.x;
+    vec2 uvR = clamp(screenUV + refrOffset - norm * dispersionOffset, vec2(0.001), vec2(0.999));
+    vec2 uvG = clamp(screenUV + refrOffset,                           vec2(0.001), vec2(0.999));
+    vec2 uvB = clamp(screenUV + refrOffset + norm * dispersionOffset, vec2(0.001), vec2(0.999));
 
-    float colR = texture(u_BackdropTexture, refrUV_R).r;
-    float colG = texture(u_BackdropTexture, refrUV_G).g;
-    float colB = texture(u_BackdropTexture, refrUV_B).b;
+    float colR = texture(u_BackdropTexture, uvR).r;
+    float colG = texture(u_BackdropTexture, uvG).g;
+    float colB = texture(u_BackdropTexture, uvB).b;
     vec3 refractedBackdrop = vec3(colR, colG, colB);
 
-    // 5. Specular Rim Zenital Fino (1.1px no topo)
+    // 5. Specular Rim Zenital Fino (1.1px no topo para corte de luz nítido)
     float zenith = max(-norm.y, 0.0);
     float rimLine = exp(-pow((distFromEdge - 0.6) / 0.45, 2.0));
     float specularRim = clamp(rimLine * zenith, 0.0, 1.0);
@@ -114,7 +116,7 @@ void main() {
     vec3 causticTint = mix(vec3(0.0, 0.898, 1.0), vec3(1.0, 1.0, 1.0), 0.72);
     vec3 causticContribution = clamp(causticTint * (causticBand * u_CausticIntensity * 0.35), vec3(0.0), vec3(0.4));
 
-    // 7. Base Abissal Translúcida VALO Glass (rgba(12, 28, 48))
+    // 7. Base Abissal Translúcida VALO Glass (#0C1C30)
     vec3 glassBase = vec3(0.047, 0.110, 0.188);
     vec3 finalColor = mix(refractedBackdrop, glassBase, clamp(0.22 * u_Opacity, 0.0, 1.0));
     finalColor += causticContribution;
