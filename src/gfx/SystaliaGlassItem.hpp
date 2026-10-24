@@ -18,6 +18,7 @@ class SystaliaGlassItem : public QQuickItem {
     Q_PROPERTY(float chromaticDispersion READ chromaticDispersion WRITE setChromaticDispersion NOTIFY chromaticDispersionChanged)
     Q_PROPERTY(float causticIntensity READ causticIntensity WRITE setCausticIntensity NOTIFY causticIntensityChanged)
     Q_PROPERTY(float surfaceOpacity READ surfaceOpacity WRITE setSurfaceOpacity NOTIFY surfaceOpacityChanged)
+    Q_PROPERTY(float time READ time WRITE setTime NOTIFY timeChanged)
     Q_PROPERTY(QQuickItem* backdropSource READ backdropSource WRITE setBackdropSource NOTIFY backdropSourceChanged)
     Q_PROPERTY(QVector2D screenResolution READ screenResolution WRITE setScreenResolution NOTIFY screenResolutionChanged)
 
@@ -43,6 +44,9 @@ public:
     float surfaceOpacity() const { return m_surfaceOpacity; }
     void setSurfaceOpacity(float opacity);
 
+    float time() const { return m_time; }
+    void setTime(float t);
+
     QQuickItem *backdropSource() const { return m_backdropSource; }
     void setBackdropSource(QQuickItem *source);
 
@@ -59,6 +63,7 @@ signals:
     void chromaticDispersionChanged();
     void causticIntensityChanged();
     void surfaceOpacityChanged();
+    void timeChanged();
     void backdropSourceChanged();
     void screenResolutionChanged();
 
@@ -72,6 +77,7 @@ private:
     float m_chromaticDispersion = 0.035f;
     float m_causticIntensity = 0.65f;
     float m_surfaceOpacity = 1.0f;
+    float m_time = 0.0f;
 
     QPointer<QQuickItem> m_backdropSource;
     QVector2D m_screenResolution = QVector2D(0.0f, 0.0f);

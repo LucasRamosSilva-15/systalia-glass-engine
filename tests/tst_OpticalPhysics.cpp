@@ -47,14 +47,14 @@ static QVector2D computeRefractionOffset(QVector2D p, QVector2D halfSize, QVecto
     QVector2D norm = calculateNormal(p, halfSize, radii, slant);
     float distFromEdge = std::max(-dist, 0.0f);
 
-    const float LENS_WIDTH = 32.0f;
+    const float LENS_WIDTH = 28.0f;
     float edgeDepth = std::clamp(distFromEdge / LENS_WIDTH, 0.0f, 1.0f);
-    float waterDropProfile = std::pow(std::sin((1.0f - edgeDepth) * 1.5707963f), 1.7f);
+    float waterDropProfile = std::pow(std::sin((1.0f - edgeDepth) * 1.5707963f), 1.6f);
 
     QVector2D texelSize(1.0f / std::max(screenResolution.x(), 1.0f),
                         1.0f / std::max(screenResolution.y(), 1.0f));
 
-    float refrStrength = waterDropProfile * (ior - 1.0f) * 70.0f;
+    float refrStrength = waterDropProfile * (ior - 1.0f) * 45.0f;
     return norm * refrStrength * texelSize;
 }
 
@@ -117,11 +117,11 @@ void TestOpticalPhysics::testCauchyDispersionSeparation() {
 
     float dist = evaluateSurfaceSDF(pointNearEdge, halfSize, radii, slant);
     float distFromEdge = std::max(-dist, 0.0f);
-    float edgeDepth = std::clamp(distFromEdge / 32.0f, 0.0f, 1.0f);
-    float waterDropProfile = std::pow(std::sin((1.0f - edgeDepth) * 1.5707963f), 1.7f);
+    float edgeDepth = std::clamp(distFromEdge / 28.0f, 0.0f, 1.0f);
+    float waterDropProfile = std::pow(std::sin((1.0f - edgeDepth) * 1.5707963f), 1.6f);
 
     float texelSizeX = 1.0f / screenRes.x();
-    float dispersionBase = dispersion * waterDropProfile * 55.0f * texelSizeX;
+    float dispersionBase = dispersion * waterDropProfile * 30.0f * texelSizeX;
 
     QVector2D screenUV(0.5f, 0.5f);
     QVector2D uvR = screenUV + offset + norm * dispersionBase;

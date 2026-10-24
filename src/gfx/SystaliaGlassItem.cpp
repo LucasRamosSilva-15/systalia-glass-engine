@@ -63,6 +63,14 @@ void SystaliaGlassItem::setSurfaceOpacity(float opacity) {
     }
 }
 
+void SystaliaGlassItem::setTime(float t) {
+    if (!qFuzzyCompare(m_time, t)) {
+        m_time = t;
+        emit timeChanged();
+        update();
+    }
+}
+
 void SystaliaGlassItem::setBackdropSource(QQuickItem *source) {
     if (m_backdropSource != source) {
         if (m_connectedProvider) {
@@ -186,6 +194,7 @@ QSGNode *SystaliaGlassItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeDat
     props.chromaticDispersion = m_chromaticDispersion;
     props.causticIntensity = m_causticIntensity;
     props.opacity = m_surfaceOpacity;
+    props.time = m_time;
 
     material->setProps(props);
     node->markDirty(QSGNode::DirtyMaterial);
