@@ -75,52 +75,55 @@ void main() {
         discard;
     }
 
-    // 2. Geometria da Lente do Menisco Óptico ("Liquid Glass" de 20.0px)
+    // 2. Geometria da Lente de Menisco Fluido (LENS_WIDTH = 24.0px)
     vec2 norm = calculateNormal(p, halfSize, u_Radii, u_Slant);
-    float distFromEdge = max(-dist, 0.0);
-
-    const float LENS_WIDTH = 20.0;
-    float edgeDepth = clamp(distFromEdge / LENS_WIDTH, 0.0, 1.0);
-    // Perfil fluido de gota de menisco líquido
+    const float LENS_WIDTH = 24.0;
+    float edgeDepth = clamp(-dist / LENS_WIDTH, 0.0, 1.0);
+    // Perfil de elevação da gota de cristal líquido:
     float meniscusProfile = sin((1.0 - edgeDepth) * 1.5707963);
 
-    // 3. Vetor de Refração Snelliana Pixel-Accurate
+    // 3. Vetor de Refração Snelliano com Amplitude Visível
     vec2 texelSize = 1.0 / max(u_ScreenResolution, vec2(1.0));
-    // Deslocamento para dentro da geometria escalonado pelo IOR
-    float displacementMagnitude = pow(meniscusProfile, 2.2) * (u_Ior - 1.0) * 35.0;
-    vec2 refrOffset = -norm * displacementMagnitude * texelSize;
+    // Força de deflexão de lente cilíndrica tangencial:
+    float displacementPixels = pow(meniscusProfile, 1.8) * (u_Ior - 1.0) * 45.0;
+    vec2 refrOffset = -norm * displacementPixels * texelSize;
 
-    // 4. Coordenadas de Screen-Space e Dispersão Cromática de Cauchy Pronunciada na Borda
+    // 4. Coordenadas de Screen-Space e Dispersão Cromática Prismática de Cauchy Realçada
     vec2 res = max(u_ScreenResolution, vec2(1.0));
     vec2 screenUV = clamp(gl_FragCoord.xy / res, vec2(0.0), vec2(1.0));
 
-    float dispersionOffset = u_ChromaticDispersion * meniscusProfile * 30.0 * texelSize.x;
-    vec2 uvR = clamp(screenUV + refrOffset - norm * dispersionOffset, vec2(0.001), vec2(0.999));
-    vec2 uvG = clamp(screenUV + refrOffset,                           vec2(0.001), vec2(0.999));
-    vec2 uvB = clamp(screenUV + refrOffset + norm * dispersionOffset, vec2(0.001), vec2(0.999));
+    float dispersionDelta = u_ChromaticDispersion * meniscusProfile * 35.0 * texelSize.x;
+    vec2 uvR = clamp(screenUV + refrOffset - norm * dispersionDelta, vec2(0.002), vec2(0.998));
+    vec2 uvG = clamp(screenUV + refrOffset,                           vec2(0.002), vec2(0.998));
+    vec2 uvB = clamp(screenUV + refrOffset + norm * dispersionDelta, vec2(0.002), vec2(0.998));
 
     float colR = texture(u_BackdropTexture, uvR).r;
     float colG = texture(u_BackdropTexture, uvG).g;
     float colB = texture(u_BackdropTexture, uvB).b;
     vec3 refractedBackdrop = vec3(colR, colG, colB);
 
-    // 5. Specular Rim Zenital Fino (1.1px no topo para corte de luz nítido)
-    float zenith = max(-norm.y, 0.0);
-    float rimLine = exp(-pow((distFromEdge - 0.6) / 0.45, 2.0));
-    float specularRim = clamp(rimLine * zenith, 0.0, 1.0);
-    vec3 rimSpecularColor = clamp(vec3(1.0) * (specularRim * 0.95) + vec3(0.0, 0.898, 1.0) * (specularRim * 0.25), vec3(0.0), vec3(1.0));
+    // 5. Calibração de Transparência do Substrato
+    // Saturação Rec.709 leve para vivacidade do cristal:
+    float luma = dot(refractedBackdrop, vec3(0.2126, 0.7152, 0.0722));
+    refractedBackdrop = clamp(mix(vec3(luma), refractedBackdrop, 1.25), vec3(0.0), vec3(1.0));
 
-    // 6. Feixe Cáustico Planar a 45°
+    vec3 glassBase = vec3(0.047, 0.110, 0.188);
+    // Mistura equilibrada: o fundo refratado deve permanecer visível e translúcido
+    vec3 finalColor = mix(refractedBackdrop, glassBase, clamp(0.35 * u_Opacity, 0.0, 0.70));
+
+    // 6. Linha Especular Zenital de Cristal
+    float zenith = max(-norm.y, 0.0);
+    float rimLine = exp(-pow((dist + 1.0) / 0.8, 2.0));
+    float specularRim = clamp(rimLine * zenith, 0.0, 1.0);
+    finalColor += vec3(1.0, 1.0, 1.0) * (specularRim * 0.85);
+
+    // 7. Feixe Cáustico Planar a 45°
     float diagCoord = clamp(dot(v_TexCoord, vec2(0.707106, 0.707106)), 0.0, 1.414);
     float causticBand = exp(-pow((diagCoord - 0.45) / 0.22, 2.0));
     vec3 causticTint = mix(vec3(0.0, 0.898, 1.0), vec3(1.0, 1.0, 1.0), 0.72);
     vec3 causticContribution = clamp(causticTint * (causticBand * u_CausticIntensity * 0.35), vec3(0.0), vec3(0.4));
-
-    // 7. Base Abissal Translúcida VALO Glass (#0C1C30)
-    vec3 glassBase = vec3(0.047, 0.110, 0.188);
-    vec3 finalColor = mix(refractedBackdrop, glassBase, clamp(0.22 * u_Opacity, 0.0, 1.0));
     finalColor += causticContribution;
-    finalColor += rimSpecularColor;
+
     finalColor = clamp(finalColor, vec3(0.0), vec3(1.0));
 
     fragColor = vec4(finalColor, alphaMask * u_Opacity);

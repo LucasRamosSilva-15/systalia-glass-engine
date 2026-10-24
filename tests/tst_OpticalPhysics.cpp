@@ -46,15 +46,15 @@ static QVector2D computeRefractionOffset(QVector2D p, QVector2D halfSize, QVecto
     QVector2D norm = calculateNormal(p, halfSize, radii, slant);
     float distFromEdge = std::max(-dist, 0.0f);
 
-    const float LENS_WIDTH = 20.0f;
+    const float LENS_WIDTH = 24.0f;
     float edgeDepth = std::clamp(distFromEdge / LENS_WIDTH, 0.0f, 1.0f);
     float meniscusProfile = std::sin((1.0f - edgeDepth) * 1.5707963f);
 
     QVector2D texelSize(1.0f / std::max(screenResolution.x(), 1.0f),
                         1.0f / std::max(screenResolution.y(), 1.0f));
 
-    float displacementMagnitude = std::pow(meniscusProfile, 2.2f) * (ior - 1.0f) * 35.0f;
-    return -norm * displacementMagnitude * texelSize;
+    float displacementPixels = std::pow(meniscusProfile, 1.8f) * (ior - 1.0f) * 45.0f;
+    return -norm * displacementPixels * texelSize;
 }
 
 class TestOpticalPhysics : public QObject {
@@ -116,11 +116,11 @@ void TestOpticalPhysics::testCauchyDispersionSeparation() {
 
     float dist = evaluateSurfaceSDF(pointNearEdge, halfSize, radii, slant);
     float distFromEdge = std::max(-dist, 0.0f);
-    float edgeDepth = std::clamp(distFromEdge / 20.0f, 0.0f, 1.0f);
+    float edgeDepth = std::clamp(distFromEdge / 24.0f, 0.0f, 1.0f);
     float meniscusProfile = std::sin((1.0f - edgeDepth) * 1.5707963f);
 
     float texelSizeX = 1.0f / screenRes.x();
-    float dispersionOffset = dispersion * meniscusProfile * 30.0f * texelSizeX;
+    float dispersionOffset = dispersion * meniscusProfile * 35.0f * texelSizeX;
 
     QVector2D screenUV(0.5f, 0.5f);
     QVector2D uvR = screenUV + offset - norm * dispersionOffset;

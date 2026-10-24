@@ -395,7 +395,7 @@ ApplicationWindow {
                 Layout.fillWidth: true
 
                 Text {
-                    text: "Menisco Óptico 20.0 px • Cauchy RGB • Specular Zenital 1.1 px • Feixe 45° • Blending RGBA8"
+                    text: "Menisco Óptico 24.0 px • Cauchy RGB • Specular Zenital 1.1 px • Feixe 45° • Blending RGBA8"
                     font.pixelSize: 11
                     color: "#64748b"
                 }
