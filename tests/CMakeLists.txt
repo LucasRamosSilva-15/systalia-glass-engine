@@ -50,3 +50,14 @@ target_link_libraries(tst_backdrop_binding PRIVATE
     sge_shaders
 )
 add_test(NAME tst_backdrop_binding COMMAND tst_backdrop_binding)
+
+# Teste 5: Física Óptica VALO Glass (Refração, Menisco, Cauchy e Normais)
+qt_add_executable(tst_optical_physics
+    tst_OpticalPhysics.cpp
+)
+target_link_libraries(tst_optical_physics PRIVATE
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Test
+)
+add_test(NAME tst_optical_physics COMMAND tst_optical_physics)
