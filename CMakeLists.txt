@@ -72,6 +72,7 @@ qt_add_qml_module(sge_core
     RESOURCE_PREFIX "/qt/qml"
     QML_FILES
         src/qml/main.qml
+        src/qml/WaylandClientView.qml
     NO_PLUGIN
 )
 

@@ -74,3 +74,17 @@ target_link_libraries(tst_wayland_socket PRIVATE
     sge_core
 )
 add_test(NAME tst_wayland_socket COMMAND tst_wayland_socket)
+
+# Teste 7: Registro do Protocolo XDG Shell (xdg_wm_base) e Capacidades do Assento (Seat)
+qt_add_executable(tst_xdg_shell
+    tst_XdgShell.cpp
+)
+target_link_libraries(tst_xdg_shell PRIVATE
+    Qt6::Core
+    Qt6::Gui
+    Qt6::WaylandCompositor
+    Qt6::Test
+    sge_core
+)
+add_test(NAME tst_xdg_shell COMMAND tst_xdg_shell)
+

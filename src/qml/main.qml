@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtWayland.Compositor
 import Systalia.Engine
 import Systalia.Compositor 1.0
 
@@ -9,15 +10,45 @@ ApplicationWindow {
     width: 1280
     height: 800
     visible: true
-    title: qsTr("Systalia Glass Engine (SGE) — Etapa 2.1: Servidor Wayland Mínimo (wayland-systalia-0)")
+    title: qsTr("Systalia Glass Engine (SGE) — Etapa 2.2: Suporte XDG Shell & Hospedagem Wayland")
     color: "#020611"
 
-    // 0. Servidor Wayland Nativo (IPC Socket wayland-systalia-0)
+    // 0. Servidor Wayland Nativo (IPC Socket wayland-systalia-0 com suporte XDG Shell)
     SystaliaCompositor {
         id: waylandServer
+        property string activeClientTitle: ""
+        property string activeClientAppId: ""
+
+        onToplevelCreated: (toplevel) => {
+            if (toplevel) {
+                activeClientTitle = toplevel.title
+                activeClientAppId = toplevel.appId
+                toplevel.titleChanged.connect(() => { activeClientTitle = toplevel.title })
+                toplevel.appIdChanged.connect(() => { activeClientAppId = toplevel.appId })
+
+                const comp = Qt.createComponent("WaylandClientView.qml")
+                if (comp.status === Component.Ready) {
+                    const offset = (clientWindowsLayer.children.length * 36) % 180
+                    comp.createObject(clientWindowsLayer, {
+                        toplevel: toplevel,
+                        x: Math.round(180 + offset),
+                        y: Math.round(100 + offset)
+                    })
+                } else if (comp.status === Component.Error) {
+                    console.error("Erro ao instanciar WaylandClientView:", comp.errorString())
+                }
+            }
+        }
+
         Component.onCompleted: {
             create()
         }
+    }
+
+    // Saída Wayland Padrão (notifica geometria e escala aos clientes)
+    WaylandOutput {
+        compositor: waylandServer
+        window: rootWindow
     }
 
     Timer {
@@ -855,6 +886,28 @@ ApplicationWindow {
                             }
                         }
 
+                        // Badge da Janela de Cliente Ativa
+                        Rectangle {
+                            visible: waylandServer.activeClientTitle.length > 0 || waylandServer.activeClientAppId.length > 0
+                            height: 18
+                            implicitWidth: activeClientText.implicitWidth + 12
+                            radius: 4
+                            color: "#18f59e0b"
+                            border.color: "#50f59e0b"
+                            border.width: 1
+
+                            Text {
+                                id: activeClientText
+                                anchors.centerIn: parent
+                                text: "Cliente: " + (waylandServer.activeClientTitle.length > 0
+                                                    ? waylandServer.activeClientTitle
+                                                    : waylandServer.activeClientAppId)
+                                font.pixelSize: 9
+                                font.bold: true
+                                color: "#f59e0b"
+                            }
+                        }
+
                         Text {
                             text: "• VALO Glass (IOR " + glassChassis.currentIOR.toFixed(2) + " / Disp " + glassChassis.currentDispersion.toFixed(3) + ")"
                             font.pixelSize: 9
@@ -937,5 +990,12 @@ ApplicationWindow {
                 }
             }
         }
+    }
+
+    // Camada flutuante superior para janelas de clientes Wayland
+    Item {
+        id: clientWindowsLayer
+        anchors.fill: parent
+        z: 10
     }
 }
