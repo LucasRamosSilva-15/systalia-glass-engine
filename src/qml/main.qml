@@ -26,16 +26,20 @@ ApplicationWindow {
                 toplevel.titleChanged.connect(() => { activeClientTitle = toplevel.title })
                 toplevel.appIdChanged.connect(() => { activeClientAppId = toplevel.appId })
 
-                const comp = Qt.createComponent("WaylandClientView.qml")
+                const comp = Qt.createComponent("WaylandWindowContainer.qml")
                 if (comp.status === Component.Ready) {
                     const offset = (clientWindowsLayer.children.length * 36) % 180
                     comp.createObject(clientWindowsLayer, {
                         toplevel: toplevel,
-                        x: Math.round(180 + offset),
-                        y: Math.round(100 + offset)
+                        backdropSource: backdropGrab,
+                        screenResolution: Qt.point(rootWindow.width * rootWindow.devicePixelRatio,
+                                                   rootWindow.height * rootWindow.devicePixelRatio),
+                        animTime: animTimer.tick,
+                        x: Math.round(160 + offset),
+                        y: Math.round(80 + offset)
                     })
                 } else if (comp.status === Component.Error) {
-                    console.error("Erro ao instanciar WaylandClientView:", comp.errorString())
+                    console.error("Erro ao instanciar WaylandWindowContainer:", comp.errorString())
                 }
             }
         }

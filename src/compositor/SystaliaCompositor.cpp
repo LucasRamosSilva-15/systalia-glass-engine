@@ -14,6 +14,12 @@ SystaliaCompositor::SystaliaCompositor(QObject *parent)
             this, &SystaliaCompositor::onToplevelCreated);
     connect(m_xdgShell, &QWaylandXdgShell::popupCreated,
             this, &SystaliaCompositor::onPopupCreated);
+
+    // Instanciação e configuração forçada de Server-Side Decoration (zxdg_decoration_manager_v1)
+    m_decorationManager = new QWaylandXdgDecorationManagerV1();
+    m_decorationManager->setParent(this);
+    m_decorationManager->setExtensionContainer(this);
+    m_decorationManager->setPreferredMode(QWaylandXdgToplevel::ServerSideDecoration);
 }
 
 SystaliaCompositor::~SystaliaCompositor() {
@@ -37,9 +43,16 @@ void SystaliaCompositor::create() {
         m_xdgShell->initialize();
     }
 
+    // Inicializa a extensão de Decoração Server-Side no registro global
+    if (m_decorationManager && !m_decorationManager->isInitialized()) {
+        m_decorationManager->initialize();
+    }
+
     if (isCreated()) {
         qInfo().noquote() << "[SGE-WAYLAND] Servidor ativo em:" << socketName();
         qInfo().noquote() << "[SGE-WAYLAND] XDG Shell registrado:" << (m_xdgShell && m_xdgShell->isInitialized());
+        qInfo().noquote() << "[SGE-WAYLAND] XDG Decoration Manager registrado (SSD forçado):"
+                          << (m_decorationManager && m_decorationManager->isInitialized());
         qInfo().noquote() << "[SGE-WAYLAND] Assento padrão inicializado com teclado e ponteiro.";
     } else {
         qWarning().noquote() << "[SGE-WAYLAND] Falha ao inicializar servidor no socket:" << socketName();
@@ -64,9 +77,18 @@ void SystaliaCompositor::onSurfaceAboutToBeDestroyed(QWaylandSurface *surface) {
 
 void SystaliaCompositor::onToplevelCreated(QWaylandXdgToplevel *toplevel, QWaylandXdgSurface *xdgSurface) {
     Q_UNUSED(xdgSurface);
-    qInfo().noquote() << "[SGE-WAYLAND] Novo cliente XDG Toplevel:"
-                      << (toplevel ? toplevel->appId() : QStringLiteral("desconhecido"))
-                      << "| Título:" << (toplevel ? toplevel->title() : QStringLiteral("sem título"));
+    if (toplevel) {
+        qInfo().noquote() << "[SGE-WAYLAND] Novo cliente XDG Toplevel:"
+                          << toplevel->appId()
+                          << "| Título:" << toplevel->title()
+                          << "| Decoração atual:" << (toplevel->decorationMode() == QWaylandXdgToplevel::ServerSideDecoration ? "ServerSide" : "ClientSide");
+
+        connect(toplevel, &QWaylandXdgToplevel::decorationModeChanged, this, [toplevel]() {
+            qInfo().noquote() << "[SGE-WAYLAND] Modo de decoração do cliente atualizado:"
+                              << (toplevel->decorationMode() == QWaylandXdgToplevel::ServerSideDecoration ? "ServerSide" : "ClientSide");
+        });
+    }
+
     emit toplevelCreated(toplevel);
 }
 

@@ -5,6 +5,7 @@
 #include <QtWaylandCompositor/QWaylandClient>
 #include <QtWaylandCompositor/QWaylandSeat>
 #include <QtWaylandCompositor/QWaylandXdgShell>
+#include <QtWaylandCompositor/QWaylandXdgDecorationManagerV1>
 #include <QSet>
 #include <QString>
 #include <QByteArray>
@@ -15,6 +16,7 @@ class SystaliaCompositor : public QWaylandCompositor {
     QML_ELEMENT
     Q_PROPERTY(int clientCount READ clientCount NOTIFY clientCountChanged)
     Q_PROPERTY(QWaylandXdgShell *xdgShell READ xdgShell CONSTANT)
+    Q_PROPERTY(QWaylandXdgDecorationManagerV1 *decorationManager READ decorationManager CONSTANT)
 
 public:
     explicit SystaliaCompositor(QObject *parent = nullptr);
@@ -22,6 +24,7 @@ public:
 
     int clientCount() const { return m_clientCount; }
     QWaylandXdgShell *xdgShell() const { return m_xdgShell; }
+    QWaylandXdgDecorationManagerV1 *decorationManager() const { return m_decorationManager; }
 
     Q_INVOKABLE void create() override;
 
@@ -42,4 +45,5 @@ private:
     int m_clientCount = 0;
     QSet<QWaylandSurface *> m_activeSurfaces;
     QWaylandXdgShell *m_xdgShell = nullptr;
+    QWaylandXdgDecorationManagerV1 *m_decorationManager = nullptr;
 };

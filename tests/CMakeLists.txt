@@ -88,3 +88,17 @@ target_link_libraries(tst_xdg_shell PRIVATE
 )
 add_test(NAME tst_xdg_shell COMMAND tst_xdg_shell)
 
+# Teste 8: Protocolo de Decoração Server-Side (zxdg_decoration_manager_v1)
+qt_add_executable(tst_xdg_decorations
+    tst_XdgDecorations.cpp
+)
+target_link_libraries(tst_xdg_decorations PRIVATE
+    Qt6::Core
+    Qt6::Gui
+    Qt6::WaylandCompositor
+    Qt6::Test
+    sge_core
+)
+add_test(NAME tst_xdg_decorations COMMAND tst_xdg_decorations)
+
+

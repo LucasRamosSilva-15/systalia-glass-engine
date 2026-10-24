@@ -73,6 +73,7 @@ qt_add_qml_module(sge_core
     QML_FILES
         src/qml/main.qml
         src/qml/WaylandClientView.qml
+        src/qml/WaylandWindowContainer.qml
     NO_PLUGIN
 )
 

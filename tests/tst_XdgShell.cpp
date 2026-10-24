@@ -15,6 +15,7 @@ private slots:
 
 void TestXdgShell::testXdgShellExtensionRegistration() {
     SystaliaCompositor compositor;
+    compositor.setSocketName("wayland-test-shell-0");
     compositor.create();
 
     QVERIFY2(compositor.isCreated(), "O compositor Wayland deve estar inicializado");
@@ -25,6 +26,7 @@ void TestXdgShell::testXdgShellExtensionRegistration() {
 
 void TestXdgShell::testDefaultSeatCapabilities() {
     SystaliaCompositor compositor;
+    compositor.setSocketName("wayland-test-shell-1");
     compositor.create();
 
     QVERIFY2(compositor.defaultSeat() != nullptr, "O compositor deve inicializar um assento padrão (defaultSeat)");
