@@ -44,18 +44,18 @@ ApplicationWindow {
             }
         }
 
-        // Padrão de barras listradas de alta frequência para evidenciar a distorção da lente
+        // Padrão de barras de calibração para lente de água
         Row {
-            x: 140
-            y: 80
-            spacing: 8
+            x: 120
+            y: 60
+            spacing: 12
             Repeater {
-                model: 24
+                model: 20
                 Rectangle {
-                    width: 8
-                    height: 280
-                    color: (index % 2 === 0) ? "#00e5ff" : "#ff007f"
-                    opacity: 0.85
+                    width: 6
+                    height: 320
+                    color: (index % 2 === 0) ? "#00f2fe" : "#ff007f"
+                    opacity: 0.9
                 }
             }
         }
@@ -151,10 +151,10 @@ ApplicationWindow {
         property real rBL: 24.0
         property real rBR: 24.0
         property real currentSlant: 0.0
-        property real currentIOR: 1.45
-        property real currentDispersion: 0.050
+        property real currentIOR: 1.33
+        property real currentDispersion: 0.055
         property real currentCaustic: 0.65
-        property real currentOpacity: 0.85
+        property real currentOpacity: 0.90
 
         radii: Qt.vector4d(rTL, rTR, rBL, rBR)
         slant: currentSlant
@@ -415,7 +415,7 @@ ApplicationWindow {
                 Layout.fillWidth: true
 
                 Text {
-                    text: "Lente de Menisco 3D 28.0 px • Cauchy RGB • Especular 1.2 px • Blending RGBA8"
+                    text: "Chassi de Água Líquida 32.0 px • Rainbow Flare • Cauchy RGB • Blending RGBA8"
                     font.pixelSize: 11
                     color: "#64748b"
                 }
