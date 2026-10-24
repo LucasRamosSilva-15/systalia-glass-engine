@@ -4,6 +4,8 @@
 #include <QVector4D>
 #include <QVector2D>
 #include <QSGTexture>
+#include <QSGTextureProvider>
+#include <QPointer>
 #include "SystaliaSurfaceProps.hpp"
 
 class SystaliaGlassItem : public QQuickItem {
@@ -16,6 +18,8 @@ class SystaliaGlassItem : public QQuickItem {
     Q_PROPERTY(float chromaticDispersion READ chromaticDispersion WRITE setChromaticDispersion NOTIFY chromaticDispersionChanged)
     Q_PROPERTY(float causticIntensity READ causticIntensity WRITE setCausticIntensity NOTIFY causticIntensityChanged)
     Q_PROPERTY(float surfaceOpacity READ surfaceOpacity WRITE setSurfaceOpacity NOTIFY surfaceOpacityChanged)
+    Q_PROPERTY(QQuickItem* backdropSource READ backdropSource WRITE setBackdropSource NOTIFY backdropSourceChanged)
+    Q_PROPERTY(QVector2D screenResolution READ screenResolution WRITE setScreenResolution NOTIFY screenResolutionChanged)
 
 public:
     explicit SystaliaGlassItem(QQuickItem *parent = nullptr);
@@ -39,6 +43,13 @@ public:
     float surfaceOpacity() const { return m_surfaceOpacity; }
     void setSurfaceOpacity(float opacity);
 
+    QQuickItem *backdropSource() const { return m_backdropSource; }
+    void setBackdropSource(QQuickItem *source);
+
+    QVector2D screenResolution() const { return m_screenResolution; }
+    void setScreenResolution(const QVector2D &res);
+
+    QSGTexture *ensureFallbackTexture();
     void releaseResources() override;
 
 signals:
@@ -48,6 +59,8 @@ signals:
     void chromaticDispersionChanged();
     void causticIntensityChanged();
     void surfaceOpacityChanged();
+    void backdropSourceChanged();
+    void screenResolutionChanged();
 
 protected:
     QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *data) override;
@@ -60,5 +73,9 @@ private:
     float m_causticIntensity = 0.65f;
     float m_surfaceOpacity = 1.0f;
 
+    QPointer<QQuickItem> m_backdropSource;
+    QVector2D m_screenResolution = QVector2D(0.0f, 0.0f);
+
+    QPointer<QSGTextureProvider> m_connectedProvider;
     QSGTexture *m_fallbackTexture = nullptr;
 };

@@ -69,12 +69,18 @@ void main() {
         discard;
     }
 
-    // Cor base sólida/translúcida VALO Glass (#0C1C30)
-    vec3 baseGlassColor = vec3(0.047, 0.110, 0.188);
+    // 4. Amostragem em Screen-Space do Backdrop Framebuffer (gl_FragCoord)
+    vec2 res = max(u_ScreenResolution, vec2(1.0));
+    vec2 screenUV = clamp(gl_FragCoord.xy / res, vec2(0.001), vec2(0.999));
+    vec4 backdropColor = texture(u_BackdropTexture, screenUV);
 
-    // Linha sutil de chanfro interno na borda (1.5px) para validação visual do recorte G2
+    // 5. Mistura com cor base abissal VALO Glass (#0C1C30)
+    vec3 glassTint = vec3(0.047, 0.110, 0.188);
+    vec3 finalColor = mix(backdropColor.rgb, glassTint, clamp(0.35 * u_Opacity, 0.0, 1.0));
+
+    // 6. Linha sutil de chanfro interno na borda (1.5px) para validação visual do recorte G2
     float borderHighlight = smoothstep(0.0, 1.5, abs(dist + 0.8));
-    vec3 colorWithEdge = mix(vec3(0.0, 0.898, 1.0), baseGlassColor, borderHighlight);
+    vec3 colorWithEdge = mix(vec3(0.0, 0.898, 1.0), finalColor, borderHighlight);
 
     fragColor = vec4(colorWithEdge, alphaMask * u_Opacity);
 }

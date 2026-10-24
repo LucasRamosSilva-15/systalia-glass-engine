@@ -63,7 +63,42 @@ void SystaliaGlassItem::setSurfaceOpacity(float opacity) {
     }
 }
 
+void SystaliaGlassItem::setBackdropSource(QQuickItem *source) {
+    if (m_backdropSource != source) {
+        if (m_connectedProvider) {
+            disconnect(m_connectedProvider, &QSGTextureProvider::textureChanged,
+                       this, &QQuickItem::update);
+            m_connectedProvider = nullptr;
+        }
+        m_backdropSource = source;
+        emit backdropSourceChanged();
+        update();
+    }
+}
+
+void SystaliaGlassItem::setScreenResolution(const QVector2D &res) {
+    if (m_screenResolution != res) {
+        m_screenResolution = res;
+        emit screenResolutionChanged();
+        update();
+    }
+}
+
+QSGTexture *SystaliaGlassItem::ensureFallbackTexture() {
+    if (!m_fallbackTexture && window()) {
+        QImage fallbackImg(4, 4, QImage::Format_RGBA8888);
+        fallbackImg.fill(QColor(12, 28, 48, 255));
+        m_fallbackTexture = window()->createTextureFromImage(fallbackImg, QQuickWindow::TextureIsOpaque);
+    }
+    return m_fallbackTexture;
+}
+
 void SystaliaGlassItem::releaseResources() {
+    if (m_connectedProvider) {
+        disconnect(m_connectedProvider, &QSGTextureProvider::textureChanged,
+                   this, &QQuickItem::update);
+        m_connectedProvider = nullptr;
+    }
     if (m_fallbackTexture) {
         delete m_fallbackTexture;
         m_fallbackTexture = nullptr;
@@ -96,27 +131,51 @@ QSGNode *SystaliaGlassItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeDat
         material = static_cast<SystaliaGlassMaterial *>(node->material());
     }
 
+    // Geometria estritamente ancorada na origem local (0.0, 0.0)
     QSGGeometry::updateTexturedRectGeometry(node->geometry(),
                                            QRectF(0.0, 0.0, w, h),
                                            QRectF(0.0, 0.0, 1.0, 1.0));
     node->markDirty(QSGNode::DirtyGeometry);
 
-    // Alocar textura sólida de fallback para blindar sampler binding 1 no Vulkan
-    if (!m_fallbackTexture && window()) {
-        QImage fallbackImg(4, 4, QImage::Format_RGBA8888);
-        fallbackImg.fill(QColor(12, 28, 48, 255));
-        m_fallbackTexture = window()->createTextureFromImage(fallbackImg, QQuickWindow::TextureIsOpaque);
+    // Extração dinâmica de QSGTexture via QSGTextureProvider do ShaderEffectSource
+    QSGTexture *tex = nullptr;
+    if (m_backdropSource && m_backdropSource->isTextureProvider()) {
+        QSGTextureProvider *provider = m_backdropSource->textureProvider();
+        if (provider) {
+            if (m_connectedProvider != provider) {
+                if (m_connectedProvider) {
+                    disconnect(m_connectedProvider, &QSGTextureProvider::textureChanged,
+                               this, &QQuickItem::update);
+                }
+                m_connectedProvider = provider;
+                connect(provider, &QSGTextureProvider::textureChanged,
+                        this, &QQuickItem::update, Qt::UniqueConnection);
+            }
+            tex = provider->texture();
+        }
     }
-    material->setTexture(m_fallbackTexture);
+
+    if (!tex) {
+        tex = ensureFallbackTexture();
+    }
+
+    if (tex) {
+        tex->setFiltering(QSGTexture::Linear);
+        tex->setHorizontalWrapMode(QSGTexture::ClampToEdge);
+        tex->setVerticalWrapMode(QSGTexture::ClampToEdge);
+        material->setTexture(tex);
+    }
 
     // Alimentar buffer uniforme std140
     SystaliaSurfaceProps props;
     props.windowSize = QVector2D(static_cast<float>(w), static_cast<float>(h));
 
-    if (window()) {
-        const qreal dpr = window()->devicePixelRatio();
-        props.screenResolution = QVector2D(static_cast<float>(window()->width() * dpr),
-                                           static_cast<float>(window()->height() * dpr));
+    if (m_screenResolution.x() > 0.0f && m_screenResolution.y() > 0.0f) {
+        props.screenResolution = m_screenResolution;
+    } else if (window()) {
+        const float dpr = static_cast<float>(window()->devicePixelRatio());
+        props.screenResolution = QVector2D(static_cast<float>(window()->width()) * dpr,
+                                           static_cast<float>(window()->height()) * dpr);
     } else {
         props.screenResolution = props.windowSize;
     }
@@ -129,8 +188,6 @@ QSGNode *SystaliaGlassItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeDat
     props.opacity = m_surfaceOpacity;
 
     material->setProps(props);
-
-    node->markDirty(QSGNode::DirtyGeometry);
     node->markDirty(QSGNode::DirtyMaterial);
 
     return node;

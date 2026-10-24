@@ -8,15 +8,25 @@ ApplicationWindow {
     width: 1280
     height: 800
     visible: true
-    title: qsTr("Systalia Glass Engine (SGE) — Etapa 1.3: Recorte SDF Squircle G2")
+    title: qsTr("Systalia Glass Engine (SGE) — Etapa 1.4: Backdrop Screen-Space")
     color: "#080b10"
 
-    // Fundo com elementos gráficos geométricos para verificação de transparência e corte SDF
+    // Timer de animação suave para os elementos dinâmicos do backdrop a 60 FPS
+    Timer {
+        id: animTimer
+        interval: 16
+        running: true
+        repeat: true
+        property real tick: 0.0
+        onTriggered: tick += 0.02
+    }
+
+    // 1. Cena de Fundo com Elementos Geométricos Dinâmicos
     Item {
         id: backgroundScene
         anchors.fill: parent
 
-        // Grade sutil
+        // Grade de diagnóstico analítico
         Grid {
             anchors.fill: parent
             rows: 20
@@ -35,10 +45,10 @@ ApplicationWindow {
             }
         }
 
-        // Disco 1: Magenta/Violeta no quadrante superior esquerdo
+        // Disco 1: Magenta/Violeta oscilando suavemente em órbita
         Rectangle {
-            x: 180
-            y: 120
+            x: 200 + Math.cos(animTimer.tick) * 90
+            y: 140 + Math.sin(animTimer.tick * 0.8) * 70
             width: 320
             height: 320
             radius: 160
@@ -48,10 +58,10 @@ ApplicationWindow {
             }
         }
 
-        // Disco 2: Ciano/Esmeralda no quadrante inferior direito
+        // Disco 2: Ciano/Esmeralda oscilando em contra-fase
         Rectangle {
-            x: 760
-            y: 360
+            x: 740 - Math.sin(animTimer.tick * 0.7) * 80
+            y: 340 - Math.cos(animTimer.tick) * 60
             width: 340
             height: 340
             radius: 170
@@ -61,14 +71,14 @@ ApplicationWindow {
             }
         }
 
-        // Linhas de diagnóstico de centralização
+        // Linhas de diagnóstico de eixos
         Rectangle {
             x: 0
             y: rootWindow.height / 2
             width: rootWindow.width
             height: 2
             color: "#00e5ff"
-            opacity: 0.3
+            opacity: 0.25
         }
 
         Rectangle {
@@ -77,19 +87,38 @@ ApplicationWindow {
             width: 2
             height: rootWindow.height
             color: "#ff0055"
-            opacity: 0.3
+            opacity: 0.25
         }
     }
 
-    // Placa de Vidro Vulkan nativo com recorte analítico SDF G2 Squircle de 4ª ordem
+    // 2. Capturador FBO Dinâmico em Screen-Space (ShaderEffectSource)
+    ShaderEffectSource {
+        id: backdropGrab
+        anchors.fill: backgroundScene
+        sourceItem: backgroundScene
+        textureSize: Qt.size(Math.max(1, rootWindow.width * rootWindow.devicePixelRatio),
+                             Math.max(1, rootWindow.height * rootWindow.devicePixelRatio))
+        live: true
+        hideSource: false
+        visible: false
+        recursive: false
+        format: ShaderEffectSource.RGBA8
+    }
+
+    // 3. Placa de Vidro VALO Glass com Amostragem Ativa do Backdrop
     SystaliaGlassItem {
         id: glassChassis
         width: 860
         height: 580
-        anchors.centerIn: parent
+        x: Math.round((rootWindow.width - width) / 2)
+        y: Math.round((rootWindow.height - height) / 2)
+
+        backdropSource: backdropGrab
+        screenResolution: Qt.vector2d(rootWindow.width * rootWindow.devicePixelRatio,
+                                      rootWindow.height * rootWindow.devicePixelRatio)
+
         surfaceOpacity: 0.85
 
-        // Propriedades reativas controladas pelo painel
         property real rTL: 24.0
         property real rTR: 24.0
         property real rBL: 24.0
@@ -99,13 +128,19 @@ ApplicationWindow {
         radii: Qt.vector4d(rTL, rTR, rBL, rBR)
         slant: currentSlant
 
-        // Conteúdo interativo integrado
+        // Permite arrastar a janela livremente pelo ecrã
+        DragHandler {
+            id: windowDrag
+            target: glassChassis
+        }
+
+        // Conteúdo interativo integrado sobre o vidro
         ColumnLayout {
             anchors.fill: parent
             anchors.margins: 20
             spacing: 12
 
-            // 1. Barra de Título Superior
+            // Barra de Título Superior
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 10
@@ -118,7 +153,7 @@ ApplicationWindow {
                 }
 
                 Text {
-                    text: "SYSTALIA GLASS ENGINE — RECORTE SQUIRCLE SDF G2 (4ª ORDEM)"
+                    text: "SYSTALIA GLASS ENGINE — BACKDROP SCREEN-SPACE ATIVO"
                     font.bold: true
                     font.pixelSize: 13
                     font.letterSpacing: 1.5
@@ -128,7 +163,7 @@ ApplicationWindow {
                 Item { Layout.fillWidth: true }
 
                 Rectangle {
-                    width: 90
+                    width: 125
                     height: 22
                     radius: 4
                     color: "#0a2540"
@@ -137,7 +172,7 @@ ApplicationWindow {
 
                     Text {
                         anchors.centerIn: parent
-                        text: "SDF G2 ACTIVE"
+                        text: "SCREEN-SPACE LIVE"
                         font.pixelSize: 10
                         font.bold: true
                         color: "#00e5ff"
@@ -151,7 +186,7 @@ ApplicationWindow {
                 color: "#1e3a5f"
             }
 
-            // 2. Barra de Presets Rápidos
+            // Barra de Presets Rápidos
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 12
@@ -195,6 +230,14 @@ ApplicationWindow {
                         glassChassis.currentSlant = 0.0;
                     }
                 }
+
+                Item { Layout.fillWidth: true }
+
+                Text {
+                    text: "(Arraste a janela com o mouse)"
+                    font.pixelSize: 11
+                    color: "#94a3b8"
+                }
             }
 
             Rectangle {
@@ -203,14 +246,13 @@ ApplicationWindow {
                 color: "#132338"
             }
 
-            // 3. Painel de Sliders Interativos (Tempo Real a 60+ FPS)
+            // Painel de Sliders Interativos
             GridLayout {
                 Layout.fillWidth: true
                 columns: 3
                 rowSpacing: 8
                 columnSpacing: 16
 
-                // Raio Top-Left
                 Text { text: "Raio Superior Esquerdo (r_tl):"; color: "#94a3b8"; font.pixelSize: 12 }
                 Slider {
                     Layout.fillWidth: true
@@ -220,7 +262,6 @@ ApplicationWindow {
                 }
                 Text { text: Math.round(glassChassis.rTL) + " px"; color: "#00e5ff"; font.pixelSize: 12; Layout.preferredWidth: 50 }
 
-                // Raio Top-Right
                 Text { text: "Raio Superior Direito (r_tr):"; color: "#94a3b8"; font.pixelSize: 12 }
                 Slider {
                     Layout.fillWidth: true
@@ -230,7 +271,6 @@ ApplicationWindow {
                 }
                 Text { text: Math.round(glassChassis.rTR) + " px"; color: "#00e5ff"; font.pixelSize: 12; Layout.preferredWidth: 50 }
 
-                // Raio Bottom-Left
                 Text { text: "Raio Inferior Esquerdo (r_bl):"; color: "#94a3b8"; font.pixelSize: 12 }
                 Slider {
                     Layout.fillWidth: true
@@ -240,7 +280,6 @@ ApplicationWindow {
                 }
                 Text { text: Math.round(glassChassis.rBL) + " px"; color: "#00e5ff"; font.pixelSize: 12; Layout.preferredWidth: 50 }
 
-                // Raio Bottom-Right
                 Text { text: "Raio Inferior Direito (r_br):"; color: "#94a3b8"; font.pixelSize: 12 }
                 Slider {
                     Layout.fillWidth: true
@@ -250,25 +289,24 @@ ApplicationWindow {
                 }
                 Text { text: Math.round(glassChassis.rBR) + " px"; color: "#00e5ff"; font.pixelSize: 12; Layout.preferredWidth: 50 }
 
-                // Slant (Inclinação)
-                Text { text: "Inclinação Lateral (Slant):"; color: "#94a3b8"; font.pixelSize: 12 }
+                Text { text: "Opacidade do Cristal:"; color: "#94a3b8"; font.pixelSize: 12 }
                 Slider {
                     Layout.fillWidth: true
-                    from: -1.0; to: 1.0
-                    value: glassChassis.currentSlant
-                    onMoved: glassChassis.currentSlant = value
+                    from: 0.05; to: 1.0
+                    value: glassChassis.surfaceOpacity
+                    onMoved: glassChassis.surfaceOpacity = value
                 }
-                Text { text: glassChassis.currentSlant.toFixed(2); color: "#00e5ff"; font.pixelSize: 12; Layout.preferredWidth: 50 }
+                Text { text: Math.round(glassChassis.surfaceOpacity * 100) + " %"; color: "#00e5ff"; font.pixelSize: 12; Layout.preferredWidth: 50 }
             }
 
             Item { Layout.fillHeight: true }
 
-            // 4. Rodapé Técnico
+            // Rodapé Técnico
             RowLayout {
                 Layout.fillWidth: true
 
                 Text {
-                    text: "SDF Squircle G2 • Subpixel AA: fwidth(dist) • Descarte: alpha <= 0.001"
+                    text: "Backdrop FBO RGBA8 • Amostragem gl_FragCoord / ScreenResolution • Alinhamento 1:1"
                     font.pixelSize: 11
                     color: "#64748b"
                 }
@@ -276,7 +314,7 @@ ApplicationWindow {
                 Item { Layout.fillWidth: true }
 
                 Text {
-                    text: "Curvatura Contínua: Ativa"
+                    text: "Screen-Space: Ativo"
                     font.pixelSize: 11
                     font.bold: true
                     color: "#10b981"

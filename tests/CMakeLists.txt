@@ -36,3 +36,17 @@ target_link_libraries(tst_sdf_geometry PRIVATE
     Qt6::Test
 )
 add_test(NAME tst_sdf_geometry COMMAND tst_sdf_geometry)
+
+# Teste 4: Vinculação de Backdrop e Resolução Screen-Space
+qt_add_executable(tst_backdrop_binding
+    tst_BackdropBinding.cpp
+)
+target_link_libraries(tst_backdrop_binding PRIVATE
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Quick
+    Qt6::Test
+    sge_core
+    sge_shaders
+)
+add_test(NAME tst_backdrop_binding COMMAND tst_backdrop_binding)
