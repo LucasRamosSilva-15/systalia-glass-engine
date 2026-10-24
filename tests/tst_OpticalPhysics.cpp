@@ -46,15 +46,15 @@ static QVector2D computeRefractionOffset(QVector2D p, QVector2D halfSize, QVecto
     QVector2D norm = calculateNormal(p, halfSize, radii, slant);
     float distFromEdge = std::max(-dist, 0.0f);
 
-    const float LENS_WIDTH = 24.0f;
+    const float LENS_WIDTH = 26.0f;
     float edgeDepth = std::clamp(distFromEdge / LENS_WIDTH, 0.0f, 1.0f);
-    float meniscusProfile = std::sin((1.0f - edgeDepth) * 1.5707963f);
+    float meniscusProfile = std::pow(std::sin((1.0f - edgeDepth) * 1.5707963f), 1.6f);
 
     QVector2D texelSize(1.0f / std::max(screenResolution.x(), 1.0f),
                         1.0f / std::max(screenResolution.y(), 1.0f));
 
-    float displacementPixels = std::pow(meniscusProfile, 1.8f) * (ior - 1.0f) * 45.0f;
-    return -norm * displacementPixels * texelSize;
+    float displacementPixels = meniscusProfile * (ior - 1.0f) * 55.0f;
+    return norm * displacementPixels * texelSize;
 }
 
 class TestOpticalPhysics : public QObject {
@@ -91,15 +91,15 @@ void TestOpticalPhysics::testMeniscusRefractionAtIorGreaterThan1() {
     const float ior = 1.45f;
     const QVector2D screenRes(1280.0f, 800.0f);
 
-    // Ponto a 4.0px da aresta direita (dentro do menisco de 20px)
+    // Ponto a 4.0px da aresta direita (dentro do menisco de 26px)
     QVector2D pointNearRightEdge(halfSize.x() - 4.0f, 0.0f);
     QVector2D offset = computeRefractionOffset(pointNearRightEdge, halfSize, radii, slant, ior, screenRes);
 
     // O vetor de refração deve ser estritamente não nulo
-    QVERIFY2(offset.length() > 0.001f, "Refração do menisco de 20px com IOR 1.45 deve produzir deflexão mensurável");
+    QVERIFY2(offset.length() > 0.001f, "Refração do menisco de 26px com IOR 1.45 deve produzir deflexão mensurável");
 
-    // Na aresta direita (norm.x > 0), -norm empurra para o interior (-X)
-    QVERIFY2(offset.x() < 0.0f, "A deflexão na aresta direita deve deslocar para o interior da janela (-norm)");
+    // Na aresta direita (norm.x > 0), +norm atrai a luz externa para dentro (+X)
+    QVERIFY2(offset.x() > 0.0f, "A deflexão na aresta direita deve seguir a normal externa (+norm)");
 }
 
 void TestOpticalPhysics::testCauchyDispersionSeparation() {
@@ -116,16 +116,16 @@ void TestOpticalPhysics::testCauchyDispersionSeparation() {
 
     float dist = evaluateSurfaceSDF(pointNearEdge, halfSize, radii, slant);
     float distFromEdge = std::max(-dist, 0.0f);
-    float edgeDepth = std::clamp(distFromEdge / 24.0f, 0.0f, 1.0f);
-    float meniscusProfile = std::sin((1.0f - edgeDepth) * 1.5707963f);
+    float edgeDepth = std::clamp(distFromEdge / 26.0f, 0.0f, 1.0f);
+    float meniscusProfile = std::pow(std::sin((1.0f - edgeDepth) * 1.5707963f), 1.6f);
 
     float texelSizeX = 1.0f / screenRes.x();
-    float dispersionOffset = dispersion * meniscusProfile * 35.0f * texelSizeX;
+    float dispersionDelta = dispersion * meniscusProfile * 45.0f * texelSizeX;
 
     QVector2D screenUV(0.5f, 0.5f);
-    QVector2D uvR = screenUV + offset - norm * dispersionOffset;
+    QVector2D uvR = screenUV + offset + norm * dispersionDelta;
     QVector2D uvG = screenUV + offset;
-    QVector2D uvB = screenUV + offset + norm * dispersionOffset;
+    QVector2D uvB = screenUV + offset - norm * dispersionDelta;
 
     float chromaticDistance = (uvB - uvR).length();
 

@@ -22,16 +22,16 @@ layout(std140, binding = 0) uniform buf {
 
 layout(binding = 1) uniform sampler2D u_BackdropTexture;
 
-// Seleção analítica do raio de curvatura correspondente ao quadrante
+// Seleção analítica do raio de curvatura por quadrante
 float selectRadius(vec2 p, vec4 r) {
     if (p.x < 0.0) {
-        return (p.y < 0.0) ? r.x : r.z; // Top-Left / Bottom-Left
+        return (p.y < 0.0) ? r.x : r.z; // TL / BL
     } else {
-        return (p.y < 0.0) ? r.y : r.w; // Top-Right / Bottom-Right
+        return (p.y < 0.0) ? r.y : r.w; // TR / BR
     }
 }
 
-// Signed Distance Field com 4 raios e continuidade G2 (Superelipse de ordem 4)
+// Signed Distance Field com 4 raios e continuidade G2 (Superelipse de 4ª ordem)
 float sdRoundedBox4G2(vec2 p, vec2 b, vec4 r) {
     float rad = selectRadius(p, r);
     rad = clamp(rad, 0.0, min(b.x, b.y) - 0.5);
@@ -39,12 +39,11 @@ float sdRoundedBox4G2(vec2 p, vec2 b, vec4 r) {
     vec2 q = abs(p) - b + vec2(rad);
     vec2 q_pos = max(q, 0.0);
     
-    // Equação da Superelipse G2: (x^4 + y^4)^(1/4) - r
     float cornerDist = pow(pow(q_pos.x, 4.0) + pow(q_pos.y, 4.0), 0.25) - rad;
     return (q.x > 0.0 && q.y > 0.0) ? cornerDist : (max(q.x, q.y) - rad);
 }
 
-// Avaliação combinada do SDF considerando o slant (inclinação lateral para trapézios/domos)
+// Avaliação analítica com inclinação lateral (slant)
 float evaluateSurfaceSDF(vec2 p, vec2 halfSize, vec4 radii, float slant) {
     vec2 p_mod = p;
     float slantFactor = 1.0 - (p.y / max(halfSize.y, 1.0)) * slant * 0.25;
@@ -53,7 +52,7 @@ float evaluateSurfaceSDF(vec2 p, vec2 halfSize, vec4 radii, float slant) {
     return dist * slantFactor;
 }
 
-// Cálculo das normais analíticas por gradiente diferencial subpixel
+// Cálculo das normais analíticas através do gradiente subpixel
 vec2 calculateNormal(vec2 p, vec2 halfSize, vec4 radii, float slant) {
     vec2 eps = vec2(0.5, 0.0);
     float dx = evaluateSurfaceSDF(p + eps.xy, halfSize, radii, slant) - evaluateSurfaceSDF(p - eps.xy, halfSize, radii, slant);
@@ -66,7 +65,7 @@ void main() {
     vec2 halfSize = u_WindowSize * 0.5;
     vec2 p = v_Position - halfSize;
 
-    // 1. Recorte Analítico SDF G2 e Subpixel Anti-Aliasing
+    // 1. Recorte Analítico SDF G2 e Anti-Aliasing Subpixel
     float dist = evaluateSurfaceSDF(p, halfSize, u_Radii, u_Slant);
     float fw = max(fwidth(dist), 0.75);
     float alphaMask = 1.0 - smoothstep(-fw * 0.5, fw * 0.5, dist);
@@ -75,54 +74,49 @@ void main() {
         discard;
     }
 
-    // 2. Geometria da Lente de Menisco Fluido (LENS_WIDTH = 24.0px)
+    // 2. Geometria da Lente de Menisco Líquido (LENS_WIDTH = 26.0px)
     vec2 norm = calculateNormal(p, halfSize, u_Radii, u_Slant);
-    const float LENS_WIDTH = 24.0;
+    const float LENS_WIDTH = 26.0;
     float edgeDepth = clamp(-dist / LENS_WIDTH, 0.0, 1.0);
-    // Perfil de elevação da gota de cristal líquido:
-    float meniscusProfile = sin((1.0 - edgeDepth) * 1.5707963);
+    
+    // Perfil de elevação da gota convexa:
+    float meniscusProfile = pow(sin((1.0 - edgeDepth) * 1.5707963), 1.6);
 
-    // 3. Vetor de Refração Snelliano com Amplitude Visível
+    // 3. Vetor de Refração Snelliano Correto (+norm para atrair a luz externa para dentro)
     vec2 texelSize = 1.0 / max(u_ScreenResolution, vec2(1.0));
-    // Força de deflexão de lente cilíndrica tangencial:
-    float displacementPixels = pow(meniscusProfile, 1.8) * (u_Ior - 1.0) * 45.0;
-    vec2 refrOffset = -norm * displacementPixels * texelSize;
+    float displacementPixels = meniscusProfile * (u_Ior - 1.0) * 55.0;
+    vec2 refrOffset = norm * displacementPixels * texelSize;
 
-    // 4. Coordenadas de Screen-Space e Dispersão Cromática Prismática de Cauchy Realçada
-    vec2 res = max(u_ScreenResolution, vec2(1.0));
-    vec2 screenUV = clamp(gl_FragCoord.xy / res, vec2(0.0), vec2(1.0));
+    // 4. Coordenadas Screen-Space e Dispersão Prismática de Cauchy
+    vec2 screenUV = clamp(gl_FragCoord.xy / max(u_ScreenResolution, vec2(1.0)), vec2(0.0), vec2(1.0));
+    float dispersionDelta = u_ChromaticDispersion * meniscusProfile * 45.0 * texelSize.x;
 
-    float dispersionDelta = u_ChromaticDispersion * meniscusProfile * 35.0 * texelSize.x;
-    vec2 uvR = clamp(screenUV + refrOffset - norm * dispersionDelta, vec2(0.002), vec2(0.998));
+    vec2 uvR = clamp(screenUV + refrOffset + norm * dispersionDelta, vec2(0.002), vec2(0.998));
     vec2 uvG = clamp(screenUV + refrOffset,                           vec2(0.002), vec2(0.998));
-    vec2 uvB = clamp(screenUV + refrOffset + norm * dispersionDelta, vec2(0.002), vec2(0.998));
+    vec2 uvB = clamp(screenUV + refrOffset - norm * dispersionDelta, vec2(0.002), vec2(0.998));
 
     float colR = texture(u_BackdropTexture, uvR).r;
     float colG = texture(u_BackdropTexture, uvG).g;
     float colB = texture(u_BackdropTexture, uvB).b;
     vec3 refractedBackdrop = vec3(colR, colG, colB);
 
-    // 5. Calibração de Transparência do Substrato
-    // Saturação Rec.709 leve para vivacidade do cristal:
-    float luma = dot(refractedBackdrop, vec3(0.2126, 0.7152, 0.0722));
-    refractedBackdrop = clamp(mix(vec3(luma), refractedBackdrop, 1.25), vec3(0.0), vec3(1.0));
-
+    // 5. Preservação de Transparência no Menisco (Pureza do Cristal na Borda)
+    // A borda do menisco permanece 100% livre da tinta escura para visibilidade da refração
     vec3 glassBase = vec3(0.047, 0.110, 0.188);
-    // Mistura equilibrada: o fundo refratado deve permanecer visível e translúcido
-    vec3 finalColor = mix(refractedBackdrop, glassBase, clamp(0.35 * u_Opacity, 0.0, 0.70));
+    float interiorTint = clamp(0.30 * u_Opacity, 0.0, 0.65) * edgeDepth;
+    vec3 finalColor = mix(refractedBackdrop, glassBase, interiorTint);
 
-    // 6. Linha Especular Zenital de Cristal
+    // 6. Linha Especular Zenital Suave no Topo
     float zenith = max(-norm.y, 0.0);
-    float rimLine = exp(-pow((dist + 1.0) / 0.8, 2.0));
+    float rimLine = exp(-pow((dist + 1.2) / 0.9, 2.0));
     float specularRim = clamp(rimLine * zenith, 0.0, 1.0);
-    finalColor += vec3(1.0, 1.0, 1.0) * (specularRim * 0.85);
+    finalColor += vec3(1.0, 1.0, 1.0) * (specularRim * 0.90);
 
     // 7. Feixe Cáustico Planar a 45°
     float diagCoord = clamp(dot(v_TexCoord, vec2(0.707106, 0.707106)), 0.0, 1.414);
     float causticBand = exp(-pow((diagCoord - 0.45) / 0.22, 2.0));
     vec3 causticTint = mix(vec3(0.0, 0.898, 1.0), vec3(1.0, 1.0, 1.0), 0.72);
-    vec3 causticContribution = clamp(causticTint * (causticBand * u_CausticIntensity * 0.35), vec3(0.0), vec3(0.4));
-    finalColor += causticContribution;
+    finalColor += clamp(causticTint * (causticBand * u_CausticIntensity * 0.35), vec3(0.0), vec3(0.4));
 
     finalColor = clamp(finalColor, vec3(0.0), vec3(1.0));
 
