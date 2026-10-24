@@ -20,11 +20,13 @@ struct alignas(16) Matrix4x4_std140 {
     } {}
 
     Matrix4x4_std140(const QMatrix4x4 &m) noexcept {
-        m.copyDataTo(data);
+        const QMatrix4x4 mt = m.transposed();
+        mt.copyDataTo(data);
     }
 
     Matrix4x4_std140 &operator=(const QMatrix4x4 &m) noexcept {
-        m.copyDataTo(data);
+        const QMatrix4x4 mt = m.transposed();
+        mt.copyDataTo(data);
         return *this;
     }
 

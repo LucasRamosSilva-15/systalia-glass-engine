@@ -97,8 +97,9 @@ QSGNode *SystaliaGlassItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeDat
     }
 
     QSGGeometry::updateTexturedRectGeometry(node->geometry(),
-                                           QRectF(0, 0, w, h),
-                                           QRectF(0, 0, 1, 1));
+                                           QRectF(0.0, 0.0, w, h),
+                                           QRectF(0.0, 0.0, 1.0, 1.0));
+    node->markDirty(QSGNode::DirtyGeometry);
 
     // Alocar textura sólida de fallback para blindar sampler binding 1 no Vulkan
     if (!m_fallbackTexture && window()) {

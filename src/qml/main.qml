@@ -61,7 +61,7 @@ ApplicationWindow {
             }
         }
 
-        // Linhas de diagnóstico
+        // Linhas de diagnóstico de centralização
         Rectangle {
             x: 0
             y: rootWindow.height / 2
@@ -81,23 +81,22 @@ ApplicationWindow {
         }
     }
 
-    // Primeiro Quad de Vidro Vulkan nativo centralizado
+    // Placa de Vidro Vulkan nativo perfeitamente centralizada via anchors.centerIn
     SystaliaGlassItem {
-        id: glassQuad
-        width: 800
-        height: 520
-        x: Math.round((rootWindow.width - width) / 2)
-        y: Math.round((rootWindow.height - height) / 2)
-
+        id: glassChassis
+        width: 860
+        height: 580
+        anchors.centerIn: parent
         surfaceOpacity: 0.85
         radii: Qt.vector4d(24.0, 24.0, 24.0, 24.0)
 
-        // Conteúdo ilustrativo sobre a placa
+        // Conteúdo visual interno repousando rigorosamente sobre a placa de vidro
         ColumnLayout {
             anchors.fill: parent
-            anchors.margins: 24
+            anchors.margins: 16
             spacing: 12
 
+            // Barra de Título Superior
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 10
@@ -110,7 +109,7 @@ ApplicationWindow {
                 }
 
                 Text {
-                    text: "SYSTALIA GLASS ENGINE (SGE) — PRIMEIRO QUAD VULKAN RHI"
+                    text: "SYSTALIA GLASS ENGINE (SGE) — VALO GLASS RHI QUAD"
                     font.bold: true
                     font.pixelSize: 13
                     font.letterSpacing: 1.5
@@ -145,23 +144,44 @@ ApplicationWindow {
 
             Item { Layout.fillHeight: true }
 
+            // Centro do Conteúdo
             Text {
                 Layout.alignment: Qt.AlignHCenter
-                text: "PLACA SÓLIDA/TRANSLÚCIDA RENDERIZADA COM SUCESSO"
+                text: "PLACA DE VIDRO PERFEITAMENTE CENTRALIZADA"
                 font.bold: true
-                font.pixelSize: 16
+                font.pixelSize: 18
                 font.letterSpacing: 1.2
                 color: "#38bdf8"
             }
 
             Text {
                 Layout.alignment: Qt.AlignHCenter
-                text: "Geometria TexturedPoint2D (16 bytes) • UniformBuffer std140 (128 bytes) • Sem Frustum Clipping"
+                text: "Geometria local QRectF(0.0, 0.0, 860, 580) • Coordenadas Sincronizadas com o SceneGraph"
                 font.pixelSize: 12
                 color: "#94a3b8"
             }
 
             Item { Layout.fillHeight: true }
+
+            // Rodapé Informativo
+            RowLayout {
+                Layout.fillWidth: true
+
+                Text {
+                    text: "Dimensões: 860 × 580 px | Opacidade: 85% | Alinhamento Local: (0,0)"
+                    font.pixelSize: 11
+                    color: "#64748b"
+                }
+
+                Item { Layout.fillWidth: true }
+
+                Text {
+                    text: "Vulkan Pipeline: Active"
+                    font.pixelSize: 11
+                    font.bold: true
+                    color: "#10b981"
+                }
+            }
         }
     }
 }

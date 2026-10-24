@@ -22,11 +22,7 @@ bool SystaliaGlassMaterialShader::updateUniformData(RenderState &state,
     auto *mat = static_cast<SystaliaGlassMaterial *>(newMaterial);
     SystaliaSurfaceProps props = mat->props();
 
-    if (state.isMatrixDirty()) {
-        props.matrix = state.combinedMatrix();
-    } else {
-        props.matrix = state.combinedMatrix();
-    }
+    props.matrix = state.combinedMatrix();
 
     std::memcpy(buf->data(), &props, sizeof(SystaliaSurfaceProps));
     return true;
