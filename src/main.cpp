@@ -3,6 +3,7 @@
 #include <QQuickWindow>
 #include <QDebug>
 #include "SystaliaGlassItem.hpp"
+#include "SystaliaCompositor.hpp"
 
 int main(int argc, char *argv[]) {
     // Configuração obrigatória do backend Vulkan QRhi antes de QGuiApplication
@@ -13,8 +14,9 @@ int main(int argc, char *argv[]) {
     app.setApplicationName(QStringLiteral("SystaliaGlassEngine"));
     app.setOrganizationName(QStringLiteral("Systalia"));
 
-    // Registro do tipo QML
+    // Registro dos tipos QML
     qmlRegisterType<SystaliaGlassItem>("Systalia.Engine", 1, 0, "SystaliaGlassItem");
+    qmlRegisterType<SystaliaCompositor>("Systalia.Compositor", 1, 0, "SystaliaCompositor");
 
     QQmlApplicationEngine engine;
     const QUrl url(QStringLiteral("qrc:/qt/qml/Systalia/Engine/src/qml/main.qml"));

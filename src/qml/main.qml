@@ -2,14 +2,23 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Systalia.Engine
+import Systalia.Compositor 1.0
 
 ApplicationWindow {
     id: rootWindow
     width: 1280
     height: 800
     visible: true
-    title: qsTr("Systalia Glass Engine (SGE) — Etapa 1.7: Cáusticas Aquáticas & Anatomia Canônica")
+    title: qsTr("Systalia Glass Engine (SGE) — Etapa 2.1: Servidor Wayland Mínimo (wayland-systalia-0)")
     color: "#020611"
+
+    // 0. Servidor Wayland Nativo (IPC Socket wayland-systalia-0)
+    SystaliaCompositor {
+        id: waylandServer
+        Component.onCompleted: {
+            create()
+        }
+    }
 
     Timer {
         id: animTimer
@@ -769,21 +778,87 @@ ApplicationWindow {
                     anchors.margins: 6
                     spacing: 4
 
-                    // Linha de Status / Toggle
+                    // Linha de Status / Toggle com Telemetria Wayland IPC
                     RowLayout {
                         Layout.fillWidth: true
+                        spacing: 8
 
                         Rectangle {
                             width: 8; height: 8; radius: 4
-                            color: "#10b981"
+                            color: waylandServer.created ? "#10b981" : "#ef4444"
+                        }
+
+                        // Badge do Servidor Wayland
+                        Rectangle {
+                            height: 18
+                            implicitWidth: socketBadgeRow.implicitWidth + 12
+                            radius: 4
+                            color: "#1500f2fe"
+                            border.color: "#4000f2fe"
+                            border.width: 1
+
+                            RowLayout {
+                                id: socketBadgeRow
+                                anchors.centerIn: parent
+                                spacing: 4
+
+                                Text {
+                                    text: "WAYLAND:"
+                                    font.pixelSize: 8
+                                    font.bold: true
+                                    color: "#64748b"
+                                }
+                                Text {
+                                    text: waylandServer.socketName
+                                    font.pixelSize: 9
+                                    font.bold: true
+                                    color: "#00f2fe"
+                                }
+                            }
+                        }
+
+                        // Badge de Status do Socket
+                        Rectangle {
+                            height: 18
+                            implicitWidth: statusBadgeText.implicitWidth + 12
+                            radius: 4
+                            color: waylandServer.created ? "#1510b981" : "#15ef4444"
+                            border.color: waylandServer.created ? "#4010b981" : "#40ef4444"
+                            border.width: 1
+
+                            Text {
+                                id: statusBadgeText
+                                anchors.centerIn: parent
+                                text: waylandServer.created ? "Ativo / Escutando" : "Inativo"
+                                font.pixelSize: 9
+                                font.bold: true
+                                color: waylandServer.created ? "#10b981" : "#ef4444"
+                            }
+                        }
+
+                        // Badge de Clientes Conectados
+                        Rectangle {
+                            height: 18
+                            implicitWidth: clientBadgeText.implicitWidth + 12
+                            radius: 4
+                            color: "#10ffffff"
+                            border.color: "#20ffffff"
+                            border.width: 1
+
+                            Text {
+                                id: clientBadgeText
+                                anchors.centerIn: parent
+                                text: "Clientes: " + waylandServer.clientCount
+                                font.pixelSize: 9
+                                font.bold: true
+                                color: "#cbd5e1"
+                            }
                         }
 
                         Text {
-                            text: "VALO Oceanic Glass • Cáusticas " + (glassChassis.currentCaustic > 0 ? "Ativas" : "Off") +
-                                  " • IOR: " + glassChassis.currentIOR.toFixed(2) +
-                                  " • Dispersão: " + glassChassis.currentDispersion.toFixed(3)
-                            font.pixelSize: 10
-                            color: "#94a3b8"
+                            text: "• VALO Glass (IOR " + glassChassis.currentIOR.toFixed(2) + " / Disp " + glassChassis.currentDispersion.toFixed(3) + ")"
+                            font.pixelSize: 9
+                            color: "#64748b"
                         }
 
                         Item { Layout.fillWidth: true }

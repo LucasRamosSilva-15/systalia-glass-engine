@@ -61,3 +61,16 @@ target_link_libraries(tst_optical_physics PRIVATE
     Qt6::Test
 )
 add_test(NAME tst_optical_physics COMMAND tst_optical_physics)
+
+# Teste 6: Criação, Ciclo de Vida e IPC do Socket Wayland (wayland-systalia-0)
+qt_add_executable(tst_wayland_socket
+    tst_WaylandSocket.cpp
+)
+target_link_libraries(tst_wayland_socket PRIVATE
+    Qt6::Core
+    Qt6::Gui
+    Qt6::WaylandCompositor
+    Qt6::Test
+    sge_core
+)
+add_test(NAME tst_wayland_socket COMMAND tst_wayland_socket)

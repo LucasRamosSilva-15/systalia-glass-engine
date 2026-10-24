@@ -19,6 +19,7 @@ find_package(Qt6 6.7 REQUIRED COMPONENTS
     Quick
     QuickControls2
     ShaderTools
+    WaylandCompositor
 )
 
 find_package(Vulkan REQUIRED)
@@ -39,24 +40,28 @@ target_link_libraries(sge_shaders PUBLIC
     Qt6::Gui
 )
 
-# Biblioteca estática central com o motor, itens visuais e módulo QML
+# Biblioteca estática central com o motor, itens visuais, compositor Wayland e módulo QML
 qt_add_library(sge_core STATIC
     src/gfx/SystaliaSurfaceProps.hpp
     src/gfx/SystaliaGlassMaterial.hpp
     src/gfx/SystaliaGlassMaterial.cpp
     src/gfx/SystaliaGlassItem.hpp
     src/gfx/SystaliaGlassItem.cpp
+    src/compositor/SystaliaCompositor.hpp
+    src/compositor/SystaliaCompositor.cpp
 )
 
 target_include_directories(sge_core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gfx
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/compositor
 )
 
 target_link_libraries(sge_core PUBLIC
     Qt6::Core
     Qt6::Gui
     Qt6::Quick
+    Qt6::WaylandCompositor
     Vulkan::Vulkan
     sge_shaders
 )
@@ -78,6 +83,7 @@ qt_add_executable(systalia_glass_engine
 target_link_libraries(systalia_glass_engine PRIVATE
     sge_core
     Qt6::QuickControls2
+    Qt6::WaylandCompositor
 )
 
 enable_testing()
