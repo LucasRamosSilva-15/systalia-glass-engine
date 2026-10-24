@@ -44,10 +44,10 @@ ApplicationWindow {
             }
         }
 
-        // Disco 1: Magenta/Violeta em órbita suave
+        // Disco 1: Magenta/Violeta em órbita suave cruzando a borda esquerda
         Rectangle {
-            x: 220 + Math.cos(animTimer.tick) * 90
-            y: 160 + Math.sin(animTimer.tick * 0.8) * 70
+            x: 120 + Math.cos(animTimer.tick) * 90
+            y: 140 + Math.sin(animTimer.tick * 0.8) * 70
             width: 320
             height: 320
             radius: 160
@@ -135,8 +135,8 @@ ApplicationWindow {
         property real rBL: 24.0
         property real rBR: 24.0
         property real currentSlant: 0.0
-        property real currentIOR: 1.20
-        property real currentDispersion: 0.035
+        property real currentIOR: 1.45
+        property real currentDispersion: 0.050
         property real currentCaustic: 0.65
         property real currentOpacity: 0.85
 
@@ -282,6 +282,7 @@ ApplicationWindow {
                             from: 1.00; to: 1.50
                             value: glassChassis.currentIOR
                             onMoved: glassChassis.currentIOR = value
+                            onValueChanged: if (pressed) glassChassis.currentIOR = value
                         }
                         Text { text: glassChassis.currentIOR.toFixed(2); color: "#00e5ff"; font.pixelSize: 11; Layout.preferredWidth: 40 }
                     }
@@ -294,6 +295,7 @@ ApplicationWindow {
                             from: 0.000; to: 0.080
                             value: glassChassis.currentDispersion
                             onMoved: glassChassis.currentDispersion = value
+                            onValueChanged: if (pressed) glassChassis.currentDispersion = value
                         }
                         Text { text: glassChassis.currentDispersion.toFixed(3); color: "#00e5ff"; font.pixelSize: 11; Layout.preferredWidth: 40 }
                     }
@@ -306,6 +308,7 @@ ApplicationWindow {
                             from: 0.00; to: 1.50
                             value: glassChassis.currentCaustic
                             onMoved: glassChassis.currentCaustic = value
+                            onValueChanged: if (pressed) glassChassis.currentCaustic = value
                         }
                         Text { text: glassChassis.currentCaustic.toFixed(2); color: "#00e5ff"; font.pixelSize: 11; Layout.preferredWidth: 40 }
                     }
@@ -318,6 +321,7 @@ ApplicationWindow {
                             from: 0.05; to: 1.00
                             value: glassChassis.currentOpacity
                             onMoved: glassChassis.currentOpacity = value
+                            onValueChanged: if (pressed) glassChassis.currentOpacity = value
                         }
                         Text { text: Math.round(glassChassis.currentOpacity * 100) + " %"; color: "#00e5ff"; font.pixelSize: 11; Layout.preferredWidth: 40 }
                     }
