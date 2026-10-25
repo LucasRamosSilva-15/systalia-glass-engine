@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<protocol name="z_systalia_surface_v1">
+  <copyright>Copyright (c) 2026 Systalia Project.</copyright>
+  <interface name="z_systalia_manager_v1" version="1">
+    <description summary="Factory for per-surface VALO optical metadata">
+      The compositor advertises one manager global. Each wl_surface can have at
+      most one live optical controller. Values are applied immediately, in wire
+      order, independently of wl_surface.commit. All lengths use surface-local
+      logical pixels. Destroying the manager leaves existing controllers valid.
+    </description>
+    <enum name="error">
+      <entry name="already_exists" value="0" summary="surface already has a controller"/>
+      <entry name="invalid_surface" value="1" summary="surface is not a live surface of this client"/>
+    </enum>
+    <request name="destroy" type="destructor"/>
+    <request name="get_systalia_surface">
+      <arg name="id" type="new_id" interface="z_systalia_surface_v1"/>
+      <arg name="surface" type="object" interface="wl_surface"/>
+    </request>
+  </interface>
+  <interface name="z_systalia_surface_v1" version="1">
+    <description summary="Optical parameters associated with one wl_surface">
+      Defaults are radii (18,18,18,18), slant 0, IOR 1.25, dispersion 0.04 and
+      meniscus width 28. Parameters are Wayland signed 24.8 fixed-point values.
+      Destroying this controller restores compositor defaults. Destroying its
+      wl_surface removes the metadata; subsequent setters report invalid_surface.
+      The inert controller may still be destroyed safely by the client.
+      Meniscus width is negotiated metadata; rendering support is compositor-defined.
+    </description>
+    <enum name="error">
+      <entry name="invalid_value" value="0" summary="parameter is outside its supported range"/>
+      <entry name="invalid_surface" value="1" summary="associated wl_surface has been destroyed"/>
+    </enum>
+    <request name="destroy" type="destructor"/>
+    <request name="set_corner_radii">
+      <description summary="Set independent G2 radii in TL, TR, BL, BR order">
+        Each radius must be nonnegative. The renderer constrains the effective
+        radius to the window dimensions without changing this metadata.
+      </description>
+      <arg name="tl" type="fixed"/>
+      <arg name="tr" type="fixed"/>
+      <arg name="bl" type="fixed"/>
+      <arg name="br" type="fixed"/>
+    </request>
+    <request name="set_slant">
+      <description summary="Set perspective slant between -1 and 1 inclusive"/>
+      <arg name="slant" type="fixed"/>
+    </request>
+    <request name="set_optical_properties">
+      <description summary="Set IOR, chromatic dispersion and meniscus width atomically">
+        IOR must be in [1,3], dispersion in [0,1], and meniscus width must be
+        positive. A rejected tuple changes none of the optical properties.
+      </description>
+      <arg name="ior" type="fixed"/>
+      <arg name="dispersion" type="fixed"/>
+      <arg name="meniscus_width" type="fixed"/>
+    </request>
+  </interface>
+</protocol>

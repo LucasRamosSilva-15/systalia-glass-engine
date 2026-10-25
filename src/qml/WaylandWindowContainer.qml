@@ -22,6 +22,14 @@ Item {
     readonly property int frameMargin: 4
     readonly property int titleBarHeight: 36
     readonly property var xdgSurface: toplevel ? toplevel.xdgSurface : null
+    readonly property var opticalMetadata: {
+        if (!waylandServer || !xdgSurface)
+            return null
+        const extension = waylandServer.surfaceExtension
+        // Track creation/removal as well as notifications on the metadata object.
+        extension.surfaceCount
+        return extension.resourceForSurface(xdgSurface.surface)
+    }
     readonly property rect clientGeometry: xdgSurface ? xdgSurface.windowGeometry : Qt.rect(0, 0, 0, 0)
     readonly property bool resizeEnabled: toplevel !== null && waylandServer !== null
                                           && !toplevel.maximized && !toplevel.fullscreen
@@ -109,10 +117,10 @@ Item {
         backdropSource: windowContainer.backdropSource
         screenResolution: Qt.vector2d(windowContainer.screenResolution.x, windowContainer.screenResolution.y)
 
-        radii: Qt.vector4d(18.0, 18.0, 18.0, 18.0)
-        slant: 0.0
-        ior: 1.25
-        chromaticDispersion: 0.040
+        radii: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.radii : Qt.vector4d(18.0, 18.0, 18.0, 18.0)
+        slant: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.slant : 0.0
+        ior: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.ior : 1.25
+        chromaticDispersion: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.dispersion : 0.040
         causticIntensity: 0.70
         surfaceOpacity: 0.90
         time: windowContainer.animTime

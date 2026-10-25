@@ -9,6 +9,7 @@ SystaliaCompositor::SystaliaCompositor(QObject *parent)
     connect(this, &QWaylandCompositor::surfaceAboutToBeDestroyed,
             this, &SystaliaCompositor::onSurfaceAboutToBeDestroyed);
 
+    m_surfaceExtension = new SystaliaSurfaceExtension(this);
     m_xdgShell = new QWaylandXdgShell(this);
     connect(m_xdgShell, &QWaylandXdgShell::toplevelCreated,
             this, &SystaliaCompositor::onToplevelCreated);
@@ -49,6 +50,7 @@ void SystaliaCompositor::create() {
     }
 
     if (isCreated()) {
+        m_surfaceExtension->initialize();
         qInfo().noquote() << "[SGE-WAYLAND] Servidor ativo em:" << socketName();
         qInfo().noquote() << "[SGE-WAYLAND] XDG Shell registrado:" << (m_xdgShell && m_xdgShell->isInitialized());
         qInfo().noquote() << "[SGE-WAYLAND] XDG Decoration Manager registrado (SSD forçado):"
