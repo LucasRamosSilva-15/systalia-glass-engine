@@ -59,6 +59,30 @@ void SystaliaCompositor::create() {
     }
 }
 
+void SystaliaCompositor::requestToplevelResize(QWaylandXdgToplevel *toplevel,
+                                               const QSize &newSize, bool isResizing) {
+    if (!toplevel || !toplevel->xdgSurface()
+        || toplevel->xdgSurface()->shell() != m_xdgShell) {
+        return;
+    }
+
+    const QSize minimum = toplevel->minSize().expandedTo(QSize(240, 160));
+    const QSize maximum = toplevel->maxSize();
+    QSize size = newSize.expandedTo(minimum);
+    if (maximum.width() > 0) {
+        size.setWidth(qMin(size.width(), qMax(minimum.width(), maximum.width())));
+    }
+    if (maximum.height() > 0) {
+        size.setHeight(qMin(size.height(), qMax(minimum.height(), maximum.height())));
+    }
+
+    QList<QWaylandXdgToplevel::State> states{QWaylandXdgToplevel::ActivatedState};
+    if (isResizing) {
+        states.prepend(QWaylandXdgToplevel::ResizingState);
+    }
+    toplevel->sendConfigure(size, states);
+}
+
 void SystaliaCompositor::onSurfaceCreated(QWaylandSurface *surface) {
     if (surface) {
         m_activeSurfaces.insert(surface);

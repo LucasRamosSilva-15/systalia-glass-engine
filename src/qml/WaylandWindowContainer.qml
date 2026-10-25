@@ -8,12 +8,98 @@ Item {
     id: windowContainer
 
     property var toplevel: null
+    property var waylandServer: null
     property var backdropSource: null
     property point screenResolution: Qt.point(1280, 800)
     property real animTime: 0.0
 
     width: 680
     height: 480
+
+    property int minWindowWidth: 320
+    property int minWindowHeight: 220
+    readonly property int borderMargin: 8
+    readonly property int frameMargin: 4
+    readonly property int titleBarHeight: 36
+    readonly property var xdgSurface: toplevel ? toplevel.xdgSurface : null
+    readonly property rect clientGeometry: xdgSurface ? xdgSurface.windowGeometry : Qt.rect(0, 0, 0, 0)
+    readonly property bool resizeEnabled: toplevel !== null && waylandServer !== null
+                                          && !toplevel.maximized && !toplevel.fullscreen
+    property bool resizing: false
+    property int resizeEdges: 0
+    property bool resizeAnchored: false
+    property point resizeOrigin: Qt.point(0, 0)
+    property size resizeStartSize: Qt.size(0, 0)
+    property size requestedClientSize: Qt.size(0, 0)
+    property real fixedRight: 0
+    property real fixedBottom: 0
+
+    // Only committed client geometry sizes the glass; configure requests are asynchronous.
+    function syncClientGeometry() {
+        if (clientGeometry.width <= 0 || clientGeometry.height <= 0)
+            return
+        width = clientGeometry.width + 2 * frameMargin
+        height = clientGeometry.height + titleBarHeight + 2 * frameMargin
+        if (resizeAnchored && (resizeEdges & Qt.LeftEdge))
+            x = fixedRight - width
+        if (resizeAnchored && (resizeEdges & Qt.TopEdge))
+            y = fixedBottom - height
+    }
+
+    onClientGeometryChanged: syncClientGeometry()
+
+    function beginResize(edges, position) {
+        if (!resizeEnabled || resizing)
+            return
+        resizeEdges = edges
+        resizeAnchored = true
+        resizeOrigin = position
+        resizeStartSize = Qt.size(width, height)
+        fixedRight = x + width
+        fixedBottom = y + height
+        requestedClientSize = Qt.size(Math.round(width - 2 * frameMargin),
+                                      Math.round(height - titleBarHeight - 2 * frameMargin))
+        resizing = true
+        forceActiveFocus()
+        waylandServer.requestToplevelResize(toplevel, requestedClientSize, true)
+    }
+
+    function updateResize(position) {
+        if (!resizing || !resizeEnabled)
+            return
+        const dx = position.x - resizeOrigin.x
+        const dy = position.y - resizeOrigin.y
+        let w = resizeStartSize.width
+        let h = resizeStartSize.height
+        if (resizeEdges & Qt.LeftEdge) w -= dx
+        if (resizeEdges & Qt.RightEdge) w += dx
+        if (resizeEdges & Qt.TopEdge) h -= dy
+        if (resizeEdges & Qt.BottomEdge) h += dy
+        const clientW = Math.max(240, minWindowWidth - 2 * frameMargin, toplevel.minSize.width)
+        const clientH = Math.max(160, minWindowHeight - titleBarHeight - 2 * frameMargin,
+                                 toplevel.minSize.height)
+        w = Math.max(clientW, Math.round(w - 2 * frameMargin))
+        h = Math.max(clientH, Math.round(h - titleBarHeight - 2 * frameMargin))
+        if (toplevel.maxSize.width > 0) w = Math.min(w, Math.max(clientW, toplevel.maxSize.width))
+        if (toplevel.maxSize.height > 0) h = Math.min(h, Math.max(clientH, toplevel.maxSize.height))
+        if (w === requestedClientSize.width && h === requestedClientSize.height)
+            return
+        requestedClientSize = Qt.size(w, h)
+        waylandServer.requestToplevelResize(toplevel, requestedClientSize, true)
+    }
+
+    function finishResize() {
+        if (!resizing)
+            return
+        resizing = false
+        if (toplevel && waylandServer)
+            waylandServer.requestToplevelResize(toplevel, requestedClientSize, false)
+    }
+
+    onResizeEnabledChanged: {
+        if (!resizeEnabled)
+            finishResize()
+    }
 
     // Chassi de Vidro Líquido Nativo do Systalia Glass Engine (SGE)
     SystaliaGlassItem {
@@ -45,7 +131,7 @@ Item {
                 anchors.top: parent.top
                 anchors.left: parent.left
                 anchors.right: parent.right
-                height: 36
+                height: windowContainer.titleBarHeight
                 radius: 18
                 color: windowContainer.activeFocus ? "#3000f2fe" : "#181e293b"
 
@@ -225,28 +311,80 @@ Item {
                 DragHandler {
                     id: windowDrag
                     target: windowContainer
+                    enabled: !windowContainer.resizing
+                    onActiveChanged: if (active) windowContainer.resizeAnchored = false
                 }
             }
 
-            // 2. Área Útil do Buffer Wayland (ShellSurfaceItem herda de WaylandQuickItem)
-            ShellSurfaceItem {
-                id: clientSurfaceItem
+            // Clip buffer extents to xdg windowGeometry without stretching uncommitted buffers.
+            Item {
+                id: clientViewport
                 anchors.top: sgeTitleBar.bottom
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
-                anchors.margins: 4
-                shellSurface: windowContainer.toplevel ? windowContainer.toplevel.xdgSurface : null
-                focus: true
-                focusOnClick: true
-                inputEventsEnabled: true
-                paintEnabled: true
-                moveItem: windowContainer
+                anchors.margins: windowContainer.frameMargin
+                clip: true
 
-                onSurfaceDestroyed: {
-                    windowContainer.destroy()
+                ShellSurfaceItem {
+                    id: clientSurfaceItem
+                    objectName: "clientSurfaceItem"
+                    x: -windowContainer.clientGeometry.x
+                    y: -windowContainer.clientGeometry.y
+                    shellSurface: windowContainer.xdgSurface
+                    focus: true
+                    focusOnClick: true
+                    inputEventsEnabled: !windowContainer.resizing
+                    paintEnabled: true
+                    moveItem: windowContainer
+
+                    onSurfaceDestroyed: {
+                        windowContainer.finishResize()
+                        windowContainer.destroy()
+                    }
                 }
             }
+        }
+    }
+
+    Repeater {
+        model: [
+            { name: "top", edges: Qt.TopEdge, cursor: Qt.SizeVerCursor },
+            { name: "bottom", edges: Qt.BottomEdge, cursor: Qt.SizeVerCursor },
+            { name: "left", edges: Qt.LeftEdge, cursor: Qt.SizeHorCursor },
+            { name: "right", edges: Qt.RightEdge, cursor: Qt.SizeHorCursor },
+            { name: "topLeft", edges: Qt.TopEdge | Qt.LeftEdge, cursor: Qt.SizeFDiagCursor },
+            { name: "bottomRight", edges: Qt.BottomEdge | Qt.RightEdge, cursor: Qt.SizeFDiagCursor },
+            { name: "topRight", edges: Qt.TopEdge | Qt.RightEdge, cursor: Qt.SizeBDiagCursor },
+            { name: "bottomLeft", edges: Qt.BottomEdge | Qt.LeftEdge, cursor: Qt.SizeBDiagCursor }
+        ]
+        delegate: MouseArea {
+            required property var modelData
+            readonly property bool horizontalEdge: (modelData.edges & (Qt.LeftEdge | Qt.RightEdge)) !== 0
+            readonly property bool verticalEdge: (modelData.edges & (Qt.TopEdge | Qt.BottomEdge)) !== 0
+            objectName: "resize_" + modelData.name
+            z: 100
+            x: (modelData.edges & Qt.RightEdge) ? windowContainer.width - width
+               : (horizontalEdge ? 0 : windowContainer.borderMargin)
+            y: (modelData.edges & Qt.BottomEdge) ? windowContainer.height - height
+               : (verticalEdge ? 0 : windowContainer.borderMargin)
+            width: horizontalEdge ? windowContainer.borderMargin
+                                  : windowContainer.width - 2 * windowContainer.borderMargin
+            height: verticalEdge ? windowContainer.borderMargin
+                                 : windowContainer.height - 2 * windowContainer.borderMargin
+            enabled: windowContainer.resizeEnabled
+            hoverEnabled: true
+            cursorShape: modelData.cursor
+            acceptedButtons: Qt.LeftButton
+            preventStealing: true
+            onPressed: mouse => windowContainer.beginResize(modelData.edges,
+                                    mapToItem(windowContainer.parent, mouse.x, mouse.y))
+            onPositionChanged: mouse => {
+                if (pressed)
+                    windowContainer.updateResize(mapToItem(windowContainer.parent, mouse.x, mouse.y))
+            }
+            onReleased: windowContainer.finishResize()
+            onCanceled: windowContainer.finishResize()
         }
     }
 

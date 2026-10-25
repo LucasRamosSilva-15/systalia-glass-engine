@@ -31,6 +31,7 @@ ApplicationWindow {
                     const offset = (clientWindowsLayer.children.length * 36) % 180
                     comp.createObject(clientWindowsLayer, {
                         toplevel: toplevel,
+                        waylandServer: waylandServer,
                         backdropSource: backdropGrab,
                         screenResolution: Qt.point(rootWindow.width * rootWindow.devicePixelRatio,
                                                    rootWindow.height * rootWindow.devicePixelRatio),
