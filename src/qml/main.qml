@@ -1096,11 +1096,30 @@ ApplicationWindow {
         function onLauncherRequested() {
             flowMenu.toggle()
         }
+        function onControlCenterRequested() {
+            controlCenter.toggle()
+        }
     }
 
     Shortcut {
         sequence: "Meta+Space"
         context: Qt.ApplicationShortcut
         onActivated: flowMenu.toggle()
+    }
+
+    Shell.SystaliaControlCenter {
+        id: controlCenter
+        backdropSource: backdropGrab
+        screenResolution: Qt.vector2d(rootWindow.width * rootWindow.devicePixelRatio,
+                                      rootWindow.height * rootWindow.devicePixelRatio)
+        animationTime: animTimer.tick
+    }
+
+    Shell.SystaliaNotificationHost {
+        id: notificationHost
+        backdropSource: backdropGrab
+        screenResolution: Qt.vector2d(rootWindow.width * rootWindow.devicePixelRatio,
+                                      rootWindow.height * rootWindow.devicePixelRatio)
+        animationTime: animTimer.tick
     }
 }

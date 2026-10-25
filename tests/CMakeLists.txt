@@ -167,6 +167,22 @@ target_link_libraries(tst_app_registry PRIVATE
 )
 add_test(NAME tst_app_registry COMMAND tst_app_registry)
 
+# Test 15: ciclo de vida, substituição, expiração e sinais D-Bus de notificações.
+qt_add_executable(tst_notification_server tst_NotificationServer.cpp)
+target_link_libraries(tst_notification_server PRIVATE
+    Qt6::Core
+    Qt6::DBus
+    Qt6::Test
+    sge_core
+)
+find_program(DBUS_RUN_SESSION_EXECUTABLE dbus-run-session)
+if(DBUS_RUN_SESSION_EXECUTABLE)
+    add_test(NAME tst_notification_server
+        COMMAND "${DBUS_RUN_SESSION_EXECUTABLE}" -- $<TARGET_FILE:tst_notification_server>)
+else()
+    add_test(NAME tst_notification_server COMMAND tst_notification_server)
+endif()
+
 set(_sge_headless_tests
     tst_systalia_engine
     tst_item_geometry
@@ -181,6 +197,7 @@ set(_sge_headless_tests
     tst_telemetry
     tst_process_launcher
     tst_app_registry
+    tst_notification_server
 )
 set_tests_properties(${_sge_headless_tests} PROPERTIES
     ENVIRONMENT "QT_QPA_PLATFORM=offscreen"

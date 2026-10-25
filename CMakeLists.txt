@@ -16,6 +16,7 @@ find_package(Qt6 6.7 REQUIRED COMPONENTS
     QuickControls2
     ShaderTools
     WaylandCompositor
+    DBus
 )
 
 find_package(Vulkan REQUIRED)
@@ -61,6 +62,10 @@ qt_add_library(sge_core STATIC
     src/system/ProcessLauncherService.cpp
     src/system/AppRegistryService.hpp
     src/system/AppRegistryService.cpp
+    src/system/NotificationServer.hpp
+    src/system/NotificationServer.cpp
+    src/system/SystemControlService.hpp
+    src/system/SystemControlService.cpp
 )
 
 qt6_generate_wayland_protocol_server_sources(sge_core
@@ -80,6 +85,7 @@ target_link_libraries(sge_core PUBLIC
     Qt6::Gui
     Qt6::Quick
     Qt6::WaylandCompositor
+    Qt6::DBus
     Vulkan::Vulkan
     sge_shaders
 )
@@ -96,6 +102,8 @@ qt_add_qml_module(sge_core
         src/qml/shell/SystaliaTopBar.qml
         src/qml/shell/SystaliaDock.qml
         src/qml/shell/SystaliaFlowMenu.qml
+        src/qml/shell/SystaliaNotificationHost.qml
+        src/qml/shell/SystaliaControlCenter.qml
     NO_PLUGIN
 )
 

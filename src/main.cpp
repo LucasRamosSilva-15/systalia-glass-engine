@@ -9,6 +9,8 @@
 #include "SystemTelemetryService.hpp"
 #include "ProcessLauncherService.hpp"
 #include "AppRegistryService.hpp"
+#include "NotificationServer.hpp"
+#include "SystemControlService.hpp"
 
 int main(int argc, char *argv[]) {
     // Configuração obrigatória do backend Vulkan QRhi antes de QGuiApplication
@@ -18,6 +20,9 @@ int main(int argc, char *argv[]) {
     QGuiApplication app(argc, argv);
     app.setApplicationName(QStringLiteral("SystaliaGlassEngine"));
     app.setOrganizationName(QStringLiteral("Systalia"));
+
+    NotificationServer notificationServer;
+    SystemControlService systemControlService;
 
     // Registro dos tipos QML
     qmlRegisterType<SystaliaGlassItem>("Systalia.Engine", 1, 0, "SystaliaGlassItem");
@@ -37,6 +42,10 @@ int main(int argc, char *argv[]) {
         [](QQmlEngine *, QJSEngine *) -> QObject * {
             return new AppRegistryService();
         });
+    qmlRegisterSingletonInstance("Systalia.System", 1, 0, "Notifications",
+                                 &notificationServer);
+    qmlRegisterSingletonInstance("Systalia.System", 1, 0, "SystemControl",
+                                 &systemControlService);
 
     QQmlApplicationEngine engine;
     engine.addImageProvider(QStringLiteral("desktopIcons"), new DesktopIconProvider());

@@ -9,6 +9,7 @@ Item {
     readonly property int barHeight: 40
 
     signal launcherRequested()
+    signal controlCenterRequested()
 
     height: barHeight
     z: 100
@@ -136,7 +137,7 @@ Item {
                 Accessible.name: "Rede"
                 ToolTip.visible: hovered
                 ToolTip.text: "Rede"
-                onClicked: networkMenu.open()
+                onClicked: topBar.controlCenterRequested()
                 contentItem: Text {
                     text: networkButton.text
                     color: networkButton.hovered ? "#e9fbff" : "#a8c7d6"
@@ -148,10 +149,6 @@ Item {
                     radius: 6
                     color: networkButton.hovered ? "#2638bdf8" : "transparent"
                 }
-                Menu {
-                    id: networkMenu
-                    MenuItem { text: "Estado da rede: ligado"; enabled: false }
-                }
             }
 
             ToolButton {
@@ -160,7 +157,7 @@ Item {
                 Accessible.name: "Som"
                 ToolTip.visible: hovered
                 ToolTip.text: "Som"
-                onClicked: soundMenu.open()
+                onClicked: topBar.controlCenterRequested()
                 contentItem: Text {
                     text: soundButton.text
                     color: soundButton.hovered ? "#e9fbff" : "#a8c7d6"
@@ -172,10 +169,6 @@ Item {
                     radius: 6
                     color: soundButton.hovered ? "#2638bdf8" : "transparent"
                 }
-                Menu {
-                    id: soundMenu
-                    MenuItem { text: "Controlo de som"; enabled: false }
-                }
             }
 
             ToolButton {
@@ -184,7 +177,7 @@ Item {
                 Accessible.name: "Brilho"
                 ToolTip.visible: hovered
                 ToolTip.text: "Brilho"
-                onClicked: brightnessMenu.open()
+                onClicked: topBar.controlCenterRequested()
                 contentItem: Text {
                     text: brightnessButton.text
                     color: brightnessButton.hovered ? "#e9fbff" : "#a8c7d6"
@@ -196,10 +189,6 @@ Item {
                     radius: 6
                     color: brightnessButton.hovered ? "#2638bdf8" : "transparent"
                 }
-                Menu {
-                    id: brightnessMenu
-                    MenuItem { text: "Controlo de brilho"; enabled: false }
-                }
             }
 
             ToolButton {
@@ -208,7 +197,7 @@ Item {
                 Accessible.name: "Perfil de sessão"
                 ToolTip.visible: hovered
                 ToolTip.text: "Perfil de sessão"
-                onClicked: profileMenu.open()
+                onClicked: topBar.controlCenterRequested()
                 contentItem: Text {
                     text: profileButton.text
                     color: "#e8faff"
@@ -222,11 +211,6 @@ Item {
                     color: profileButton.hovered ? "#3947c9e8" : "#2633a3bd"
                     border.color: "#4867c9d8"
                     border.width: 1
-                }
-                Menu {
-                    id: profileMenu
-                    MenuItem { text: "Sessão Systalia"; enabled: false }
-                    MenuItem { text: "Encerrar sessão"; enabled: false }
                 }
             }
         }
