@@ -116,12 +116,10 @@ endif()
 
 # Teste 10: IPC do protocolo óptico, precisão fixed-point e ciclo de vida.
 find_package(Qt6 REQUIRED COMPONENTS WaylandClient)
+add_subdirectory(protocol-client)
 qt_add_executable(tst_systalia_protocol tst_SystaliaProtocol.cpp)
-qt6_generate_wayland_protocol_client_sources(tst_systalia_protocol
-    FILES "${PROJECT_SOURCE_DIR}/protocols/z_systalia_surface_v1.xml"
-)
 target_link_libraries(tst_systalia_protocol PRIVATE
-    Qt6::Test Qt6::Quick Qt6::WaylandClient Wayland::Client Wayland::Server sge_core
+    Qt6::Test Qt6::Quick Qt6::WaylandClient Wayland::Server sge_core sge_test_protocol_client
 )
 add_test(NAME tst_systalia_protocol COMMAND tst_systalia_protocol)
 set_tests_properties(tst_systalia_protocol PROPERTIES
@@ -205,4 +203,107 @@ set_tests_properties(${_sge_headless_tests} PROPERTIES
 set_tests_properties(tst_xdg_resize PROPERTIES
     TIMEOUT 120
     ENVIRONMENT "${_tst_xdg_resize_environment}"
+)
+
+# The expanded suite keeps each executable independently runnable while also
+# exposing layer-level build targets and CTest labels.
+function(sge_add_expanded_test target source layer)
+    qt_add_executable(${target} ${source})
+    target_link_libraries(${target} PRIVATE
+        Qt6::Core
+        Qt6::Gui
+        Qt6::Quick
+        Qt6::WaylandCompositor
+        Qt6::Test
+        sge_core
+    )
+    add_test(NAME ${target} COMMAND ${target})
+    set_tests_properties(${target} PROPERTIES
+        LABELS "${layer}"
+        TIMEOUT 45
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    )
+endfunction()
+
+# Unit tests: pure math, ABI layout, kernel text parsing and desktop Exec parsing.
+sge_add_expanded_test(tst_sdf_geometry_math unit/tst_SdfGeometryMath.cpp unit)
+target_compile_definitions(tst_sdf_geometry_math PRIVATE
+    SGE_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+)
+sge_add_expanded_test(tst_memory_alignment unit/tst_MemoryAlignment.cpp unit)
+sge_add_expanded_test(tst_linux_parsers unit/tst_LinuxParsers.cpp unit)
+
+# Integration tests exercise actual Wayland wire requests and model resets.
+sge_add_expanded_test(tst_protocol_roundtrip integration/tst_ProtocolRoundtrip.cpp integration)
+target_link_libraries(tst_protocol_roundtrip PRIVATE
+    Qt6::WaylandClient Wayland::Server sge_test_protocol_client
+)
+sge_add_expanded_test(tst_xdg_shell_decoration integration/tst_XdgShellDecoration.cpp integration)
+sge_add_expanded_test(tst_app_model_filtering integration/tst_AppModelFiltering.cpp integration)
+
+# A real Qt Wayland client maps a painted buffer, then disconnects cleanly.
+sge_add_expanded_test(tst_wayland_client_lifecycle_e2e
+    e2e/tst_WaylandClientLifecycleE2E.cpp e2e
+)
+
+set_tests_properties(
+    tst_protocol_roundtrip
+    tst_xdg_shell_decoration
+    tst_wayland_client_lifecycle_e2e
+    PROPERTIES ENVIRONMENT "${_tst_xdg_resize_environment}"
+)
+
+add_custom_target(unit_tests DEPENDS
+    tst_systalia_engine
+    tst_item_geometry
+    tst_backdrop_binding
+    tst_sdf_geometry
+    tst_optical_physics
+    tst_unified_composition
+    tst_sdf_geometry_math
+    tst_memory_alignment
+    tst_linux_parsers
+)
+add_custom_target(integration_tests DEPENDS
+    tst_wayland_socket
+    tst_xdg_shell
+    tst_xdg_decorations
+    tst_xdg_resize
+    tst_systalia_protocol
+    tst_telemetry
+    tst_process_launcher
+    tst_app_registry
+    tst_notification_server
+    tst_protocol_roundtrip
+    tst_xdg_shell_decoration
+    tst_app_model_filtering
+)
+add_custom_target(e2e_tests DEPENDS tst_wayland_client_lifecycle_e2e)
+
+set_tests_properties(
+    tst_systalia_engine
+    tst_item_geometry
+    tst_sdf_geometry
+    tst_backdrop_binding
+    tst_optical_physics
+    tst_unified_composition
+    tst_sdf_geometry_math
+    tst_memory_alignment
+    tst_linux_parsers
+    PROPERTIES LABELS "unit"
+)
+set_tests_properties(
+    tst_wayland_socket
+    tst_xdg_shell
+    tst_xdg_decorations
+    tst_xdg_resize
+    tst_systalia_protocol
+    tst_telemetry
+    tst_process_launcher
+    tst_app_registry
+    tst_notification_server
+    tst_protocol_roundtrip
+    tst_xdg_shell_decoration
+    tst_app_model_filtering
+    PROPERTIES LABELS "integration"
 )
