@@ -178,8 +178,14 @@ void TestXdgResize::maximizeRequestUsesCompositorSlot() {
 
 void TestXdgResize::activationSetsSeatKeyboardFocus() {
     QVERIFY(!m_compositor->activateToplevel(nullptr));
+    bool activatedBeforeInitialCommit = false;
+    connect(m_compositor.get(), &SystaliaCompositor::toplevelCreated,
+            this, [this, &activatedBeforeInitialCommit](QWaylandXdgToplevel *toplevel) {
+        activatedBeforeInitialCommit = m_compositor->activateToplevel(toplevel);
+    });
     startClient();
     QVERIFY(m_toplevel);
+    QVERIFY(activatedBeforeInitialCommit);
 
     QQmlEngine engine;
     QQuickWindow window;

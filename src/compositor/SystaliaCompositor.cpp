@@ -86,13 +86,20 @@ bool SystaliaCompositor::activateToplevel(QObject *toplevelObject) {
         return false;
     }
 
+    const auto configureSize = [](QWaylandXdgToplevel *window) {
+        return window->xdgSurface()->windowGeometry().size();
+    };
+
     for (QWaylandXdgToplevel *candidate : std::as_const(m_activeToplevels)) {
         if (!candidate || candidate == toplevel || !candidate->xdgSurface()) {
             continue;
         }
+        const QSize currentSize = configureSize(candidate);
+        if (currentSize.width() <= 0 || currentSize.height() <= 0) {
+            continue;
+        }
         QList<QWaylandXdgToplevel::State> states = candidate->states();
         states.removeAll(QWaylandXdgToplevel::ActivatedState);
-        const QSize currentSize = candidate->xdgSurface()->windowGeometry().size();
         candidate->sendConfigure(currentSize, states);
     }
 
@@ -100,8 +107,10 @@ bool SystaliaCompositor::activateToplevel(QObject *toplevelObject) {
     if (!states.contains(QWaylandXdgToplevel::ActivatedState)) {
         states.append(QWaylandXdgToplevel::ActivatedState);
     }
-    const QSize currentSize = toplevel->xdgSurface()->windowGeometry().size();
-    toplevel->sendConfigure(currentSize, states);
+    const QSize currentSize = configureSize(toplevel);
+    if (currentSize.width() > 0 && currentSize.height() > 0) {
+        toplevel->sendConfigure(currentSize, states);
+    }
     return true;
 }
 
