@@ -41,8 +41,11 @@ private slots:
     void configureHandshake();
     void dragEdges_data();
     void dragEdges();
-    void minimumAndCancellation();
-    void clientConstraints();
+    void resizeHonorsMinimumFrameGeometry();
+    void lostMouseGrabCancelsResize();
+    void finishResizeIsIdempotent();
+    void clientMinimumConstraintClampsConfigure();
+    void clientMaximumConstraintClampsConfigure();
 private:
     std::unique_ptr<QTemporaryDir> m_runtime;
     std::unique_ptr<SystaliaCompositor> m_compositor;
@@ -357,7 +360,7 @@ void TestXdgResize::dragEdges() {
     QVERIFY(!item->property("resizing").toBool());
 }
 
-void TestXdgResize::minimumAndCancellation() {
+void TestXdgResize::resizeHonorsMinimumFrameGeometry() {
     startClient();
     QVERIFY(m_toplevel);
     QQmlEngine engine;
@@ -373,10 +376,21 @@ void TestXdgResize::minimumAndCancellation() {
     QCOMPARE(item->position(), QPointF(746, 512));
     QTRY_VERIFY(!m_toplevel->resizing());
     QVERIFY(m_toplevel->activated());
-    // Exercise MouseArea.onCanceled through a real lost mouse grab.
+}
+
+void TestXdgResize::lostMouseGrabCancelsResize() {
+    startClient();
+    QVERIFY(m_toplevel);
+    QQmlEngine engine;
+    QQuickWindow window;
     window.resize(1400, 1000);
+    auto item = createContainer(engine, window);
+    QVERIFY(item);
     window.show();
     QVERIFY(QTest::qWaitForWindowExposed(&window));
+    QTRY_COMPARE(item->size(), QSizeF(816, 552));
+
+    // Exercise MouseArea.onCanceled through a real lost mouse grab.
     QQuickItem *zone = nullptr;
     for (auto *child : item->childItems()) {
         if (child->objectName() == "resize_bottomRight") zone = child;
@@ -389,23 +403,46 @@ void TestXdgResize::minimumAndCancellation() {
     zone->ungrabMouse();
     QVERIFY(!item->property("resizing").toBool());
     QTRY_VERIFY(!m_toplevel->resizing());
-    QTRY_COMPARE(m_toplevel->xdgSurface()->windowGeometry().size(), QSize(394, 228));
+    QTRY_COMPARE(m_toplevel->xdgSurface()->windowGeometry().size(), QSize(890, 560));
     QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, press + QPoint(90, 60));
-    // Repeated cancellation/release is safe and does not restart resizing.
+}
+
+void TestXdgResize::finishResizeIsIdempotent() {
+    startClient();
+    QVERIFY(m_toplevel);
+    QQmlEngine engine;
+    QQuickWindow window;
+    auto item = createContainer(engine, window);
+    QVERIFY(item);
+    QVERIFY(QMetaObject::invokeMethod(item.get(), "beginResize", Q_ARG(QVariant, int(Qt::RightEdge)),
+                                     Q_ARG(QVariant, QPointF(250, 180))));
+    QVERIFY(QMetaObject::invokeMethod(item.get(), "updateResize", Q_ARG(QVariant, QPointF(340, 180))));
     QVERIFY(QMetaObject::invokeMethod(item.get(), "finishResize"));
+    QTRY_COMPARE(m_toplevel->xdgSurface()->windowGeometry().size(), QSize(890, 500));
+    QVERIFY(QMetaObject::invokeMethod(item.get(), "finishResize"));
+    QCOMPARE(m_toplevel->xdgSurface()->windowGeometry().size(), QSize(890, 500));
     QVERIFY(!item->property("resizing").toBool());
 }
 
-void TestXdgResize::clientConstraints() {
+void TestXdgResize::clientMinimumConstraintClampsConfigure() {
     startClient(true);
     QVERIFY(m_toplevel);
     QTRY_COMPARE(m_toplevel->minSize(), QSize(400, 250));
-    QTRY_COMPARE(m_toplevel->maxSize(), QSize(900, 650));
     m_compositor->requestToplevelResize(m_toplevel, QSize(-10, 0), true);
     QTRY_COMPARE(m_toplevel->xdgSurface()->windowGeometry().size(), QSize(400, 250));
     QTRY_VERIFY(m_toplevel->resizing());
-    m_compositor->requestToplevelResize(m_toplevel, QSize(2000, 2000), false);
+    m_compositor->requestToplevelResize(m_toplevel, QSize(640, 400), false);
+    QTRY_VERIFY(!m_toplevel->resizing());
+}
+
+void TestXdgResize::clientMaximumConstraintClampsConfigure() {
+    startClient(true);
+    QVERIFY(m_toplevel);
+    QTRY_COMPARE(m_toplevel->maxSize(), QSize(900, 650));
+    m_compositor->requestToplevelResize(m_toplevel, QSize(2000, 2000), true);
     QTRY_COMPARE(m_toplevel->xdgSurface()->windowGeometry().size(), QSize(900, 650));
+    QTRY_VERIFY(m_toplevel->resizing());
+    m_compositor->requestToplevelResize(m_toplevel, QSize(640, 400), false);
     QTRY_VERIFY(!m_toplevel->resizing());
 }
 

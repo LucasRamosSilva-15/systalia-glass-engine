@@ -79,6 +79,9 @@ public:
 
     wl_surface *createSurface() { return track(wl_compositor_create_surface(m_core)); }
 
+    bool hasManagerGlobal() const { return m_manager != nullptr; }
+    int managerGlobalCount() const { return m_managerGlobals; }
+
     z_systalia_surface_v1 *createSurfaceMetadata(wl_surface *surface) {
         return track(z_systalia_manager_v1_get_systalia_surface(m_manager, surface));
     }
@@ -115,6 +118,7 @@ private:
             self->m_core = self->track(static_cast<wl_compositor *>(
                 wl_registry_bind(registry, name, &wl_compositor_interface, qMin(version, 4u))));
         } else if (std::strcmp(interface, z_systalia_manager_v1_interface.name) == 0) {
+            ++self->m_managerGlobals;
             self->m_manager = self->track(static_cast<z_systalia_manager_v1 *>(
                 wl_registry_bind(registry, name, &z_systalia_manager_v1_interface, 1)));
         }
@@ -128,6 +132,7 @@ private:
     wl_registry *m_registry = nullptr;
     wl_compositor *m_core = nullptr;
     z_systalia_manager_v1 *m_manager = nullptr;
+    int m_managerGlobals = 0;
     QList<wl_proxy *> m_proxies;
 };
 
@@ -138,7 +143,11 @@ private slots:
     void initTestCase();
     void init();
     void cleanup();
-    void sendsOpticalMetadataAndEmitsSignals();
+    void advertisesOneManagerGlobal();
+    void cornerRadiiRoundtripEmitsItsSignal();
+    void slantRoundtripEmitsItsSignal();
+    void opticalTupleRoundtripEmitsOneSignal();
+    void repeatedRadiiDoNotEmitDuplicateChanges();
 
 private:
     QTemporaryDir m_runtime;
@@ -161,7 +170,14 @@ void TestProtocolRoundtrip::cleanup() {
     m_compositor.reset();
 }
 
-void TestProtocolRoundtrip::sendsOpticalMetadataAndEmitsSignals() {
+void TestProtocolRoundtrip::advertisesOneManagerGlobal() {
+    WireClient client(m_compositor.get());
+    QVERIFY(client.connectToServer());
+    QVERIFY(client.hasManagerGlobal());
+    QCOMPARE(client.managerGlobalCount(), 1);
+}
+
+void TestProtocolRoundtrip::cornerRadiiRoundtripEmitsItsSignal() {
     WireClient client(m_compositor.get());
     QVERIFY(client.connectToServer());
     wl_surface *surface = client.createSurface();
@@ -173,34 +189,88 @@ void TestProtocolRoundtrip::sendsOpticalMetadataAndEmitsSignals() {
     SystaliaSurfaceResource *metadata = client.serverMetadata(surface);
     QVERIFY(metadata);
     QSignalSpy radiiChanged(metadata, &SystaliaSurfaceResource::radiiChanged);
-    QSignalSpy slantChanged(metadata, &SystaliaSurfaceResource::slantChanged);
-    QSignalSpy opticalChanged(metadata, &SystaliaSurfaceResource::opticalPropertiesChanged);
     QVERIFY(radiiChanged.isValid());
-    QVERIFY(slantChanged.isValid());
-    QVERIFY(opticalChanged.isValid());
 
     const wl_fixed_t tl = wl_fixed_from_double(28.0);
     const wl_fixed_t tr = wl_fixed_from_double(24.0);
     const wl_fixed_t bl = wl_fixed_from_double(20.0);
     const wl_fixed_t br = wl_fixed_from_double(16.0);
-    const wl_fixed_t slant = wl_fixed_from_double(0.25);
-    const wl_fixed_t ior = wl_fixed_from_double(1.33);
-    const wl_fixed_t dispersion = wl_fixed_from_double(0.04);
-    const wl_fixed_t meniscusWidth = wl_fixed_from_double(30.0);
-
     z_systalia_surface_v1_set_corner_radii(metadataProxy, tl, tr, bl, br);
-    z_systalia_surface_v1_set_slant(metadataProxy, slant);
-    z_systalia_surface_v1_set_optical_properties(metadataProxy, ior, dispersion, meniscusWidth);
     QVERIFY(client.roundtrip());
 
     QCOMPARE(metadata->radii(), QVector4D(28.0f, 24.0f, 20.0f, 16.0f));
-    QCOMPARE(metadata->slant(), static_cast<float>(wl_fixed_to_double(slant)));
-    QCOMPARE(metadata->ior(), static_cast<float>(wl_fixed_to_double(ior)));
-    QCOMPARE(metadata->dispersion(), static_cast<float>(wl_fixed_to_double(dispersion)));
-    QCOMPARE(metadata->meniscusWidth(), static_cast<float>(wl_fixed_to_double(meniscusWidth)));
     QCOMPARE(radiiChanged.count(), 1);
+    QCOMPARE(radiiChanged.at(0).at(0).value<QVector4D>(), metadata->radii());
+}
+
+void TestProtocolRoundtrip::slantRoundtripEmitsItsSignal() {
+    WireClient client(m_compositor.get());
+    QVERIFY(client.connectToServer());
+    wl_surface *surface = client.createSurface();
+    z_systalia_surface_v1 *metadataProxy = client.createSurfaceMetadata(surface);
+    QVERIFY(client.roundtrip());
+    SystaliaSurfaceResource *metadata = client.serverMetadata(surface);
+    QVERIFY(metadata);
+    QSignalSpy slantChanged(metadata, &SystaliaSurfaceResource::slantChanged);
+    QVERIFY(slantChanged.isValid());
+
+    const wl_fixed_t requested = wl_fixed_from_double(0.25);
+    z_systalia_surface_v1_set_slant(metadataProxy, requested);
+    QVERIFY(client.roundtrip());
+    const float expected = static_cast<float>(wl_fixed_to_double(requested));
+    QCOMPARE(metadata->slant(), expected);
     QCOMPARE(slantChanged.count(), 1);
+    QCOMPARE(slantChanged.at(0).at(0).toFloat(), expected);
+}
+
+void TestProtocolRoundtrip::opticalTupleRoundtripEmitsOneSignal() {
+    WireClient client(m_compositor.get());
+    QVERIFY(client.connectToServer());
+    wl_surface *surface = client.createSurface();
+    z_systalia_surface_v1 *metadataProxy = client.createSurfaceMetadata(surface);
+    QVERIFY(client.roundtrip());
+    SystaliaSurfaceResource *metadata = client.serverMetadata(surface);
+    QVERIFY(metadata);
+    QSignalSpy opticalChanged(metadata, &SystaliaSurfaceResource::opticalPropertiesChanged);
+    QVERIFY(opticalChanged.isValid());
+
+    const wl_fixed_t ior = wl_fixed_from_double(1.33);
+    const wl_fixed_t dispersion = wl_fixed_from_double(0.04);
+    const wl_fixed_t meniscusWidth = wl_fixed_from_double(30.0);
+    z_systalia_surface_v1_set_optical_properties(metadataProxy, ior, dispersion, meniscusWidth);
+    QVERIFY(client.roundtrip());
+    const float expectedIor = static_cast<float>(wl_fixed_to_double(ior));
+    const float expectedDispersion = static_cast<float>(wl_fixed_to_double(dispersion));
+    const float expectedWidth = static_cast<float>(wl_fixed_to_double(meniscusWidth));
+    QCOMPARE(metadata->ior(), expectedIor);
+    QCOMPARE(metadata->dispersion(), expectedDispersion);
+    QCOMPARE(metadata->meniscusWidth(), expectedWidth);
     QCOMPARE(opticalChanged.count(), 1);
+    QCOMPARE(opticalChanged.at(0).at(0).toFloat(), expectedIor);
+    QCOMPARE(opticalChanged.at(0).at(1).toFloat(), expectedDispersion);
+    QCOMPARE(opticalChanged.at(0).at(2).toFloat(), expectedWidth);
+}
+
+void TestProtocolRoundtrip::repeatedRadiiDoNotEmitDuplicateChanges() {
+    WireClient client(m_compositor.get());
+    QVERIFY(client.connectToServer());
+    wl_surface *surface = client.createSurface();
+    z_systalia_surface_v1 *metadataProxy = client.createSurfaceMetadata(surface);
+    QVERIFY(client.roundtrip());
+    SystaliaSurfaceResource *metadata = client.serverMetadata(surface);
+    QVERIFY(metadata);
+    QSignalSpy radiiChanged(metadata, &SystaliaSurfaceResource::radiiChanged);
+    QVERIFY(radiiChanged.isValid());
+
+    z_systalia_surface_v1_set_corner_radii(metadataProxy,
+        wl_fixed_from_double(28.0), wl_fixed_from_double(24.0),
+        wl_fixed_from_double(20.0), wl_fixed_from_double(16.0));
+    QVERIFY(client.roundtrip());
+    z_systalia_surface_v1_set_corner_radii(metadataProxy,
+        wl_fixed_from_double(28.0), wl_fixed_from_double(24.0),
+        wl_fixed_from_double(20.0), wl_fixed_from_double(16.0));
+    QVERIFY(client.roundtrip());
+    QCOMPARE(radiiChanged.count(), 1);
 }
 
 QTEST_GUILESS_MAIN(TestProtocolRoundtrip)

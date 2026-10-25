@@ -33,10 +33,16 @@ private slots:
     void initTestCase();
     void init();
     void cleanup();
-    void mapsCommitsAndDisconnectsRealClient();
+    void connectionCreatesOneCompositorClient();
+    void xdgClientCommitsARealBuffer();
+    void clientSurfaceIsAttachedToWorkspaceContainer();
+    void disconnectReleasesClientSurfaceAndContainer();
 
 private:
     void startClient();
+    std::unique_ptr<QObject> createWorkspaceContainer(QQmlEngine &engine,
+                                                       QQuickItem &workspace,
+                                                       QQuickItem *&container);
     QTemporaryDir m_runtime;
     std::unique_ptr<SystaliaCompositor> m_compositor;
     QProcess m_client;
@@ -90,15 +96,22 @@ void TestWaylandClientLifecycleE2E::startClient() {
     QVERIFY2(m_client.waitForStarted(), qPrintable(m_client.errorString()));
 }
 
-void TestWaylandClientLifecycleE2E::mapsCommitsAndDisconnectsRealClient() {
+void TestWaylandClientLifecycleE2E::connectionCreatesOneCompositorClient() {
     QCOMPARE(m_compositor->clientCount(), 0);
     startClient();
     QTRY_COMPARE_WITH_TIMEOUT(m_compositor->clientCount(), 1, 5000);
     QTRY_VERIFY_WITH_TIMEOUT(m_toplevel, 5000);
     QTRY_VERIFY_WITH_TIMEOUT(m_surface, 5000);
-    QTRY_VERIFY_WITH_TIMEOUT(m_surface->hasContent(), 5000);
+}
 
-    QQmlEngine engine;
+void TestWaylandClientLifecycleE2E::xdgClientCommitsARealBuffer() {
+    startClient();
+    QTRY_VERIFY_WITH_TIMEOUT(m_surface, 5000);
+    QTRY_VERIFY_WITH_TIMEOUT(m_surface->hasContent(), 5000);
+}
+
+std::unique_ptr<QObject> TestWaylandClientLifecycleE2E::createWorkspaceContainer(
+    QQmlEngine &engine, QQuickItem &workspace, QQuickItem *&container) {
     QQmlComponent factory(&engine);
     factory.setData(R"(
         import QtQuick
@@ -121,16 +134,28 @@ void TestWaylandClientLifecycleE2E::mapsCommitsAndDisconnectsRealClient() {
                 windowContainer = clientWindowComponent.createObject(workspace)
             }
         })", QUrl());
-    QQuickItem workspace;
-    workspace.setSize(QSizeF(1280.0, 800.0));
     std::unique_ptr<QObject> factoryObject(factory.createWithInitialProperties({
         {QStringLiteral("targetToplevel"), QVariant::fromValue(m_toplevel.data())},
         {QStringLiteral("targetServer"), QVariant::fromValue(m_compositor.get())},
         {QStringLiteral("workspace"), QVariant::fromValue(&workspace)}
     }));
-    QVERIFY2(factoryObject, qPrintable(factory.errorString()));
-    QPointer<QQuickItem> container = qobject_cast<QQuickItem *>(
+    if (!factoryObject)
+        return {};
+    container = qobject_cast<QQuickItem *>(
         factoryObject->property("windowContainer").value<QObject *>());
+    return factoryObject;
+}
+
+void TestWaylandClientLifecycleE2E::clientSurfaceIsAttachedToWorkspaceContainer() {
+    startClient();
+    QTRY_VERIFY_WITH_TIMEOUT(m_surface, 5000);
+    QTRY_VERIFY_WITH_TIMEOUT(m_surface->hasContent(), 5000);
+    QQmlEngine engine;
+    QQuickItem workspace;
+    workspace.setSize(QSizeF(1280.0, 800.0));
+    QQuickItem *container = nullptr;
+    std::unique_ptr<QObject> factoryObject = createWorkspaceContainer(engine, workspace, container);
+    QVERIFY(factoryObject);
     QVERIFY(container);
     QCOMPARE(container->parentItem(), &workspace);
     QCOMPARE(workspace.childItems().size(), 1);
@@ -138,6 +163,23 @@ void TestWaylandClientLifecycleE2E::mapsCommitsAndDisconnectsRealClient() {
         QStringLiteral("clientSurfaceItem"));
     QVERIFY(clientItem);
     QCOMPARE(clientItem->property("surface").value<QWaylandSurface *>(), m_surface.data());
+
+}
+
+void TestWaylandClientLifecycleE2E::disconnectReleasesClientSurfaceAndContainer() {
+    startClient();
+    QTRY_VERIFY_WITH_TIMEOUT(m_toplevel, 5000);
+    QTRY_VERIFY_WITH_TIMEOUT(m_surface, 5000);
+    QTRY_VERIFY_WITH_TIMEOUT(m_surface->hasContent(), 5000);
+
+    QQmlEngine engine;
+    QQuickItem workspace;
+    QQuickItem *containerObject = nullptr;
+    std::unique_ptr<QObject> factoryObject = createWorkspaceContainer(
+        engine, workspace, containerObject);
+    QVERIFY(factoryObject);
+    QPointer<QQuickItem> container = containerObject;
+    QVERIFY(container);
 
     const QPointer<QWaylandXdgToplevel> toplevel = m_toplevel;
     const QPointer<QWaylandSurface> surface = m_surface;

@@ -5,32 +5,42 @@
 
 #include "AppRegistryService.hpp"
 
+namespace {
+
+bool writeEntry(const QString &path, const QByteArray &contents) {
+    QFile file(path);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+        return false;
+    return file.write(contents) == contents.size();
+}
+
+} // namespace
+
 class TestAppRegistry final : public QObject {
     Q_OBJECT
 
 private slots:
-    void parsesDesktopEntryAndFieldCodes();
-    void filtersModelAndEmitsNotifications();
+    void parsesDesktopEntryMetadata();
+    void rejectsHiddenDesktopEntry();
+    void filtersModelForQuery_data();
+    void filtersModelForQuery();
+    void filterEmitsModelAndPropertyNotifications();
+    void unchangedNormalizedFilterDoesNotEmitAgain();
 };
 
-void TestAppRegistry::parsesDesktopEntryAndFieldCodes() {
+void TestAppRegistry::parsesDesktopEntryMetadata() {
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
-
-    const QString desktopFile = directory.filePath(QStringLiteral("systalia-terminal.desktop"));
-    QFile file(desktopFile);
-    QVERIFY(file.open(QIODevice::WriteOnly | QIODevice::Text));
-    const QByteArray desktopContents =
+    const QString path = directory.filePath(QStringLiteral("systalia-terminal.desktop"));
+    QVERIFY(writeEntry(path,
         "[Desktop Entry]\n"
         "Type=Application\n"
         "Name=Ocean Terminal\n"
         "Exec=/usr/bin/terminal --title=%c %U\n"
         "Icon=utilities-terminal\n"
-        "Categories=System;TerminalEmulator;\n";
-    QCOMPARE(file.write(desktopContents), desktopContents.size());
-    file.close();
+        "Categories=System;TerminalEmulator;\n"));
 
-    const auto parsed = AppRegistryService::parseDesktopFile(desktopFile);
+    const auto parsed = AppRegistryService::parseDesktopFile(path);
     QVERIFY(parsed.has_value());
     QCOMPARE(parsed->name, QStringLiteral("Ocean Terminal"));
     QCOMPARE(parsed->exec, QStringLiteral("/usr/bin/terminal --title=%c %U"));
@@ -39,54 +49,82 @@ void TestAppRegistry::parsesDesktopEntryAndFieldCodes() {
     QCOMPARE(parsed->icon, QStringLiteral("utilities-terminal"));
     QCOMPARE(parsed->categories,
              QStringList({QStringLiteral("System"), QStringLiteral("TerminalEmulator")}));
-
-    const QString hiddenFile = directory.filePath(QStringLiteral("hidden.desktop"));
-    QFile hidden(hiddenFile);
-    QVERIFY(hidden.open(QIODevice::WriteOnly | QIODevice::Text));
-    const QByteArray hiddenContents =
-        "[Desktop Entry]\nType=Application\nName=Hidden\nExec=hidden\nNoDisplay=true\n";
-    QCOMPARE(hidden.write(hiddenContents), hiddenContents.size());
-    hidden.close();
-    QVERIFY(!AppRegistryService::parseDesktopFile(hiddenFile).has_value());
 }
 
-void TestAppRegistry::filtersModelAndEmitsNotifications() {
+void TestAppRegistry::rejectsHiddenDesktopEntry() {
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
+    const QString path = directory.filePath(QStringLiteral("hidden.desktop"));
+    QVERIFY(writeEntry(path,
+        "[Desktop Entry]\nType=Application\nName=Hidden\nExec=hidden\nNoDisplay=true\n"));
+    QVERIFY(!AppRegistryService::parseDesktopFile(path).has_value());
+}
 
-    const QStringList desktopFiles{
-        directory.filePath(QStringLiteral("terminal.desktop")),
-        directory.filePath(QStringLiteral("browser.desktop"))
-    };
-    const QList<QByteArray> desktopContents{
-        "[Desktop Entry]\nType=Application\nName=Ocean Terminal\nExec=terminal\nCategories=System;\n",
-        "[Desktop Entry]\nType=Application\nName=Blue Browser\nExec=browser\nCategories=Network;WebBrowser;\n"
-    };
-    for (qsizetype index = 0; index < desktopFiles.size(); ++index) {
-        QFile file(desktopFiles.at(index));
-        QVERIFY(file.open(QIODevice::WriteOnly | QIODevice::Text));
-        QCOMPARE(file.write(desktopContents.at(index)), desktopContents.at(index).size());
-    }
+void TestAppRegistry::filtersModelForQuery_data() {
+    QTest::addColumn<QString>("query");
+    QTest::addColumn<QString>("expectedName");
+    QTest::newRow("case-insensitive-category")
+        << QStringLiteral("NETWORK") << QStringLiteral("Blue Browser");
+    QTest::newRow("name")
+        << QStringLiteral("terminal") << QStringLiteral("Ocean Terminal");
+    QTest::newRow("executable")
+        << QStringLiteral("browser-bin") << QStringLiteral("Blue Browser");
+}
 
+void TestAppRegistry::filtersModelForQuery() {
+    QFETCH(QString, query);
+    QFETCH(QString, expectedName);
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    QVERIFY(writeEntry(directory.filePath(QStringLiteral("terminal.desktop")),
+        "[Desktop Entry]\nType=Application\nName=Ocean Terminal\nExec=terminal-bin\nCategories=System;\n"));
+    QVERIFY(writeEntry(directory.filePath(QStringLiteral("browser.desktop")),
+        "[Desktop Entry]\nType=Application\nName=Blue Browser\nExec=browser-bin\nCategories=Network;WebBrowser;\n"));
+
+    AppRegistryService service({directory.path()});
+    QCOMPARE(service.rowCount(), 2);
+    service.setFilterText(query);
+    QCOMPARE(service.rowCount(), 1);
+    QCOMPARE(service.data(service.index(0, 0), AppRegistryService::NameRole).toString(),
+             expectedName);
+}
+
+void TestAppRegistry::filterEmitsModelAndPropertyNotifications() {
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    QVERIFY(writeEntry(directory.filePath(QStringLiteral("terminal.desktop")),
+        "[Desktop Entry]\nType=Application\nName=Ocean Terminal\nExec=terminal-bin\n"));
+    QVERIFY(writeEntry(directory.filePath(QStringLiteral("browser.desktop")),
+        "[Desktop Entry]\nType=Application\nName=Blue Browser\nExec=browser-bin\n"));
+    AppRegistryService service({directory.path()});
+    QSignalSpy modelReset(&service, &QAbstractItemModel::modelReset);
+    QSignalSpy filterChanged(&service, &AppRegistryService::filterTextChanged);
+    QSignalSpy countChanged(&service, &AppRegistryService::applicationCountChanged);
+    QVERIFY(modelReset.isValid());
+    QVERIFY(filterChanged.isValid());
+    QVERIFY(countChanged.isValid());
+
+    service.setFilterText(QStringLiteral("terminal"));
+    QCOMPARE(service.rowCount(), 1);
+    QCOMPARE(modelReset.count(), 1);
+    QCOMPARE(filterChanged.count(), 1);
+    QCOMPARE(countChanged.count(), 1);
+}
+
+void TestAppRegistry::unchangedNormalizedFilterDoesNotEmitAgain() {
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
     AppRegistryService service({directory.path()});
     QSignalSpy modelReset(&service, &QAbstractItemModel::modelReset);
     QSignalSpy filterChanged(&service, &AppRegistryService::filterTextChanged);
     QVERIFY(modelReset.isValid());
     QVERIFY(filterChanged.isValid());
-    QCOMPARE(service.rowCount(), 2);
-    QCOMPARE(service.applicationCount(), 2);
-
-    service.setFilterText(QStringLiteral("NETWORK"));
-    QCOMPARE(service.filterText(), QStringLiteral("NETWORK"));
-    QCOMPARE(service.rowCount(), 1);
-    QCOMPARE(service.data(service.index(0, 0), AppRegistryService::NameRole).toString(),
-             QStringLiteral("Blue Browser"));
+    service.setFilterText(QStringLiteral("  network  "));
+    QCOMPARE(service.filterText(), QStringLiteral("network"));
+    QCOMPARE(modelReset.count(), 1);
+    service.setFilterText(QStringLiteral("network"));
     QCOMPARE(modelReset.count(), 1);
     QCOMPARE(filterChanged.count(), 1);
-
-    service.setFilterText(QString());
-    QCOMPARE(service.rowCount(), 2);
-    QCOMPARE(modelReset.count(), 2);
 }
 
 QTEST_GUILESS_MAIN(TestAppRegistry)

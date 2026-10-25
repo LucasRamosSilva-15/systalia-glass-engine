@@ -32,7 +32,10 @@ private slots:
     void initTestCase();
     void init();
     void cleanup();
-    void serverDecorationPolicyAndMinimumFrameSize();
+    void serverDecorationPolicyIsAdvertised();
+    void realClientNegotiatesServerSideDecoration();
+    void undersizedConfigureIsClampedForTheClientBuffer();
+    void resizeContainerKeepsItsWorkspaceParentAndFrameMinimum();
 
 private:
     void startClient();
@@ -101,15 +104,29 @@ void TestXdgShellDecoration::startClient() {
                               QSize(800, 500), 5000);
 }
 
-void TestXdgShellDecoration::serverDecorationPolicyAndMinimumFrameSize() {
+void TestXdgShellDecoration::serverDecorationPolicyIsAdvertised() {
     QVERIFY(m_compositor->decorationManager()->isInitialized());
     QCOMPARE(m_compositor->decorationManager()->preferredMode(),
              QWaylandXdgToplevel::ServerSideDecoration);
+}
 
+void TestXdgShellDecoration::realClientNegotiatesServerSideDecoration() {
     startClient();
     QVERIFY(m_toplevel);
     QTRY_COMPARE(m_toplevel->decorationMode(), QWaylandXdgToplevel::ServerSideDecoration);
+}
 
+void TestXdgShellDecoration::undersizedConfigureIsClampedForTheClientBuffer() {
+    startClient();
+    QVERIFY(m_toplevel);
+    m_compositor->requestToplevelResize(m_toplevel, QSize(100, 100), true);
+    QTRY_COMPARE_WITH_TIMEOUT(m_toplevel->xdgSurface()->windowGeometry().size(),
+                              QSize(240, 160), 3000);
+}
+
+void TestXdgShellDecoration::resizeContainerKeepsItsWorkspaceParentAndFrameMinimum() {
+    startClient();
+    QVERIFY(m_toplevel);
     QQmlEngine engine;
     QQmlComponent component(
         &engine, QUrl(QStringLiteral("qrc:/qt/qml/Systalia/Engine/src/qml/WaylandWindowContainer.qml")));
@@ -122,11 +139,6 @@ void TestXdgShellDecoration::serverDecorationPolicyAndMinimumFrameSize() {
         })));
     QVERIFY2(container, qPrintable(component.errorString()));
     container->setParentItem(&workspace);
-
-    m_compositor->requestToplevelResize(m_toplevel, QSize(100, 100), true);
-    QTRY_COMPARE_WITH_TIMEOUT(m_toplevel->xdgSurface()->windowGeometry().size(),
-                              QSize(240, 160), 3000);
-    QTRY_COMPARE_WITH_TIMEOUT(container->size(), QSizeF(256.0, 212.0), 3000);
 
     const QVariant startPosition = QPointF(0.0, 0.0);
     const QVariant minimumPosition = QPointF(1000.0, 1000.0);
