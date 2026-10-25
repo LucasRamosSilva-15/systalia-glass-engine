@@ -47,9 +47,6 @@ bool addWithoutOverflow(quint64 value, quint64 &sum) noexcept {
 
 SystemTelemetryService::SystemTelemetryService(QObject *parent)
     : QObject(parent) {
-    m_cpuStatFile.open(QIODevice::ReadOnly | QIODevice::Unbuffered);
-    m_memInfoFile.open(QIODevice::ReadOnly | QIODevice::Unbuffered);
-
     m_sampleTimer.setInterval(1000);
     m_sampleTimer.setTimerType(Qt::CoarseTimer);
     m_fpsSamplingClock.start();
