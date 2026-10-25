@@ -77,6 +77,7 @@ ApplicationWindow {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
+        anchors.bottomMargin: 98
     }
 
     Timer {
@@ -1025,5 +1026,36 @@ ApplicationWindow {
         id: clientWindowsLayer
         anchors.fill: workspace
         z: 10
+    }
+
+    Shell.SystaliaDock {
+        id: systemDock
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 14
+        z: 95
+        visible: !waylandServer.hasMaximizedToplevel
+        backdropSource: backdropGrab
+        screenResolution: Qt.vector2d(rootWindow.width * rootWindow.devicePixelRatio,
+                                      rootWindow.height * rootWindow.devicePixelRatio)
+        activeAppIds: waylandServer.activeAppIds
+        animationTime: animTimer.tick
+        filesVisible: glassChassis.visible
+        settingsOpen: drawerToggle.expanded
+
+        onFilesRequested: glassChassis.visible = !glassChassis.visible
+        onAudioRequested: {
+            if (!ProcessLauncher.launch("pavucontrol"))
+                ProcessLauncher.launch("pwvucontrol")
+        }
+        onTerminalRequested: {
+            if (!ProcessLauncher.launch("alacritty"))
+                ProcessLauncher.launch("foot")
+        }
+        onIdeRequested: {
+            if (!ProcessLauncher.launch("code"))
+                ProcessLauncher.launch("codium")
+        }
+        onSettingsRequested: drawerToggle.expanded = !drawerToggle.expanded
     }
 }

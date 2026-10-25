@@ -7,6 +7,7 @@
 #include "SystaliaGlassItem.hpp"
 #include "SystaliaCompositor.hpp"
 #include "SystemTelemetryService.hpp"
+#include "ProcessLauncherService.hpp"
 
 int main(int argc, char *argv[]) {
     // Configuração obrigatória do backend Vulkan QRhi antes de QGuiApplication
@@ -24,6 +25,11 @@ int main(int argc, char *argv[]) {
         "Systalia.System", 1, 0, "SystemTelemetry",
         [](QQmlEngine *, QJSEngine *) -> QObject * {
             return new SystemTelemetryService();
+        });
+    qmlRegisterSingletonType<ProcessLauncherService>(
+        "Systalia.System", 1, 0, "ProcessLauncher",
+        [](QQmlEngine *, QJSEngine *) -> QObject * {
+            return new ProcessLauncherService();
         });
 
     QQmlApplicationEngine engine;

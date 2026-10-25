@@ -57,6 +57,8 @@ qt_add_library(sge_core STATIC
     src/compositor/SystaliaCompositor.cpp
     src/system/SystemTelemetryService.hpp
     src/system/SystemTelemetryService.cpp
+    src/system/ProcessLauncherService.hpp
+    src/system/ProcessLauncherService.cpp
 )
 
 qt6_generate_wayland_protocol_server_sources(sge_core
@@ -90,6 +92,7 @@ qt_add_qml_module(sge_core
         src/qml/WaylandClientView.qml
         src/qml/WaylandWindowContainer.qml
         src/qml/shell/SystaliaTopBar.qml
+        src/qml/shell/SystaliaDock.qml
     NO_PLUGIN
 )
 

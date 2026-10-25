@@ -104,6 +104,21 @@ void SystaliaCompositor::onSurfaceAboutToBeDestroyed(QWaylandSurface *surface) {
 void SystaliaCompositor::onToplevelCreated(QWaylandXdgToplevel *toplevel, QWaylandXdgSurface *xdgSurface) {
     Q_UNUSED(xdgSurface);
     if (toplevel) {
+        m_activeToplevels.insert(toplevel);
+        connect(toplevel, &QWaylandXdgToplevel::appIdChanged, this, [this]() {
+            emit activeAppIdsChanged();
+        });
+        connect(toplevel, &QWaylandXdgToplevel::maximizedChanged, this, [this]() {
+            emit activeToplevelStateChanged();
+        });
+        connect(toplevel, &QObject::destroyed, this, [this, toplevel]() {
+            m_activeToplevels.remove(toplevel);
+            emit activeAppIdsChanged();
+            emit activeToplevelStateChanged();
+        });
+        emit activeAppIdsChanged();
+        emit activeToplevelStateChanged();
+
         qInfo().noquote() << "[SGE-WAYLAND] Novo cliente XDG Toplevel:"
                           << toplevel->appId()
                           << "| Título:" << toplevel->title()
@@ -122,6 +137,30 @@ void SystaliaCompositor::onPopupCreated(QWaylandXdgPopup *popup, QWaylandXdgSurf
     Q_UNUSED(xdgSurface);
     qDebug().noquote() << "[SGE-WAYLAND] Novo XDG Popup criado";
     emit popupCreated(popup);
+}
+
+QStringList SystaliaCompositor::activeAppIds() const {
+    QStringList appIds;
+    for (const QWaylandXdgToplevel *toplevel : m_activeToplevels) {
+        if (!toplevel) {
+            continue;
+        }
+        const QString appId = toplevel->appId().trimmed();
+        if (!appId.isEmpty() && !appIds.contains(appId, Qt::CaseInsensitive)) {
+            appIds.append(appId);
+        }
+    }
+    appIds.sort(Qt::CaseInsensitive);
+    return appIds;
+}
+
+bool SystaliaCompositor::hasMaximizedToplevel() const {
+    for (const QWaylandXdgToplevel *toplevel : m_activeToplevels) {
+        if (toplevel && toplevel->maximized()) {
+            return true;
+        }
+    }
+    return false;
 }
 
 void SystaliaCompositor::recalculateClientCount() {

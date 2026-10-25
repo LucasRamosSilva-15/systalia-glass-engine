@@ -9,6 +9,7 @@
 #include "SystaliaSurfaceExtension.hpp"
 #include <QSet>
 #include <QString>
+#include <QStringList>
 #include <QByteArray>
 #include <QtQml/qqmlregistration.h>
 
@@ -17,6 +18,8 @@ class SystaliaCompositor : public QWaylandCompositor {
     QML_ELEMENT
     Q_PROPERTY(SystaliaSurfaceExtension *surfaceExtension READ surfaceExtension CONSTANT)
     Q_PROPERTY(int clientCount READ clientCount NOTIFY clientCountChanged)
+    Q_PROPERTY(QStringList activeAppIds READ activeAppIds NOTIFY activeAppIdsChanged)
+    Q_PROPERTY(bool hasMaximizedToplevel READ hasMaximizedToplevel NOTIFY activeToplevelStateChanged)
     Q_PROPERTY(QWaylandXdgShell *xdgShell READ xdgShell CONSTANT)
     Q_PROPERTY(QWaylandXdgDecorationManagerV1 *decorationManager READ decorationManager CONSTANT)
 
@@ -26,6 +29,8 @@ public:
 
     SystaliaSurfaceExtension *surfaceExtension() const { return m_surfaceExtension; }
     int clientCount() const { return m_clientCount; }
+    QStringList activeAppIds() const;
+    bool hasMaximizedToplevel() const;
     QWaylandXdgShell *xdgShell() const { return m_xdgShell; }
     QWaylandXdgDecorationManagerV1 *decorationManager() const { return m_decorationManager; }
 
@@ -35,6 +40,8 @@ public:
 
 signals:
     void clientCountChanged();
+    void activeAppIdsChanged();
+    void activeToplevelStateChanged();
     void toplevelCreated(QWaylandXdgToplevel *toplevel);
     void popupCreated(QWaylandXdgPopup *popup);
 
@@ -50,6 +57,7 @@ private:
     SystaliaSurfaceExtension *m_surfaceExtension = nullptr;
     int m_clientCount = 0;
     QSet<QWaylandSurface *> m_activeSurfaces;
+    QSet<QWaylandXdgToplevel *> m_activeToplevels;
     QWaylandXdgShell *m_xdgShell = nullptr;
     QWaylandXdgDecorationManagerV1 *m_decorationManager = nullptr;
 };

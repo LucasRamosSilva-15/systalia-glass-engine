@@ -148,6 +148,15 @@ target_link_libraries(tst_telemetry PRIVATE
 )
 add_test(NAME tst_telemetry COMMAND tst_telemetry)
 
+# Teste 13: ambiente Wayland e ciclo de vida de processos desacoplados.
+qt_add_executable(tst_process_launcher tst_ProcessLauncher.cpp)
+target_link_libraries(tst_process_launcher PRIVATE
+    Qt6::Core
+    Qt6::Test
+    sge_core
+)
+add_test(NAME tst_process_launcher COMMAND tst_process_launcher)
+
 set(_sge_headless_tests
     tst_systalia_engine
     tst_item_geometry
@@ -160,6 +169,7 @@ set(_sge_headless_tests
     tst_systalia_protocol
     tst_unified_composition
     tst_telemetry
+    tst_process_launcher
 )
 set_tests_properties(${_sge_headless_tests} PROPERTIES
     ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
