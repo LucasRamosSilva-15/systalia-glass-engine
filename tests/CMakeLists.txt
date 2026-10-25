@@ -102,3 +102,8 @@ target_link_libraries(tst_xdg_decorations PRIVATE
 add_test(NAME tst_xdg_decorations COMMAND tst_xdg_decorations)
 
 
+# Teste 9: Configure/ack/commit de resize e arraste das oito bordas SSD.
+qt_add_executable(tst_xdg_resize tst_XdgResize.cpp)
+target_link_libraries(tst_xdg_resize PRIVATE Qt6::Test Qt6::Quick sge_core)
+add_test(NAME tst_xdg_resize COMMAND tst_xdg_resize)
+set_tests_properties(tst_xdg_resize PROPERTIES TIMEOUT 120)
