@@ -40,8 +40,11 @@ public:
 
     void setTexture(QSGTexture *texture) { m_texture = texture; }
     QSGTexture *texture() const { return m_texture; }
+    void setClientTexture(QSGTexture *texture) { m_clientTexture = texture; }
+    QSGTexture *clientTexture() const { return m_clientTexture; }
 
 private:
     SystaliaSurfaceProps m_props;
     QSGTexture *m_texture = nullptr;
+    QSGTexture *m_clientTexture = nullptr;
 };

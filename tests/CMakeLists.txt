@@ -106,7 +106,13 @@ add_test(NAME tst_xdg_decorations COMMAND tst_xdg_decorations)
 qt_add_executable(tst_xdg_resize tst_XdgResize.cpp)
 target_link_libraries(tst_xdg_resize PRIVATE Qt6::Test Qt6::Quick sge_core)
 add_test(NAME tst_xdg_resize COMMAND tst_xdg_resize)
-set_tests_properties(tst_xdg_resize PROPERTIES TIMEOUT 120)
+get_filename_component(_qt6_cmake_dir "${Qt6Core_DIR}" DIRECTORY)
+get_filename_component(_qt6_arch_lib_dir "${_qt6_cmake_dir}" DIRECTORY)
+set(_qt6_plugin_dir "${_qt6_arch_lib_dir}/qt6/plugins")
+set(_tst_xdg_resize_environment "QT_QPA_PLATFORM=offscreen")
+if(EXISTS "${_qt6_plugin_dir}/platforms/libqwayland-generic.so")
+    list(APPEND _tst_xdg_resize_environment "QT_PLUGIN_PATH=${_qt6_plugin_dir}")
+endif()
 
 # Teste 10: IPC do protocolo óptico, precisão fixed-point e ciclo de vida.
 find_package(Qt6 REQUIRED COMPONENTS WaylandClient)
@@ -120,4 +126,34 @@ target_link_libraries(tst_systalia_protocol PRIVATE
 add_test(NAME tst_systalia_protocol COMMAND tst_systalia_protocol)
 set_tests_properties(tst_systalia_protocol PROPERTIES
     TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
+
+# Teste 11: composição do cliente, offsets std140 e recorte interno G2.
+qt_add_executable(tst_unified_composition tst_UnifiedComposition.cpp)
+target_link_libraries(tst_unified_composition PRIVATE
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Test
+    sge_core
+)
+add_test(NAME tst_unified_composition COMMAND tst_unified_composition)
+
+set(_sge_headless_tests
+    tst_systalia_engine
+    tst_item_geometry
+    tst_sdf_geometry
+    tst_backdrop_binding
+    tst_optical_physics
+    tst_wayland_socket
+    tst_xdg_shell
+    tst_xdg_decorations
+    tst_systalia_protocol
+    tst_unified_composition
+)
+set_tests_properties(${_sge_headless_tests} PROPERTIES
+    ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
+set_tests_properties(tst_xdg_resize PROPERTIES
+    TIMEOUT 120
+    ENVIRONMENT "${_tst_xdg_resize_environment}"
 )

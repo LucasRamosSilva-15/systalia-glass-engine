@@ -5,6 +5,8 @@
 #include <QQuickWindow>
 #include <QImage>
 #include <QColor>
+#include <QSGTextureProvider>
+#include <algorithm>
 
 SystaliaGlassItem::SystaliaGlassItem(QQuickItem *parent)
     : QQuickItem(parent) {
@@ -84,10 +86,32 @@ void SystaliaGlassItem::setBackdropSource(QQuickItem *source) {
     }
 }
 
+void SystaliaGlassItem::setClientTextureSource(QQuickItem *source) {
+    if (m_clientTextureSource == source)
+        return;
+    if (m_connectedClientProvider) {
+        disconnect(m_connectedClientProvider, &QSGTextureProvider::textureChanged,
+                   this, &QQuickItem::update);
+        m_connectedClientProvider = nullptr;
+    }
+    m_clientTextureSource = source;
+    emit clientTextureSourceChanged();
+    update();
+}
+
 void SystaliaGlassItem::setScreenResolution(const QVector2D &res) {
     if (m_screenResolution != res) {
         m_screenResolution = res;
         emit screenResolutionChanged();
+        update();
+    }
+}
+
+void SystaliaGlassItem::setTitleBarHeight(float height) {
+    const float boundedHeight = std::max(0.0f, height);
+    if (!qFuzzyCompare(m_titleBarHeight, boundedHeight)) {
+        m_titleBarHeight = boundedHeight;
+        emit titleBarHeightChanged();
         update();
     }
 }
@@ -101,15 +125,33 @@ QSGTexture *SystaliaGlassItem::ensureFallbackTexture() {
     return m_fallbackTexture;
 }
 
+QSGTexture *SystaliaGlassItem::ensureFallbackClientTexture() {
+    if (!m_fallbackClientTexture && window()) {
+        QImage fallbackImg(4, 4, QImage::Format_RGBA8888);
+        fallbackImg.fill(Qt::transparent);
+        m_fallbackClientTexture = window()->createTextureFromImage(fallbackImg);
+    }
+    return m_fallbackClientTexture;
+}
+
 void SystaliaGlassItem::releaseResources() {
     if (m_connectedProvider) {
         disconnect(m_connectedProvider, &QSGTextureProvider::textureChanged,
                    this, &QQuickItem::update);
         m_connectedProvider = nullptr;
     }
+    if (m_connectedClientProvider) {
+        disconnect(m_connectedClientProvider, &QSGTextureProvider::textureChanged,
+                   this, &QQuickItem::update);
+        m_connectedClientProvider = nullptr;
+    }
     if (m_fallbackTexture) {
         delete m_fallbackTexture;
         m_fallbackTexture = nullptr;
+    }
+    if (m_fallbackClientTexture) {
+        delete m_fallbackClientTexture;
+        m_fallbackClientTexture = nullptr;
     }
 }
 
@@ -167,11 +209,37 @@ QSGNode *SystaliaGlassItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeDat
         tex = ensureFallbackTexture();
     }
 
+    QSGTexture *clientTexture = nullptr;
+    if (m_clientTextureSource && m_clientTextureSource->isTextureProvider()) {
+        QSGTextureProvider *provider = m_clientTextureSource->textureProvider();
+        if (provider) {
+            if (m_connectedClientProvider != provider) {
+                if (m_connectedClientProvider) {
+                    disconnect(m_connectedClientProvider, &QSGTextureProvider::textureChanged,
+                               this, &QQuickItem::update);
+                }
+                m_connectedClientProvider = provider;
+                connect(provider, &QSGTextureProvider::textureChanged,
+                        this, &QQuickItem::update, Qt::UniqueConnection);
+            }
+            clientTexture = provider->texture();
+        }
+    }
+    const bool hasClientTexture = clientTexture != nullptr;
+    if (!clientTexture)
+        clientTexture = ensureFallbackClientTexture();
+
     if (tex) {
         tex->setFiltering(QSGTexture::Linear);
         tex->setHorizontalWrapMode(QSGTexture::ClampToEdge);
         tex->setVerticalWrapMode(QSGTexture::ClampToEdge);
         material->setTexture(tex);
+    }
+    if (clientTexture) {
+        clientTexture->setFiltering(QSGTexture::Linear);
+        clientTexture->setHorizontalWrapMode(QSGTexture::ClampToEdge);
+        clientTexture->setVerticalWrapMode(QSGTexture::ClampToEdge);
+        material->setClientTexture(clientTexture);
     }
 
     // Alimentar buffer uniforme std140
@@ -195,6 +263,8 @@ QSGNode *SystaliaGlassItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeDat
     props.causticIntensity = m_causticIntensity;
     props.opacity = m_surfaceOpacity;
     props.time = m_time;
+    props.hasClientTexture = hasClientTexture ? 1.0f : 0.0f;
+    props.titleBarHeight = m_titleBarHeight;
 
     material->setProps(props);
     node->markDirty(QSGNode::DirtyMaterial);

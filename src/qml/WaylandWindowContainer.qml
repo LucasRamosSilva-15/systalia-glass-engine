@@ -19,7 +19,7 @@ Item {
     property int minWindowWidth: 320
     property int minWindowHeight: 220
     readonly property int borderMargin: 8
-    readonly property int frameMargin: 4
+    readonly property int frameMargin: 8
     readonly property int titleBarHeight: 36
     readonly property var xdgSurface: toplevel ? toplevel.xdgSurface : null
     readonly property var opticalMetadata: {
@@ -115,9 +115,11 @@ Item {
         anchors.fill: parent
 
         backdropSource: windowContainer.backdropSource
+        clientTextureSource: clientSurfaceItem
         screenResolution: Qt.vector2d(windowContainer.screenResolution.x, windowContainer.screenResolution.y)
+        titleBarHeight: windowContainer.titleBarHeight
 
-        radii: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.radii : Qt.vector4d(18.0, 18.0, 18.0, 18.0)
+        radii: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.radii : Qt.vector4d(24.0, 24.0, 24.0, 24.0)
         slant: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.slant : 0.0
         ior: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.ior : 1.25
         chromaticDispersion: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.dispersion : 0.040
@@ -125,13 +127,12 @@ Item {
         surfaceOpacity: 0.90
         time: windowContainer.animTime
 
-        // Substrato protetor abissal para contraste óptico de texto e janelas externas
+        // Estrutura transparente para a SSD sobre a imagem já composta pelo shader.
         Rectangle {
             anchors.fill: parent
             radius: 18
-            color: Qt.rgba(0.04, 0.08, 0.15, 0.75)
-            border.color: windowContainer.activeFocus ? "#00f2fe" : "#25ffffff"
-            border.width: 1
+            color: "transparent"
+            border.width: 0
 
             // 1. Barra de Título SGE com Decoração Server-Side Nativa (SSD)
             Rectangle {
@@ -344,6 +345,7 @@ Item {
                     focusOnClick: true
                     inputEventsEnabled: !windowContainer.resizing
                     paintEnabled: true
+                    opacity: 0.0
                     moveItem: windowContainer
 
                     onSurfaceDestroyed: {

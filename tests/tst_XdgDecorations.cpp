@@ -1,5 +1,7 @@
 #include <QTest>
 #include <QSignalSpy>
+#include <QTemporaryDir>
+#include <memory>
 #include "SystaliaCompositor.hpp"
 #include <QtWaylandCompositor/QWaylandXdgDecorationManagerV1>
 #include <QtWaylandCompositor/QWaylandXdgToplevel>
@@ -9,11 +11,20 @@ class TestXdgDecorations : public QObject {
     Q_OBJECT
 
 private slots:
+    void initTestCase();
     void testDecorationManagerInstantiation();
     void testPreferredModeServerSide();
     void testInterfaceName();
     void testPreferredModeSignal();
+private:
+    std::unique_ptr<QTemporaryDir> m_runtime;
 };
+
+void TestXdgDecorations::initTestCase() {
+    m_runtime = std::make_unique<QTemporaryDir>();
+    QVERIFY(m_runtime->isValid());
+    qputenv("XDG_RUNTIME_DIR", m_runtime->path().toUtf8());
+}
 
 void TestXdgDecorations::testDecorationManagerInstantiation() {
     SystaliaCompositor compositor;
