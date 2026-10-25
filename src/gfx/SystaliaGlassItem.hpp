@@ -20,7 +20,9 @@ class SystaliaGlassItem : public QQuickItem {
     Q_PROPERTY(float surfaceOpacity READ surfaceOpacity WRITE setSurfaceOpacity NOTIFY surfaceOpacityChanged)
     Q_PROPERTY(float time READ time WRITE setTime NOTIFY timeChanged)
     Q_PROPERTY(QQuickItem* backdropSource READ backdropSource WRITE setBackdropSource NOTIFY backdropSourceChanged)
+    Q_PROPERTY(QQuickItem* clientTextureSource READ clientTextureSource WRITE setClientTextureSource NOTIFY clientTextureSourceChanged)
     Q_PROPERTY(QVector2D screenResolution READ screenResolution WRITE setScreenResolution NOTIFY screenResolutionChanged)
+    Q_PROPERTY(float titleBarHeight READ titleBarHeight WRITE setTitleBarHeight NOTIFY titleBarHeightChanged)
 
 public:
     explicit SystaliaGlassItem(QQuickItem *parent = nullptr);
@@ -50,10 +52,17 @@ public:
     QQuickItem *backdropSource() const { return m_backdropSource; }
     void setBackdropSource(QQuickItem *source);
 
+    QQuickItem *clientTextureSource() const { return m_clientTextureSource; }
+    void setClientTextureSource(QQuickItem *source);
+
     QVector2D screenResolution() const { return m_screenResolution; }
     void setScreenResolution(const QVector2D &res);
 
+    float titleBarHeight() const { return m_titleBarHeight; }
+    void setTitleBarHeight(float height);
+
     QSGTexture *ensureFallbackTexture();
+    QSGTexture *ensureFallbackClientTexture();
     void releaseResources() override;
 
 signals:
@@ -65,7 +74,9 @@ signals:
     void surfaceOpacityChanged();
     void timeChanged();
     void backdropSourceChanged();
+    void clientTextureSourceChanged();
     void screenResolutionChanged();
+    void titleBarHeightChanged();
 
 protected:
     QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *data) override;
@@ -80,8 +91,12 @@ private:
     float m_time = 0.0f;
 
     QPointer<QQuickItem> m_backdropSource;
+    QPointer<QQuickItem> m_clientTextureSource;
     QVector2D m_screenResolution = QVector2D(0.0f, 0.0f);
+    float m_titleBarHeight = 36.0f;
 
     QPointer<QSGTextureProvider> m_connectedProvider;
+    QPointer<QSGTextureProvider> m_connectedClientProvider;
     QSGTexture *m_fallbackTexture = nullptr;
+    QSGTexture *m_fallbackClientTexture = nullptr;
 };

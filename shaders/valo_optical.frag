@@ -16,11 +16,12 @@ layout(std140, binding = 0) uniform buf {
     float u_CausticIntensity;
     float u_Opacity;
     float u_Time;
-    float _pad0;
-    float _pad1;
+    float u_HasClientTexture;
+    float u_TitleBarHeight;
 };
 
 layout(binding = 1) uniform sampler2D u_BackdropTexture;
+layout(binding = 2) uniform sampler2D u_ClientTexture;
 
 float selectRadius(vec2 p, vec4 r) {
     if (p.x < 0.0) return (p.y < 0.0) ? r.x : r.z;
@@ -29,7 +30,7 @@ float selectRadius(vec2 p, vec4 r) {
 
 float sdRoundedBox4G2(vec2 p, vec2 b, vec4 r) {
     float rad = selectRadius(p, r);
-    rad = clamp(rad, 0.0, min(b.x, b.y) - 0.5);
+    rad = clamp(rad, 0.0, max(0.0, min(b.x, b.y) - 0.5));
     vec2 q = abs(p) - b + vec2(rad);
     vec2 q_pos = max(q, 0.0);
     float cornerDist = pow(pow(q_pos.x, 4.0) + pow(q_pos.y, 4.0), 0.25) - rad;
@@ -117,5 +118,32 @@ void main() {
     float softEdgeGleam = pow(meniscus, 2.2) * 0.20;
     finalColor += vec3(0.0, 0.8, 1.0) * softEdgeGleam;
 
-    fragColor = vec4(clamp(finalColor, vec3(0.0), vec3(1.0)), alphaMask * u_Opacity);
+    // A textura Wayland entra na mesma passada óptica e fica restrita ao chassi interno.
+    float clientCoverage = 0.0;
+    if (u_HasClientTexture > 0.5) {
+        const float CLIENT_INSET = 8.0;
+        vec2 clientSize = u_WindowSize - vec2(2.0 * CLIENT_INSET,
+                                               u_TitleBarHeight + 2.0 * CLIENT_INSET);
+        if (clientSize.x > 0.0 && clientSize.y > 0.0) {
+            vec2 clientOrigin = vec2(CLIENT_INSET, u_TitleBarHeight + CLIENT_INSET);
+            vec2 clientPosition = v_Position - clientOrigin;
+            vec2 clientHalfSize = clientSize * 0.5;
+            vec2 clientPoint = clientPosition - clientHalfSize;
+            vec4 clientRadii = vec4(0.0, 0.0,
+                                    max(0.0, u_Radii.z - CLIENT_INSET),
+                                    max(0.0, u_Radii.w - CLIENT_INSET));
+            float clientDistance = evaluateSurfaceSDF(clientPoint, clientHalfSize,
+                                                      clientRadii, u_Slant);
+            float clientFw = max(fwidth(clientDistance), 0.75);
+            float clientMask = 1.0 - smoothstep(-clientFw * 0.5,
+                                                clientFw * 0.5, clientDistance);
+            vec2 clientUV = clamp(clientPosition / clientSize, vec2(0.0), vec2(1.0));
+            vec4 clientPixel = texture(u_ClientTexture, clientUV);
+            clientCoverage = clientMask * clientPixel.a;
+            finalColor = mix(finalColor, clientPixel.rgb, clientCoverage);
+        }
+    }
+
+    float finalAlpha = max(alphaMask * u_Opacity, clientCoverage);
+    fragColor = vec4(clamp(finalColor, vec3(0.0), vec3(1.0)), finalAlpha);
 }

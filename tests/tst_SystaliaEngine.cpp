@@ -30,7 +30,8 @@ void TestSystaliaEngine::testStd140Offsets() {
     QCOMPARE(offsetof(SystaliaSurfaceProps, causticIntensity), size_t(108));
     QCOMPARE(offsetof(SystaliaSurfaceProps, opacity), size_t(112));
     QCOMPARE(offsetof(SystaliaSurfaceProps, time), size_t(116));
-    QCOMPARE(offsetof(SystaliaSurfaceProps, padding), size_t(120));
+    QCOMPARE(offsetof(SystaliaSurfaceProps, hasClientTexture), size_t(120));
+    QCOMPARE(offsetof(SystaliaSurfaceProps, titleBarHeight), size_t(124));
 }
 
 void TestSystaliaEngine::testShaderBytecodeAssets() {

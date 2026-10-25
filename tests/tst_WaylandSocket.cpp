@@ -1,15 +1,24 @@
 #include <QTest>
 #include <QFile>
 #include <QString>
+#include <QTemporaryDir>
 #include "SystaliaCompositor.hpp"
 
 class TestWaylandSocket : public QObject {
     Q_OBJECT
 
 private slots:
+    void initTestCase();
     void testSocketCreationAndDestruction();
     void testClientCountInitialZero();
+private:
+    QTemporaryDir m_runtime;
 };
+
+void TestWaylandSocket::initTestCase() {
+    QVERIFY(m_runtime.isValid());
+    qputenv("XDG_RUNTIME_DIR", m_runtime.path().toUtf8());
+}
 
 void TestWaylandSocket::testSocketCreationAndDestruction() {
     const QString runtimeDir = qEnvironmentVariable("XDG_RUNTIME_DIR");

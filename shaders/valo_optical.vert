@@ -16,9 +16,9 @@ layout(std140, binding = 0) uniform buf {
     float u_ChromaticDispersion;
     float u_CausticIntensity;
     float u_Opacity;
-    float _pad0;
-    float _pad1;
-    float _pad2;
+    float u_Time;
+    float u_HasClientTexture;
+    float u_TitleBarHeight;
 };
 
 void main() {

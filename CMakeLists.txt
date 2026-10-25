@@ -46,6 +46,7 @@ target_link_libraries(sge_shaders PUBLIC
 # Biblioteca estática central com o motor, itens visuais, compositor Wayland e módulo QML
 qt_add_library(sge_core STATIC
     src/gfx/SystaliaSurfaceProps.hpp
+    src/gfx/SystaliaClientClip.hpp
     src/gfx/SystaliaGlassMaterial.hpp
     src/gfx/SystaliaGlassMaterial.cpp
     src/gfx/SystaliaGlassItem.hpp

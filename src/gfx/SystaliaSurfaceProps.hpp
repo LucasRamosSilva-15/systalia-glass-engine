@@ -53,7 +53,8 @@ struct alignas(16) SystaliaSurfaceProps {
     float causticIntensity = 0.85f;        // offset 108, tamanho 4
     float opacity = 0.85f;                 // offset 112, tamanho 4
     float time = 0.0f;                     // offset 116, tamanho 4 (NOVO: u_Time)
-    float padding[2] = {0.0f, 0.0f};       // offset 120, tamanho 8
+    float hasClientTexture = 0.0f;         // offset 120, tamanho 4
+    float titleBarHeight = 36.0f;          // offset 124, tamanho 4
 };
 
 static_assert(sizeof(SystaliaSurfaceProps) == 128, "Tamanho deve ser exatamente 128 bytes");
@@ -69,4 +70,7 @@ static_assert(offsetof(SystaliaSurfaceProps, chromaticDispersion) == 104, "Offse
 static_assert(offsetof(SystaliaSurfaceProps, causticIntensity) == 108, "Offset de causticIntensity deve ser 108");
 static_assert(offsetof(SystaliaSurfaceProps, opacity) == 112, "Offset de opacity deve ser 112");
 static_assert(offsetof(SystaliaSurfaceProps, time) == 116, "Offset de time deve ser 116");
-static_assert(offsetof(SystaliaSurfaceProps, padding) == 120, "Offset de padding deve ser 120");
+static_assert(offsetof(SystaliaSurfaceProps, hasClientTexture) == 120,
+              "Offset de hasClientTexture deve ser 120");
+static_assert(offsetof(SystaliaSurfaceProps, titleBarHeight) == 124,
+              "Offset de titleBarHeight deve ser 124");

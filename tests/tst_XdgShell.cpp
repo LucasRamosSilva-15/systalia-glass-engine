@@ -1,5 +1,7 @@
 #include <QTest>
 #include <QSignalSpy>
+#include <QTemporaryDir>
+#include <memory>
 #include "SystaliaCompositor.hpp"
 #include <QtWaylandCompositor/QWaylandXdgShell>
 #include <QtWaylandCompositor/QWaylandSeat>
@@ -8,10 +10,19 @@ class TestXdgShell : public QObject {
     Q_OBJECT
 
 private slots:
+    void initTestCase();
     void testXdgShellExtensionRegistration();
     void testDefaultSeatCapabilities();
     void testToplevelSignalsAvailable();
+private:
+    std::unique_ptr<QTemporaryDir> m_runtime;
 };
+
+void TestXdgShell::initTestCase() {
+    m_runtime = std::make_unique<QTemporaryDir>();
+    QVERIFY(m_runtime->isValid());
+    qputenv("XDG_RUNTIME_DIR", m_runtime->path().toUtf8());
+}
 
 void TestXdgShell::testXdgShellExtensionRegistration() {
     SystaliaCompositor compositor;

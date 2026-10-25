@@ -1,5 +1,6 @@
 #include "SystaliaGlassMaterial.hpp"
 #include <cstring>
+#include <functional>
 
 SystaliaGlassMaterialShader::SystaliaGlassMaterialShader() {
     setShaderFileName(VertexStage, QStringLiteral(":/shaders/valo_optical.vert.qsb"));
@@ -36,11 +37,13 @@ void SystaliaGlassMaterialShader::updateSampledImage(RenderState &state,
     Q_UNUSED(state);
     Q_UNUSED(oldMaterial);
 
-    if (binding == 1) {
-        auto *mat = static_cast<SystaliaGlassMaterial *>(newMaterial);
-        if (mat && mat->texture()) {
-            *texture = mat->texture();
-        }
+    auto *mat = static_cast<SystaliaGlassMaterial *>(newMaterial);
+    if (!mat)
+        return;
+    if (binding == 1 && mat->texture()) {
+        *texture = mat->texture();
+    } else if (binding == 2 && mat->clientTexture()) {
+        *texture = mat->clientTexture();
     }
 }
 
@@ -77,6 +80,11 @@ QSGMaterialShader *SystaliaGlassMaterial::createShader(QSGRendererInterface::Ren
 }
 
 int SystaliaGlassMaterial::compare(const QSGMaterial *other) const {
-    Q_UNUSED(other);
+    const auto *otherMaterial = static_cast<const SystaliaGlassMaterial *>(other);
+    const std::less<QSGTexture *> less;
+    if (m_texture != otherMaterial->m_texture)
+        return less(m_texture, otherMaterial->m_texture) ? -1 : 1;
+    if (m_clientTexture != otherMaterial->m_clientTexture)
+        return less(m_clientTexture, otherMaterial->m_clientTexture) ? -1 : 1;
     return 0;
 }
