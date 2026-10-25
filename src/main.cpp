@@ -1,6 +1,7 @@
 #include <QGuiApplication>
-#include <QQmlContext>
+#include <QJSEngine>
 #include <QQmlApplicationEngine>
+#include <QQmlEngine>
 #include <QQuickWindow>
 #include <QDebug>
 #include "SystaliaGlassItem.hpp"
@@ -19,10 +20,13 @@ int main(int argc, char *argv[]) {
     // Registro dos tipos QML
     qmlRegisterType<SystaliaGlassItem>("Systalia.Engine", 1, 0, "SystaliaGlassItem");
     qmlRegisterType<SystaliaCompositor>("Systalia.Compositor", 1, 0, "SystaliaCompositor");
+    qmlRegisterSingletonType<SystemTelemetryService>(
+        "Systalia.System", 1, 0, "SystemTelemetry",
+        [](QQmlEngine *, QJSEngine *) -> QObject * {
+            return new SystemTelemetryService();
+        });
 
-    SystemTelemetryService telemetry;
     QQmlApplicationEngine engine;
-    engine.rootContext()->setContextProperty(QStringLiteral("systemTelemetry"), &telemetry);
     const QUrl url(QStringLiteral("qrc:/qt/qml/Systalia/Engine/src/qml/main.qml"));
 
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,

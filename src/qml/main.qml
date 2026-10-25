@@ -4,6 +4,8 @@ import QtQuick.Layouts
 import QtWayland.Compositor
 import Systalia.Engine
 import Systalia.Compositor 1.0
+import Systalia.System 1.0
+import "shell" as Shell
 
 ApplicationWindow {
     id: rootWindow
@@ -13,7 +15,7 @@ ApplicationWindow {
     title: qsTr("Systalia Glass Engine — Systalia Desktop Environment")
     color: "#020611"
 
-    Component.onCompleted: systemTelemetry.attachWindow(rootWindow)
+    Component.onCompleted: SystemTelemetry.attachWindow(rootWindow)
 
     // 0. Servidor Wayland Nativo (IPC Socket wayland-systalia-0 com suporte XDG Shell)
     SystaliaCompositor {
@@ -58,17 +60,20 @@ ApplicationWindow {
         window: rootWindow
     }
 
-    SystaliaTopBar {
+    Shell.SystaliaTopBar {
         id: topBar
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
-        telemetry: systemTelemetry
+        height: 40
+        z: 100
+        telemetry: SystemTelemetry
     }
 
     Item {
         id: workspace
-        anchors.top: topBar.bottom
+        anchors.top: parent.top
+        anchors.topMargin: topBar.height + 8
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
