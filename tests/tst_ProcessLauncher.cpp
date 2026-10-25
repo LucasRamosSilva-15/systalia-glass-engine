@@ -12,7 +12,15 @@ private slots:
 };
 
 void TestProcessLauncher::createsWaylandProcessEnvironment() {
+    const bool hadBackendOverride = qEnvironmentVariableIsSet("QSG_RHI_BACKEND");
+    const QByteArray previousBackend = qgetenv("QSG_RHI_BACKEND");
+    qputenv("QSG_RHI_BACKEND", QByteArrayLiteral("vulkan"));
     const QProcessEnvironment environment = ProcessLauncherService::waylandProcessEnvironment();
+    if (hadBackendOverride) {
+        qputenv("QSG_RHI_BACKEND", previousBackend);
+    } else {
+        qunsetenv("QSG_RHI_BACKEND");
+    }
 
     QCOMPARE(environment.value(QStringLiteral("WAYLAND_DISPLAY")),
              QStringLiteral("wayland-systalia-0"));
@@ -20,6 +28,7 @@ void TestProcessLauncher::createsWaylandProcessEnvironment() {
              QStringLiteral("wayland"));
     QCOMPARE(environment.value(QStringLiteral("GDK_BACKEND")),
              QStringLiteral("wayland"));
+    QVERIFY(!environment.contains(QStringLiteral("QSG_RHI_BACKEND")));
     QVERIFY(environment.contains(QStringLiteral("PATH")));
 }
 

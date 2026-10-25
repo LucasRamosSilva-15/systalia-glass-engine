@@ -77,6 +77,7 @@ bool ProcessLauncherService::isAppRunning(const QString &appId) const {
 
 QProcessEnvironment ProcessLauncherService::waylandProcessEnvironment() {
     QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
+    environment.remove(QStringLiteral("QSG_RHI_BACKEND"));
     environment.insert(QStringLiteral("WAYLAND_DISPLAY"), QStringLiteral("wayland-systalia-0"));
     environment.insert(QStringLiteral("QT_QPA_PLATFORM"), QStringLiteral("wayland"));
     environment.insert(QStringLiteral("GDK_BACKEND"), QStringLiteral("wayland"));
