@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(systalia_glass_engine LANGUAGES CXX)
+project(systalia_glass_engine LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -19,6 +19,7 @@ find_package(Qt6 6.7 REQUIRED COMPONENTS
 )
 
 find_package(Vulkan REQUIRED)
+find_package(WaylandScanner REQUIRED)
 
 if(Qt6_VERSION VERSION_GREATER_EQUAL 6.8)
     qt_policy(SET QTP0004 NEW)
@@ -49,11 +50,18 @@ qt_add_library(sge_core STATIC
     src/gfx/SystaliaGlassMaterial.cpp
     src/gfx/SystaliaGlassItem.hpp
     src/gfx/SystaliaGlassItem.cpp
+    src/compositor/SystaliaSurfaceExtension.hpp
+    src/compositor/SystaliaSurfaceExtension.cpp
     src/compositor/SystaliaCompositor.hpp
     src/compositor/SystaliaCompositor.cpp
 )
 
+qt6_generate_wayland_protocol_server_sources(sge_core
+    FILES "${CMAKE_CURRENT_SOURCE_DIR}/protocols/z_systalia_surface_v1.xml"
+)
+
 target_include_directories(sge_core PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>"
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gfx
     ${CMAKE_CURRENT_SOURCE_DIR}/src/compositor

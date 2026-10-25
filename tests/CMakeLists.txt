@@ -107,3 +107,17 @@ qt_add_executable(tst_xdg_resize tst_XdgResize.cpp)
 target_link_libraries(tst_xdg_resize PRIVATE Qt6::Test Qt6::Quick sge_core)
 add_test(NAME tst_xdg_resize COMMAND tst_xdg_resize)
 set_tests_properties(tst_xdg_resize PROPERTIES TIMEOUT 120)
+
+# Teste 10: IPC do protocolo óptico, precisão fixed-point e ciclo de vida.
+find_package(Qt6 REQUIRED COMPONENTS WaylandClient)
+qt_add_executable(tst_systalia_protocol tst_SystaliaProtocol.cpp)
+qt6_generate_wayland_protocol_client_sources(tst_systalia_protocol
+    FILES "${PROJECT_SOURCE_DIR}/protocols/z_systalia_surface_v1.xml"
+)
+target_link_libraries(tst_systalia_protocol PRIVATE
+    Qt6::Test Qt6::Quick Qt6::WaylandClient Wayland::Client Wayland::Server sge_core
+)
+add_test(NAME tst_systalia_protocol COMMAND tst_systalia_protocol)
+set_tests_properties(tst_systalia_protocol PROPERTIES
+    TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
