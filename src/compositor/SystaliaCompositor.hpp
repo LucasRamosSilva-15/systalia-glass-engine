@@ -35,7 +35,7 @@ public:
     QWaylandXdgDecorationManagerV1 *decorationManager() const { return m_decorationManager; }
 
     Q_INVOKABLE void create() override;
-    Q_INVOKABLE bool closeToplevel(QWaylandXdgToplevel *toplevel);
+    Q_INVOKABLE bool closeToplevel(QObject *toplevelObject);
     Q_INVOKABLE void requestToplevelResize(QWaylandXdgToplevel *toplevel,
                                            const QSize &newSize, bool isResizing);
 
@@ -44,6 +44,7 @@ signals:
     void activeAppIdsChanged();
     void activeToplevelStateChanged();
     void toplevelCreated(QWaylandXdgToplevel *toplevel);
+    void toplevelCreatedForQml(QObject *toplevelObject);
     void popupCreated(QWaylandXdgPopup *popup);
 
 private slots:

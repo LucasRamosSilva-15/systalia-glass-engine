@@ -49,7 +49,8 @@ private:
     QTimer m_frames;
     QPointer<QWaylandXdgToplevel> m_toplevel;
     void startClient(bool bounded = false);
-    std::unique_ptr<QQuickItem> createContainer(QQmlEngine &engine, QQuickWindow &window);
+    std::unique_ptr<QQuickItem> createContainer(QQmlEngine &engine, QQuickWindow &window,
+                                                QObject *toplevelObject = nullptr);
 };
 
 void TestXdgResize::initTestCase() {
@@ -119,13 +120,19 @@ void TestXdgResize::nullAndInvokable() {
 
 void TestXdgResize::closeRequestUsesCompositorSlot() {
     QVERIFY(!m_compositor->closeToplevel(nullptr));
+    QSignalSpy qmlToplevelCreated(m_compositor.get(),
+                                  &SystaliaCompositor::toplevelCreatedForQml);
+    QVERIFY(qmlToplevelCreated.isValid());
     startClient();
     QVERIFY(m_toplevel);
+    QCOMPARE(qmlToplevelCreated.count(), 1);
+    QCOMPARE(qmlToplevelCreated.at(0).at(0).value<QObject *>(), m_toplevel.data());
 
     QQmlEngine engine;
     QQuickWindow window;
     window.resize(1400, 1000);
-    auto item = createContainer(engine, window);
+    QObject *toplevelObject = qmlToplevelCreated.at(0).at(0).value<QObject *>();
+    auto item = createContainer(engine, window, toplevelObject);
     QVERIFY(item);
     auto *closeButton = item->findChild<QQuickItem *>("closeToplevelButton");
     QVERIFY(closeButton);
@@ -206,10 +213,15 @@ void TestXdgResize::configureHandshake() {
     QCOMPARE(m_toplevel->xdgSurface()->windowGeometry().size(), expected);
 }
 
-std::unique_ptr<QQuickItem> TestXdgResize::createContainer(QQmlEngine &engine, QQuickWindow &window) {
+std::unique_ptr<QQuickItem> TestXdgResize::createContainer(QQmlEngine &engine,
+                                                           QQuickWindow &window,
+                                                           QObject *toplevelObject) {
     QQmlComponent component(&engine, QUrl("qrc:/qt/qml/Systalia/Engine/src/qml/WaylandWindowContainer.qml"));
+    if (!toplevelObject) {
+        toplevelObject = m_toplevel.data();
+    }
     auto *object = component.createWithInitialProperties({
-        {"toplevel", QVariant::fromValue(m_toplevel.data())},
+        {"toplevel", QVariant::fromValue(toplevelObject)},
         {"waylandServer", QVariant::fromValue(m_compositor.get())}
     });
     if (!object) {

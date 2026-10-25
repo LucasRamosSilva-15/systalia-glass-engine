@@ -23,18 +23,18 @@ ApplicationWindow {
         property string activeClientTitle: ""
         property string activeClientAppId: ""
 
-        onToplevelCreated: (toplevel) => {
-            if (toplevel) {
-                activeClientTitle = toplevel.title
-                activeClientAppId = toplevel.appId
-                toplevel.titleChanged.connect(() => { activeClientTitle = toplevel.title })
-                toplevel.appIdChanged.connect(() => { activeClientAppId = toplevel.appId })
+        onToplevelCreatedForQml: (toplevelObject) => {
+            if (toplevelObject) {
+                activeClientTitle = toplevelObject.title
+                activeClientAppId = toplevelObject.appId
+                toplevelObject.titleChanged.connect(() => { activeClientTitle = toplevelObject.title })
+                toplevelObject.appIdChanged.connect(() => { activeClientAppId = toplevelObject.appId })
 
                 const comp = Qt.createComponent("WaylandWindowContainer.qml")
                 if (comp.status === Component.Ready) {
                     const offset = (clientWindowsLayer.children.length * 36) % 180
                     comp.createObject(clientWindowsLayer, {
-                        toplevel: toplevel,
+                        toplevel: toplevelObject,
                         waylandServer: waylandServer,
                         backdropSource: backdropGrab,
                         screenResolution: Qt.point(rootWindow.width * rootWindow.devicePixelRatio,

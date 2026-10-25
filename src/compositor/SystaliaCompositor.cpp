@@ -61,7 +61,8 @@ void SystaliaCompositor::create() {
     }
 }
 
-bool SystaliaCompositor::closeToplevel(QWaylandXdgToplevel *toplevel) {
+bool SystaliaCompositor::closeToplevel(QObject *toplevelObject) {
+    auto *toplevel = qobject_cast<QWaylandXdgToplevel *>(toplevelObject);
     if (!toplevel || !toplevel->xdgSurface()
         || toplevel->xdgSurface()->shell() != m_xdgShell) {
         return false;
@@ -147,6 +148,7 @@ void SystaliaCompositor::onToplevelCreated(QWaylandXdgToplevel *toplevel, QWayla
     }
 
     emit toplevelCreated(toplevel);
+    emit toplevelCreatedForQml(toplevel);
 }
 
 void SystaliaCompositor::onPopupCreated(QWaylandXdgPopup *popup, QWaylandXdgSurface *xdgSurface) {
