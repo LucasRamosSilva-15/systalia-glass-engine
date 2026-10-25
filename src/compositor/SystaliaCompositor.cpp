@@ -72,6 +72,22 @@ bool SystaliaCompositor::closeToplevel(QObject *toplevelObject) {
     return true;
 }
 
+bool SystaliaCompositor::toggleToplevelMaximized(QObject *toplevelObject,
+                                                 const QSize &size) {
+    auto *toplevel = qobject_cast<QWaylandXdgToplevel *>(toplevelObject);
+    if (!toplevel || !toplevel->xdgSurface()
+        || toplevel->xdgSurface()->shell() != m_xdgShell) {
+        return false;
+    }
+
+    if (toplevel->maximized()) {
+        toplevel->sendUnmaximized();
+    } else {
+        toplevel->sendMaximized(size);
+    }
+    return true;
+}
+
 void SystaliaCompositor::requestToplevelResize(QWaylandXdgToplevel *toplevel,
                                                const QSize &newSize, bool isResizing) {
     if (!toplevel || !toplevel->xdgSurface()

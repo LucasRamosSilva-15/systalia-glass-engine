@@ -36,6 +36,8 @@ public:
 
     Q_INVOKABLE void create() override;
     Q_INVOKABLE bool closeToplevel(QObject *toplevelObject);
+    Q_INVOKABLE bool toggleToplevelMaximized(QObject *toplevelObject,
+                                              const QSize &size);
     Q_INVOKABLE void requestToplevelResize(QWaylandXdgToplevel *toplevel,
                                            const QSize &newSize, bool isResizing);
 

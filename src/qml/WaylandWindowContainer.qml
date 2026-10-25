@@ -302,15 +302,14 @@ Item {
 
                             MouseArea {
                                 id: maxMouse
+                                objectName: "maximizeToplevelButton"
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 onClicked: {
-                                    if (windowContainer.toplevel) {
-                                        if (windowContainer.toplevel.maximized) {
-                                            windowContainer.toplevel.sendUnmaximized()
-                                        } else {
-                                            windowContainer.toplevel.sendMaximized(Qt.size(windowContainer.width, windowContainer.height))
-                                        }
+                                    if (windowContainer.toplevel && windowContainer.waylandServer) {
+                                        windowContainer.waylandServer.toggleToplevelMaximized(
+                                            windowContainer.toplevel,
+                                            Qt.size(windowContainer.width, windowContainer.height))
                                     }
                                 }
                             }

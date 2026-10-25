@@ -6,6 +6,7 @@ import QtWayland.Compositor
 Item {
     id: rootClientView
     property var toplevel: null
+    property var waylandServer: null
     property alias surface: quickItem.surface
 
     width: (toplevel && toplevel.maxSize.width > 0) ? Math.min(toplevel.maxSize.width, 720) : 640
@@ -81,8 +82,8 @@ Item {
                         anchors.fill: parent
                         hoverEnabled: true
                         onClicked: {
-                            if (rootClientView.toplevel) {
-                                rootClientView.toplevel.sendClose()
+                            if (rootClientView.toplevel && rootClientView.waylandServer) {
+                                rootClientView.waylandServer.closeToplevel(rootClientView.toplevel)
                             }
                         }
                     }

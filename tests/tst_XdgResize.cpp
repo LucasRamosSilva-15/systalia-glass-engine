@@ -34,6 +34,7 @@ private slots:
     void cleanup();
     void nullAndInvokable();
     void closeRequestUsesCompositorSlot();
+    void maximizeRequestUsesCompositorSlot();
     void clientBufferIsBoundAndPainted();
     void configureHandshake_data();
     void configureHandshake();
@@ -143,6 +144,35 @@ void TestXdgResize::closeRequestUsesCompositorSlot() {
         QPointF(closeButton->width() / 2.0, closeButton->height() / 2.0)).toPoint();
     QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, closePosition);
     QTRY_VERIFY_WITH_TIMEOUT(m_client.state() == QProcess::NotRunning, 3000);
+}
+
+void TestXdgResize::maximizeRequestUsesCompositorSlot() {
+    QVERIFY(!m_compositor->toggleToplevelMaximized(nullptr, QSize(800, 500)));
+    QSignalSpy qmlToplevelCreated(m_compositor.get(),
+                                  &SystaliaCompositor::toplevelCreatedForQml);
+    QVERIFY(qmlToplevelCreated.isValid());
+    startClient();
+    QVERIFY(m_toplevel);
+
+    QQmlEngine engine;
+    QQuickWindow window;
+    window.resize(1400, 1000);
+    QObject *toplevelObject = qmlToplevelCreated.at(0).at(0).value<QObject *>();
+    auto item = createContainer(engine, window, toplevelObject);
+    QVERIFY(item);
+    QWaylandSurface *surface = m_toplevel->xdgSurface()->surface();
+    QVERIFY(surface);
+    QVERIFY(surface->primaryView());
+    surface->primaryView()->setOutput(m_output.get());
+    auto *maximizeButton = item->findChild<QQuickItem *>("maximizeToplevelButton");
+    QVERIFY(maximizeButton);
+
+    window.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    const QPoint maximizePosition = maximizeButton->mapToScene(
+        QPointF(maximizeButton->width() / 2.0, maximizeButton->height() / 2.0)).toPoint();
+    QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, maximizePosition);
+    QTRY_VERIFY(m_toplevel->maximized());
 }
 
 void TestXdgResize::clientBufferIsBoundAndPainted() {
