@@ -17,7 +17,7 @@ Item {
     anchors.rightMargin: 16
     width: 370
     height: Math.max(0, parent.height - 64)
-    z: 130
+    z: 220
     visible: Notifications.notificationCount > 0 || opacity > 0.01
     opacity: Notifications.notificationCount > 0 ? 1.0 : 0.0
 

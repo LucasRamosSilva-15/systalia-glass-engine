@@ -232,6 +232,7 @@ target_compile_definitions(tst_sdf_geometry_math PRIVATE
 )
 sge_add_expanded_test(tst_memory_alignment unit/tst_MemoryAlignment.cpp unit)
 sge_add_expanded_test(tst_linux_parsers unit/tst_LinuxParsers.cpp unit)
+sge_add_expanded_test(tst_task_switcher unit/tst_TaskSwitcher.cpp unit)
 
 # Integration tests exercise actual Wayland wire requests and model resets.
 sge_add_expanded_test(tst_protocol_roundtrip integration/tst_ProtocolRoundtrip.cpp integration)
@@ -263,6 +264,7 @@ add_custom_target(unit_tests DEPENDS
     tst_sdf_geometry_math
     tst_memory_alignment
     tst_linux_parsers
+    tst_task_switcher
 )
 add_custom_target(integration_tests DEPENDS
     tst_wayland_socket

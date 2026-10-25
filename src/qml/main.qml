@@ -29,7 +29,10 @@ ApplicationWindow {
         windowContainer.z = clientWindowsLayer.topZIndex
     }
 
-    Component.onCompleted: SystemTelemetry.attachWindow(rootWindow)
+    Component.onCompleted: {
+        SystemTelemetry.attachWindow(rootWindow)
+        waylandServer.attachTaskSwitcherWindow(rootWindow)
+    }
 
     // 0. Servidor Wayland Nativo (IPC Socket wayland-systalia-0 com suporte XDG Shell)
     SystaliaCompositor {
@@ -1101,6 +1104,19 @@ ApplicationWindow {
         }
     }
 
+    Connections {
+        target: waylandServer
+        function onWindowSelected(toplevelObject) {
+            for (let index = 0; index < clientWindowsLayer.children.length; ++index) {
+                const windowContainer = clientWindowsLayer.children[index]
+                if (windowContainer.toplevel === toplevelObject) {
+                    rootWindow.raiseClientWindow(windowContainer)
+                    break
+                }
+            }
+        }
+    }
+
     Shortcut {
         sequence: "Meta+Space"
         context: Qt.ApplicationShortcut
@@ -1117,6 +1133,17 @@ ApplicationWindow {
 
     Shell.SystaliaNotificationHost {
         id: notificationHost
+        backdropSource: backdropGrab
+        screenResolution: Qt.vector2d(rootWindow.width * rootWindow.devicePixelRatio,
+                                      rootWindow.height * rootWindow.devicePixelRatio)
+        animationTime: animTimer.tick
+    }
+
+    Shell.SystaliaTaskSwitcher {
+        id: taskSwitcher
+        anchors.fill: parent
+        z: 200
+        waylandServer: waylandServer
         backdropSource: backdropGrab
         screenResolution: Qt.vector2d(rootWindow.width * rootWindow.devicePixelRatio,
                                       rootWindow.height * rootWindow.devicePixelRatio)

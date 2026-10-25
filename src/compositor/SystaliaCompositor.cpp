@@ -1,6 +1,9 @@
 #include "SystaliaCompositor.hpp"
 #include <QDebug>
 #include <QFile>
+#include <QKeyEvent>
+#include <QQuickWindow>
+#include <QtWaylandCompositor/QWaylandKeyboard>
 #include <utility>
 
 SystaliaCompositor::SystaliaCompositor(QObject *parent)
@@ -16,6 +19,16 @@ SystaliaCompositor::SystaliaCompositor(QObject *parent)
             this, &SystaliaCompositor::onToplevelCreated);
     connect(m_xdgShell, &QWaylandXdgShell::popupCreated,
             this, &SystaliaCompositor::onPopupCreated);
+
+    m_windowStackModel = new WindowStackModel(this);
+    connect(m_windowStackModel, &WindowStackModel::taskSwitcherVisibleChanged,
+            this, &SystaliaCompositor::taskSwitcherVisibleChanged);
+    connect(m_windowStackModel, &WindowStackModel::taskSwitcherIndexChanged,
+            this, &SystaliaCompositor::taskSwitcherIndexChanged);
+    connect(m_windowStackModel, &WindowStackModel::windowCountChanged,
+            this, &SystaliaCompositor::windowCountChanged);
+    connect(m_windowStackModel, &WindowStackModel::windowSelected,
+            this, &SystaliaCompositor::windowSelected);
 
     // Instanciação e configuração forçada de Server-Side Decoration (zxdg_decoration_manager_v1)
     m_decorationManager = new QWaylandXdgDecorationManagerV1();
@@ -36,6 +49,22 @@ void SystaliaCompositor::create() {
     // Inicialização do assento de entrada padrão (teclado + mouse/pointer)
     if (!defaultSeat()) {
         new QWaylandSeat(this, QWaylandSeat::DefaultCapabilities);
+    }
+
+    if (!m_keyboardFocusConnection) {
+        m_keyboardFocusConnection = connect(
+            defaultSeat(), &QWaylandSeat::keyboardFocusChanged, this,
+            [this](QWaylandSurface *surface, QWaylandSurface *) {
+                if (!surface)
+                    return;
+                for (QWaylandXdgToplevel *toplevel : std::as_const(m_activeToplevels)) {
+                    if (toplevel && toplevel->xdgSurface()
+                        && toplevel->xdgSurface()->surface() == surface) {
+                        m_windowStackModel->promoteWindow(toplevel);
+                        return;
+                    }
+                }
+            });
     }
 
     QWaylandCompositor::create();
@@ -85,6 +114,7 @@ bool SystaliaCompositor::activateToplevel(QObject *toplevelObject) {
     if (!surface || !seat || !seat->setKeyboardFocus(surface)) {
         return false;
     }
+    m_windowStackModel->promoteWindow(toplevel);
 
     const auto configureSize = [](QWaylandXdgToplevel *window) {
         return window->xdgSurface()->windowGeometry().size();
@@ -112,6 +142,88 @@ bool SystaliaCompositor::activateToplevel(QObject *toplevelObject) {
         toplevel->sendConfigure(currentSize, states);
     }
     return true;
+}
+
+bool SystaliaCompositor::selectWindow(int index) {
+    QObject *selected = m_windowStackModel->selectAndCommit(index);
+    auto *toplevel = qobject_cast<QWaylandXdgToplevel *>(selected);
+    return toplevel && activateToplevel(toplevel);
+}
+
+void SystaliaCompositor::attachTaskSwitcherWindow(QQuickWindow *window) {
+    if (m_taskSwitcherWindow == window)
+        return;
+    if (m_taskSwitcherWindow)
+        m_taskSwitcherWindow->removeEventFilter(this);
+    m_taskSwitcherWindow = window;
+    if (m_taskSwitcherWindow)
+        m_taskSwitcherWindow->installEventFilter(this);
+}
+
+bool SystaliaCompositor::eventFilter(QObject *watched, QEvent *event) {
+    if (watched == m_taskSwitcherWindow.data() && event) {
+        if (event->type() == QEvent::ShortcutOverride) {
+            auto *keyEvent = static_cast<QKeyEvent *>(event);
+            if (keyEvent->key() == Qt::Key_Tab
+                && keyEvent->modifiers().testFlag(Qt::AltModifier)) {
+                keyEvent->accept();
+                return true;
+            }
+        }
+        if ((event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease)
+            && handleTaskSwitcherKeyEvent(static_cast<QKeyEvent *>(event))) {
+            event->accept();
+            return true;
+        }
+    }
+    return QWaylandCompositor::eventFilter(watched, event);
+}
+
+bool SystaliaCompositor::handleTaskSwitcherKeyEvent(QKeyEvent *event) {
+    if (!event)
+        return false;
+
+    if (event->type() == QEvent::KeyPress) {
+        if (event->key() == Qt::Key_Alt) {
+            m_altPressWasForwarded = true;
+            return false;
+        }
+        if (event->key() == Qt::Key_Tab) {
+            if (event->modifiers().testFlag(Qt::AltModifier)) {
+                const int direction = event->modifiers().testFlag(Qt::ShiftModifier) ? -1 : 1;
+                return m_windowStackModel->beginTaskSwitch(direction);
+            }
+            return m_windowStackModel->taskSwitcherVisible();
+        }
+        return false;
+    }
+
+    if (event->type() != QEvent::KeyRelease)
+        return false;
+
+    if (event->key() == Qt::Key_Alt) {
+        if (!m_windowStackModel->taskSwitcherVisible()) {
+            m_altPressWasForwarded = false;
+            return false;
+        }
+
+        QWaylandSeat *seat = defaultSeat();
+        if (m_altPressWasForwarded && seat && seat->keyboard()) {
+            const uint scanCode = seat->keyboard()->keyToScanCode(Qt::Key_Alt);
+            if (scanCode != 0)
+                seat->sendKeyReleaseEvent(scanCode);
+        }
+        m_altPressWasForwarded = false;
+
+        QObject *selected = m_windowStackModel->commitTaskSwitch();
+        if (selected)
+            activateToplevel(selected);
+        return true;
+    }
+
+    if (event->key() == Qt::Key_Tab && m_windowStackModel->taskSwitcherVisible())
+        return true;
+    return false;
 }
 
 bool SystaliaCompositor::toggleToplevelMaximized(QObject *toplevelObject,
@@ -173,6 +285,7 @@ void SystaliaCompositor::onSurfaceAboutToBeDestroyed(QWaylandSurface *surface) {
 void SystaliaCompositor::onToplevelCreated(QWaylandXdgToplevel *toplevel, QWaylandXdgSurface *xdgSurface) {
     if (toplevel) {
         m_activeToplevels.insert(toplevel);
+        m_windowStackModel->registerWindow(toplevel);
         connect(toplevel, &QWaylandXdgToplevel::appIdChanged, this, [this]() {
             emit activeAppIdsChanged();
         });

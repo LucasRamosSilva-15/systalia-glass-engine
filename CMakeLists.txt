@@ -56,6 +56,8 @@ qt_add_library(sge_core STATIC
     src/compositor/SystaliaSurfaceExtension.cpp
     src/compositor/SystaliaCompositor.hpp
     src/compositor/SystaliaCompositor.cpp
+    src/compositor/WindowStackModel.hpp
+    src/compositor/WindowStackModel.cpp
     src/system/SystemTelemetryService.hpp
     src/system/SystemTelemetryService.cpp
     src/system/ProcessLauncherService.hpp
@@ -104,6 +106,7 @@ qt_add_qml_module(sge_core
         src/qml/shell/SystaliaFlowMenu.qml
         src/qml/shell/SystaliaNotificationHost.qml
         src/qml/shell/SystaliaControlCenter.qml
+        src/qml/shell/SystaliaTaskSwitcher.qml
     NO_PLUGIN
 )
 
