@@ -127,6 +127,39 @@ Item {
         surfaceOpacity: 0.90
         time: windowContainer.animTime
 
+        // A fonte Wayland fica atrás do passe óptico; o shader a compõe no mesmo frame.
+        Item {
+            id: clientViewport
+            objectName: "clientViewport"
+            x: windowContainer.frameMargin
+            y: windowContainer.titleBarHeight + windowContainer.frameMargin
+            width: Math.max(0, parent.width - 2 * windowContainer.frameMargin)
+            height: Math.max(0, parent.height - windowContainer.titleBarHeight
+                             - 2 * windowContainer.frameMargin)
+            z: -1
+            clip: true
+
+            ShellSurfaceItem {
+                id: clientSurfaceItem
+                objectName: "clientSurfaceItem"
+                x: -windowContainer.clientGeometry.x
+                y: -windowContainer.clientGeometry.y
+                shellSurface: windowContainer.xdgSurface
+                surface: windowContainer.xdgSurface
+                         ? windowContainer.xdgSurface.surface : null
+                focus: true
+                focusOnClick: true
+                inputEventsEnabled: !windowContainer.resizing
+                paintEnabled: true
+                moveItem: windowContainer
+
+                onSurfaceDestroyed: {
+                    windowContainer.finishResize()
+                    windowContainer.destroy()
+                }
+            }
+        }
+
         // Estrutura transparente para a SSD sobre a imagem já composta pelo shader.
         Rectangle {
             anchors.fill: parent
@@ -325,35 +358,6 @@ Item {
                 }
             }
 
-            // Clip buffer extents to xdg windowGeometry without stretching uncommitted buffers.
-            Item {
-                id: clientViewport
-                anchors.top: sgeTitleBar.bottom
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.bottom: parent.bottom
-                anchors.margins: windowContainer.frameMargin
-                clip: true
-
-                ShellSurfaceItem {
-                    id: clientSurfaceItem
-                    objectName: "clientSurfaceItem"
-                    x: -windowContainer.clientGeometry.x
-                    y: -windowContainer.clientGeometry.y
-                    shellSurface: windowContainer.xdgSurface
-                    focus: true
-                    focusOnClick: true
-                    inputEventsEnabled: !windowContainer.resizing
-                    paintEnabled: true
-                    opacity: 0.0
-                    moveItem: windowContainer
-
-                    onSurfaceDestroyed: {
-                        windowContainer.finishResize()
-                        windowContainer.destroy()
-                    }
-                }
-            }
         }
     }
 

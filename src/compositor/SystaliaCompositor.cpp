@@ -102,7 +102,6 @@ void SystaliaCompositor::onSurfaceAboutToBeDestroyed(QWaylandSurface *surface) {
 }
 
 void SystaliaCompositor::onToplevelCreated(QWaylandXdgToplevel *toplevel, QWaylandXdgSurface *xdgSurface) {
-    Q_UNUSED(xdgSurface);
     if (toplevel) {
         m_activeToplevels.insert(toplevel);
         connect(toplevel, &QWaylandXdgToplevel::appIdChanged, this, [this]() {
@@ -128,6 +127,13 @@ void SystaliaCompositor::onToplevelCreated(QWaylandXdgToplevel *toplevel, QWayla
             qInfo().noquote() << "[SGE-WAYLAND] Modo de decoração do cliente atualizado:"
                               << (toplevel->decorationMode() == QWaylandXdgToplevel::ServerSideDecoration ? "ServerSide" : "ClientSide");
         });
+
+        if (xdgSurface && xdgSurface->shell() == m_xdgShell) {
+            const uint serial = toplevel->sendConfigure(
+                QSize(800, 500), QList<QWaylandXdgToplevel::State>{});
+            qInfo().noquote() << "[SGE-WAYLAND] Configure inicial enviado; serial:"
+                              << serial << "| tamanho: 800x500";
+        }
     }
 
     emit toplevelCreated(toplevel);
