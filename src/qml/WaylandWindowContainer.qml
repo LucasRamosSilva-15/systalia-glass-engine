@@ -338,11 +338,12 @@ Item {
 
                             MouseArea {
                                 id: closeMouse
+                                objectName: "closeToplevelButton"
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 onClicked: {
-                                    if (windowContainer.toplevel) {
-                                        windowContainer.toplevel.sendClose()
+                                    if (windowContainer.toplevel && windowContainer.waylandServer) {
+                                        windowContainer.waylandServer.closeToplevel(windowContainer.toplevel)
                                     }
                                 }
                             }

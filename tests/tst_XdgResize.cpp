@@ -33,6 +33,7 @@ private slots:
     void init();
     void cleanup();
     void nullAndInvokable();
+    void closeRequestUsesCompositorSlot();
     void clientBufferIsBoundAndPainted();
     void configureHandshake_data();
     void configureHandshake();
@@ -114,6 +115,27 @@ void TestXdgResize::nullAndInvokable() {
     m_compositor->requestToplevelResize(nullptr, QSize(0, 0), false);
     QCOMPARE(created.count(), 0);
     QCOMPARE(m_compositor->clientCount(), 0);
+}
+
+void TestXdgResize::closeRequestUsesCompositorSlot() {
+    QVERIFY(!m_compositor->closeToplevel(nullptr));
+    startClient();
+    QVERIFY(m_toplevel);
+
+    QQmlEngine engine;
+    QQuickWindow window;
+    window.resize(1400, 1000);
+    auto item = createContainer(engine, window);
+    QVERIFY(item);
+    auto *closeButton = item->findChild<QQuickItem *>("closeToplevelButton");
+    QVERIFY(closeButton);
+
+    window.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    const QPoint closePosition = closeButton->mapToScene(
+        QPointF(closeButton->width() / 2.0, closeButton->height() / 2.0)).toPoint();
+    QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, closePosition);
+    QTRY_VERIFY_WITH_TIMEOUT(m_client.state() == QProcess::NotRunning, 3000);
 }
 
 void TestXdgResize::clientBufferIsBoundAndPainted() {

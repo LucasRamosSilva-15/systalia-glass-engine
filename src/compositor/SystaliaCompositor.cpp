@@ -61,6 +61,16 @@ void SystaliaCompositor::create() {
     }
 }
 
+bool SystaliaCompositor::closeToplevel(QWaylandXdgToplevel *toplevel) {
+    if (!toplevel || !toplevel->xdgSurface()
+        || toplevel->xdgSurface()->shell() != m_xdgShell) {
+        return false;
+    }
+
+    toplevel->sendClose();
+    return true;
+}
+
 void SystaliaCompositor::requestToplevelResize(QWaylandXdgToplevel *toplevel,
                                                const QSize &newSize, bool isResizing) {
     if (!toplevel || !toplevel->xdgSurface()
