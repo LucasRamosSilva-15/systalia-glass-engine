@@ -1,9 +1,11 @@
 #include <QGuiApplication>
+#include <QQmlContext>
 #include <QQmlApplicationEngine>
 #include <QQuickWindow>
 #include <QDebug>
 #include "SystaliaGlassItem.hpp"
 #include "SystaliaCompositor.hpp"
+#include "SystemTelemetryService.hpp"
 
 int main(int argc, char *argv[]) {
     // Configuração obrigatória do backend Vulkan QRhi antes de QGuiApplication
@@ -18,7 +20,9 @@ int main(int argc, char *argv[]) {
     qmlRegisterType<SystaliaGlassItem>("Systalia.Engine", 1, 0, "SystaliaGlassItem");
     qmlRegisterType<SystaliaCompositor>("Systalia.Compositor", 1, 0, "SystaliaCompositor");
 
+    SystemTelemetryService telemetry;
     QQmlApplicationEngine engine;
+    engine.rootContext()->setContextProperty(QStringLiteral("systemTelemetry"), &telemetry);
     const QUrl url(QStringLiteral("qrc:/qt/qml/Systalia/Engine/src/qml/main.qml"));
 
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,

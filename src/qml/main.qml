@@ -10,8 +10,10 @@ ApplicationWindow {
     width: 1280
     height: 800
     visible: true
-    title: qsTr("Systalia Glass Engine (SGE) — Etapa 2.2: Suporte XDG Shell & Hospedagem Wayland")
+    title: qsTr("Systalia Glass Engine — Systalia Desktop Environment")
     color: "#020611"
+
+    Component.onCompleted: systemTelemetry.attachWindow(rootWindow)
 
     // 0. Servidor Wayland Nativo (IPC Socket wayland-systalia-0 com suporte XDG Shell)
     SystaliaCompositor {
@@ -54,6 +56,22 @@ ApplicationWindow {
     WaylandOutput {
         compositor: waylandServer
         window: rootWindow
+    }
+
+    SystaliaTopBar {
+        id: topBar
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        telemetry: systemTelemetry
+    }
+
+    Item {
+        id: workspace
+        anchors.top: topBar.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
     }
 
     Timer {
@@ -241,7 +259,7 @@ ApplicationWindow {
         width: 920
         height: 600
         x: Math.round((rootWindow.width - width) / 2)
-        y: Math.round((rootWindow.height - height) / 2)
+        y: workspace.y + Math.round((workspace.height - height) / 2)
 
         backdropSource: backdropGrab
         screenResolution: Qt.vector2d(rootWindow.width * rootWindow.devicePixelRatio,
@@ -1000,7 +1018,7 @@ ApplicationWindow {
     // Camada flutuante superior para janelas de clientes Wayland
     Item {
         id: clientWindowsLayer
-        anchors.fill: parent
+        anchors.fill: workspace
         z: 10
     }
 }

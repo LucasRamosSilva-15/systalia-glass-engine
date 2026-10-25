@@ -55,6 +55,8 @@ qt_add_library(sge_core STATIC
     src/compositor/SystaliaSurfaceExtension.cpp
     src/compositor/SystaliaCompositor.hpp
     src/compositor/SystaliaCompositor.cpp
+    src/system/SystemTelemetryService.hpp
+    src/system/SystemTelemetryService.cpp
 )
 
 qt6_generate_wayland_protocol_server_sources(sge_core
@@ -66,6 +68,7 @@ target_include_directories(sge_core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gfx
     ${CMAKE_CURRENT_SOURCE_DIR}/src/compositor
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/system
 )
 
 target_link_libraries(sge_core PUBLIC
@@ -86,6 +89,7 @@ qt_add_qml_module(sge_core
         src/qml/main.qml
         src/qml/WaylandClientView.qml
         src/qml/WaylandWindowContainer.qml
+        src/qml/shell/SystaliaTopBar.qml
     NO_PLUGIN
 )
 

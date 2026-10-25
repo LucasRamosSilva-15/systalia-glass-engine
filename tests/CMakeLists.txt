@@ -138,6 +138,16 @@ target_link_libraries(tst_unified_composition PRIVATE
 )
 add_test(NAME tst_unified_composition COMMAND tst_unified_composition)
 
+# Teste 12: parser de /proc/stat, memória real e formato do relógio do sistema.
+qt_add_executable(tst_telemetry tst_Telemetry.cpp)
+target_link_libraries(tst_telemetry PRIVATE
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Test
+    sge_core
+)
+add_test(NAME tst_telemetry COMMAND tst_telemetry)
+
 set(_sge_headless_tests
     tst_systalia_engine
     tst_item_geometry
@@ -149,6 +159,7 @@ set(_sge_headless_tests
     tst_xdg_decorations
     tst_systalia_protocol
     tst_unified_composition
+    tst_telemetry
 )
 set_tests_properties(${_sge_headless_tests} PROPERTIES
     ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
