@@ -15,6 +15,20 @@ ApplicationWindow {
     title: qsTr("Systalia Glass Engine — Systalia Desktop Environment")
     color: "#020611"
 
+    function raiseFileWindow() {
+        glassChassis.z = 20
+        clientWindowsLayer.z = 10
+    }
+
+    function raiseClientWindow(windowContainer) {
+        if (!windowContainer)
+            return
+        glassChassis.z = 10
+        clientWindowsLayer.z = 20
+        clientWindowsLayer.topZIndex += 1
+        windowContainer.z = clientWindowsLayer.topZIndex
+    }
+
     Component.onCompleted: SystemTelemetry.attachWindow(rootWindow)
 
     // 0. Servidor Wayland Nativo (IPC Socket wayland-systalia-0 com suporte XDG Shell)
@@ -33,9 +47,10 @@ ApplicationWindow {
                 const comp = Qt.createComponent("WaylandWindowContainer.qml")
                 if (comp.status === Component.Ready) {
                     const offset = (clientWindowsLayer.children.length * 36) % 180
-                    comp.createObject(clientWindowsLayer, {
+                    const clientWindow = comp.createObject(clientWindowsLayer, {
                         toplevel: toplevelObject,
                         waylandServer: waylandServer,
+                        workspace: rootWindow,
                         backdropSource: backdropGrab,
                         screenResolution: Qt.point(rootWindow.width * rootWindow.devicePixelRatio,
                                                    rootWindow.height * rootWindow.devicePixelRatio),
@@ -43,6 +58,10 @@ ApplicationWindow {
                         x: Math.round(160 + offset),
                         y: Math.round(80 + offset)
                     })
+                    if (clientWindow) {
+                        rootWindow.raiseClientWindow(clientWindow)
+                        Qt.callLater(() => waylandServer.activateToplevel(toplevelObject))
+                    }
                 } else if (comp.status === Component.Error) {
                     console.error("Erro ao instanciar WaylandWindowContainer:", comp.errorString())
                 }
@@ -285,6 +304,10 @@ ApplicationWindow {
         causticIntensity: currentCaustic
         surfaceOpacity: currentOpacity
         time: animTimer.tick
+
+        TapHandler {
+            onTapped: rootWindow.raiseFileWindow()
+        }
 
         DragHandler {
             id: windowDrag
@@ -1026,6 +1049,7 @@ ApplicationWindow {
         id: clientWindowsLayer
         anchors.fill: workspace
         z: 10
+        property int topZIndex: 0
     }
 
     Shell.SystaliaDock {
@@ -1057,5 +1081,26 @@ ApplicationWindow {
                 ProcessLauncher.launch("codium")
         }
         onSettingsRequested: drawerToggle.expanded = !drawerToggle.expanded
+    }
+
+    Shell.SystaliaFlowMenu {
+        id: flowMenu
+        backdropSource: backdropGrab
+        screenResolution: Qt.vector2d(rootWindow.width * rootWindow.devicePixelRatio,
+                                      rootWindow.height * rootWindow.devicePixelRatio)
+        animationTime: animTimer.tick
+    }
+
+    Connections {
+        target: topBar
+        function onLauncherRequested() {
+            flowMenu.toggle()
+        }
+    }
+
+    Shortcut {
+        sequence: "Meta+Space"
+        context: Qt.ApplicationShortcut
+        onActivated: flowMenu.toggle()
     }
 }

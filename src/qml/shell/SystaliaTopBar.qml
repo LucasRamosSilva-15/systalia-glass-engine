@@ -8,6 +8,8 @@ Item {
     property var telemetry: null
     readonly property int barHeight: 40
 
+    signal launcherRequested()
+
     height: barHeight
     z: 100
 
@@ -49,6 +51,11 @@ Item {
             id: identityBlock
             Layout.alignment: Qt.AlignVCenter
             spacing: 7
+
+            TapHandler {
+                cursorShape: Qt.PointingHandCursor
+                onTapped: topBar.launcherRequested()
+            }
 
             Rectangle {
                 Layout.preferredWidth: 23

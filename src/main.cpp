@@ -8,6 +8,7 @@
 #include "SystaliaCompositor.hpp"
 #include "SystemTelemetryService.hpp"
 #include "ProcessLauncherService.hpp"
+#include "AppRegistryService.hpp"
 
 int main(int argc, char *argv[]) {
     // Configuração obrigatória do backend Vulkan QRhi antes de QGuiApplication
@@ -31,8 +32,14 @@ int main(int argc, char *argv[]) {
         [](QQmlEngine *, QJSEngine *) -> QObject * {
             return new ProcessLauncherService();
         });
+    qmlRegisterSingletonType<AppRegistryService>(
+        "Systalia.System", 1, 0, "AppRegistry",
+        [](QQmlEngine *, QJSEngine *) -> QObject * {
+            return new AppRegistryService();
+        });
 
     QQmlApplicationEngine engine;
+    engine.addImageProvider(QStringLiteral("desktopIcons"), new DesktopIconProvider());
     const QUrl url(QStringLiteral("qrc:/qt/qml/Systalia/Engine/src/qml/main.qml"));
 
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,

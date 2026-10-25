@@ -157,6 +157,16 @@ target_link_libraries(tst_process_launcher PRIVATE
 )
 add_test(NAME tst_process_launcher COMMAND tst_process_launcher)
 
+# Test 14: parser .desktop, filtragem da lista de aplicações e notificações do modelo.
+qt_add_executable(tst_app_registry tst_AppRegistry.cpp)
+target_link_libraries(tst_app_registry PRIVATE
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Test
+    sge_core
+)
+add_test(NAME tst_app_registry COMMAND tst_app_registry)
+
 set(_sge_headless_tests
     tst_systalia_engine
     tst_item_geometry
@@ -170,6 +180,7 @@ set(_sge_headless_tests
     tst_unified_composition
     tst_telemetry
     tst_process_launcher
+    tst_app_registry
 )
 set_tests_properties(${_sge_headless_tests} PROPERTIES
     ENVIRONMENT "QT_QPA_PLATFORM=offscreen"

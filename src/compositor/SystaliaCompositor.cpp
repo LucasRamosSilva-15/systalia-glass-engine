@@ -1,6 +1,7 @@
 #include "SystaliaCompositor.hpp"
 #include <QDebug>
 #include <QFile>
+#include <utility>
 
 SystaliaCompositor::SystaliaCompositor(QObject *parent)
     : QWaylandCompositor(parent) {
@@ -69,6 +70,38 @@ bool SystaliaCompositor::closeToplevel(QObject *toplevelObject) {
     }
 
     toplevel->sendClose();
+    return true;
+}
+
+bool SystaliaCompositor::activateToplevel(QObject *toplevelObject) {
+    auto *toplevel = qobject_cast<QWaylandXdgToplevel *>(toplevelObject);
+    if (!toplevel || !m_activeToplevels.contains(toplevel) || !toplevel->xdgSurface()
+        || toplevel->xdgSurface()->shell() != m_xdgShell) {
+        return false;
+    }
+
+    QWaylandSurface *surface = toplevel->xdgSurface()->surface();
+    QWaylandSeat *seat = defaultSeat();
+    if (!surface || !seat || !seat->setKeyboardFocus(surface)) {
+        return false;
+    }
+
+    for (QWaylandXdgToplevel *candidate : std::as_const(m_activeToplevels)) {
+        if (!candidate || candidate == toplevel || !candidate->xdgSurface()) {
+            continue;
+        }
+        QList<QWaylandXdgToplevel::State> states = candidate->states();
+        states.removeAll(QWaylandXdgToplevel::ActivatedState);
+        const QSize currentSize = candidate->xdgSurface()->windowGeometry().size();
+        candidate->sendConfigure(currentSize, states);
+    }
+
+    QList<QWaylandXdgToplevel::State> states = toplevel->states();
+    if (!states.contains(QWaylandXdgToplevel::ActivatedState)) {
+        states.append(QWaylandXdgToplevel::ActivatedState);
+    }
+    const QSize currentSize = toplevel->xdgSurface()->windowGeometry().size();
+    toplevel->sendConfigure(currentSize, states);
     return true;
 }
 

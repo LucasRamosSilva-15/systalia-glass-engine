@@ -9,6 +9,7 @@ Item {
 
     property var toplevel: null
     property var waylandServer: null
+    property var workspace: null
     property var backdropSource: null
     property point screenResolution: Qt.point(1280, 800)
     property real animTime: 0.0
@@ -406,6 +407,10 @@ Item {
         onTapped: {
             windowContainer.forceActiveFocus()
             clientSurfaceItem.forceActiveFocus()
+            if (windowContainer.workspace)
+                windowContainer.workspace.raiseClientWindow(windowContainer)
+            if (windowContainer.waylandServer && windowContainer.toplevel)
+                windowContainer.waylandServer.activateToplevel(windowContainer.toplevel)
         }
     }
 }

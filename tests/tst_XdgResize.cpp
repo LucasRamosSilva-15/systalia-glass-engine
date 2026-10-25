@@ -35,6 +35,7 @@ private slots:
     void nullAndInvokable();
     void closeRequestUsesCompositorSlot();
     void maximizeRequestUsesCompositorSlot();
+    void activationSetsSeatKeyboardFocus();
     void clientBufferIsBoundAndPainted();
     void configureHandshake_data();
     void configureHandshake();
@@ -173,6 +174,29 @@ void TestXdgResize::maximizeRequestUsesCompositorSlot() {
         QPointF(maximizeButton->width() / 2.0, maximizeButton->height() / 2.0)).toPoint();
     QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, maximizePosition);
     QTRY_VERIFY(m_toplevel->maximized());
+}
+
+void TestXdgResize::activationSetsSeatKeyboardFocus() {
+    QVERIFY(!m_compositor->activateToplevel(nullptr));
+    startClient();
+    QVERIFY(m_toplevel);
+
+    QQmlEngine engine;
+    QQuickWindow window;
+    window.resize(1400, 1000);
+    auto item = createContainer(engine, window, m_toplevel.data());
+    QVERIFY(item);
+    window.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+
+    QWaylandSurface *surface = m_toplevel->xdgSurface()->surface();
+    QVERIFY(surface);
+    QTRY_VERIFY(surface->primaryView());
+    QVERIFY(surface->primaryView());
+    surface->primaryView()->setOutput(m_output.get());
+
+    QVERIFY(m_compositor->activateToplevel(m_toplevel.data()));
+    QCOMPARE(m_compositor->defaultSeat()->keyboardFocus(), surface);
 }
 
 void TestXdgResize::clientBufferIsBoundAndPainted() {
