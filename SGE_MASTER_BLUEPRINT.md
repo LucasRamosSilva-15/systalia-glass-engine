@@ -6,7 +6,7 @@
 **Plano complementar:** `SGE_IMPLEMENTATION_PLAN.md`
 **Stack alvo:** C++23, Qt 6.7+, QtQuick/Scene Graph, QtWaylandCompositor, Vulkan/QRhi, GLSL 450, CMake, Ninja e CTest.
 
-Este documento descreve o estado técnico observado no repositório, fixa os contratos que não podem regredir e define a direção do Systalia Glass Engine (SGE). Ele substitui o roteiro v2.0, cujo ponto de intervenção estava desatualizado e ainda classificava recursos implementados como tarefas futuras. A reformulação visual do Systalia — VALO está prevista; os valores visuais finais dependem da leitura dos frames e componentes atuais do Figma e não são inventados neste documento.
+Este documento descreve o estado técnico observado no repositório, fixa os contratos que não podem regredir e define a direção do Systalia Glass Engine (SGE). Ele substitui o roteiro v2.0, cujo ponto de intervenção estava desatualizado e ainda classificava recursos implementados como tarefas futuras. Foi feita uma auditoria inicial do frame de desktop no Figma e os valores observados estão registados na seção 5. Estados e componentes ausentes, bem como divergências com a implementação atual, continuam identificados como decisões abertas.
 
 ## 1. Produto e escopo
 
@@ -107,7 +107,7 @@ A imagem de fundo oficial atualmente versionada na raiz é `carina-nebula-star-f
 - `SystaliaNotificationHost.qml` — toasts do servidor D-Bus.
 - `SystaliaTaskSwitcher.qml` — miniaturas e seleção MRU.
 
-A reformulação integral do design deve substituir ou ajustar a apresentação sem duplicar serviços nem remover interações já implementadas. O inventário visual final precisa ser conciliado com os frames atuais do Figma antes de definir cores, tipografia, medidas e estados exatos.
+A reformulação integral do design deve substituir ou ajustar a apresentação sem duplicar serviços nem remover interações já implementadas. O inventário inicial e as divergências estão registados na seção 5; os valores observados são referência, enquanto tokens, estados e comportamento finais dependem de fechar as decisões abertas.
 
 ## 4. Estado das etapas
 
@@ -127,7 +127,7 @@ A reformulação integral do design deve substituir ou ajustar a apresentação 
 | 3.5 | Notificações D-Bus e controles rápidos | Serviço, modelo e componentes presentes; conflito com outro dono do serviço D-Bus é uma condição de execução. |
 | 3.6 | Alternador de tarefas | Modelo MRU, atalhos e QML presentes; correções recentes de foco e dimensão do frame aguardam validação no ambiente alvo. |
 | 3.7 | Revisão, ASan/UBSan e benchmark | Pendente como auditoria completa; a expansão de testes não substitui profiling ou análise de leaks. |
-| Redesign VALO/SDE | Nova linguagem visual a partir do Figma | Planejado; frames, medidas e componentes do redesign ainda não foram incorporados a uma especificação técnica verificável. |
+| Redesign VALO/SDE | Nova linguagem visual a partir do Figma | Auditoria inicial do frame principal registada na seção 5; implementação visual pendente de resolver fundo, mapeamento do Control Center, estados ausentes e escala-alvo. |
 | Fases 4–6 | Workspaces, tiling, multi-monitor, sessão autônoma, áudio e terminal | Roadmap; não implementado integralmente. |
 
 ### Risco de execução conhecido
@@ -136,30 +136,74 @@ Em uma execução reportada pelo usuário, QtWaylandCompositor/Mesa registrou fa
 
 Avisos de tema de ícones ausente ou de escala de SVG são questões de ambiente/recursos e devem ser tratados separadamente do contrato Wayland. O nome D-Bus já ocupado deve ser diagnosticado sem tomar silenciosamente o serviço do desktop hospedeiro.
 
-## 5. Redesign visual: requisitos para atualizar este blueprint
+## 5. Redesign visual: inventário Figma e decisões abertas
 
-O redesign será conduzido a partir de `SYSTALIA — VALO | Desktop Concept`. Esta revisão não declara que o Figma já foi inspecionado; somente o nome e links do projeto foram fornecidos. Antes de traduzir o design em valores de produção, registrar:
+Fonte auditada em 26 de outubro de 2026: [SYSTALIA — VALO | Desktop Concept](https://www.figma.com/design/kax6aiYKgM2Fk7dllyZRRF/SYSTALIA-%E2%80%94-VALO-%7C-Desktop-Concept). O arquivo tem uma página, `Page 1`, com uma composição principal `SYSTALIA / VALO — Main Desktop` (node `2:2`) de **1662 × 975 px**. A auditoria documenta o estado estático visível; o frame não fornece variantes nem protótipo de interação.
 
-1. Frames de desktop, estados e dimensões de referência.
-2. Tokens de cor, tipografia, espaçamento, raio, elevação e material.
-3. Componentes reutilizáveis e suas variantes/estados.
-4. Comportamentos de hover, foco, teclado, animações, menus e janelas.
-5. Uso do wallpaper Carina, contraste e recorte nas proporções alvo.
-6. Acessibilidade, escala e comportamento em resoluções distintas.
-7. Mapeamento de cada componente visual para QML/C++ existente ou componente novo.
+### 5.1 Composição observada
 
-Quando o Figma estiver acessível ou for exportado, atualizar esta seção com os valores e decisões observados, remover os itens pendentes e numerar a etapa de implementação aprovada.
+As posições abaixo são relativas ao frame `2:2`.
+
+| Elemento | Node | Geometria | Conteúdo e aparência observados |
+|---|---|---:|---|
+| Atmosfera oceânica | `2:3` | 1662 × 975, tela toda | Fundo vetorial azul profundo com halos ciano, raios volumétricos descendentes e partículas bioluminescentes. Não é uma fotografia. |
+| Top System Bar | `2:81` | 1646 × 45 em (8, 4), raio 22 | Cápsula azul-marinho translúcida; marca SYSTALIA, `SDE-KWIN \| VALO`, CPU/RAM/FPS, relógio e seis glifos de status. |
+| Systalia Files | `2:88` | 701 × 534 em (113, 193), raio 20 | Janela de vidro com navegação lateral, Home ativo, breadcrumb, pesquisa e grade de seis itens; badge `ABYSSUS VES` e ações de janela. |
+| Systalia Control Center | `2:134` | 700 × 534 em (864, 193), raio 20 | Janela de ajustes `VALO & SOAR Engine`; navegação lateral, três opções e área `Live Material Controls` com um toggle e seis sliders. |
+| Floating Dock | `2:194` | 555 × 125 em (555, 817), raio 47 | Cápsula de vidro com cinco ícones: pasta, áudio, terminal, código e brilho magenta. Cada slot de ícone mede 78 × 78 px. |
+
+As janelas usam contorno branco de 1,5 px com 79% de opacidade, sombra ciano e preta e camadas translúcidas azul-petróleo. O frame inclui reflexos e assets vetoriais VALO: prisma cáustico interno (`12:10`, `12:11`), fita espectral (`24:2`, `24:4`), refração violeta/ciano (`24:3`, `24:5`), glints e folhas acrílicas para os arquivos, e ícones customizados para a dock. O fundo usa um grupo vetorial próprio (`2:3`), distinto da imagem Carina versionada no repositório.
+
+### 5.2 Tokens visuais lidos dos estilos do frame
+
+`get_variable_defs` não retornou variáveis para a composição. Os valores abaixo vêm dos estilos aplicados às camadas; ainda precisam ser consolidados num tema QML depois das decisões abertas.
+
+| Token observado | Valor/uso no Figma |
+|---|---|
+| Gradiente base do desktop | `#0a2542` para `#061426`, com halos azuis/cianos e partículas. |
+| Superfície da TopBar | `rgba(7,22,40,0.86)`; contorno `rgba(116,213,238,0.24)`; sombra `rgba(9,186,237,0.2)`. |
+| Texto | Família Inter. Marca 19 px; telemetry 17 px; nomes de janela 20–21 px; navegação 16 px; labels dos sliders 16 px. |
+| Cores de texto | `#c6e5f8`, `#9cbad3`, `#d5e2ee`, `#f4fcff`; seleção ciano `#42e9ee`. |
+| Trilha dos sliders | Progresso em gradiente `#14c4e7` → `#17f5df`; trilha `rgba(115,186,218,0.26)`; labels de valor `#d9ecf7`. |
+| Material das janelas | Blur de fundo de 18 px, gradientes ciano/azul translúcidos, gloss superior, borda clara e sombras internas/externas. |
+
+O estado capturado mostra `Home` selecionado em Systalia Files e `Control Center` selecionado no painel de ajustes. A chave do material está ligada; os sliders mostram 65%, 100, 75%, `On`, 10 e 100%. Estes são valores da ilustração, não valores iniciais aprovados para o serviço.
+
+### 5.3 Cobertura, estados e diferença para o branch
+
+O frame é um único estado composto. Não há frames separados de launcher, notificações, alternador de tarefas, moldura SSD ou clientes Wayland externos. Também não aparecem estados hover/focus/pressed/disabled, menus abertos, animações, fluxo de teclado, comportamento responsivo ou acessibilidade. Esses elementos ficam sem especificação visual; não se deve inferir uma aparência a partir do código atual.
+
+| Área | Referência Figma | Implementação observada no branch | Questão pendente |
+|---|---|---|---|
+| Wallpaper | Atmosfera vetorial luminosa, com raios e partículas. | Foto Carina 3840 × 2160 com `PreserveAspectCrop`. | Confirmar se o redesign substitui a foto ou se Carina continua como fonte do desktop. |
+| TopBar | Cápsula 1646 × 45, margem 8/4 e raio 22; mostra `SDE-KWIN \| VALO` e seis glifos. | `SystaliaTopBar.qml`: barra full-width de 40 px, gradiente e linhas ciano; mostra `SDE \| VALO` e quatro botões. | Confirmar marca, semântica dos seis glifos, geometria e conteúdo final; preservar bindings reais da telemetria. |
+| Janelas desktop | Systalia Files 701 × 534 e janela de ajustes 700 × 534, lado a lado. | `main.qml`: janela demo de vidro 920 × 600; Control Center QML é um painel superior de 358 × 508. | Definir layout/resolução-alvo e relação entre a janela de ajustes do Figma e o quick panel atual. |
+| Control Center | Navegação General/Status/Control Center/Software/Drivers/About e ajustes do material VALO/SOAR. | `SystaliaControlCenter.qml`: Wi-Fi, Bluetooth, Não incomodar, volume e brilho; `main.qml` tem uma gaveta de depuração com quatro parâmetros ópticos. | Determinar se a janela do Figma substitui a gaveta, o quick panel, ambos ou é uma aplicação independente. |
+| Dock | Cápsula 555 × 125 com slots 78 × 78 e ícones ilustrados. | `SystaliaDock.qml`: 64 px de altura, tiles 44 × 44 e cinco ações reais. | Confirmar escala, margens e correspondência funcional dos cinco ícones. |
+| Launcher, notificações, task switcher e clientes | Não mostrados nesta página. | Componentes QML/serviços já existem. | Obter frames/estados de referência ou confirmar que ficam fora deste redesign. |
+
+O frame Figma tem 1662 × 975 px e o shell atual inicia em 1280 × 800 px. Não há especificação de escala ou layout responsivo; não escalar essas medidas por suposição. Os nomes e estados observados são evidência visual, mas ainda não definem comportamento.
+
+### 5.4 Decisões para fechar antes de substituir o visual
+
+1. Escolher a direção do fundo: atmosfera vetorial do Figma ou wallpaper Carina atual.
+2. Confirmar se a janela `VALO & SOAR Engine` é o novo painel de configurações da shell, uma janela independente ou outra superfície.
+3. Confirmar resolução e estratégia responsiva, incluindo proporção e escala de referência.
+4. Fornecer ou aprovar estados de launcher, notificações, task switcher, SSD e clientes externos que não aparecem no frame.
+5. Confirmar a semântica dos glifos e dos cinco ícones da dock, além dos nomes `SDE-KWIN`, `ABYSSUS VES` e `SOAR Engine`.
+6. Verificar a origem/licença dos assets vetoriais antes de os exportar para o produto.
+7. Consolidar os estilos observados em tokens compartilhados somente após resolver as decisões acima.
 
 ## 6. Roadmap de engenharia
 
 ### 6.1 Próximo trabalho: redesign Systalia — VALO
 
-1. Auditar frames e extrair a especificação visual.
-2. Consolidar tokens e layout sem alterar contratos Wayland/GLSL.
-3. Reestruturar o desktop e os componentes shell segundo a hierarquia do design.
+1. Fechar as decisões listadas na seção 5.4 e obter referências para os estados/componentes ausentes.
+2. Consolidar os estilos aprovados em tokens e definir o layout responsivo sem alterar contratos Wayland/GLSL.
+3. Reestruturar o desktop e os componentes shell segundo a especificação visual aprovada.
 4. Validar os estados das janelas externas e da aplicação demo.
 5. Corrigir/documentar importação de buffers GPU no ambiente alvo.
-6. Executar CTest, inspeção visual e profiling; atualizar o plano técnico e registrar discrepâncias.
+6. Executar CTest, inspeção visual e profiling; atualizar o plano técnico e registar discrepâncias.
 
 ### 6.2 Fase 3.7 — Auditoria técnica
 
