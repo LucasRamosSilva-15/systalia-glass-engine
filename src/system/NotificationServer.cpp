@@ -1,6 +1,8 @@
 #include "NotificationServer.hpp"
 
+#include <QDBusConnectionInterface>
 #include <QDBusError>
+#include <QDBusReply>
 #include <QDebug>
 #include <QMetaType>
 
@@ -29,8 +31,19 @@ NotificationServer::NotificationServer(bool registerOnSessionBus, QObject *paren
 
     m_registeredService = m_sessionBus.registerService(QString::fromLatin1(notificationService));
     if (!m_registeredService) {
-        qWarning().noquote() << "[SGE-DBUS] Não foi possível registar"
-                             << notificationService << ':' << m_sessionBus.lastError().message();
+        const QString serviceName = QString::fromLatin1(notificationService);
+        const QDBusError registrationError = m_sessionBus.lastError();
+        QDBusConnectionInterface *busInterface = m_sessionBus.interface();
+        const QDBusReply<QString> ownerReply = busInterface
+            ? busInterface->serviceOwner(serviceName) : QDBusReply<QString>();
+        if (ownerReply.isValid() && !ownerReply.value().isEmpty()) {
+            qWarning().noquote() << "[SGE-DBUS] Não foi possível registar" << notificationService
+                                 << ": o serviço já pertence a" << ownerReply.value()
+                                 << ". O SGE continuará sem receber notificações D-Bus.";
+        } else {
+            qWarning().noquote() << "[SGE-DBUS] Não foi possível registar" << notificationService
+                                 << ":" << registrationError.name() << registrationError.message();
+        }
         return;
     }
 

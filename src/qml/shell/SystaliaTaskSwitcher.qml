@@ -14,6 +14,11 @@ Item {
     readonly property real tileWidth: 224
     readonly property real tileHeight: 168
     readonly property real tileSpacing: 14
+    readonly property int windowCount: waylandServer ? waylandServer.windowCount : 0
+    readonly property real frameWidth: Math.min(
+        width * 0.85,
+        Math.max(320, windowCount * tileWidth
+                 + Math.max(0, windowCount - 1) * tileSpacing + 48))
 
     anchors.fill: parent
     z: 200
@@ -32,8 +37,7 @@ Item {
     SystaliaGlassItem {
         id: switcherFrame
         anchors.centerIn: parent
-        width: Math.min(parent.width * 0.85,
-                        Math.max(320, itemsList.contentWidth + 48))
+        width: taskSwitcher.frameWidth
         height: 220
         z: -1
         radii: Qt.vector4d(24, 24, 24, 24)

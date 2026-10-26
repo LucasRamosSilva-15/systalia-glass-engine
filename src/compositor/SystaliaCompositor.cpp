@@ -51,23 +51,29 @@ void SystaliaCompositor::create() {
         new QWaylandSeat(this, QWaylandSeat::DefaultCapabilities);
     }
 
-    if (!m_keyboardFocusConnection) {
-        m_keyboardFocusConnection = connect(
-            defaultSeat(), &QWaylandSeat::keyboardFocusChanged, this,
-            [this](QWaylandSurface *surface, QWaylandSurface *) {
-                if (!surface)
-                    return;
-                for (QWaylandXdgToplevel *toplevel : std::as_const(m_activeToplevels)) {
-                    if (toplevel && toplevel->xdgSurface()
-                        && toplevel->xdgSurface()->surface() == surface) {
-                        m_windowStackModel->promoteWindow(toplevel);
-                        return;
-                    }
-                }
-            });
-    }
-
     QWaylandCompositor::create();
+
+    // QWaylandCompositor creates/installs its default seat during create().
+    // Connect only after that point; defaultSeat() can still be null beforehand.
+    if (!m_keyboardFocusConnection) {
+        if (QWaylandSeat *seat = defaultSeat()) {
+            m_keyboardFocusConnection = connect(
+                seat, &QWaylandSeat::keyboardFocusChanged, this,
+                [this](QWaylandSurface *surface, QWaylandSurface *) {
+                    if (!surface)
+                        return;
+                    for (QWaylandXdgToplevel *toplevel : std::as_const(m_activeToplevels)) {
+                        if (toplevel && toplevel->xdgSurface()
+                            && toplevel->xdgSurface()->surface() == surface) {
+                            m_windowStackModel->promoteWindow(toplevel);
+                            return;
+                        }
+                    }
+                });
+        } else {
+            qWarning().noquote() << "[SGE-WAYLAND] Assento padrão indisponível; histórico de foco desativado.";
+        }
+    }
 
     // Inicializa explicitamente a extensão XDG Shell se ainda não estiver ativa no registro
     if (m_xdgShell && !m_xdgShell->isInitialized()) {
