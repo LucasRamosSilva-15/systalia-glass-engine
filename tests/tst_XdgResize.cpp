@@ -38,6 +38,7 @@ private slots:
     void maximizeRequestUsesCompositorSlot();
     void activationSetsSeatKeyboardFocus();
     void clientBufferIsBoundAndPainted();
+    void unmappedClientDoesNotLeaveAnEmptyFrame();
     void configureHandshake_data();
     void configureHandshake();
     void dragEdges_data();
@@ -54,7 +55,7 @@ private:
     QProcess m_client;
     QTimer m_frames;
     QPointer<QWaylandXdgToplevel> m_toplevel;
-    void startClient(bool bounded = false);
+    void startClient(bool bounded = false, bool unmapAfterMap = false);
     std::unique_ptr<QQuickItem> createContainer(QQmlEngine &engine, QQuickWindow &window,
                                                 QObject *toplevelObject = nullptr);
 };
@@ -87,7 +88,7 @@ void TestXdgResize::init() {
             this, [this](QWaylandXdgToplevel *toplevel) { m_toplevel = toplevel; });
 }
 
-void TestXdgResize::startClient(bool bounded) {
+void TestXdgResize::startClient(bool bounded, bool unmapAfterMap) {
     auto environment = QProcessEnvironment::systemEnvironment();
     environment.insert("QT_QPA_PLATFORM", "wayland");
     environment.insert("WAYLAND_DISPLAY", "wayland-resize-test");
@@ -96,6 +97,7 @@ void TestXdgResize::startClient(bool bounded) {
     m_client.setProcessChannelMode(QProcess::MergedChannels);
     QStringList arguments{"--resize-client"};
     if (bounded) arguments.append("--bounded-client");
+    if (unmapAfterMap) arguments.append("--unmap-after-map");
     m_client.start(QCoreApplication::applicationFilePath(), arguments);
     QVERIFY(m_client.waitForStarted());
     QTRY_VERIFY2_WITH_TIMEOUT(m_toplevel, m_client.readAll().constData(), 5000);
@@ -277,6 +279,11 @@ void TestXdgResize::clientBufferIsBoundAndPainted() {
     QVERIFY(surfaceItem);
     QCOMPARE(surfaceItem->opacity(), 1.0);
     QCOMPARE(surfaceItem->property("surface").value<QWaylandSurface *>(), surface);
+    auto *clientTextureCapture = item->findChild<QQuickItem *>("clientTextureCapture");
+    QVERIFY(clientTextureCapture);
+    QCOMPARE(clientTextureCapture->property("sourceItem").value<QQuickItem *>(), surfaceItem);
+    QVERIFY(clientTextureCapture->property("live").toBool());
+    QVERIFY(clientTextureCapture->property("hideSource").toBool());
 
     auto *viewport = item->findChild<QQuickItem *>("clientViewport");
     QVERIFY(viewport);
@@ -285,11 +292,33 @@ void TestXdgResize::clientBufferIsBoundAndPainted() {
 
     auto *glass = item->findChild<SystaliaGlassItem *>();
     QVERIFY(glass);
-    QCOMPARE(glass->clientTextureSource(), surfaceItem);
+    QCOMPARE(glass->clientTextureSource(), clientTextureCapture);
 
     window.show();
     QVERIFY(QTest::qWaitForWindowExposed(&window));
     QTRY_VERIFY(surface->hasContent());
+    QTRY_VERIFY(item->property("clientMapped").toBool());
+    QTRY_COMPARE(surfaceItem->size(), viewport->size());
+}
+
+void TestXdgResize::unmappedClientDoesNotLeaveAnEmptyFrame() {
+    startClient(false, true);
+    QVERIFY(m_toplevel);
+    QWaylandSurface *surface = m_toplevel->xdgSurface()->surface();
+    QVERIFY(surface);
+
+    QQmlEngine engine;
+    QQuickWindow window;
+    window.resize(1400, 1000);
+    auto item = createContainer(engine, window);
+    QVERIFY(item);
+    window.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+
+    QTRY_VERIFY_WITH_TIMEOUT(surface->hasContent(), 3000);
+    QTRY_VERIFY(item->isVisible());
+    QTRY_VERIFY_WITH_TIMEOUT(!surface->hasContent(), 4000);
+    QTRY_VERIFY(!item->isVisible());
 }
 
 void TestXdgResize::configureHandshake_data() {
@@ -509,6 +538,9 @@ int main(int argc, char **argv) {
         }
         window.resize(640, 400);
         window.show();
+        if (app.arguments().contains("--unmap-after-map")) {
+            QTimer::singleShot(1200, &window, &QWindow::hide);
+        }
         return app.exec();
     }
     TestXdgResize test;

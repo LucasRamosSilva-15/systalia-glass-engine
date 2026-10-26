@@ -18,10 +18,12 @@ Item {
     property size restoreClientSize: Qt.size(0, 0)
     property bool maximizedBySge: false
     property bool restoringGeometry: false
+    property bool destructionScheduled: false
 
     width: 680
     height: 480
-    visible: !minimized
+    visible: !minimized && clientMapped
+    enabled: visible
 
     property int minWindowWidth: 320
     property int minWindowHeight: 220
@@ -37,6 +39,8 @@ Item {
             return false
         return waylandServer.isToplevelMinimized(toplevel)
     }
+    readonly property bool clientMapped: xdgSurface && xdgSurface.surface
+                                        ? xdgSurface.surface.hasContent : false
     readonly property var opticalMetadata: {
         if (!waylandServer || !xdgSurface)
             return null
@@ -126,6 +130,14 @@ Item {
             waylandServer.requestToplevelResize(toplevel, requestedClientSize, false)
     }
 
+    function disposeContainer() {
+        if (destructionScheduled)
+            return
+        destructionScheduled = true
+        finishResize()
+        destroy()
+    }
+
     function toggleMaximized() {
         if (!toplevel || !waylandServer || !parent)
             return
@@ -205,7 +217,7 @@ Item {
         anchors.fill: parent
 
         backdropSource: windowContainer.backdropSource
-        clientTextureSource: clientSurfaceItem
+        clientTextureSource: clientTextureCapture
         screenResolution: Qt.vector2d(windowContainer.screenResolution.x, windowContainer.screenResolution.y)
         titleBarHeight: windowContainer.titleBarHeight
 
@@ -234,6 +246,8 @@ Item {
                 objectName: "clientSurfaceItem"
                 x: -windowContainer.clientGeometry.x
                 y: -windowContainer.clientGeometry.y
+                width: Math.max(0, windowContainer.clientGeometry.width)
+                height: Math.max(0, windowContainer.clientGeometry.height)
                 shellSurface: windowContainer.xdgSurface
                 surface: windowContainer.xdgSurface
                          ? windowContainer.xdgSurface.surface : null
@@ -244,9 +258,19 @@ Item {
                 moveItem: windowContainer
 
                 onSurfaceDestroyed: {
-                    windowContainer.finishResize()
-                    windowContainer.destroy()
+                    windowContainer.disposeContainer()
                 }
+            }
+
+            ShaderEffectSource {
+                id: clientTextureCapture
+                objectName: "clientTextureCapture"
+                sourceItem: clientSurfaceItem
+                live: true
+                hideSource: true
+                recursive: false
+                visible: false
+                format: ShaderEffectSource.RGBA8
             }
         }
 
