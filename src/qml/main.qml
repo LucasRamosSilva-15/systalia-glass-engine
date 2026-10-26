@@ -14,10 +14,43 @@ ApplicationWindow {
     visible: true
     title: qsTr("Systalia Glass Engine — Systalia Desktop Environment")
     color: "#020611"
+    property bool filesWindowMaximized: false
+    property rect filesWindowRestoreGeometry: Qt.rect(0, 0, 920, 600)
 
     function raiseFileWindow() {
+        glassChassis.visible = true
         glassChassis.z = 20
         clientWindowsLayer.z = 10
+    }
+
+    function minimizeFileWindow() {
+        glassChassis.visible = false
+    }
+
+    function closeFileWindow() {
+        if (filesWindowMaximized)
+            toggleFileWindowMaximized()
+        glassChassis.visible = false
+    }
+
+    function toggleFileWindowMaximized() {
+        if (filesWindowMaximized) {
+            glassChassis.x = filesWindowRestoreGeometry.x
+            glassChassis.y = filesWindowRestoreGeometry.y
+            glassChassis.width = filesWindowRestoreGeometry.width
+            glassChassis.height = filesWindowRestoreGeometry.height
+            filesWindowMaximized = false
+            return
+        }
+
+        filesWindowRestoreGeometry = Qt.rect(glassChassis.x, glassChassis.y,
+                                             glassChassis.width, glassChassis.height)
+        glassChassis.x = workspace.x
+        glassChassis.y = workspace.y
+        glassChassis.width = workspace.width
+        glassChassis.height = workspace.height
+        filesWindowMaximized = true
+        raiseFileWindow()
     }
 
     function raiseClientWindow(windowContainer) {
@@ -315,6 +348,7 @@ ApplicationWindow {
         DragHandler {
             id: windowDrag
             target: glassChassis
+            enabled: !rootWindow.filesWindowMaximized
         }
 
         // =====================================================================
@@ -435,6 +469,9 @@ ApplicationWindow {
                                 id: minMouse
                                 anchors.fill: parent
                                 hoverEnabled: true
+                                acceptedButtons: Qt.LeftButton
+                                preventStealing: true
+                                onClicked: rootWindow.minimizeFileWindow()
                             }
                         }
 
@@ -459,12 +496,27 @@ ApplicationWindow {
                                 color: "transparent"
                                 border.color: "#f8fafc"
                                 border.width: 1.5
+                                visible: !rootWindow.filesWindowMaximized
+                            }
+
+                            Rectangle {
+                                anchors.centerIn: parent
+                                width: 8
+                                height: 8
+                                radius: 1
+                                color: "transparent"
+                                border.color: "#f8fafc"
+                                border.width: 1.3
+                                visible: rootWindow.filesWindowMaximized
                             }
 
                             MouseArea {
                                 id: maxMouse
                                 anchors.fill: parent
                                 hoverEnabled: true
+                                acceptedButtons: Qt.LeftButton
+                                preventStealing: true
+                                onClicked: rootWindow.toggleFileWindowMaximized()
                             }
                         }
 
@@ -499,6 +551,9 @@ ApplicationWindow {
                                 id: closeMouse
                                 anchors.fill: parent
                                 hoverEnabled: true
+                                acceptedButtons: Qt.LeftButton
+                                preventStealing: true
+                                onClicked: rootWindow.closeFileWindow()
                             }
                         }
                     }
@@ -1070,7 +1125,12 @@ ApplicationWindow {
         filesVisible: glassChassis.visible
         settingsOpen: drawerToggle.expanded
 
-        onFilesRequested: glassChassis.visible = !glassChassis.visible
+        onFilesRequested: {
+            if (glassChassis.visible)
+                rootWindow.minimizeFileWindow()
+            else
+                rootWindow.raiseFileWindow()
+        }
         onAudioRequested: {
             if (!ProcessLauncher.launch("pavucontrol"))
                 ProcessLauncher.launch("pwvucontrol")

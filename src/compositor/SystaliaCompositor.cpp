@@ -93,13 +93,55 @@ void SystaliaCompositor::create() {
 
 bool SystaliaCompositor::closeToplevel(QObject *toplevelObject) {
     auto *toplevel = qobject_cast<QWaylandXdgToplevel *>(toplevelObject);
-    if (!toplevel || !toplevel->xdgSurface()
+    if (!toplevel || !m_activeToplevels.contains(toplevel) || !toplevel->xdgSurface()
         || toplevel->xdgSurface()->shell() != m_xdgShell) {
         return false;
     }
 
     toplevel->sendClose();
     return true;
+}
+
+bool SystaliaCompositor::minimizeToplevel(QObject *toplevelObject) {
+    auto *toplevel = qobject_cast<QWaylandXdgToplevel *>(toplevelObject);
+    if (!toplevel || !m_activeToplevels.contains(toplevel) || !toplevel->xdgSurface()
+        || toplevel->xdgSurface()->shell() != m_xdgShell) {
+        return false;
+    }
+    if (m_minimizedToplevels.contains(toplevel))
+        return true;
+
+    m_minimizedToplevels.insert(toplevel);
+    ++m_minimizedToplevelsRevision;
+    emit minimizedToplevelsChanged();
+    emit activeToplevelStateChanged();
+
+    QWaylandSeat *seat = defaultSeat();
+    QWaylandSurface *surface = toplevel->xdgSurface()->surface();
+    if (!seat || !surface || seat->keyboardFocus() != surface)
+        return true;
+
+    for (int index = 0; index < m_windowStackModel->windowCount(); ++index) {
+        auto *candidate = qobject_cast<QWaylandXdgToplevel *>(
+            m_windowStackModel->windowAt(index));
+        if (!candidate || candidate == toplevel || m_minimizedToplevels.contains(candidate))
+            continue;
+        if (activateToplevel(candidate))
+            return true;
+    }
+
+    seat->setKeyboardFocus(nullptr);
+    QList<QWaylandXdgToplevel::State> states = toplevel->states();
+    states.removeAll(QWaylandXdgToplevel::ActivatedState);
+    const QSize currentSize = toplevel->xdgSurface()->windowGeometry().size();
+    if (currentSize.width() > 0 && currentSize.height() > 0)
+        toplevel->sendConfigure(currentSize, states);
+    return true;
+}
+
+bool SystaliaCompositor::isToplevelMinimized(QObject *toplevelObject) const {
+    auto *toplevel = qobject_cast<QWaylandXdgToplevel *>(toplevelObject);
+    return toplevel && m_minimizedToplevels.contains(toplevel);
 }
 
 bool SystaliaCompositor::activateToplevel(QObject *toplevelObject) {
@@ -111,7 +153,23 @@ bool SystaliaCompositor::activateToplevel(QObject *toplevelObject) {
 
     QWaylandSurface *surface = toplevel->xdgSurface()->surface();
     QWaylandSeat *seat = defaultSeat();
-    if (!surface || !seat || !seat->setKeyboardFocus(surface)) {
+    if (!surface || !seat) {
+        return false;
+    }
+
+    const bool wasMinimized = m_minimizedToplevels.remove(toplevel) > 0;
+    if (wasMinimized) {
+        ++m_minimizedToplevelsRevision;
+        emit minimizedToplevelsChanged();
+        emit activeToplevelStateChanged();
+    }
+    if (!seat->setKeyboardFocus(surface)) {
+        if (wasMinimized) {
+            m_minimizedToplevels.insert(toplevel);
+            ++m_minimizedToplevelsRevision;
+            emit minimizedToplevelsChanged();
+            emit activeToplevelStateChanged();
+        }
         return false;
     }
     m_windowStackModel->promoteWindow(toplevel);
@@ -234,11 +292,18 @@ bool SystaliaCompositor::toggleToplevelMaximized(QObject *toplevelObject,
         return false;
     }
 
-    if (toplevel->maximized()) {
-        toplevel->sendUnmaximized();
-    } else {
-        toplevel->sendMaximized(size);
-    }
+    const QSize minimum = toplevel->minSize().expandedTo(QSize(240, 160));
+    const QSize maximum = toplevel->maxSize();
+    QSize configureSize = size.expandedTo(minimum);
+    if (maximum.width() > 0)
+        configureSize.setWidth(qMin(configureSize.width(), qMax(minimum.width(), maximum.width())));
+    if (maximum.height() > 0)
+        configureSize.setHeight(qMin(configureSize.height(), qMax(minimum.height(), maximum.height())));
+
+    if (toplevel->maximized())
+        toplevel->sendUnmaximized(configureSize);
+    else
+        toplevel->sendMaximized(configureSize);
     return true;
 }
 
@@ -294,6 +359,11 @@ void SystaliaCompositor::onToplevelCreated(QWaylandXdgToplevel *toplevel, QWayla
         });
         connect(toplevel, &QObject::destroyed, this, [this, toplevel]() {
             m_activeToplevels.remove(toplevel);
+            if (m_minimizedToplevels.remove(toplevel) > 0) {
+                ++m_minimizedToplevelsRevision;
+                emit minimizedToplevelsChanged();
+                emit activeToplevelStateChanged();
+            }
             emit activeAppIdsChanged();
             emit activeToplevelStateChanged();
         });
@@ -344,8 +414,8 @@ QStringList SystaliaCompositor::activeAppIds() const {
 }
 
 bool SystaliaCompositor::hasMaximizedToplevel() const {
-    for (const QWaylandXdgToplevel *toplevel : m_activeToplevels) {
-        if (toplevel && toplevel->maximized()) {
+    for (QWaylandXdgToplevel *toplevel : m_activeToplevels) {
+        if (toplevel && !m_minimizedToplevels.contains(toplevel) && toplevel->maximized()) {
             return true;
         }
     }

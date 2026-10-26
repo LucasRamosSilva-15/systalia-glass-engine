@@ -13,9 +13,15 @@ Item {
     property var backdropSource: null
     property point screenResolution: Qt.point(1280, 800)
     property real animTime: 0.0
+    property point restorePosition: Qt.point(0, 0)
+    property size restoreFrameSize: Qt.size(0, 0)
+    property size restoreClientSize: Qt.size(0, 0)
+    property bool maximizedBySge: false
+    property bool restoringGeometry: false
 
     width: 680
     height: 480
+    visible: !minimized
 
     property int minWindowWidth: 320
     property int minWindowHeight: 220
@@ -23,6 +29,14 @@ Item {
     readonly property int frameMargin: 8
     readonly property int titleBarHeight: 36
     readonly property var xdgSurface: toplevel ? toplevel.xdgSurface : null
+    readonly property bool minimized: {
+        if (!waylandServer || !toplevel)
+            return false
+        const revision = waylandServer.minimizedToplevelsRevision
+        if (revision < 0)
+            return false
+        return waylandServer.isToplevelMinimized(toplevel)
+    }
     readonly property var opticalMetadata: {
         if (!waylandServer || !xdgSurface)
             return null
@@ -33,7 +47,7 @@ Item {
     }
     readonly property rect clientGeometry: xdgSurface ? xdgSurface.windowGeometry : Qt.rect(0, 0, 0, 0)
     readonly property bool resizeEnabled: toplevel !== null && waylandServer !== null
-                                          && !toplevel.maximized && !toplevel.fullscreen
+                                          && !maximizedBySge && !toplevel.fullscreen
     property bool resizing: false
     property int resizeEdges: 0
     property bool resizeAnchored: false
@@ -49,8 +63,15 @@ Item {
             return
         width = clientGeometry.width + 2 * frameMargin
         height = clientGeometry.height + titleBarHeight + 2 * frameMargin
-        if (resizeAnchored && (resizeEdges & Qt.LeftEdge))
+        if (restoringGeometry) {
+            if (Math.round(clientGeometry.width) === restoreClientSize.width
+                    && Math.round(clientGeometry.height) === restoreClientSize.height)
+                restoreGeometryTimer.restart()
+            return
+        }
+        if (resizeAnchored && (resizeEdges & Qt.LeftEdge)) {
             x = fixedRight - width
+        }
         if (resizeAnchored && (resizeEdges & Qt.TopEdge))
             y = fixedBottom - height
     }
@@ -105,9 +126,77 @@ Item {
             waylandServer.requestToplevelResize(toplevel, requestedClientSize, false)
     }
 
+    function toggleMaximized() {
+        if (!toplevel || !waylandServer || !parent)
+            return
+
+        const wasMaximized = maximizedBySge
+        let clientWidth = 0
+        let clientHeight = 0
+        let nextX = x
+        let nextY = y
+
+        if (wasMaximized) {
+            const frameWidth = restoreFrameSize.width > 0 ? restoreFrameSize.width : 816
+            const frameHeight = restoreFrameSize.height > 0 ? restoreFrameSize.height : 552
+            clientWidth = Math.round(frameWidth - 2 * frameMargin)
+            clientHeight = Math.round(frameHeight - titleBarHeight - 2 * frameMargin)
+            restoreClientSize = Qt.size(clientWidth, clientHeight)
+            nextX = restorePosition.x
+            nextY = restorePosition.y
+        } else {
+            restorePosition = Qt.point(x, y)
+            restoreFrameSize = Qt.size(width, height)
+            clientWidth = Math.round(parent.width - 2 * frameMargin)
+            clientHeight = Math.round(parent.height - titleBarHeight - 2 * frameMargin)
+            nextX = 0
+            nextY = 0
+        }
+
+        if (clientWidth <= 0 || clientHeight <= 0)
+            return
+        maximizedBySge = !wasMaximized
+        restoringGeometry = wasMaximized
+        if (!waylandServer.toggleToplevelMaximized(toplevel, Qt.size(clientWidth, clientHeight))) {
+            maximizedBySge = wasMaximized
+            restoringGeometry = false
+            return
+        }
+
+        x = nextX
+        y = nextY
+        if (restoringGeometry
+                && Math.round(clientGeometry.width) === restoreClientSize.width
+                && Math.round(clientGeometry.height) === restoreClientSize.height)
+            restoreGeometryTimer.restart()
+    }
+
+    Timer {
+        id: restoreGeometryTimer
+        interval: 16
+        repeat: false
+        onTriggered: {
+            if (!windowContainer.restoringGeometry)
+                return
+            windowContainer.x = windowContainer.restorePosition.x
+            windowContainer.y = windowContainer.restorePosition.y
+            windowContainer.restoringGeometry = false
+        }
+    }
+
     onResizeEnabledChanged: {
         if (!resizeEnabled)
             finishResize()
+    }
+
+    onToplevelChanged: maximizedBySge = toplevel ? Boolean(toplevel.maximized) : false
+
+    Connections {
+        target: windowContainer.toplevel
+        function onMaximizedChanged() {
+            windowContainer.maximizedBySge = windowContainer.toplevel
+                                             ? Boolean(windowContainer.toplevel.maximized) : false
+        }
     }
 
     // Chassi de Vidro Líquido Nativo do Systalia Glass Engine (SGE)
@@ -274,8 +363,16 @@ Item {
 
                             MouseArea {
                                 id: minMouse
+                                objectName: "minimizeToplevelButton"
                                 anchors.fill: parent
                                 hoverEnabled: true
+                                acceptedButtons: Qt.LeftButton
+                                preventStealing: true
+                                onClicked: {
+                                    if (windowContainer.toplevel && windowContainer.waylandServer)
+                                        windowContainer.waylandServer.minimizeToplevel(
+                                            windowContainer.toplevel)
+                                }
                             }
                         }
 
@@ -299,6 +396,17 @@ Item {
                                 color: "transparent"
                                 border.color: "#f8fafc"
                                 border.width: 1.2
+                                visible: !windowContainer.maximizedBySge
+                            }
+
+                            Rectangle {
+                                anchors.centerIn: parent
+                                width: 7
+                                height: 7
+                                color: "transparent"
+                                border.color: "#f8fafc"
+                                border.width: 1.2
+                                visible: windowContainer.maximizedBySge
                             }
 
                             MouseArea {
@@ -306,13 +414,9 @@ Item {
                                 objectName: "maximizeToplevelButton"
                                 anchors.fill: parent
                                 hoverEnabled: true
-                                onClicked: {
-                                    if (windowContainer.toplevel && windowContainer.waylandServer) {
-                                        windowContainer.waylandServer.toggleToplevelMaximized(
-                                            windowContainer.toplevel,
-                                            Qt.size(windowContainer.width, windowContainer.height))
-                                    }
-                                }
+                                acceptedButtons: Qt.LeftButton
+                                preventStealing: true
+                                onClicked: windowContainer.toggleMaximized()
                             }
                         }
 
@@ -341,6 +445,8 @@ Item {
                                 objectName: "closeToplevelButton"
                                 anchors.fill: parent
                                 hoverEnabled: true
+                                acceptedButtons: Qt.LeftButton
+                                preventStealing: true
                                 onClicked: {
                                     if (windowContainer.toplevel && windowContainer.waylandServer) {
                                         windowContainer.waylandServer.closeToplevel(windowContainer.toplevel)

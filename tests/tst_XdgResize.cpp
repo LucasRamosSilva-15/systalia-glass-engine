@@ -34,6 +34,7 @@ private slots:
     void cleanup();
     void nullAndInvokable();
     void closeRequestUsesCompositorSlot();
+    void minimizeButtonHidesAndActivationRestoresToplevel();
     void maximizeRequestUsesCompositorSlot();
     void activationSetsSeatKeyboardFocus();
     void clientBufferIsBoundAndPainted();
@@ -150,6 +151,40 @@ void TestXdgResize::closeRequestUsesCompositorSlot() {
     QTRY_VERIFY_WITH_TIMEOUT(m_client.state() == QProcess::NotRunning, 3000);
 }
 
+void TestXdgResize::minimizeButtonHidesAndActivationRestoresToplevel() {
+    QVERIFY(!m_compositor->minimizeToplevel(nullptr));
+    QVERIFY(!m_compositor->isToplevelMinimized(nullptr));
+    QSignalSpy qmlToplevelCreated(m_compositor.get(),
+                                  &SystaliaCompositor::toplevelCreatedForQml);
+    QVERIFY(qmlToplevelCreated.isValid());
+    startClient();
+    QVERIFY(m_toplevel);
+
+    QQmlEngine engine;
+    QQuickWindow window;
+    window.resize(1400, 1000);
+    QObject *toplevelObject = qmlToplevelCreated.at(0).at(0).value<QObject *>();
+    auto item = createContainer(engine, window, toplevelObject);
+    QVERIFY(item);
+    auto *minimizeButton = item->findChild<QQuickItem *>("minimizeToplevelButton");
+    QVERIFY(minimizeButton);
+
+    window.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    QTRY_VERIFY(item->isVisible());
+    const QPoint minimizePosition = minimizeButton->mapToScene(
+        QPointF(minimizeButton->width() / 2.0, minimizeButton->height() / 2.0)).toPoint();
+    QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, minimizePosition);
+
+    QTRY_VERIFY(m_compositor->isToplevelMinimized(m_toplevel.data()));
+    QTRY_VERIFY(!item->isVisible());
+    QVERIFY(m_compositor->activateToplevel(m_toplevel.data()));
+    QTRY_VERIFY(!m_compositor->isToplevelMinimized(m_toplevel.data()));
+    QTRY_VERIFY(item->isVisible());
+    QCOMPARE(m_compositor->defaultSeat()->keyboardFocus(),
+             m_toplevel->xdgSurface()->surface());
+}
+
 void TestXdgResize::maximizeRequestUsesCompositorSlot() {
     QVERIFY(!m_compositor->toggleToplevelMaximized(nullptr, QSize(800, 500)));
     QSignalSpy qmlToplevelCreated(m_compositor.get(),
@@ -177,6 +212,22 @@ void TestXdgResize::maximizeRequestUsesCompositorSlot() {
         QPointF(maximizeButton->width() / 2.0, maximizeButton->height() / 2.0)).toPoint();
     QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, maximizePosition);
     QTRY_VERIFY(m_toplevel->maximized());
+    QTRY_VERIFY(item->property("maximizedBySge").toBool());
+    QTRY_COMPARE(m_toplevel->xdgSurface()->windowGeometry().size(), QSize(1384, 948));
+    QTRY_COMPARE(item->size(), QSizeF(1400, 1000));
+    QCOMPARE(item->position(), QPointF(0, 0));
+    QCOMPARE(item->property("restorePosition").toPointF(), QPointF(250, 180));
+
+    const QPoint restorePosition = maximizeButton->mapToScene(
+        QPointF(maximizeButton->width() / 2.0, maximizeButton->height() / 2.0)).toPoint();
+    QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, restorePosition);
+    QCOMPARE(item->position(), QPointF(250, 180));
+    QTRY_VERIFY(!m_toplevel->maximized());
+    QTRY_VERIFY(!item->property("maximizedBySge").toBool());
+    QTRY_COMPARE(m_toplevel->xdgSurface()->windowGeometry().size(), QSize(800, 500));
+    QTRY_COMPARE(item->size(), QSizeF(816, 552));
+    QCOMPARE(item->property("restorePosition").toPointF(), QPointF(250, 180));
+    QTRY_COMPARE(item->position(), QPointF(250, 180));
 }
 
 void TestXdgResize::activationSetsSeatKeyboardFocus() {

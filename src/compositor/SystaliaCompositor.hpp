@@ -28,6 +28,8 @@ class SystaliaCompositor : public QWaylandCompositor {
     Q_PROPERTY(bool taskSwitcherVisible READ taskSwitcherVisible NOTIFY taskSwitcherVisibleChanged)
     Q_PROPERTY(int taskSwitcherIndex READ taskSwitcherIndex NOTIFY taskSwitcherIndexChanged)
     Q_PROPERTY(int windowCount READ windowCount NOTIFY windowCountChanged)
+    Q_PROPERTY(int minimizedToplevelsRevision READ minimizedToplevelsRevision
+               NOTIFY minimizedToplevelsChanged)
     Q_PROPERTY(QStringList activeAppIds READ activeAppIds NOTIFY activeAppIdsChanged)
     Q_PROPERTY(bool hasMaximizedToplevel READ hasMaximizedToplevel NOTIFY activeToplevelStateChanged)
     Q_PROPERTY(QWaylandXdgShell *xdgShell READ xdgShell CONSTANT)
@@ -43,6 +45,7 @@ public:
     bool taskSwitcherVisible() const { return m_windowStackModel->taskSwitcherVisible(); }
     int taskSwitcherIndex() const { return m_windowStackModel->taskSwitcherIndex(); }
     int windowCount() const { return m_windowStackModel->windowCount(); }
+    int minimizedToplevelsRevision() const { return m_minimizedToplevelsRevision; }
     QStringList activeAppIds() const;
     bool hasMaximizedToplevel() const;
     QWaylandXdgShell *xdgShell() const { return m_xdgShell; }
@@ -50,6 +53,8 @@ public:
 
     Q_INVOKABLE void create() override;
     Q_INVOKABLE bool closeToplevel(QObject *toplevelObject);
+    Q_INVOKABLE bool minimizeToplevel(QObject *toplevelObject);
+    Q_INVOKABLE bool isToplevelMinimized(QObject *toplevelObject) const;
     Q_INVOKABLE bool activateToplevel(QObject *toplevelObject);
     Q_INVOKABLE bool selectWindow(int index);
     Q_INVOKABLE void attachTaskSwitcherWindow(QQuickWindow *window);
@@ -63,6 +68,7 @@ signals:
     void taskSwitcherVisibleChanged();
     void taskSwitcherIndexChanged();
     void windowCountChanged();
+    void minimizedToplevelsChanged();
     void windowSelected(QObject *toplevelObject);
     void activeAppIdsChanged();
     void activeToplevelStateChanged();
@@ -86,6 +92,8 @@ private:
     int m_clientCount = 0;
     QSet<QWaylandSurface *> m_activeSurfaces;
     QSet<QWaylandXdgToplevel *> m_activeToplevels;
+    QSet<QWaylandXdgToplevel *> m_minimizedToplevels;
+    int m_minimizedToplevelsRevision = 0;
     QWaylandXdgShell *m_xdgShell = nullptr;
     QWaylandXdgDecorationManagerV1 *m_decorationManager = nullptr;
     QPointer<QQuickWindow> m_taskSwitcherWindow;
