@@ -1,218 +1,165 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Layouts
+import Systalia.Engine
 
 Item {
     id: topBar
 
     property var telemetry: null
-    readonly property int barHeight: 40
+    property var backdropSource: null
+    property var screenResolution: Qt.vector2d(width, height)
+    property real animationTime: 0
 
     signal launcherRequested()
     signal controlCenterRequested()
 
-    height: barHeight
+    width: 1646
+    height: 45
     z: 100
 
+    SystaliaGlassItem {
+        anchors.fill: parent
+        backdropSource: topBar.backdropSource
+        screenResolution: topBar.screenResolution
+        radii: Qt.vector4d(22, 22, 22, 22)
+        slant: 0
+        ior: 1.12
+        chromaticDispersion: 0.018
+        causticIntensity: 0.18
+        surfaceOpacity: 0.72
+        time: topBar.animationTime
+    }
+
     Rectangle {
         anchors.fill: parent
+        radius: 22
+        color: "#d9071628"
+        border.color: "#3d74d5ee"
+        border.width: 1
+        antialiasing: true
+    }
+
+    Rectangle {
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.leftMargin: 25
+        anchors.rightMargin: 25
+        height: 1
+        opacity: .7
         gradient: Gradient {
-            orientation: Gradient.Vertical
-            GradientStop { position: 0.0; color: "#e6162c46" }
-            GradientStop { position: 0.55; color: "#d70b1c32" }
-            GradientStop { position: 1.0; color: "#eb071225" }
+            orientation: Gradient.Horizontal
+            GradientStop { position: 0; color: "transparent" }
+            GradientStop { position: .18; color: "#5bc5e7f0" }
+            GradientStop { position: .82; color: "#5bc5e7f0" }
+            GradientStop { position: 1; color: "transparent" }
         }
-        border.width: 0
+        antialiasing: true
     }
 
-    Rectangle {
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
-        height: 1
-        color: "#705ceaff"
-    }
-
-    Rectangle {
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: 1
-        height: 1
-        color: "#28b8f7ff"
-    }
-
-    RowLayout {
-        anchors.fill: parent
-        anchors.leftMargin: 16
-        anchors.rightMargin: 14
-        spacing: 8
-
-        RowLayout {
-            id: identityBlock
-            Layout.alignment: Qt.AlignVCenter
-            spacing: 7
-
-            TapHandler {
-                cursorShape: Qt.PointingHandCursor
-                onTapped: topBar.launcherRequested()
-            }
-
-            Rectangle {
-                Layout.preferredWidth: 23
-                Layout.preferredHeight: 25
-                radius: 12
-                rotation: -8
-                gradient: Gradient {
-                    orientation: Gradient.Vertical
-                    GradientStop { position: 0.0; color: "#80ecfeff" }
-                    GradientStop { position: 0.24; color: "#7044d9e8" }
-                    GradientStop { position: 1.0; color: "#d00873a8" }
-                }
-                border.color: "#a0d9fbff"
-                border.width: 1
-
-                Text {
-                    anchors.centerIn: parent
-                    text: "S"
-                    color: "#f4fdff"
-                    font.pixelSize: 14
-                    font.bold: true
-                    font.family: "Inter, Noto Sans, sans-serif"
-                }
-            }
-
-            Text {
-                text: "SYSTALIA"
-                color: "#f1fbff"
-                font.pixelSize: 11
-                font.bold: true
-                font.letterSpacing: 1.2
-            }
-
-            Text {
-                text: "|"
-                color: "#668da8"
-                font.pixelSize: 12
-            }
-
-            Text {
-                text: "SDE | VALO"
-                color: "#91bdd0"
-                font.pixelSize: 9
-                font.bold: true
-                font.letterSpacing: 0.9
-            }
+    Image {
+        x: 14
+        anchors.verticalCenter: parent.verticalCenter
+        width: 28
+        height: 28
+        source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/systalia-mark.svg"
+        sourceSize: Qt.size(28, 28)
+        smooth: true
+        mipmap: true
+        TapHandler {
+            cursorShape: Qt.PointingHandCursor
+            onTapped: topBar.launcherRequested()
         }
+        HoverHandler { cursorShape: Qt.PointingHandCursor }
+    }
 
-        Item { Layout.fillWidth: true }
+    Text {
+        x: 47
+        anchors.verticalCenter: parent.verticalCenter
+        text: "SYSTALIA"
+        color: SystaliaTheme.text
+        font.family: SystaliaTheme.fontFamily
+        font.pixelSize: 19
+        font.weight: Font.DemiBold
+        font.letterSpacing: 1.0
+        antialiasing: true
+    }
 
-        Text {
-            Layout.alignment: Qt.AlignVCenter
-            text: topBar.telemetry
-                  ? "CPU %1%  |  RAM %2 GB  |  FPS %3  |  %4"
-                    .arg(Math.round(topBar.telemetry.cpuUsage))
-                    .arg(topBar.telemetry.ramUsageGb.toFixed(1))
-                    .arg(topBar.telemetry.fps)
-                    .arg(topBar.telemetry.systemTime)
-                  : "CPU --%  |  RAM -- GB  |  FPS --  |  -- -- --- > --:--:--"
-            color: "#d6edf6"
-            font.pixelSize: 10
-            font.family: "Monospace"
-            font.letterSpacing: 0.25
+    Text {
+        x: 189
+        anchors.verticalCenter: parent.verticalCenter
+        text: "SDE-KWIN  |  VALO"
+        color: SystaliaTheme.textSecondary
+        font.family: SystaliaTheme.fontFamily
+        font.pixelSize: 17
+        font.letterSpacing: .55
+        antialiasing: true
+    }
+
+    Text {
+        x: 392
+        anchors.verticalCenter: parent.verticalCenter
+        width: 302
+        text: topBar.telemetry
+              ? "CPU %1%   RAM %2 GB   FPS %3"
+                .arg(Math.round(topBar.telemetry.cpuUsage))
+                .arg(topBar.telemetry.ramUsageGb.toFixed(1))
+                .arg(topBar.telemetry.fps)
+              : "CPU --%   RAM -- GB   FPS --"
+        color: SystaliaTheme.textSecondary
+        font.family: SystaliaTheme.fontFamily
+        font.pixelSize: 17
+        font.letterSpacing: .2
+        elide: Text.ElideRight
+        antialiasing: true
+    }
+
+    Text {
+        x: 724
+        anchors.verticalCenter: parent.verticalCenter
+        text: topBar.telemetry ? topBar.telemetry.systemTime : "--:--:--"
+        color: SystaliaTheme.text
+        font.family: SystaliaTheme.fontFamily
+        font.pixelSize: 17
+        font.weight: Font.Medium
+        antialiasing: true
+    }
+
+    Row {
+        anchors.right: parent.right
+        anchors.rightMargin: 17
+        anchors.verticalCenter: parent.verticalCenter
+        spacing: 5
+
+        StatusButton { glyph: "⌁"; accessibleName: "Rede"; onClicked: topBar.controlCenterRequested() }
+        StatusButton { glyph: "◖"; accessibleName: "Som"; onClicked: topBar.controlCenterRequested() }
+        StatusButton { glyph: "☼"; accessibleName: "Brilho"; onClicked: topBar.controlCenterRequested() }
+        StatusButton { glyph: "⌘"; accessibleName: "Sessão"; onClicked: topBar.controlCenterRequested() }
+    }
+
+    component StatusButton: ToolButton {
+        id: statusButton
+        property string glyph: "•"
+        property string accessibleName: "Controle do sistema"
+        Accessible.name: accessibleName
+        width: 32
+        height: 30
+        hoverEnabled: true
+        contentItem: Text {
+            text: statusButton.glyph
+            color: statusButton.hovered ? "#f4fcff" : "#c6e5f8"
+            font.pixelSize: 16
+            font.weight: Font.Medium
             horizontalAlignment: Text.AlignHCenter
-            elide: Text.ElideRight
+            verticalAlignment: Text.AlignVCenter
+            antialiasing: true
         }
-
-        Item { Layout.fillWidth: true }
-
-        RowLayout {
-            id: sessionControls
-            Layout.alignment: Qt.AlignVCenter
-            spacing: 3
-
-            ToolButton {
-                id: networkButton
-                text: "⌁"
-                Accessible.name: "Rede"
-                ToolTip.visible: hovered
-                ToolTip.text: "Rede"
-                onClicked: topBar.controlCenterRequested()
-                contentItem: Text {
-                    text: networkButton.text
-                    color: networkButton.hovered ? "#e9fbff" : "#a8c7d6"
-                    font.pixelSize: 17
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
-                background: Rectangle {
-                    radius: 6
-                    color: networkButton.hovered ? "#2638bdf8" : "transparent"
-                }
-            }
-
-            ToolButton {
-                id: soundButton
-                text: "◖"
-                Accessible.name: "Som"
-                ToolTip.visible: hovered
-                ToolTip.text: "Som"
-                onClicked: topBar.controlCenterRequested()
-                contentItem: Text {
-                    text: soundButton.text
-                    color: soundButton.hovered ? "#e9fbff" : "#a8c7d6"
-                    font.pixelSize: 14
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
-                background: Rectangle {
-                    radius: 6
-                    color: soundButton.hovered ? "#2638bdf8" : "transparent"
-                }
-            }
-
-            ToolButton {
-                id: brightnessButton
-                text: "☼"
-                Accessible.name: "Brilho"
-                ToolTip.visible: hovered
-                ToolTip.text: "Brilho"
-                onClicked: topBar.controlCenterRequested()
-                contentItem: Text {
-                    text: brightnessButton.text
-                    color: brightnessButton.hovered ? "#e9fbff" : "#a8c7d6"
-                    font.pixelSize: 16
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
-                background: Rectangle {
-                    radius: 6
-                    color: brightnessButton.hovered ? "#2638bdf8" : "transparent"
-                }
-            }
-
-            ToolButton {
-                id: profileButton
-                text: "LR"
-                Accessible.name: "Perfil de sessão"
-                ToolTip.visible: hovered
-                ToolTip.text: "Perfil de sessão"
-                onClicked: topBar.controlCenterRequested()
-                contentItem: Text {
-                    text: profileButton.text
-                    color: "#e8faff"
-                    font.pixelSize: 9
-                    font.bold: true
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
-                background: Rectangle {
-                    radius: 11
-                    color: profileButton.hovered ? "#3947c9e8" : "#2633a3bd"
-                    border.color: "#4867c9d8"
-                    border.width: 1
-                }
-            }
+        background: Rectangle {
+            radius: 9
+            color: statusButton.hovered ? "#3d47a9c2" : "#1f295373"
+            border.color: statusButton.hovered ? "#7b9de0f0" : "#285e8ca8"
+            border.width: 1
+            antialiasing: true
         }
     }
 }

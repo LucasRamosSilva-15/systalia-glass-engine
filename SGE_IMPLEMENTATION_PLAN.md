@@ -3,7 +3,7 @@
 **Documento alinhado a:** `SGE_MASTER_BLUEPRINT.md` v3.0
 **Projeto Figma:** `SYSTALIA — VALO | Desktop Concept`
 **Repositório:** `LucasRamosSilva-15/systalia-glass-engine`
-**Estado:** Inventário inicial do frame principal extraído do Figma em 26 de outubro de 2026; implementação visual pendente de resolver as decisões abertas das seções 3 e 8.
+**Estado:** Primeira implementação visual do frame principal feita em QML em 26 de outubro de 2026; build e validação em runtime ainda pendentes.
 
 ## 1. Objetivo
 
@@ -24,6 +24,8 @@ O branch já contém:
 - 23 entradas declaradas no CTest, entre unitárias, integração e E2E.
 
 O estado de código não prova homologação gráfica. Logs de execução reportaram ausência de `EGL_WL_bind_wayland_display` e falha de identificação de dispositivo Mesa. A visibilidade de aplicações aceleradas precisa ser validada em uma sessão representativa. O nome D-Bus de notificações também pode pertencer a outro daemon no barramento do desktop hospedeiro.
+
+Após a auditoria, a janela principal passou a usar o wallpaper VALO local descrito na seção 3.4; a imagem Carina permanece no repositório como recurso legado.
 
 ## 3. Inventário visual obrigatório antes de implementar
 
@@ -70,36 +72,45 @@ Fonte: [SYSTALIA — VALO | Desktop Concept](https://www.figma.com/design/kax6ai
 
 | Área | Figma observado | Código atual | Decisão/ação |
 |---|---|---|---|
-| Wallpaper | Atmosfera vetorial luminosa. | Carina Nebula 3840 × 2160, `PreserveAspectCrop`. | Resolver qual arte deve ser aplicada; manter a divergência documentada até essa decisão. |
-| TopBar | Cápsula 1646 × 45 em (8, 4), raio 22; seis glifos. | `SystaliaTopBar.qml`: full-width, 40 px, quatro botões; string `SDE | VALO`. | Confirmar dimensões, identidade `SDE-KWIN | VALO` e significado dos glifos; manter telemetria real. |
-| Desktop e janelas | Duas janelas lado a lado, 701 × 534 e 700 × 534. | `main.qml`: chassis demo 920 × 600; shell inicia em 1280 × 800. | Definir resolução de referência, layout e comportamento responsivo antes de substituir a composição. |
-| Systalia Files | Navegação + grade de arquivos em janela editável. | Janela demo de vidro e conteúdo em `main.qml`. | Mapear a janela e preservar ações/estado existentes; ajustar geometria após definir escala. |
-| Control Center | Janela de ajustes ópticos VALO/SOAR com seis sliders. | `SystaliaControlCenter.qml` é quick panel de Wi-Fi/volume/brilho; `main.qml` tem gaveta de depuração óptica com quatro sliders. | Definir se Figma representa uma aplicação nova, a gaveta óptica ou uma substituição do quick panel. |
-| Dock | 555 × 125; slots 78 × 78 e cinco ícones ilustrados. | `SystaliaDock.qml`: 64 px de altura e tiles 44 × 44, com cinco ações reais. | Preservar ações, confirmar correspondência dos glifos e adaptar escala. |
+| Wallpaper | Atmosfera vetorial luminosa. | SVG local VALO em `src/qml/assets/figma/valo-ocean-atmosphere.svg`, alinhado ao canvas pelo `PreserveAspectFit`. | Direção vetorial aplicada; o SVG original do Figma não foi acessível pelo proxy (HTTP 403), então o recurso local reconstitui a referência. |
+| TopBar | Cápsula 1646 × 45 em (8, 4), raio 22; seis glifos. | `SystaliaTopBar.qml`: medidas e marca `SDE-KWIN \| VALO` aplicadas, telemetria real e quatro ações existentes. | Os dois glifos adicionais não têm semântica identificada; mantida a funcionalidade conhecida. |
+| Desktop e janelas | Duas janelas lado a lado, 701 × 534 e 700 × 534. | Canvases em `main.qml` usam escala uniforme baseada em 1662 × 975. | Layout implementado; dimensões/escala aguardam comparação visual em runtime. |
+| Systalia Files | Navegação + grade de arquivos em janela editável. | `SystaliaFilesWindow.qml`: Home ativo, busca, seis itens, ações da janela e status Wayland. | Implementação estática da composição; navegação real de arquivos não fazia parte do componente anterior. |
+| Control Center | Janela de ajustes ópticos VALO/SOAR com seis sliders. | `SystaliaMaterialWindow.qml` controla seis propriedades reais do `SystaliaGlassItem`; `SystaliaControlCenter.qml` preserva os ajustes de sistema. | Mapeamento separado do quick panel, sem sliders para parâmetros sem suporte. |
+| Dock | 555 × 125; slots 78 × 78 e cinco ícones ilustrados. | `SystaliaDock.qml`: dimensões, ícones vetoriais locais e cinco ações reais. | Geometria aplicada; desenhos locais aproximam o conceito e não são os SVGs originais do Figma. |
 | Launcher, notificações, task switcher e janelas externas | Sem referências no frame disponível. | Componentes e serviços já existem. | Não redesenhar sem referências ou decisão explícita de escopo. |
 | Material VALO | Gloss, refrações e assets vetoriais visíveis. | Material/shader nativos com ABI `std140` de 128 bytes e geometria G2. | Manter contratos; mapear parâmetros visuais somente depois de validar o design e os valores do motor. |
 
-O frame mede 1662 × 975 px e não mostra uma escala alternativa. As dimensões são referência do artboard, não uma declaração de pixels físicos nem de layout responsivo.
+O frame mede 1662 × 975 px e não mostra uma escala alternativa. A implementação usa essas dimensões como artboard e aplica escala uniforme calculada pelo menor fator entre largura e altura da janela. Esse comportamento é uma decisão de implementação, ainda sem evidência de captura em múltiplas resoluções.
 
 ## 4. Mapeamento do design para o código
 
-| Área do design | Implementação principal | Regras |
-|---|---|---|
 | Área | Implementação principal | Regra e divergência observada |
 |---|---|---|
-| Tokens compartilhados | Novo módulo QML de tema, por exemplo `src/qml/theme/SystaliaTheme.qml` | A consulta ao node `2:2` não retornou variáveis vinculadas ao frame; consolidar os valores inline registados na seção 3 depois de fechar arte e escala. |
-| Desktop e wallpaper | `src/qml/main.qml` | Figma mostra atmosfera vetorial; branch usa foto Carina. Manter `backdropGrab` onde há refração e aguardar decisão sobre a arte. |
-| Barra superior | `src/qml/shell/SystaliaTopBar.qml` | Figma: cápsula 1646 × 45. Código: full-width 40 px. Preservar bindings de telemetria e abertura dos painéis; confirmar glifos e rótulos. |
-| Dock | `src/qml/shell/SystaliaDock.qml` | Figma: 555 × 125 com cinco slots 78 × 78. Código: altura 64 px e tiles 44 × 44. Preservar ações e estados dos processos. |
-| Systalia Files | `src/qml/main.qml` | Figma: janela 701 × 534 com navegação e grade. Código: chassis demo 920 × 600. Preservar operações e ajustar o layout depois de definir a escala-alvo. |
-| Control Center VALO/SOAR | `src/qml/shell/SystaliaControlCenter.qml` e gaveta em `main.qml` | O Figma mostra ajustes de material; o quick panel atual mostra controles do sistema e a gaveta tem quatro parâmetros ópticos. A correspondência entre as três superfícies ainda está aberta. |
+| Tokens compartilhados | `src/qml/theme/SystaliaTheme.qml` | Singleton QML com paleta e tipografia base observadas; revisão de contraste em runtime pendente. |
+| Desktop e wallpaper | `src/qml/main.qml` e `src/qml/assets/figma/valo-ocean-atmosphere.svg` | Arte vetorial local e `backdropGrab` para as superfícies de vidro. O SVG é uma reconstituição, pois o proxy bloqueou a exportação dos assets Figma. |
+| Barra superior | `src/qml/shell/SystaliaTopBar.qml` | Geometria Figma, marca e bindings reais de telemetria; os quatro botões continuam abrindo o quick panel. |
+| Dock | `src/qml/shell/SystaliaDock.qml` | Geometria e slots aproximados do frame; ações preservadas e ícones locais empacotados como recursos QML. |
+| Systalia Files | `src/qml/shell/SystaliaFilesWindow.qml` | Janela 701 × 534 com navegação e seis cartões ilustrativos; ações de janela e status Wayland. |
+| Control Center VALO/SOAR | `src/qml/shell/SystaliaMaterialWindow.qml` | Janela 700 × 534 ligada a seis propriedades do material. O quick panel de sistema permanece em `SystaliaControlCenter.qml`. |
 | Flow Launcher | `src/qml/shell/SystaliaFlowMenu.qml` | Não aparece no frame. Preservar busca/modelo/execução; solicitar referência antes de mudar aparência. |
 | Notificações | `src/qml/shell/SystaliaNotificationHost.qml` | Não aparece no frame. Preservar D-Bus, timers, fechar e ordem; solicitar referência antes de mudar aparência. |
 | Alternador | `src/qml/shell/SystaliaTaskSwitcher.qml` | Não aparece no frame. Preservar seleção MRU e atalhos; solicitar referência antes de mudar aparência. |
 | Janelas clientes | `src/qml/WaylandWindowContainer.qml` | Sem frame ou estado externo no Figma auditado. Preservar buffer, SSD, foco, resize e ações da janela. |
-| Motor óptico | `src/gfx/` e `shaders/` | Figma usa gloss, refração e assets vetoriais. Só alterar parâmetros após aprovação visual; manter ABI `std140` e geometria G2. |
+| Motor óptico | `src/gfx/` e `shaders/` | ABI `std140` de 128 bytes, geometria G2 e shader permanecem sem alterações. Contorno e recorte de cliente mantêm `fwidth`/`smoothstep`; QML altera propriedades existentes. |
 
-O nome do módulo QML de tema é uma proposta de implementação. Se o inventário indicar que o tema deve ser produzido como singleton C++ ou outro recurso, documentar a decisão antes de espalhar tokens pelos componentes.
+`SystaliaTheme.qml` é singleton QML e reúne cores e tipografia base observadas. Build, execução e revisão do resultado ainda estão pendentes.
+
+### 3.4 Implementação visual inicial
+
+- `main.qml` organiza o frame em canvases escalados com referência 1662 × 975; clientes Wayland permanecem em coordenadas lógicas da janela raiz.
+- `SystaliaFilesWindow.qml` e `SystaliaMaterialWindow.qml` formam as duas janelas lado a lado. O painel Material controla opacidade, IOR, dispersão cromática, cáusticas, raio e slant do glass item.
+- `SystaliaTopBar.qml` usa as medidas do frame e mantém CPU/RAM/FPS/hora ligados a `SystemTelemetry`.
+- `SystaliaDock.qml` usa as dimensões ilustradas e mantém os cinco launchers existentes.
+- `main.cpp` não procura mais o wallpaper Carina; o SVG VALO é recurso do módulo QML. `backdropGrab` continua ativo.
+- O shader não foi alterado. A borda G2 e o recorte de cliente mantêm suavização analítica via `fwidth`; retângulos arredondados QML declaram `antialiasing: true`, e imagens usam `smooth`/`mipmap`.
+- Os endpoints temporários de asset Figma retornaram HTTP 403 pelo proxy. Os SVGs em `src/qml/assets/figma/` foram reconstituídos localmente e não correspondem aos vetores originais.
+- Build, execução e captura visual não foram feitos; validação de runtime segue pendente.
 
 ## 5. Sequência de implementação
 
@@ -111,7 +122,7 @@ O nome do módulo QML de tema é uma proposta de implementação. Se o inventár
 4. Marcar cada elemento como existente, substituído, novo ou removido. **Concluído inicialmente; correspondências abertas estão na seção 3.3.**
 5. Confirmar os pontos de interação que afetam serviços e Wayland. **Pendente:** o frame não documenta interações nem estados alternativos.
 
-**Saída atual:** inventário estático e discrepâncias registados. A Etapa A ainda não está fechada: não substituir o visual antes de resolver as decisões da seção 3.3 e obter os estados/referências que farão parte do escopo.
+**Saída atual:** frame principal inventariado e usado como referência para a primeira implementação. Estados de launcher, notificações, task switcher, SSD, clientes e acessibilidade seguem sem referência; isso não bloqueia o escopo visual do frame principal.
 
 ### Etapa B — Fundação visual
 
@@ -120,7 +131,7 @@ O nome do módulo QML de tema é uma proposta de implementação. Se o inventár
 3. Preparar assets em formatos adequados e atualizar o pipeline de recursos se necessário.
 4. Validar wallpaper, contraste e recorte nas resoluções e escalas escolhidas.
 
-**Saída:** tema comum usado por ao menos um componente representativo, sem duplicação de valores.
+**Saída:** tema QML comum criado e usado nos componentes principais; revisão de contraste e escala pendente.
 
 ### Etapa C — Estrutura do desktop e janelas
 
@@ -130,30 +141,27 @@ O nome do módulo QML de tema é uma proposta de implementação. Se o inventár
 4. Atualizar `WaylandWindowContainer.qml` sem alterar contratos de buffer, input, geometria, foco ou estados XDG.
 5. Comparar clientes reais, incluindo terminal, com o conteúdo da janela visível.
 
-**Saída:** desktop base e janelas com hierarquia visual consistente.
+**Saída:** desktop e duas janelas principais implementados em QML; comparação visual e validação Wayland pendentes.
 
 ### Etapa D — Shell e overlays
 
-Implementar nesta ordem, conforme dependências visuais observadas:
+O frame principal está implementado nestes componentes:
 
 1. TopBar e dock.
-2. Flow Launcher e estados de pesquisa/seleção.
-3. Control center e estados de cada toggle/slider.
-4. Host de notificações e empilhamento.
-5. Task switcher e seleção MRU.
-6. Estados vazios, indisponíveis, foco por teclado e painéis sobre janelas.
+2. Janela VALO/SOAR e controles de material.
+3. Janela Systalia Files.
 
-A ordem pode mudar se o Figma definir dependências diferentes; registrar a razão.
+Flow Launcher, notificações, task switcher e janelas externas continuam com a aparência anterior porque o frame não especifica esses componentes.
 
 ### Etapa E — Serviços e integração
 
 1. Manter os serviços C++ desacoplados dos detalhes de apresentação.
-2. Ligar os novos controles visuais às propriedades QML existentes e testar valores reais.
+2. Ligar os novos controles visuais às propriedades existentes do `SystaliaGlassItem`; ainda falta validar os valores em runtime.
 3. Evitar comandos bloqueantes no render thread; manter a execução assíncrona.
 4. Resolver a validação de buffers EGL no ambiente objetivo, distinguindo buffers SHM dos acelerados.
 5. Testar notificações em barramento isolado ou com o daemon concorrente identificado; não substituir silenciosamente outro dono D-Bus.
 
-**Saída:** aparência nova com a mesma funcionalidade real, sem controles meramente decorativos.
+**Saída:** controles de material ligados a propriedades reais; validação no ambiente Vulkan permanece pendente.
 
 ### Etapa F — Revisão visual, desempenho e acessibilidade
 
@@ -197,14 +205,14 @@ O número de entradas CTest não é o número de casos QTest. Registrar ambos se
 ## 8. Riscos e decisões abertas
 
 - **Cobertura do Figma:** o arquivo auditado expõe um frame desktop estático; launcher, notificações, task switcher, SSD, clientes, estados de input e comportamento responsivo não estão especificados.
-- **Direção do wallpaper:** a composição vetorial do Figma diverge da imagem Carina usada pelo branch. É necessária uma decisão antes de atualizar `main.qml`.
-- **Mapeamento de Control Center:** o painel VALO/SOAR do Figma não corresponde diretamente ao quick panel existente; a gaveta óptica de `main.qml` também só cobre parte dos controles mostrados.
-- **Tokens e assets:** a consulta do frame não retornou variáveis vinculadas; os estilos estão inline e a origem/licença dos assets precisa ser confirmada antes da exportação.
-- **Escala:** existe uma referência de 1662 × 975 px, sem variantes; comportamento responsivo não pode ser inferido.
+- **Direção do wallpaper:** a atmosfera vetorial foi aplicada; a arte local reconstitui o frame e não é o SVG original do Figma, que o proxy bloqueou com HTTP 403.
+- **Mapeamento de Control Center:** a janela VALO/SOAR liga seis controles a propriedades reais do material; o quick panel permanece separado.
+- **Tokens e assets:** o frame não tem variáveis retornadas; `SystaliaTheme.qml` reúne os tokens base. Os desenhos locais não são os assets exportados do Figma.
+- **Escala:** existe uma referência de 1662 × 975 px; o canvas usa escala uniforme, ainda sem comparação de screenshots em outros tamanhos.
 - **Buffers GPU:** a falta da extensão EGL reportada pode tornar uma shell visualmente correta incapaz de mostrar determinados clientes Wayland.
 - **D-Bus compartilhado:** um daemon de notificações hospedeiro pode ocupar o nome padrão.
-- **Captura de wallpaper 4K:** a captura live do backdrop pode aumentar custo de GPU/memória; medir antes de alterar a arquitetura.
-- **Shell demo vs. aplicações finais:** Systalia Files é parte da apresentação atual; a função e escopo dessa janela devem ser confirmados no redesign.
+- **Captura de wallpaper:** o fundo vetorial e a captura live do backdrop têm custo de GPU/memória ainda não medido.
+- **Shell demo vs. aplicações finais:** Systalia Files continua como janela ilustrativa; os seis cartões não representam operações reais de navegação no sistema de arquivos.
 
 ## 9. Atualização dos documentos
 

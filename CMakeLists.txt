@@ -92,6 +92,29 @@ target_link_libraries(sge_core PUBLIC
     sge_shaders
 )
 
+set_source_files_properties(src/qml/theme/SystaliaTheme.qml PROPERTIES
+    QT_QML_SINGLETON_TYPE TRUE
+)
+
+set(sge_valo_assets
+    src/qml/assets/figma/valo-ocean-atmosphere.svg
+    src/qml/assets/figma/systalia-mark.svg
+    src/qml/assets/figma/file-folder.svg
+    src/qml/assets/figma/file-document.svg
+    src/qml/assets/figma/file-download.svg
+    src/qml/assets/figma/file-code.svg
+    src/qml/assets/figma/file-image.svg
+    src/qml/assets/figma/dock-folder.svg
+    src/qml/assets/figma/dock-speaker.svg
+    src/qml/assets/figma/dock-terminal.svg
+    src/qml/assets/figma/dock-code.svg
+    src/qml/assets/figma/dock-spark.svg
+)
+
+foreach(asset IN LISTS sge_valo_assets)
+    set_source_files_properties(${asset} PROPERTIES QT_RESOURCE_ALIAS "${asset}")
+endforeach()
+
 qt_add_qml_module(sge_core
     OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/Systalia/Engine"
     URI Systalia.Engine
@@ -99,14 +122,19 @@ qt_add_qml_module(sge_core
     RESOURCE_PREFIX "/qt/qml"
     QML_FILES
         src/qml/main.qml
+        src/qml/theme/SystaliaTheme.qml
         src/qml/WaylandClientView.qml
         src/qml/WaylandWindowContainer.qml
         src/qml/shell/SystaliaTopBar.qml
         src/qml/shell/SystaliaDock.qml
+        src/qml/shell/SystaliaFilesWindow.qml
+        src/qml/shell/SystaliaMaterialWindow.qml
         src/qml/shell/SystaliaFlowMenu.qml
         src/qml/shell/SystaliaNotificationHost.qml
         src/qml/shell/SystaliaControlCenter.qml
         src/qml/shell/SystaliaTaskSwitcher.qml
+    RESOURCES
+        ${sge_valo_assets}
     NO_PLUGIN
 )
 

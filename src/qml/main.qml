@@ -13,14 +13,19 @@ ApplicationWindow {
     height: 800
     visible: true
     title: qsTr("Systalia Glass Engine — Systalia Desktop Environment")
-    color: "#020611"
+    color: SystaliaTheme.ocean
+
+    readonly property real designScale: Math.max(0.45, Math.min(width / 1662, height / 975))
     property bool filesWindowMaximized: false
-    property rect filesWindowRestoreGeometry: Qt.rect(0, 0, 920, 600)
+    property rect filesWindowRestoreGeometry: Qt.rect(113, 193, 701, 534)
+    property bool materialWindowMaximized: false
+    property rect materialWindowRestoreGeometry: Qt.rect(864, 193, 700, 534)
 
     function raiseFileWindow() {
         glassChassis.visible = true
+        windowCanvas.z = 30
         glassChassis.z = 20
-        clientWindowsLayer.z = 10
+        clientWindowsLayer.z = 20
     }
 
     function minimizeFileWindow() {
@@ -45,19 +50,52 @@ ApplicationWindow {
 
         filesWindowRestoreGeometry = Qt.rect(glassChassis.x, glassChassis.y,
                                              glassChassis.width, glassChassis.height)
-        glassChassis.x = workspace.x
-        glassChassis.y = workspace.y
-        glassChassis.width = workspace.width
-        glassChassis.height = workspace.height
+        glassChassis.x = 18
+        glassChassis.y = 66
+        glassChassis.width = 1626
+        glassChassis.height = 720
         filesWindowMaximized = true
         raiseFileWindow()
+    }
+
+    function raiseMaterialWindow() {
+        materialWindow.visible = true
+        windowCanvas.z = 30
+        materialWindow.z = 21
+        clientWindowsLayer.z = 20
+    }
+
+    function closeMaterialWindow() {
+        if (materialWindowMaximized)
+            toggleMaterialWindowMaximized()
+        materialWindow.visible = false
+    }
+
+    function toggleMaterialWindowMaximized() {
+        if (materialWindowMaximized) {
+            materialWindow.x = materialWindowRestoreGeometry.x
+            materialWindow.y = materialWindowRestoreGeometry.y
+            materialWindow.width = materialWindowRestoreGeometry.width
+            materialWindow.height = materialWindowRestoreGeometry.height
+            materialWindowMaximized = false
+            return
+        }
+
+        materialWindowRestoreGeometry = Qt.rect(materialWindow.x, materialWindow.y,
+                                                 materialWindow.width, materialWindow.height)
+        materialWindow.x = 18
+        materialWindow.y = 66
+        materialWindow.width = 1626
+        materialWindow.height = 720
+        materialWindowMaximized = true
+        raiseMaterialWindow()
     }
 
     function raiseClientWindow(windowContainer) {
         if (!windowContainer)
             return
-        glassChassis.z = 10
-        clientWindowsLayer.z = 20
+        windowCanvas.z = 10
+        clientWindowsLayer.z = 40
         clientWindowsLayer.topZIndex += 1
         windowContainer.z = clientWindowsLayer.topZIndex
     }
@@ -67,7 +105,6 @@ ApplicationWindow {
         waylandServer.attachTaskSwitcherWindow(rootWindow)
     }
 
-    // 0. Servidor Wayland Nativo (IPC Socket wayland-systalia-0 com suporte XDG Shell)
     SystaliaCompositor {
         id: waylandServer
         property string activeClientTitle: ""
@@ -104,62 +141,27 @@ ApplicationWindow {
             }
         }
 
-        Component.onCompleted: {
-            create()
-        }
+        Component.onCompleted: create()
     }
 
-    // Saída Wayland Padrão (notifica geometria e escala aos clientes)
     WaylandOutput {
         compositor: waylandServer
         window: rootWindow
     }
 
-    Shell.SystaliaTopBar {
-        id: topBar
-        anchors.top: parent.top
-        anchors.left: parent.left
-        anchors.right: parent.right
-        height: 40
-        z: 100
-        telemetry: SystemTelemetry
-    }
-
-    Item {
-        id: workspace
-        anchors.top: parent.top
-        anchors.topMargin: topBar.height + 8
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: 98
-    }
-
-    Timer {
-        id: animTimer
-        interval: 16
-        running: true
-        repeat: true
-        property real tick: 0.0
-        onTriggered: tick += 0.02
-    }
-
-    // Fundo fotográfico, sem gradientes, orbes, grelha ou partículas gerados em QML.
     Image {
         id: wallpaper
         anchors.fill: parent
-        z: -1
-        source: sgeWallpaperSource
-        fillMode: Image.PreserveAspectCrop
+        z: -10
+        source: Qt.resolvedUrl("assets/figma/valo-ocean-atmosphere.svg")
+        fillMode: Image.PreserveAspectFit
         asynchronous: true
         cache: true
         smooth: true
+        mipmap: true
         visible: status === Image.Ready
     }
 
-    // =========================================================================
-    // 1. CAPTURA DO PAPEL DE PAREDE PARA A REFRAÇÃO DO VIDRO
-    // =========================================================================
     ShaderEffectSource {
         id: backdropGrab
         anchors.fill: wallpaper
@@ -173,838 +175,147 @@ ApplicationWindow {
         format: ShaderEffectSource.RGBA8
     }
 
-    // =========================================================================
-    // 2. CHASSI DE CRISTAL DE ÁGUA LÍQUIDA (Systalia Glass Item nativo QRhi)
-    // =========================================================================
-    SystaliaGlassItem {
-        id: glassChassis
-        width: 920
-        height: 600
-        x: Math.round((rootWindow.width - width) / 2)
-        y: workspace.y + Math.round((workspace.height - height) / 2)
+    Item {
+        id: workspace
+        anchors.fill: parent
+        anchors.topMargin: 60
+        anchors.bottomMargin: 94
+    }
 
-        backdropSource: backdropGrab
-        screenResolution: Qt.vector2d(rootWindow.width * rootWindow.devicePixelRatio,
-                                      rootWindow.height * rootWindow.devicePixelRatio)
+    Timer {
+        id: animTimer
+        interval: 16
+        running: true
+        repeat: true
+        property real tick: 0.0
+        onTriggered: tick += 0.02
+    }
 
-        // Propriedades ópticas calibradas da Etapa 1.7
-        property real currentIOR: 1.25
-        property real currentDispersion: 0.040
-        property real currentCaustic: 0.85
-        property real currentOpacity: 0.85
-        property real currentSlant: 0.0
+    Item {
+        id: windowCanvas
+        width: 1662
+        height: 975
+        scale: rootWindow.designScale
+        x: (rootWindow.width - width * scale) / 2
+        y: (rootWindow.height - height * scale) / 2
+        transformOrigin: Item.TopLeft
+        z: 10
 
-        radii: Qt.vector4d(28.0, 28.0, 28.0, 28.0)
-        slant: currentSlant
-        ior: currentIOR
-        chromaticDispersion: currentDispersion
-        causticIntensity: currentCaustic
-        surfaceOpacity: currentOpacity
-        time: animTimer.tick
-
-        TapHandler {
-            onTapped: rootWindow.raiseFileWindow()
+        Shell.SystaliaFilesWindow {
+            id: glassChassis
+            x: 113
+            y: 193
+            z: 10
+            backdropSource: backdropGrab
+            screenResolution: Qt.vector2d(rootWindow.width * rootWindow.devicePixelRatio,
+                                          rootWindow.height * rootWindow.devicePixelRatio)
+            animationTime: animTimer.tick
+            controller: rootWindow
+            waylandServer: waylandServer
+            refractiveIndex: materialWindow.refractiveIndex
+            dispersion: materialWindow.dispersion
+            caustics: materialWindow.caustics
+            surfaceOpacity: materialWindow.surfaceOpacity
+            surfaceSlant: materialWindow.surfaceSlant
+            cornerRadius: materialWindow.cornerRadius
+            materialActive: materialWindow.materialActive
         }
 
-        DragHandler {
-            id: windowDrag
-            target: glassChassis
-            enabled: !rootWindow.filesWindowMaximized
-        }
-
-        // =====================================================================
-        // 4. ANATOMIA CANÔNICA EM 3 CAMADAS (Estrutura Fiel a Janela1.jpeg)
-        // =====================================================================
-        Item {
-            anchors.fill: parent
-
-            // -----------------------------------------------------------------
-            // CAMADA 4.1: BARRA DE TÍTULO SUPERIOR (Titlebar Translúcida)
-            // -----------------------------------------------------------------
-            Item {
-                id: titleBar
-                anchors.top: parent.top
-                anchors.left: parent.left
-                anchors.right: parent.right
-                height: 52
-
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.leftMargin: 20
-                    anchors.rightMargin: 18
-                    spacing: 12
-
-                    // Ícone Frutiger Aero: Pasta Azul Ciano Cristalina
-                    Rectangle {
-                        width: 26
-                        height: 22
-                        radius: 5
-                        gradient: Gradient {
-                            orientation: Gradient.Vertical
-                            GradientStop { position: 0.0; color: "#5eead4" }
-                            GradientStop { position: 0.4; color: "#00f2fe" }
-                            GradientStop { position: 1.0; color: "#0284c7" }
-                        }
-                        border.color: "#ffffff"
-                        border.width: 1
-
-                        // Aba superior da pasta
-                        Rectangle {
-                            x: 3; y: -3
-                            width: 10
-                            height: 5
-                            radius: 2
-                            color: "#5eead4"
-                        }
-
-                        // Reflexo especular no ícone
-                        Rectangle {
-                            anchors.top: parent.top
-                            anchors.left: parent.left
-                            anchors.right: parent.right
-                            height: parent.height * 0.45
-                            radius: 4
-                            color: "#40ffffff"
-                        }
-                    }
-
-                    // Título Canônico da Janela
-                    Text {
-                        text: "Systalia Files"
-                        font.pixelSize: 14
-                        font.bold: true
-                        font.family: "Inter, Noto Sans, sans-serif"
-                        color: "#f8fafc"
-                        style: Text.Outline
-                        styleColor: "#60020611"
-                    }
-
-                    // Badge Translúcido "ABYSSUS VFS"
-                    Rectangle {
-                        height: 20
-                        implicitWidth: badgeText.implicitWidth + 16
-                        radius: 10
-                        color: "#1800f2fe"
-                        border.color: "#5000f2fe"
-                        border.width: 1
-
-                        Text {
-                            id: badgeText
-                            anchors.centerIn: parent
-                            text: "ABYSSUS VFS"
-                            font.pixelSize: 10
-                            font.bold: true
-                            font.letterSpacing: 1.2
-                            color: "#38bdf8"
-                        }
-                    }
-
-                    Item { Layout.fillWidth: true }
-
-                    // Botões de Controle em Cápsula (Minimizar, Maximizar, Fechar)
-                    Row {
-                        spacing: 8
-
-                        // Botão Minimizar
-                        Rectangle {
-                            width: 28
-                            height: 22
-                            radius: 11
-                            gradient: Gradient {
-                                orientation: Gradient.Vertical
-                                GradientStop { position: 0.0; color: minMouse.containsMouse ? "#45ffffff" : "#25ffffff" }
-                                GradientStop { position: 1.0; color: minMouse.containsMouse ? "#200284c7" : "#0d1b2a" }
-                            }
-                            border.color: minMouse.containsMouse ? "#00f2fe" : "#30ffffff"
-                            border.width: 1
-
-                            Rectangle {
-                                anchors.centerIn: parent
-                                width: 10
-                                height: 2
-                                radius: 1
-                                color: "#f8fafc"
-                            }
-
-                            MouseArea {
-                                id: minMouse
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                acceptedButtons: Qt.LeftButton
-                                preventStealing: true
-                                onClicked: rootWindow.minimizeFileWindow()
-                            }
-                        }
-
-                        // Botão Maximizar
-                        Rectangle {
-                            width: 28
-                            height: 22
-                            radius: 11
-                            gradient: Gradient {
-                                orientation: Gradient.Vertical
-                                GradientStop { position: 0.0; color: maxMouse.containsMouse ? "#45ffffff" : "#25ffffff" }
-                                GradientStop { position: 1.0; color: maxMouse.containsMouse ? "#200284c7" : "#0d1b2a" }
-                            }
-                            border.color: maxMouse.containsMouse ? "#00f2fe" : "#30ffffff"
-                            border.width: 1
-
-                            Rectangle {
-                                anchors.centerIn: parent
-                                width: 9
-                                height: 9
-                                radius: 1.5
-                                color: "transparent"
-                                border.color: "#f8fafc"
-                                border.width: 1.5
-                                visible: !rootWindow.filesWindowMaximized
-                            }
-
-                            Rectangle {
-                                anchors.centerIn: parent
-                                width: 8
-                                height: 8
-                                radius: 1
-                                color: "transparent"
-                                border.color: "#f8fafc"
-                                border.width: 1.3
-                                visible: rootWindow.filesWindowMaximized
-                            }
-
-                            MouseArea {
-                                id: maxMouse
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                acceptedButtons: Qt.LeftButton
-                                preventStealing: true
-                                onClicked: rootWindow.toggleFileWindowMaximized()
-                            }
-                        }
-
-                        // Botão Fechar (com gradiente aero coral suave ao passar o cursor)
-                        Rectangle {
-                            width: 28
-                            height: 22
-                            radius: 11
-                            gradient: Gradient {
-                                orientation: Gradient.Vertical
-                                GradientStop {
-                                    position: 0.0
-                                    color: closeMouse.containsMouse ? "#ff5c7a" : "#30ffffff"
-                                }
-                                GradientStop {
-                                    position: 1.0
-                                    color: closeMouse.containsMouse ? "#b91c1c" : "#0d1b2a"
-                                }
-                            }
-                            border.color: closeMouse.containsMouse ? "#fca5a5" : "#35ffffff"
-                            border.width: 1
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: "✕"
-                                font.pixelSize: 10
-                                font.bold: true
-                                color: "#f8fafc"
-                            }
-
-                            MouseArea {
-                                id: closeMouse
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                acceptedButtons: Qt.LeftButton
-                                preventStealing: true
-                                onClicked: rootWindow.closeFileWindow()
-                            }
-                        }
-                    }
-                }
-            }
-
-            // -----------------------------------------------------------------
-            // CORPO DA JANELA: BARRA LATERAL FLUTUANTE + ÁREA DE ARQUIVOS
-            // -----------------------------------------------------------------
-            Item {
-                anchors.top: titleBar.bottom
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.bottom: controlsDrawer.top
-                anchors.margins: 14
-
-                // CAMADA 4.2: BARRA LATERAL FLUTUANTE ESCURA (Canonical Sidebar)
-                Rectangle {
-                    id: floatingSidebar
-                    anchors.top: parent.top
-                    anchors.left: parent.left
-                    anchors.bottom: parent.bottom
-                    width: 200
-                    radius: 16
-                    color: Qt.rgba(0.03, 0.07, 0.13, 0.65)
-                    border.color: Qt.rgba(1.0, 1.0, 1.0, 0.10)
-                    border.width: 1
-
-                    ColumnLayout {
-                        anchors.fill: parent
-                        anchors.margins: 12
-                        spacing: 4
-
-                        Text {
-                            text: "FAVORITES"
-                            font.pixelSize: 10
-                            font.bold: true
-                            font.letterSpacing: 1.0
-                            color: "#64748b"
-                            Layout.leftMargin: 8
-                            Layout.topMargin: 4
-                            Layout.bottomMargin: 4
-                        }
-
-                        // Item 1: Recent (Ativo com indicador e glow ciano)
-                        Rectangle {
-                            Layout.fillWidth: true
-                            height: 32
-                            radius: 8
-                            color: "#2500f2fe"
-                            border.color: "#4000f2fe"
-                            border.width: 1
-
-                            Rectangle {
-                                anchors.left: parent.left
-                                anchors.verticalCenter: parent.verticalCenter
-                                anchors.leftMargin: 4
-                                width: 3
-                                height: 16
-                                radius: 1.5
-                                color: "#00f2fe"
-                            }
-
-                            RowLayout {
-                                anchors.fill: parent
-                                anchors.leftMargin: 16
-                                anchors.rightMargin: 10
-                                spacing: 10
-
-                                Text { text: "⏱"; font.pixelSize: 13; color: "#00f2fe" }
-                                Text { text: "Recent"; font.pixelSize: 12; font.bold: true; color: "#f8fafc" }
-                            }
-                        }
-
-                        // Itens de Menu Canônicos
-                        Repeater {
-                            model: [
-                                { label: "Home", icon: "⌂" },
-                                { label: "Desktop", icon: "🖥" },
-                                { label: "Documents", icon: "📁" },
-                                { label: "Downloads", icon: "⬇" }
-                            ]
-
-                            Rectangle {
-                                Layout.fillWidth: true
-                                height: 32
-                                radius: 8
-                                color: itemMouse.containsMouse ? "#15ffffff" : "transparent"
-
-                                RowLayout {
-                                    anchors.fill: parent
-                                    anchors.leftMargin: 16
-                                    anchors.rightMargin: 10
-                                    spacing: 10
-
-                                    Text { text: modelData.icon; font.pixelSize: 12; color: "#94a3b8" }
-                                    Text { text: modelData.label; font.pixelSize: 12; color: "#cbd5e1" }
-                                }
-
-                                MouseArea {
-                                    id: itemMouse
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                }
-                            }
-                        }
-
-                        Rectangle {
-                            Layout.fillWidth: true
-                            height: 1
-                            color: "#1e293b"
-                            Layout.topMargin: 8
-                            Layout.bottomMargin: 8
-                        }
-
-                        Text {
-                            text: "VOLUMES"
-                            font.pixelSize: 10
-                            font.bold: true
-                            font.letterSpacing: 1.0
-                            color: "#64748b"
-                            Layout.leftMargin: 8
-                        }
-
-                        Rectangle {
-                            Layout.fillWidth: true
-                            height: 32
-                            radius: 8
-                            color: volMouse.containsMouse ? "#15ffffff" : "transparent"
-
-                            RowLayout {
-                                anchors.fill: parent
-                                anchors.leftMargin: 16
-                                anchors.rightMargin: 10
-                                spacing: 10
-
-                                Text { text: "💾"; font.pixelSize: 12; color: "#38bdf8" }
-                                Text { text: "Abyssus SSD"; font.pixelSize: 12; color: "#cbd5e1" }
-                            }
-
-                            MouseArea {
-                                id: volMouse
-                                anchors.fill: parent
-                                hoverEnabled: true
-                            }
-                        }
-
-                        Item { Layout.fillHeight: true }
-
-                        // Info de capacidade no rodapé da barra lateral
-                        Rectangle {
-                            Layout.fillWidth: true
-                            height: 38
-                            radius: 8
-                            color: "#10000000"
-                            border.color: "#15ffffff"
-                            border.width: 1
-
-                            ColumnLayout {
-                                anchors.fill: parent
-                                anchors.margins: 6
-                                spacing: 3
-
-                                RowLayout {
-                                    Text { text: "420 GB free"; font.pixelSize: 10; color: "#94a3b8" }
-                                    Item { Layout.fillWidth: true }
-                                    Text { text: "VALO FS"; font.pixelSize: 9; font.bold: true; color: "#00f2fe" }
-                                }
-
-                                Rectangle {
-                                    Layout.fillWidth: true
-                                    height: 3
-                                    radius: 1.5
-                                    color: "#1e293b"
-
-                                    Rectangle {
-                                        width: parent.width * 0.65
-                                        height: parent.height
-                                        radius: 1.5
-                                        color: "#00f2fe"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // -------------------------------------------------------------
-                // CAMADA 4.3: ÁREA DE ARQUIVOS (Fundo 100% Líquido e Translúcido)
-                // -------------------------------------------------------------
-                Item {
-                    id: fileViewArea
-                    anchors.top: parent.top
-                    anchors.left: floatingSidebar.right
-                    anchors.right: parent.right
-                    anchors.bottom: parent.bottom
-                    anchors.leftMargin: 14
-
-                    ColumnLayout {
-                        anchors.fill: parent
-                        spacing: 12
-
-                        // Barra de Navegação Superior (Breadcrumbs + Busca)
-                        RowLayout {
-                            Layout.fillWidth: true
-                            height: 34
-
-                            // Caminho em cápsula de vidro
-                            Rectangle {
-                                height: 32
-                                Layout.fillWidth: true
-                                radius: 8
-                                color: "#180f172a"
-                                border.color: "#20ffffff"
-                                border.width: 1
-
-                                RowLayout {
-                                    anchors.fill: parent
-                                    anchors.leftMargin: 12
-                                    anchors.rightMargin: 12
-                                    spacing: 8
-
-                                    Text { text: "Abyssus SSD"; font.pixelSize: 11; font.bold: true; color: "#38bdf8" }
-                                    Text { text: "›"; font.pixelSize: 12; color: "#64748b" }
-                                    Text { text: "Systalia Files"; font.pixelSize: 11; font.bold: true; color: "#f8fafc" }
-                                }
-                            }
-
-                            // Barra de Busca Translúcida
-                            Rectangle {
-                                width: 170
-                                height: 32
-                                radius: 8
-                                color: "#180f172a"
-                                border.color: "#20ffffff"
-                                border.width: 1
-
-                                RowLayout {
-                                    anchors.fill: parent
-                                    anchors.leftMargin: 10
-                                    anchors.rightMargin: 10
-                                    spacing: 6
-
-                                    Text { text: "🔍"; font.pixelSize: 11; color: "#64748b" }
-                                    Text { text: "Filter files..."; font.pixelSize: 11; color: "#64748b" }
-                                }
-                            }
-                        }
-
-                        // Grade de Ícones Canônicos (Visual Frutiger Aero Crystal)
-                        Grid {
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            columns: 4
-                            spacing: 16
-
-                            Repeater {
-                                model: [
-                                    { name: "All Files", type: "stack", color1: "#38bdf8", color2: "#0284c7" },
-                                    { name: "Documents", type: "folder", color1: "#00f2fe", color2: "#0369a1" },
-                                    { name: "Document", type: "file", color1: "#e2e8f0", color2: "#94a3b8" },
-                                    { name: "Download2", type: "download", color1: "#22d3ee", color2: "#0891b2" },
-                                    { name: "Oceanic.raw", type: "code", color1: "#818cf8", color2: "#4338ca" },
-                                    { name: "Caustics.exr", type: "image", color1: "#f472b6", color2: "#db2777" },
-                                    { name: "Kernel.spv", type: "code", color1: "#34d399", color2: "#059669" },
-                                    { name: "Archive.tar", type: "zip", color1: "#fbbf24", color2: "#d97706" }
-                                ]
-
-                                Rectangle {
-                                    width: (fileViewArea.width - 3 * 16) / 4
-                                    height: 105
-                                    radius: 12
-                                    color: fileMouse.containsMouse ? "#20ffffff" : "transparent"
-                                    border.color: fileMouse.containsMouse ? "#4000f2fe" : "transparent"
-                                    border.width: 1
-
-                                    ColumnLayout {
-                                        anchors.centerIn: parent
-                                        spacing: 8
-
-                                        // Ícone Tridimensional com Brilho Especular Frutiger Aero
-                                        Rectangle {
-                                            Layout.alignment: Qt.AlignHCenter
-                                            width: 48
-                                            height: 44
-                                            radius: 10
-                                            gradient: Gradient {
-                                                orientation: Gradient.Vertical
-                                                GradientStop { position: 0.0; color: modelData.color1 }
-                                                GradientStop { position: 1.0; color: modelData.color2 }
-                                            }
-                                            border.color: "#60ffffff"
-                                            border.width: 1.2
-
-                                            // Reflexo especular no topo do ícone
-                                            Rectangle {
-                                                anchors.top: parent.top
-                                                anchors.left: parent.left
-                                                anchors.right: parent.right
-                                                height: parent.height * 0.45
-                                                radius: 8
-                                                color: "#50ffffff"
-                                            }
-
-                                            // Glifo do ícone
-                                            Text {
-                                                anchors.centerIn: parent
-                                                text: (modelData.type === "folder") ? "📁" :
-                                                      ((modelData.type === "download") ? "⬇" :
-                                                      ((modelData.type === "stack") ? "🗂" :
-                                                      ((modelData.type === "image") ? "🖼" : "📄")))
-                                                font.pixelSize: 18
-                                            }
-                                        }
-
-                                        // Nome do Arquivo com Sombra para Leitura Cristalina
-                                        Text {
-                                            Layout.alignment: Qt.AlignHCenter
-                                            text: modelData.name
-                                            font.pixelSize: 11
-                                            font.bold: true
-                                            color: "#f8fafc"
-                                            style: Text.Outline
-                                            styleColor: "#80020611"
-                                        }
-                                    }
-
-                                    MouseArea {
-                                        id: fileMouse
-                                        anchors.fill: parent
-                                        hoverEnabled: true
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // -----------------------------------------------------------------
-            // CAMADA 4.4: PAINEL DE CALIBRAÇÃO ÓPTICA RETRÁTIL (Rodapé Elegante)
-            // -----------------------------------------------------------------
-            Rectangle {
-                id: controlsDrawer
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.bottom: parent.bottom
-                anchors.leftMargin: 14
-                anchors.rightMargin: 14
-                anchors.bottomMargin: 10
-                height: drawerToggle.expanded ? 70 : 28
-                radius: 10
-                color: Qt.rgba(0.02, 0.05, 0.10, 0.75)
-                border.color: Qt.rgba(1.0, 1.0, 1.0, 0.12)
-                border.width: 1
-
-                Behavior on height {
-                    NumberAnimation { duration: 180; easing.type: Easing.OutQuad }
-                }
-
-                ColumnLayout {
-                    anchors.fill: parent
-                    anchors.margins: 6
-                    spacing: 4
-
-                    // Linha de Status / Toggle com Telemetria Wayland IPC
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: 8
-
-                        Rectangle {
-                            width: 8; height: 8; radius: 4
-                            color: waylandServer.created ? "#10b981" : "#ef4444"
-                        }
-
-                        // Badge do Servidor Wayland
-                        Rectangle {
-                            height: 18
-                            implicitWidth: socketBadgeRow.implicitWidth + 12
-                            radius: 4
-                            color: "#1500f2fe"
-                            border.color: "#4000f2fe"
-                            border.width: 1
-
-                            RowLayout {
-                                id: socketBadgeRow
-                                anchors.centerIn: parent
-                                spacing: 4
-
-                                Text {
-                                    text: "WAYLAND:"
-                                    font.pixelSize: 8
-                                    font.bold: true
-                                    color: "#64748b"
-                                }
-                                Text {
-                                    text: waylandServer.socketName
-                                    font.pixelSize: 9
-                                    font.bold: true
-                                    color: "#00f2fe"
-                                }
-                            }
-                        }
-
-                        // Badge de Status do Socket
-                        Rectangle {
-                            height: 18
-                            implicitWidth: statusBadgeText.implicitWidth + 12
-                            radius: 4
-                            color: waylandServer.created ? "#1510b981" : "#15ef4444"
-                            border.color: waylandServer.created ? "#4010b981" : "#40ef4444"
-                            border.width: 1
-
-                            Text {
-                                id: statusBadgeText
-                                anchors.centerIn: parent
-                                text: waylandServer.created ? "Ativo / Escutando" : "Inativo"
-                                font.pixelSize: 9
-                                font.bold: true
-                                color: waylandServer.created ? "#10b981" : "#ef4444"
-                            }
-                        }
-
-                        // Badge de Clientes Conectados
-                        Rectangle {
-                            height: 18
-                            implicitWidth: clientBadgeText.implicitWidth + 12
-                            radius: 4
-                            color: "#10ffffff"
-                            border.color: "#20ffffff"
-                            border.width: 1
-
-                            Text {
-                                id: clientBadgeText
-                                anchors.centerIn: parent
-                                text: "Clientes: " + waylandServer.clientCount
-                                font.pixelSize: 9
-                                font.bold: true
-                                color: "#cbd5e1"
-                            }
-                        }
-
-                        // Badge da Janela de Cliente Ativa
-                        Rectangle {
-                            visible: waylandServer.activeClientTitle.length > 0 || waylandServer.activeClientAppId.length > 0
-                            height: 18
-                            implicitWidth: activeClientText.implicitWidth + 12
-                            radius: 4
-                            color: "#18f59e0b"
-                            border.color: "#50f59e0b"
-                            border.width: 1
-
-                            Text {
-                                id: activeClientText
-                                anchors.centerIn: parent
-                                text: "Cliente: " + (waylandServer.activeClientTitle.length > 0
-                                                    ? waylandServer.activeClientTitle
-                                                    : waylandServer.activeClientAppId)
-                                font.pixelSize: 9
-                                font.bold: true
-                                color: "#f59e0b"
-                            }
-                        }
-
-                        Text {
-                            text: "• VALO Glass (IOR " + glassChassis.currentIOR.toFixed(2) + " / Disp " + glassChassis.currentDispersion.toFixed(3) + ")"
-                            font.pixelSize: 9
-                            color: "#64748b"
-                        }
-
-                        Item { Layout.fillWidth: true }
-
-                        Rectangle {
-                            id: drawerToggle
-                            property bool expanded: false
-                            width: 90; height: 18; radius: 9
-                            color: drawerMouse.containsMouse ? "#2500f2fe" : "#10ffffff"
-                            border.color: "#3000f2fe"; border.width: 1
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: drawerToggle.expanded ? "Ocultar Controles" : "Ajustar Óptica ⚙"
-                                font.pixelSize: 9; font.bold: true; color: "#00f2fe"
-                            }
-
-                            MouseArea {
-                                id: drawerMouse
-                                anchors.fill: parent
-                                onClicked: drawerToggle.expanded = !drawerToggle.expanded
-                            }
-                        }
-                    }
-
-                    // Sliders Expansíveis para Calibração Rápida
-                    RowLayout {
-                        Layout.fillWidth: true
-                        visible: drawerToggle.expanded
-                        spacing: 16
-
-                        RowLayout {
-                            Text { text: "IOR:"; color: "#38bdf8"; font.pixelSize: 10 }
-                            Slider {
-                                Layout.preferredWidth: 100
-                                from: 1.00; to: 1.50
-                                value: glassChassis.currentIOR
-                                onMoved: glassChassis.currentIOR = value
-                            }
-                            Text { text: glassChassis.currentIOR.toFixed(2); color: "#f8fafc"; font.pixelSize: 10 }
-                        }
-
-                        RowLayout {
-                            Text { text: "Dispersão:"; color: "#38bdf8"; font.pixelSize: 10 }
-                            Slider {
-                                Layout.preferredWidth: 100
-                                from: 0.000; to: 0.080
-                                value: glassChassis.currentDispersion
-                                onMoved: glassChassis.currentDispersion = value
-                            }
-                            Text { text: glassChassis.currentDispersion.toFixed(3); color: "#f8fafc"; font.pixelSize: 10 }
-                        }
-
-                        RowLayout {
-                            Text { text: "Cáusticas:"; color: "#38bdf8"; font.pixelSize: 10 }
-                            Slider {
-                                Layout.preferredWidth: 100
-                                from: 0.00; to: 1.50
-                                value: glassChassis.currentCaustic
-                                onMoved: glassChassis.currentCaustic = value
-                            }
-                            Text { text: glassChassis.currentCaustic.toFixed(2); color: "#f8fafc"; font.pixelSize: 10 }
-                        }
-
-                        RowLayout {
-                            Text { text: "Opacidade:"; color: "#38bdf8"; font.pixelSize: 10 }
-                            Slider {
-                                Layout.preferredWidth: 100
-                                from: 0.20; to: 1.00
-                                value: glassChassis.currentOpacity
-                                onMoved: glassChassis.currentOpacity = value
-                            }
-                            Text { text: Math.round(glassChassis.currentOpacity * 100) + "%"; color: "#f8fafc"; font.pixelSize: 10 }
-                        }
-                    }
-                }
-            }
+        Shell.SystaliaMaterialWindow {
+            id: materialWindow
+            x: 864
+            y: 193
+            z: 10
+            backdropSource: backdropGrab
+            screenResolution: Qt.vector2d(rootWindow.width * rootWindow.devicePixelRatio,
+                                          rootWindow.height * rootWindow.devicePixelRatio)
+            animationTime: animTimer.tick
+            controller: rootWindow
         }
     }
 
-    // Camada flutuante superior para janelas de clientes Wayland
     Item {
         id: clientWindowsLayer
         anchors.fill: workspace
-        z: 10
+        z: 20
         property int topZIndex: 0
     }
 
-    Shell.SystaliaDock {
-        id: systemDock
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: 14
-        z: 95
-        visible: !waylandServer.hasMaximizedToplevel
-        backdropSource: backdropGrab
-        screenResolution: Qt.vector2d(rootWindow.width * rootWindow.devicePixelRatio,
-                                      rootWindow.height * rootWindow.devicePixelRatio)
-        activeAppIds: waylandServer.activeAppIds
-        animationTime: animTimer.tick
-        filesVisible: glassChassis.visible
-        settingsOpen: drawerToggle.expanded
+    Item {
+        id: topBarCanvas
+        width: 1662
+        height: 975
+        scale: rootWindow.designScale
+        x: (rootWindow.width - width * scale) / 2
+        y: (rootWindow.height - height * scale) / 2
+        transformOrigin: Item.TopLeft
+        z: 100
 
-        onFilesRequested: {
-            if (glassChassis.visible)
-                rootWindow.minimizeFileWindow()
-            else
-                rootWindow.raiseFileWindow()
+        Shell.SystaliaTopBar {
+            id: topBar
+            x: 8
+            y: 4
+            telemetry: SystemTelemetry
+            backdropSource: backdropGrab
+            screenResolution: Qt.vector2d(rootWindow.width * rootWindow.devicePixelRatio,
+                                          rootWindow.height * rootWindow.devicePixelRatio)
+            animationTime: animTimer.tick
         }
-        onAudioRequested: {
-            if (!ProcessLauncher.launch("pavucontrol"))
-                ProcessLauncher.launch("pwvucontrol")
+    }
+
+    Item {
+        id: dockCanvas
+        width: 1662
+        height: 975
+        scale: rootWindow.designScale
+        x: (rootWindow.width - width * scale) / 2
+        y: (rootWindow.height - height * scale) / 2
+        transformOrigin: Item.TopLeft
+        z: 95
+
+        Shell.SystaliaDock {
+            id: systemDock
+            x: 555
+            y: 817
+            visible: !waylandServer.hasMaximizedToplevel
+            backdropSource: backdropGrab
+            screenResolution: Qt.vector2d(rootWindow.width * rootWindow.devicePixelRatio,
+                                          rootWindow.height * rootWindow.devicePixelRatio)
+            activeAppIds: waylandServer.activeAppIds
+            animationTime: animTimer.tick
+            filesVisible: glassChassis.visible
+            settingsOpen: materialWindow.visible
+            refractiveIndex: materialWindow.refractiveIndex
+            dispersion: materialWindow.dispersion
+            caustics: materialWindow.caustics
+            surfaceOpacity: materialWindow.surfaceOpacity
+            materialActive: materialWindow.materialActive
+
+            onFilesRequested: {
+                if (glassChassis.visible)
+                    rootWindow.minimizeFileWindow()
+                else
+                    rootWindow.raiseFileWindow()
+            }
+            onAudioRequested: {
+                if (!ProcessLauncher.launch("pavucontrol"))
+                    ProcessLauncher.launch("pwvucontrol")
+            }
+            onTerminalRequested: {
+                if (!ProcessLauncher.launch("alacritty"))
+                    ProcessLauncher.launch("foot")
+            }
+            onIdeRequested: {
+                if (!ProcessLauncher.launch("code"))
+                    ProcessLauncher.launch("codium")
+            }
+            onSettingsRequested: {
+                if (materialWindow.visible)
+                    rootWindow.closeMaterialWindow()
+                else
+                    rootWindow.raiseMaterialWindow()
+            }
         }
-        onTerminalRequested: {
-            if (!ProcessLauncher.launch("alacritty"))
-                ProcessLauncher.launch("foot")
-        }
-        onIdeRequested: {
-            if (!ProcessLauncher.launch("code"))
-                ProcessLauncher.launch("codium")
-        }
-        onSettingsRequested: drawerToggle.expanded = !drawerToggle.expanded
     }
 
     Shell.SystaliaFlowMenu {
@@ -1017,12 +328,8 @@ ApplicationWindow {
 
     Connections {
         target: topBar
-        function onLauncherRequested() {
-            flowMenu.toggle()
-        }
-        function onControlCenterRequested() {
-            controlCenter.toggle()
-        }
+        function onLauncherRequested() { flowMenu.toggle() }
+        function onControlCenterRequested() { controlCenter.toggle() }
     }
 
     Connections {

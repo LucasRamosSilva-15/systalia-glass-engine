@@ -1,9 +1,6 @@
 #include <QGuiApplication>
-#include <QDir>
-#include <QFileInfo>
 #include <QJSEngine>
 #include <QQmlApplicationEngine>
-#include <QQmlContext>
 #include <QQmlEngine>
 #include <QQuickWindow>
 #include <QUrl>
@@ -53,27 +50,6 @@ int main(int argc, char *argv[]) {
 
     QQmlApplicationEngine engine;
     engine.addImageProvider(QStringLiteral("desktopIcons"), new DesktopIconProvider());
-
-    const QString wallpaperFileName = QStringLiteral(
-        "carina-nebula-star-formation-astronomy-astrophysics-stars-3840x2160-4312.jpg");
-    const QStringList wallpaperCandidates{
-        QDir(QCoreApplication::applicationDirPath()).filePath(
-            QStringLiteral("../") + wallpaperFileName),
-        QDir::current().filePath(wallpaperFileName)
-    };
-    QUrl wallpaperUrl;
-    for (const QString &candidate : wallpaperCandidates) {
-        const QFileInfo fileInfo(candidate);
-        if (fileInfo.isFile() && fileInfo.isReadable()) {
-            wallpaperUrl = QUrl::fromLocalFile(fileInfo.absoluteFilePath());
-            break;
-        }
-    }
-    if (wallpaperUrl.isEmpty()) {
-        qWarning().noquote() << "Imagem de fundo não encontrada:" << wallpaperFileName
-                             << "(procurada na raiz do projeto e no diretório atual).";
-    }
-    engine.rootContext()->setContextProperty(QStringLiteral("sgeWallpaperSource"), wallpaperUrl);
 
     const QUrl url(QStringLiteral("qrc:/qt/qml/Systalia/Engine/src/qml/main.qml"));
 
