@@ -13,14 +13,11 @@ Item {
     property real animationTime: 0.0
     property bool filesVisible: true
     property bool settingsOpen: false
-    readonly property int launcherCount: 5
     readonly property int itemExtent: 58
-    readonly property int itemSpacing: 7
-    readonly property int horizontalPadding: 14
+    readonly property real pillRadius: height / 2.0
 
-    width: horizontalPadding * 2 + launcherCount * itemExtent
-           + (launcherCount - 1) * itemSpacing
-    height: 84
+    width: iconsRow.implicitWidth + pillRadius * 1.5
+    height: 64
     z: 95
 
     signal filesRequested()
@@ -76,11 +73,12 @@ Item {
         z: 0
         backdropSource: dock.backdropSource
         screenResolution: dock.screenResolution
-        radii: Qt.vector4d(36.0, 36.0, 14.0, 14.0)
-        slant: 0.35
+        radii: Qt.vector4d(dock.pillRadius, dock.pillRadius,
+                            dock.pillRadius, dock.pillRadius)
+        slant: 0.0
         ior: 1.25
-        chromaticDispersion: 0.04
-        causticIntensity: 0.72
+        chromaticDispersion: 0.038
+        causticIntensity: 0.65
         surfaceOpacity: 0.88
         time: dock.animationTime
     }
@@ -88,8 +86,8 @@ Item {
     Rectangle {
         anchors.left: parent.left
         anchors.right: parent.right
-        anchors.leftMargin: 38
-        anchors.rightMargin: 38
+        anchors.leftMargin: dock.pillRadius * 0.75
+        anchors.rightMargin: dock.pillRadius * 0.75
         anchors.top: parent.top
         anchors.topMargin: 10
         height: 1
@@ -104,11 +102,14 @@ Item {
     }
 
     Row {
-        id: launcherRow
-        anchors.horizontalCenter: parent.horizontalCenter
+        id: iconsRow
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.leftMargin: dock.pillRadius * 0.75
+        anchors.rightMargin: dock.pillRadius * 0.75
         anchors.top: parent.top
-        anchors.topMargin: 8
-        spacing: dock.itemSpacing
+        anchors.topMargin: 4
+        spacing: 12
         z: 2
 
         Repeater {
@@ -118,7 +119,7 @@ Item {
                 id: launcher
                 required property var modelData
                 width: dock.itemExtent
-                height: 62
+                height: 60
                 scale: pointer.hovered ? 1.14 : 1.0
 
                 Behavior on scale {
@@ -170,7 +171,7 @@ Item {
                 Rectangle {
                     anchors.horizontalCenter: parent.horizontalCenter
                     anchors.top: iconTile.bottom
-                    anchors.topMargin: 7
+                    anchors.topMargin: 5
                     width: 16
                     height: 3
                     radius: 2
