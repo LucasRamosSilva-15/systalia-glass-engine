@@ -144,165 +144,26 @@ ApplicationWindow {
         onTriggered: tick += 0.02
     }
 
-    // =========================================================================
-    // 1. CENA DE FUNDO OCEÂNICO PROFUNDO (Abyssal Backdrop com Luz e Partículas)
-    // =========================================================================
-    Item {
-        id: backgroundScene
+    // Fundo fotográfico, sem gradientes, orbes, grelha ou partículas gerados em QML.
+    Image {
+        id: wallpaper
         anchors.fill: parent
-
-        // Gradiente abissal profundo
-        Rectangle {
-            anchors.fill: parent
-            gradient: Gradient {
-                orientation: Gradient.Vertical
-                GradientStop { position: 0.00; color: "#020611" }
-                GradientStop { position: 0.45; color: "#041528" }
-                GradientStop { position: 1.00; color: "#072644" }
-            }
-        }
-
-        // Raios de luz volumétrica subaquática (Sunbeams em ângulo)
-        Item {
-            anchors.fill: parent
-            opacity: 0.35
-
-            Rectangle {
-                x: 100 + Math.sin(animTimer.tick * 0.4) * 40
-                y: -100
-                width: 180
-                height: 1100
-                rotation: -28
-                transformOrigin: Item.TopLeft
-                gradient: Gradient {
-                    orientation: Gradient.Vertical
-                    GradientStop { position: 0.0; color: "#4000f2fe" }
-                    GradientStop { position: 0.5; color: "#1500d4ff" }
-                    GradientStop { position: 1.0; color: "transparent" }
-                }
-            }
-
-            Rectangle {
-                x: 420 + Math.cos(animTimer.tick * 0.3) * 50
-                y: -100
-                width: 260
-                height: 1100
-                rotation: -24
-                transformOrigin: Item.TopLeft
-                gradient: Gradient {
-                    orientation: Gradient.Vertical
-                    GradientStop { position: 0.0; color: "#3538bdf8" }
-                    GradientStop { position: 0.6; color: "#100284c7" }
-                    GradientStop { position: 1.0; color: "transparent" }
-                }
-            }
-
-            Rectangle {
-                x: 820 - Math.sin(animTimer.tick * 0.35) * 45
-                y: -100
-                width: 220
-                height: 1100
-                rotation: -22
-                transformOrigin: Item.TopLeft
-                gradient: Gradient {
-                    orientation: Gradient.Vertical
-                    GradientStop { position: 0.0; color: "#2500f2fe" }
-                    GradientStop { position: 0.7; color: "#080369a1" }
-                    GradientStop { position: 1.0; color: "transparent" }
-                }
-            }
-        }
-
-        // Grade analítica sutil de referência espacial
-        Grid {
-            anchors.fill: parent
-            rows: 20
-            columns: 32
-            opacity: 0.12
-
-            Repeater {
-                model: 20 * 32
-                Rectangle {
-                    width: rootWindow.width / 32
-                    height: rootWindow.height / 20
-                    color: "transparent"
-                    border.color: "#38bdf8"
-                    border.width: 1
-                }
-            }
-        }
-
-        // Padrão de calibração de alto contraste (barras finas que cruzam a borda do vidro)
-        Row {
-            x: 90
-            y: 50
-            spacing: 10
-            Repeater {
-                model: 18
-                Rectangle {
-                    width: 5
-                    height: 280
-                    color: (index % 2 === 0) ? "#00f2fe" : "#ff007f"
-                    opacity: 0.85
-                }
-            }
-        }
-
-        // Orbe luminoso 1: Magenta/Rosa profundo em órbita suave (cruzando a lateral esquerda da janela)
-        Rectangle {
-            x: 110 + Math.cos(animTimer.tick * 0.6) * 80
-            y: 200 + Math.sin(animTimer.tick * 0.5) * 60
-            width: 300
-            height: 300
-            radius: 150
-            opacity: 0.75
-            gradient: Gradient {
-                GradientStop { position: 0.0; color: "#ff007f" }
-                GradientStop { position: 1.0; color: "#7928ca" }
-            }
-        }
-
-        // Orbe luminoso 2: Ciano/Turquesa oceânico cruzando o canto inferior direito
-        Rectangle {
-            x: 800 - Math.sin(animTimer.tick * 0.5) * 90
-            y: 380 - Math.cos(animTimer.tick * 0.7) * 70
-            width: 360
-            height: 360
-            radius: 180
-            opacity: 0.70
-            gradient: Gradient {
-                GradientStop { position: 0.0; color: "#00f2fe" }
-                GradientStop { position: 1.0; color: "#0284c7" }
-            }
-        }
-
-        // Partículas oceânicas em suspensão (Ambient underwater bioluminescent specks)
-        Repeater {
-            model: 20
-            Rectangle {
-                property real seedX: ((index * 67) % 1200) + 40
-                property real seedY: ((index * 43) % 720) + 40
-                property real speed: 0.3 + (index % 5) * 0.15
-                property real pSize: 3 + (index % 4) * 2
-
-                x: seedX + Math.sin(animTimer.tick * speed + index) * 35
-                y: seedY + Math.cos(animTimer.tick * (speed * 0.8) + index * 2) * 25
-                width: pSize
-                height: pSize
-                radius: pSize * 0.5
-                color: (index % 3 === 0) ? "#ffffff" : ((index % 3 === 1) ? "#38bdf8" : "#00f2fe")
-                opacity: 0.25 + 0.35 * Math.sin(animTimer.tick * 1.5 + index)
-            }
-        }
+        z: -1
+        source: sgeWallpaperSource
+        fillMode: Image.PreserveAspectCrop
+        asynchronous: true
+        cache: true
+        smooth: true
+        visible: status === Image.Ready
     }
 
     // =========================================================================
-    // 2. CAPTURA ATIVA DO BACKDROP (FBO Screen-Space)
+    // 1. CAPTURA DO PAPEL DE PAREDE PARA A REFRAÇÃO DO VIDRO
     // =========================================================================
     ShaderEffectSource {
         id: backdropGrab
-        anchors.fill: backgroundScene
-        sourceItem: backgroundScene
+        anchors.fill: wallpaper
+        sourceItem: wallpaper
         textureSize: Qt.size(Math.max(1, rootWindow.width * rootWindow.devicePixelRatio),
                              Math.max(1, rootWindow.height * rootWindow.devicePixelRatio))
         live: true
@@ -313,7 +174,7 @@ ApplicationWindow {
     }
 
     // =========================================================================
-    // 3. CHASSI DE CRISTAL DE ÁGUA LÍQUIDA (Systalia Glass Item nativo QRhi)
+    // 2. CHASSI DE CRISTAL DE ÁGUA LÍQUIDA (Systalia Glass Item nativo QRhi)
     // =========================================================================
     SystaliaGlassItem {
         id: glassChassis
