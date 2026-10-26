@@ -238,7 +238,7 @@ Item {
             width: Math.max(0, parent.width - 2 * windowContainer.frameMargin)
             height: Math.max(0, parent.height - windowContainer.titleBarHeight
                              - 2 * windowContainer.frameMargin)
-            z: -1
+            z: 1
             clip: true
 
             ShellSurfaceItem {
@@ -267,7 +267,7 @@ Item {
                 objectName: "clientTextureCapture"
                 sourceItem: clientSurfaceItem
                 live: true
-                hideSource: true
+                hideSource: false
                 recursive: false
                 visible: false
                 format: ShaderEffectSource.RGBA8

@@ -283,12 +283,12 @@ void TestXdgResize::clientBufferIsBoundAndPainted() {
     QVERIFY(clientTextureCapture);
     QCOMPARE(clientTextureCapture->property("sourceItem").value<QQuickItem *>(), surfaceItem);
     QVERIFY(clientTextureCapture->property("live").toBool());
-    QVERIFY(clientTextureCapture->property("hideSource").toBool());
+    QVERIFY(!clientTextureCapture->property("hideSource").toBool());
 
     auto *viewport = item->findChild<QQuickItem *>("clientViewport");
     QVERIFY(viewport);
     QVERIFY(viewport->clip());
-    QCOMPARE(viewport->z(), -1.0);
+    QCOMPARE(viewport->z(), 1.0);
 
     auto *glass = item->findChild<SystaliaGlassItem *>();
     QVERIFY(glass);
