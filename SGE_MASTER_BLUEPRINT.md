@@ -59,7 +59,7 @@ O shader principal é `shaders/valo_optical.frag`; seus recursos de vértice e o
 
 ### 2.4 Fundo e captura
 
-`src/qml/main.qml` usa o wallpaper VALO empacotado em `src/qml/assets/figma/valo-ocean-atmosphere.png`, em `Image.PreserveAspectFit`, alinhado ao canvas de referência de 1662 × 975 px. O PNG de 3324 × 1950 é renderizado em alta resolução a partir da reconstituição SVG local para que funcione em runtimes Qt sem o plugin SVG. Os demais ícones também são PNGs 4× gerados das reconstituições locais. Os URLs temporários dos assets originais do Figma responderam HTTP 403; a imagem Carina continua versionada na raiz, mas deixou de ser a fonte do desktop.
+`src/qml/main.qml` usa o wallpaper VALO empacotado em `src/qml/assets/figma/valo-ocean-atmosphere.png`, em `Image.PreserveAspectFit`, alinhado ao canvas de referência de 1662 × 975 px. O PNG de 3324 × 1950 é renderizado em alta resolução a partir do SVG exportado do nó Figma `2:3` para funcionar em runtimes Qt sem o plugin SVG. Ícones e camadas de refração também são rasterizados dos vetores exportados do frame. Os URLs temporários dos assets do Figma responderam HTTP 403, mas a API do Figma permitiu exportar os nós diretamente. A imagem Carina continua versionada na raiz, mas deixou de ser a fonte do desktop.
 
 `backdropGrab` continua a capturar o wallpaper para que as superfícies de vidro possam refratá-lo. O custo de captura em resoluções altas deve ser medido durante a reformulação.
 
@@ -107,7 +107,7 @@ O shader principal é `shaders/valo_optical.frag`; seus recursos de vértice e o
 - `SystaliaNotificationHost.qml` — toasts do servidor D-Bus.
 - `SystaliaTaskSwitcher.qml` — miniaturas e seleção MRU.
 
-O frame principal do redesign está em `src/qml/`: duas janelas de vidro, TopBar e dock usam um canvas baseado em 1662 × 975 px, que também é o tamanho inicial da janela. Build e captura de runtime foram feitos nesse tamanho via Xvfb/Vulkan. A captura confirmou a composição e a geometria do frame; a exportação dos vetores originais segue bloqueada pelo HTTP 403. O quick panel de sistema, launcher, notificações, task switcher e compositor mantêm seus serviços e interações existentes.
+O frame principal do redesign está em `src/qml/`: duas janelas de vidro, TopBar e dock usam um canvas baseado em 1662 × 975 px, que também é o tamanho inicial da janela. Build e captura de runtime foram feitos nesse tamanho via Xvfb/Vulkan. A captura confirmou a composição e os vetores exportados diretamente dos nós do Figma. Os URLs temporários seguem bloqueados pelo HTTP 403 do proxy. O quick panel de sistema, launcher, notificações, task switcher e compositor mantêm seus serviços e interações existentes.
 
 ## 4. Estado das etapas
 
@@ -127,7 +127,7 @@ O frame principal do redesign está em `src/qml/`: duas janelas de vidro, TopBar
 | 3.5 | Notificações D-Bus e controles rápidos | Serviço, modelo e componentes presentes; conflito com outro dono do serviço D-Bus é uma condição de execução. |
 | 3.6 | Alternador de tarefas | Modelo MRU, atalhos e QML presentes; correções recentes de foco e dimensão do frame aguardam validação no ambiente alvo. |
 | 3.7 | Revisão, ASan/UBSan e benchmark | Pendente como auditoria completa; a expansão de testes não substitui profiling ou análise de leaks. |
-| Redesign VALO/SDE | Nova linguagem visual a partir do Figma | Composição principal implementada e capturada em 1662 × 975. Wallpaper/ícones são reconstituições locais em PNG de alta resolução; comparação em outras escalas e validação no host alvo seguem pendentes. Control Center de material separado do quick panel. |
+| Redesign VALO/SDE | Nova linguagem visual a partir do Figma | Composição principal e vetores exportados implementados e capturados em 1662 × 975; comparação em outras escalas e validação no host alvo seguem pendentes. Control Center de material separado do quick panel. |
 | Fases 4–6 | Workspaces, tiling, multi-monitor, sessão autônoma, áudio e terminal | Roadmap; não implementado integralmente. |
 
 ### Risco de execução conhecido
@@ -175,11 +175,11 @@ O frame é um único estado composto. Não há frames separados de launcher, not
 
 | Área | Referência Figma | Implementação observada no branch | Questão pendente |
 |---|---|---|---|
-| Wallpaper | Atmosfera vetorial luminosa, com raios e partículas. | PNG 3324 × 1950 gerado da reconstituição local; proporção 1662 × 975. | Capturado no runtime. Os SVGs originais do Figma continuam inacessíveis via URL temporária (HTTP 403). |
+| Wallpaper | Atmosfera vetorial luminosa, com raios e partículas. | PNG 3324 × 1950 rasterizado do SVG exportado do nó Figma `2:3`; proporção 1662 × 975. | Capturado no runtime. O SVG de origem está mantido no projeto. |
 | TopBar | Cápsula 1646 × 45, margem 8/4 e raio 22; mostra `SDE-KWIN \| VALO` e seis glifos. | `SystaliaTopBar.qml`: geometria, telemetria real, data e hora; seis glifos abrem o quick panel. | Captura confere a geometria. Os glifos têm semântica parcial no frame e mantêm a ação existente do painel. |
 | Janelas desktop | Systalia Files 701 × 534 e janela de ajustes 700 × 534, lado a lado. | `SystaliaFilesWindow.qml` e `SystaliaMaterialWindow.qml` em (113,193) e (864,193), dentro do canvas `min(largura/1662, altura/975)`. | Posições e dimensões conferidas na captura 1662 × 975; outras escalas aguardam comparação. |
 | Control Center | Navegação General/Status/Control Center/Software/Drivers/About e ajustes do material VALO/SOAR. | `SystaliaMaterialWindow.qml` apresenta seis sliders ligados a opacidade, IOR, dispersão, cáusticas, raio e slant. `SystaliaControlCenter.qml` continua responsável por Wi-Fi, Bluetooth, Não incomodar, volume e brilho. | Correspondência visual implementada; áreas sem equivalente no motor não foram expostas como sliders decorativos. |
-| Dock | Cápsula 555 × 125 com slots 78 × 78 e ícones ilustrados. | `SystaliaDock.qml`: dimensões, raio 47 e cinco ações preservadas; ícones PNG 4× gerados de vetores locais. | Geometria conferida. Os ícones locais aproximam os vetores originais, inacessíveis pelo proxy. |
+| Dock | Cápsula 555 × 125 com slots 78 × 78 e ícones ilustrados. | `SystaliaDock.qml`: dimensões, raio 47 e cinco ações preservadas; ícones PNG 4× rasterizados dos vetores Figma exportados. | Geometria e arte conferidas na captura. |
 | Launcher, notificações, task switcher e clientes | Não mostrados nesta página. | Componentes QML/serviços já existem. | Obter frames/estados de referência ou confirmar que ficam fora deste redesign. |
 
 O frame Figma tem 1662 × 975 px. O canvas mantém essa referência e usa escala uniforme para caber na janela do desktop; não há variantes responsivas no arquivo. Posições e proporções em resoluções diferentes ainda aguardam comparação visual.
@@ -189,7 +189,7 @@ O frame Figma tem 1662 × 975 px. O canvas mantém essa referência e usa escala
 - `src/qml/main.qml` usa 1662 × 975 como dimensão inicial e canvas escalado para janelas, TopBar e dock; a camada Wayland permanece em coordenadas lógicas da janela raiz.
 - `SystaliaFilesWindow.qml` segue as posições do frame com navegação Home, pesquisa, seis itens sem cartões adicionais e badge `ABYSSUS VES`.
 - `SystaliaMaterialWindow.qml` apresenta o painel VALO/SOAR, seis controles que alteram propriedades existentes do `SystaliaGlassItem` e um toggle que ativa/desativa a opacidade do material.
-- `SystaliaTheme.qml` guarda a paleta e a família Inter. SVGs locais são as fontes editáveis das reconstituições; PNGs 2×/4× são empacotados porque o runtime Qt usado não decodifica SVG. Os assets exportados do Figma não puderam ser recuperados do proxy (HTTP 403), portanto esses desenhos não são cópias dos vetores originais.
+- `SystaliaTheme.qml` guarda a paleta e a família Inter. Vetores do frame foram exportados pela API do Figma e mantidos em `src/qml/assets/figma`; a sombra externa usa SVG local com os valores de sombra do frame. PNGs 2×/4× são empacotados porque o runtime Qt usado não decodifica SVG. Os URLs temporários retornam HTTP 403 pelo proxy, mas a exportação dos nós via Figma funcionou.
 - O shader GLSL não foi alterado: `shaders/valo_optical.frag` mantém `fwidth`/`smoothstep` para o contorno G2 e o recorte do cliente. Retângulos QML arredondados declaram `antialiasing: true`; imagens usam `smooth` e `mipmap`.
 - `cmake --build build --target systalia_glass_engine` concluiu. A captura via Xvfb/Vulkan em 1662 × 975 confirmou a renderização dos recursos e a geometria-base. A captura reportou falta de sessão D-Bus e falha de EGL para o compositor; não houve validação de cliente Wayland externo ou de GPU física. CTest não foi executado.
 
@@ -198,7 +198,7 @@ O frame Figma tem 1662 × 975 px. O canvas mantém essa referência e usa escala
 1. Comparar a implementação em escalas menores; a dimensão de referência 1662 × 975 já foi capturada, mas o frame não fornece estados responsivos.
 2. Fornecer referências para launcher, notificações, task switcher, SSD, clientes externos e estados de foco/teclado ausentes.
 3. Definir o significado dos seis glifos da TopBar; a implementação preserva o quick panel existente como ação para todos eles.
-4. Substituir as reconstituições locais pelos SVGs originais do Figma caso seja possível exportá-los e se isso for desejado.
+4. Comparar as labels demonstrativas do painel no Figma com os controles de propriedades reais do motor; preservar a semântica dos valores do SGE.
 5. Validar em sessão gráfica alvo e medir FPS/custo do `backdropGrab`; a captura atual usa Xvfb com Vulkan/lavapipe.
 
 ## 6. Roadmap de engenharia

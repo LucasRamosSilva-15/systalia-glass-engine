@@ -24,7 +24,19 @@ Item {
     width: 701
     height: 534
     visible: true
-    clip: true
+    clip: false
+
+    Image {
+        x: -60
+        y: -60
+        width: 821
+        height: 694
+        z: -1
+        source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-window-shadow.png"
+        sourceSize: Qt.size(1642, 1388)
+        smooth: true
+        mipmap: true
+    }
 
     SystaliaGlassItem {
         anchors.fill: parent
@@ -69,6 +81,47 @@ Item {
         border.color: "#24c8ffff"
         border.width: 0.8
         antialiasing: true
+    }
+
+    Item {
+        anchors.fill: parent
+        clip: true
+
+        Image {
+            x: -8.92
+            y: 99.96
+            width: 565.335
+            height: 492.371
+            source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-files-prism.png"
+            sourceSize: Qt.size(1056, 804)
+            fillMode: Image.Stretch
+            smooth: true
+            mipmap: true
+        }
+
+        Image {
+            x: -88.44
+            y: 67.92
+            width: 599.68
+            height: 512.41
+            source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-files-ribbon.png"
+            sourceSize: Qt.size(994, 868)
+            fillMode: Image.Stretch
+            smooth: true
+            mipmap: true
+        }
+
+        Image {
+            x: 196.77
+            y: 13.5
+            width: 449.24
+            height: 524.653
+            source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-files-edge.png"
+            sourceSize: Qt.size(764, 962)
+            fillMode: Image.Stretch
+            smooth: true
+            mipmap: true
+        }
     }
 
     Rectangle {
@@ -326,12 +379,12 @@ Item {
 
     Repeater {
         model: [
-            { name: "All Files", icon: "file-folder.png", glyph: "", left: 216.5, top: 125.5 },
-            { name: "Documents", icon: "file-document.png", glyph: "◉", left: 334.5, top: 125.5 },
-            { name: "Document", icon: "file-document.png", glyph: "</>", left: 452.5, top: 125.5 },
-            { name: "Download2", icon: "file-download.png", glyph: "⬇", left: 570.5, top: 125.5 },
-            { name: "Divides 1", icon: "file-document.png", glyph: "≡", left: 216.5, top: 245.5 },
-            { name: "Systion 4", icon: "file-document.png", glyph: "✓", left: 334.5, top: 245.5 }
+            { name: "All Files", icon: "valo-file-document.png", glyph: "", left: 216.5, top: 125.5 },
+            { name: "Documents", icon: "valo-file-documents-art.png", glyph: "◉", left: 334.5, top: 125.5 },
+            { name: "Document", icon: "valo-file-document.png", glyph: "</>", left: 452.5, top: 125.5 },
+            { name: "Download2", icon: "valo-file-download.png", glyph: "⬇", left: 570.5, top: 125.5 },
+            { name: "Divides 1", icon: "valo-file-list.png", glyph: "≡", left: 216.5, top: 245.5 },
+            { name: "Systion 4", icon: "valo-file-check.png", glyph: "✓", left: 334.5, top: 245.5 }
         ]
 
         delegate: Item {
@@ -353,25 +406,52 @@ Item {
             }
 
             Image {
-                x: fileEntry.modelData.name === "All Files" ? 3 : 7
-                y: 0
-                width: fileEntry.modelData.name === "All Files" ? 70 : 55
+                x: -7
+                y: -10
+                width: 82
+                height: 87
+                visible: fileEntry.modelData.name === "All Files"
+                source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-file-folder-body.png"
+                sourceSize: Qt.size(512, 543)
+                fillMode: Image.PreserveAspectFit
+                smooth: true
+                mipmap: true
+            }
+
+            Image {
+                x: -7
+                y: 10
+                width: 90
                 height: 67
+                visible: fileEntry.modelData.name === "All Files"
+                source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-file-folder-lip.png"
+                sourceSize: Qt.size(512, 381)
+                fillMode: Image.PreserveAspectFit
+                smooth: true
+                mipmap: true
+            }
+
+            Image {
+                x: fileEntry.modelData.name === "Documents" ? 3 : 2
+                y: fileEntry.modelData.name === "Documents" ? -13.5 : -14.5
+                width: fileEntry.modelData.name === "Documents" ? 75 : 77
+                height: fileEntry.modelData.name === "Documents" ? 94 : 96
+                visible: fileEntry.modelData.name !== "All Files"
                 source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/" + fileEntry.modelData.icon
-                sourceSize: Qt.size(width * 4, height * 4)
+                sourceSize: Qt.size(512, 642)
                 fillMode: Image.PreserveAspectFit
                 smooth: true
                 mipmap: true
             }
 
             Text {
-                x: 4
-                y: 15
+                x: 20
+                y: 16
                 width: 55
                 height: 44
                 visible: fileEntry.modelData.glyph !== ""
                 text: fileEntry.modelData.glyph
-                color: "#eb8cf1ff"
+                color: "#8cf1ff"
                 font.family: SystaliaTheme.fontFamily
                 font.pixelSize: fileEntry.modelData.glyph === "</>" ? 22 : 26
                 font.weight: Font.Bold
@@ -413,34 +493,38 @@ Item {
         ToolTip.text: accessibleName
         ToolTip.delay: 450
 
-        contentItem: Text {
-            text: action.glyph
-            color: action.closeAction ? "#fff6f7" : "#f2fcff"
-            font.pixelSize: 12
-            font.weight: Font.DemiBold
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-            antialiasing: true
-        }
-
         background: Rectangle {
             anchors.centerIn: parent
-            width: 16
-            height: 16
-            radius: 8
-            color: action.closeAction ? (action.hovered ? "#ff6478" : "#f22e4f")
-                                      : (action.hovered ? "#36b7ff" : "#087bc9")
-            border.color: action.closeAction ? "#ff8c9b" : "#77daff"
-            border.width: 1
-            antialiasing: true
-            Rectangle {
-                anchors.fill: parent
-                anchors.margins: 2
-                radius: width / 2
-                color: "transparent"
-                border.color: action.closeAction ? "#7a142d" : "#104f81"
-                border.width: 0.7
-                antialiasing: true
+            width: 28
+            height: 28
+            color: "transparent"
+            Image {
+                anchors.centerIn: parent
+                width: 38
+                height: 38
+                source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-window-action-"
+                        + (action.closeAction ? "close" : action.glyph === "−" ? "minimize" : "maximize")
+                        + "-bg.png"
+                sourceSize: Qt.size(128, 128)
+                smooth: true
+                mipmap: true
+                opacity: action.hovered ? 0.92 : 1
+            }
+        }
+
+        contentItem: Item {
+            Image {
+                anchors.centerIn: parent
+                width: 16
+                height: 16
+                source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-window-"
+                        + (action.closeAction ? "close" : action.glyph === "−" ? "minimize" : "maximize")
+                        + ".png"
+                sourceSize: Qt.size(512, 512)
+                fillMode: Image.PreserveAspectFit
+                smooth: true
+                mipmap: true
+                opacity: action.hovered ? 0.92 : 1
             }
         }
     }

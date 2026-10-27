@@ -98,17 +98,32 @@ set_source_files_properties(src/qml/theme/SystaliaTheme.qml PROPERTIES
 
 set(sge_valo_assets
     src/qml/assets/figma/valo-ocean-atmosphere.png
-    src/qml/assets/figma/systalia-mark.png
-    src/qml/assets/figma/file-folder.png
-    src/qml/assets/figma/file-document.png
-    src/qml/assets/figma/file-download.png
-    src/qml/assets/figma/file-code.png
-    src/qml/assets/figma/file-image.png
-    src/qml/assets/figma/dock-folder.png
-    src/qml/assets/figma/dock-speaker.png
-    src/qml/assets/figma/dock-terminal.png
-    src/qml/assets/figma/dock-code.png
-    src/qml/assets/figma/dock-spark.png
+    src/qml/assets/figma/valo-mark.png
+    src/qml/assets/figma/valo-dock-folder.png
+    src/qml/assets/figma/valo-dock-speaker.png
+    src/qml/assets/figma/valo-dock-terminal.png
+    src/qml/assets/figma/valo-dock-code.png
+    src/qml/assets/figma/valo-dock-spark.png
+    src/qml/assets/figma/valo-file-folder-body.png
+    src/qml/assets/figma/valo-file-folder-lip.png
+    src/qml/assets/figma/valo-file-documents-art.png
+    src/qml/assets/figma/valo-file-document.png
+    src/qml/assets/figma/valo-file-download.png
+    src/qml/assets/figma/valo-file-list.png
+    src/qml/assets/figma/valo-file-check.png
+    src/qml/assets/figma/valo-files-prism.png
+    src/qml/assets/figma/valo-files-ribbon.png
+    src/qml/assets/figma/valo-files-edge.png
+    src/qml/assets/figma/valo-control-prism.png
+    src/qml/assets/figma/valo-control-ribbon.png
+    src/qml/assets/figma/valo-control-edge.png
+    src/qml/assets/figma/valo-window-action-minimize-bg.png
+    src/qml/assets/figma/valo-window-action-maximize-bg.png
+    src/qml/assets/figma/valo-window-action-close-bg.png
+    src/qml/assets/figma/valo-window-minimize.png
+    src/qml/assets/figma/valo-window-maximize.png
+    src/qml/assets/figma/valo-window-close.png
+    src/qml/assets/figma/valo-window-shadow.png
 )
 
 foreach(asset IN LISTS sge_valo_assets)

@@ -1,0 +1,19 @@
+<svg width="821" height="694" viewBox="0 0 821 694" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="valo-window-shadow" x="0" y="0" width="821" height="694" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="20" result="cyanBlur"/>
+      <feOffset dy="20" in="cyanBlur" result="cyanOffset"/>
+      <feFlood flood-color="#00E5FF" flood-opacity="0.14" result="cyanColor"/>
+      <feComposite in="cyanColor" in2="cyanOffset" operator="in" result="cyanShadow"/>
+      <feGaussianBlur in="SourceAlpha" stdDeviation="6" result="blackBlur"/>
+      <feOffset dy="8" in="blackBlur" result="blackOffset"/>
+      <feFlood flood-color="#000000" flood-opacity="0.45" result="blackColor"/>
+      <feComposite in="blackColor" in2="blackOffset" operator="in" result="blackShadow"/>
+      <feMerge>
+        <feMergeNode in="cyanShadow"/>
+        <feMergeNode in="blackShadow"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect x="60" y="60" width="701" height="534" rx="20" fill="#FFFFFF" filter="url(#valo-window-shadow)"/>
+</svg>

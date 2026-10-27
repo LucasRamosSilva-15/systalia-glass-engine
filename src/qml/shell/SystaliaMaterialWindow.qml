@@ -21,7 +21,19 @@ Item {
     width: 700
     height: 534
     visible: true
-    clip: true
+    clip: false
+
+    Image {
+        x: -60
+        y: -60
+        width: 821
+        height: 694
+        z: -1
+        source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-window-shadow.png"
+        sourceSize: Qt.size(1642, 1388)
+        smooth: true
+        mipmap: true
+    }
 
     SystaliaGlassItem {
         anchors.fill: parent
@@ -66,6 +78,47 @@ Item {
         border.color: "#24c8ffff"
         border.width: 0.8
         antialiasing: true
+    }
+
+    Item {
+        anchors.fill: parent
+        clip: true
+
+        Image {
+            x: -9.11
+            y: 99.96
+            width: 564.729
+            height: 492.062
+            source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-control-prism.png"
+            sourceSize: Qt.size(1054, 804)
+            fillMode: Image.Stretch
+            smooth: true
+            mipmap: true
+        }
+
+        Image {
+            x: -88.52
+            y: 67.92
+            width: 599.029
+            height: 512.018
+            source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-control-ribbon.png"
+            sourceSize: Qt.size(992, 870)
+            fillMode: Image.Stretch
+            smooth: true
+            mipmap: true
+        }
+
+        Image {
+            x: 196.23
+            y: 13.5
+            width: 448.856
+            height: 524.482
+            source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-control-edge.png"
+            sourceSize: Qt.size(764, 962)
+            fillMode: Image.Stretch
+            smooth: true
+            mipmap: true
+        }
     }
 
     Rectangle {
@@ -550,34 +603,38 @@ Item {
         ToolTip.text: accessibleName
         ToolTip.delay: 450
 
-        contentItem: Text {
-            text: action.glyph
-            color: "#f2fcff"
-            font.pixelSize: 12
-            font.weight: Font.DemiBold
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-            antialiasing: true
-        }
-
         background: Rectangle {
             anchors.centerIn: parent
-            width: 16
-            height: 16
-            radius: 8
-            color: action.closeAction ? (action.hovered ? "#ff6478" : "#f22e4f")
-                                      : (action.hovered ? "#36b7ff" : "#087bc9")
-            border.color: action.closeAction ? "#ff8c9b" : "#77daff"
-            border.width: 1
-            antialiasing: true
-            Rectangle {
-                anchors.fill: parent
-                anchors.margins: 2
-                radius: width / 2
-                color: "transparent"
-                border.color: action.closeAction ? "#7a142d" : "#104f81"
-                border.width: 0.7
-                antialiasing: true
+            width: 27
+            height: 27
+            color: "transparent"
+            Image {
+                anchors.centerIn: parent
+                width: 38
+                height: 38
+                source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-window-action-"
+                        + (action.closeAction ? "close" : action.glyph === "−" ? "minimize" : "maximize")
+                        + "-bg.png"
+                sourceSize: Qt.size(128, 128)
+                smooth: true
+                mipmap: true
+                opacity: action.hovered ? 0.92 : 1
+            }
+        }
+
+        contentItem: Item {
+            Image {
+                anchors.centerIn: parent
+                width: 16
+                height: 16
+                source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-window-"
+                        + (action.closeAction ? "close" : action.glyph === "−" ? "minimize" : "maximize")
+                        + ".png"
+                sourceSize: Qt.size(512, 512)
+                fillMode: Image.PreserveAspectFit
+                smooth: true
+                mipmap: true
+                opacity: action.hovered ? 0.92 : 1
             }
         }
     }

@@ -45,7 +45,7 @@ Item {
         y: 9
         width: 18
         height: 23
-        source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/systalia-mark.png"
+        source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-mark.png"
         sourceSize: Qt.size(112, 112)
         fillMode: Image.PreserveAspectFit
         smooth: true

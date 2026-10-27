@@ -31,11 +31,11 @@ Item {
     signal settingsRequested()
 
     readonly property var launchers: [
-        { action: "files", label: "Systalia Files", icon: "dock-folder.png", appIds: ["systalia-files"] },
-        { action: "audio", label: "Áudio", icon: "dock-speaker.png", appIds: ["pavucontrol", "pwvucontrol", "org.pulseaudio.pavucontrol"] },
-        { action: "terminal", label: "Terminal", icon: "dock-terminal.png", appIds: ["alacritty", "foot"] },
-        { action: "ide", label: "Editor de código", icon: "dock-code.png", appIds: ["code", "codium", "com.visualstudio.code"] },
-        { action: "settings", label: "Systalia Core", icon: "dock-spark.png", appIds: ["systalia-core"] }
+        { action: "files", label: "Systalia Files", icon: "valo-dock-folder.png", appIds: ["systalia-files"] },
+        { action: "audio", label: "Áudio", icon: "valo-dock-speaker.png", appIds: ["pavucontrol", "pwvucontrol", "org.pulseaudio.pavucontrol"] },
+        { action: "terminal", label: "Terminal", icon: "valo-dock-terminal.png", appIds: ["alacritty", "foot"] },
+        { action: "ide", label: "Editor de código", icon: "valo-dock-code.png", appIds: ["code", "codium", "com.visualstudio.code"] },
+        { action: "settings", label: "Systalia Core", icon: "valo-dock-spark.png", appIds: ["systalia-core"] }
     ]
 
     function isRunning(appIds) {
