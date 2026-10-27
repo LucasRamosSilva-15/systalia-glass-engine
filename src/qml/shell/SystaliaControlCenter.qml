@@ -11,6 +11,7 @@ Item {
     property var backdropSource: null
     property var screenResolution: Qt.vector2d(width, height)
     property real animationTime: 0.0
+    property vector4d cornerRadii: Qt.vector4d(22, 22, 22, 22)
 
     anchors.fill: parent
     z: 115
@@ -55,7 +56,7 @@ Item {
             anchors.fill: parent
             backdropSource: controlCenter.backdropSource
             screenResolution: controlCenter.screenResolution
-            radii: Qt.vector4d(22, 22, 22, 22)
+            radii: controlCenter.cornerRadii
             slant: 0.0
             ior: 1.27
             chromaticDispersion: 0.04
@@ -64,12 +65,12 @@ Item {
             time: controlCenter.animationTime
         }
 
-        Rectangle {
+        SystaliaG2Frame {
             anchors.fill: parent
-            radius: 22
-            color: "#d00b1b2d"
-            border.color: "#7880e9f5"
-            border.width: 1
+            radii: controlCenter.cornerRadii
+            fillColor: "#d00b1b2d"
+            strokeColor: "#7880e9f5"
+            strokeWidth: 1
         }
 
         ColumnLayout {

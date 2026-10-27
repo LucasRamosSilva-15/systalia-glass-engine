@@ -11,6 +11,7 @@ Item {
     property var backdropSource: null
     property var screenResolution: Qt.vector2d(width, height)
     property real animationTime: 0.0
+    property vector4d cornerRadii: Qt.vector4d(24, 24, 24, 24)
 
     anchors.fill: parent
     z: 120
@@ -59,7 +60,7 @@ Item {
             anchors.fill: parent
             backdropSource: flowMenu.backdropSource
             screenResolution: flowMenu.screenResolution
-            radii: Qt.vector4d(24, 24, 24, 24)
+            radii: flowMenu.cornerRadii
             slant: 0.0
             ior: 1.28
             chromaticDispersion: 0.04
@@ -68,12 +69,12 @@ Item {
             time: flowMenu.animationTime
         }
 
-        Rectangle {
+        SystaliaG2Frame {
             anchors.fill: parent
-            color: "#a8091b2c"
-            radius: 24
-            border.color: "#725ceaff"
-            border.width: 1
+            radii: flowMenu.cornerRadii
+            fillColor: "#a8091b2c"
+            strokeColor: "#725ceaff"
+            strokeWidth: 1
         }
 
         ColumnLayout {

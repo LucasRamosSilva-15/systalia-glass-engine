@@ -16,6 +16,8 @@ Item {
     property real surfaceOpacity: 0.85
     property real surfaceSlant: 0
     property real cornerRadius: 20
+    property vector4d cornerRadii: Qt.vector4d(cornerRadius, cornerRadius,
+                                                cornerRadius, cornerRadius)
     property bool materialActive: true
     property string selectedSection: "Control Center"
 
@@ -40,8 +42,7 @@ Item {
         anchors.fill: parent
         backdropSource: materialWindow.backdropSource
         screenResolution: materialWindow.screenResolution
-        radii: Qt.vector4d(materialWindow.cornerRadius, materialWindow.cornerRadius,
-                            materialWindow.cornerRadius, materialWindow.cornerRadius)
+        radii: materialWindow.cornerRadii
         slant: materialWindow.surfaceSlant
         ior: materialWindow.refractiveIndex
         chromaticDispersion: materialWindow.dispersion
@@ -52,7 +53,7 @@ Item {
 
     SystaliaG2Frame {
         anchors.fill: parent
-        cornerRadius: materialWindow.cornerRadius
+        radii: materialWindow.cornerRadii
         fillGradient: LinearGradient {
             x1: 0
             y1: 0
@@ -126,7 +127,7 @@ Item {
 
     SystaliaG2Frame {
         anchors.fill: parent
-        cornerRadius: materialWindow.cornerRadius
+        radii: materialWindow.cornerRadii
         strokeColor: "#c9ffffff"
         strokeWidth: 1.5
     }

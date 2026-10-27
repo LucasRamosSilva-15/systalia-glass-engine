@@ -11,6 +11,7 @@ Item {
     property var backdropSource: null
     property vector2d screenResolution: Qt.vector2d(width, height)
     property real animationTime: 0.0
+    property vector4d cornerRadii: Qt.vector4d(24, 24, 24, 24)
     readonly property real tileWidth: 224
     readonly property real tileHeight: 168
     readonly property real tileSpacing: 14
@@ -40,7 +41,7 @@ Item {
         width: taskSwitcher.frameWidth
         height: 220
         z: -1
-        radii: Qt.vector4d(24, 24, 24, 24)
+        radii: taskSwitcher.cornerRadii
         slant: 0.0
         ior: 1.28
         chromaticDispersion: 0.035
@@ -51,14 +52,14 @@ Item {
         time: taskSwitcher.animationTime
     }
 
-    Rectangle {
+    SystaliaG2Frame {
         anchors.centerIn: parent
         width: switcherFrame.width
         height: switcherFrame.height
-        radius: 24
-        color: "#d20a1829"
-        border.width: 1
-        border.color: "#8a70d9ed"
+        radii: taskSwitcher.cornerRadii
+        fillColor: "#d20a1829"
+        strokeWidth: 1
+        strokeColor: "#8a70d9ed"
     }
 
     ListView {

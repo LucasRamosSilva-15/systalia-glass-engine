@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Shapes
 import Systalia.Engine
 import Systalia.System 1.0
 
@@ -19,6 +20,7 @@ Item {
     property real surfaceOpacity: 0.88
     property bool materialActive: true
     readonly property real pillRadius: 47
+    property vector4d cornerRadii: Qt.vector4d(pillRadius, pillRadius, pillRadius, pillRadius)
 
     width: 555
     height: 125
@@ -70,7 +72,7 @@ Item {
         anchors.fill: parent
         backdropSource: dock.backdropSource
         screenResolution: dock.screenResolution
-        radii: Qt.vector4d(dock.pillRadius, dock.pillRadius, dock.pillRadius, dock.pillRadius)
+        radii: dock.cornerRadii
         slant: 0
         ior: dock.refractiveIndex
         chromaticDispersion: dock.dispersion
@@ -79,18 +81,20 @@ Item {
         time: dock.animationTime
     }
 
-    Rectangle {
+    SystaliaG2Frame {
         anchors.fill: parent
-        radius: dock.pillRadius
-        gradient: Gradient {
-            orientation: Gradient.Vertical
+        radii: dock.cornerRadii
+        fillGradient: LinearGradient {
+            x1: 0
+            y1: 0
+            x2: 0
+            y2: dock.height
             GradientStop { position: 0.0; color: "#4a5d9fb8" }
             GradientStop { position: 0.34; color: "#56194c70" }
             GradientStop { position: 1.0; color: "#63102741" }
         }
-        border.color: "#c2e8ffff"
-        border.width: 1.25
-        antialiasing: true
+        strokeColor: "#c2e8ffff"
+        strokeWidth: 1.25
     }
 
     Rectangle {

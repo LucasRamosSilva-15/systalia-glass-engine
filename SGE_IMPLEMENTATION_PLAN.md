@@ -97,7 +97,7 @@ O frame mede 1662 × 975 px e não mostra uma escala alternativa. A aplicação 
 | Notificações | `src/qml/shell/SystaliaNotificationHost.qml` | Não aparece no frame. Preservar D-Bus, timers, fechar e ordem; solicitar referência antes de mudar aparência. |
 | Alternador | `src/qml/shell/SystaliaTaskSwitcher.qml` | Não aparece no frame. Preservar seleção MRU e atalhos; solicitar referência antes de mudar aparência. |
 | Janelas clientes | `src/qml/WaylandWindowContainer.qml` | Sem frame ou estado externo no Figma auditado. Preservar buffer, SSD, foco, resize e ações da janela. |
-| Motor óptico | `src/gfx/` e `shaders/` | ABI `std140` de 128 bytes, geometria G2 e shader permanecem sem alterações. Contorno e recorte de cliente mantêm `fwidth`/`smoothstep`; QML altera propriedades existentes. |
+| Motor óptico | `src/gfx/` e `shaders/` | ABI `std140` de 128 bytes e geometria G2 preservadas. `fwidth`/`smoothstep` filtram o contorno óptico e o recorte de cliente; cada componente fornece quatro raios independentes para o vidro e a moldura antialiasada. |
 
 `SystaliaTheme.qml` é singleton QML e reúne cores e família tipográfica base observadas. O build do executável e a captura em Xvfb/Vulkan a 1662 × 975 passaram; o runtime registrou sessão D-Bus indisponível e falha EGL do compositor Wayland. A captura não valida GPU física, clientes Wayland externos ou escalas menores. CTest não foi executado.
 
@@ -108,7 +108,7 @@ O frame mede 1662 × 975 px e não mostra uma escala alternativa. A aplicação 
 - `SystaliaTopBar.qml` usa as medidas do frame e mantém CPU/RAM/FPS/hora ligados a `SystemTelemetry`.
 - `SystaliaDock.qml` usa as dimensões ilustradas e mantém os cinco launchers existentes.
 - `main.cpp` não procura mais o wallpaper Carina; o PNG VALO 2×, os ícones 4×, os botões e as refrações são recursos QML rasterizados de SVGs exportados do frame. A sombra externa é desenhada em SVG com os valores de sombra observados no frame. `backdropGrab` continua ativo.
-- O shader não foi alterado. A borda G2 e o recorte de cliente mantêm suavização analítica via `fwidth`; retângulos arredondados QML declaram `antialiasing: true`, e imagens usam `smooth`/`mipmap`.
+- O shader mantém ABI `std140` de 128 bytes e geometria G2. `fwidth`/`smoothstep` usam cobertura de fragmento para suavizar o contorno e o fio de brilho; `SystaliaG2Frame.qml` usa `CurveRenderer` e raios independentes por canto, compartilhados com o vidro de cada componente.
 - Os endpoints temporários de asset do Figma retornam HTTP 403 pelo proxy. Os vetores necessários foram exportados diretamente dos nós do frame pela API do Figma e guardados em `src/qml/assets/figma`; os PNGs 2×/4× são rasterizações desses SVGs para o runtime Qt sem suporte a SVG.
 - `cmake --build build --target systalia_glass_engine` concluiu e a captura de runtime mostrou wallpaper, ícones, janelas e dock. D-Bus de sessão e EGL Wayland não inicializaram no Xvfb; CTest e clientes externos não foram executados.
 

@@ -10,6 +10,7 @@ Item {
     property var screenResolution: Qt.vector2d(width, height)
     property real animationTime: 0
     property date dateNow: new Date()
+    property vector4d cornerRadii: Qt.vector4d(22, 22, 22, 22)
 
     signal launcherRequested()
     signal controlCenterRequested()
@@ -22,7 +23,7 @@ Item {
         anchors.fill: parent
         backdropSource: topBar.backdropSource
         screenResolution: topBar.screenResolution
-        radii: Qt.vector4d(22, 22, 22, 22)
+        radii: topBar.cornerRadii
         slant: 0
         ior: 1.12
         chromaticDispersion: 0.018
@@ -31,13 +32,12 @@ Item {
         time: topBar.animationTime
     }
 
-    Rectangle {
+    SystaliaG2Frame {
         anchors.fill: parent
-        radius: 22
-        color: "#db071628"
-        border.color: "#3d74d5ee"
-        border.width: 1
-        antialiasing: true
+        radii: topBar.cornerRadii
+        fillColor: "#db071628"
+        strokeColor: "#3d74d5ee"
+        strokeWidth: 1
     }
 
     Image {

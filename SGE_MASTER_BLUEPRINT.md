@@ -190,7 +190,7 @@ O frame Figma tem 1662 × 975 px. O canvas mantém essa referência e usa escala
 - `SystaliaFilesWindow.qml` segue as posições do frame com navegação Home, pesquisa, seis itens sem cartões adicionais e badge `ABYSSUS VES`.
 - `SystaliaMaterialWindow.qml` apresenta o painel VALO/SOAR, seis controles que alteram propriedades existentes do `SystaliaGlassItem` e um toggle que ativa/desativa a opacidade do material.
 - `SystaliaTheme.qml` guarda a paleta e a família Inter. Vetores do frame foram exportados pela API do Figma e mantidos em `src/qml/assets/figma`; a sombra externa usa SVG local com os valores de sombra do frame. PNGs 2×/4× são empacotados porque o runtime Qt usado não decodifica SVG. Os URLs temporários retornam HTTP 403 pelo proxy, mas a exportação dos nós via Figma funcionou.
-- O shader GLSL não foi alterado: `shaders/valo_optical.frag` mantém `fwidth`/`smoothstep` para o contorno G2 e o recorte do cliente. Retângulos QML arredondados declaram `antialiasing: true`; imagens usam `smooth` e `mipmap`.
+- O shader mantém a ABI de 128 bytes e o contorno G2; `fwidth`/`smoothstep` cobrem o contorno óptico e o recorte do cliente. A largura de cobertura também filtra o fio de brilho da borda. `SystaliaG2Frame.qml` usa `CurveRenderer` com quatro raios independentes, ligados aos mesmos raios do vidro em cada componente.
 - `cmake --build build --target systalia_glass_engine` concluiu. A captura via Xvfb/Vulkan em 1662 × 975 confirmou a renderização dos recursos e a geometria-base. A captura reportou falta de sessão D-Bus e falha de EGL para o compositor; não houve validação de cliente Wayland externo ou de GPU física. CTest não foi executado.
 
 ### 5.5 Decisões pendentes

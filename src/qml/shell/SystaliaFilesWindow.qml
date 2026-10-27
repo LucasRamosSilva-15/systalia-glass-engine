@@ -18,6 +18,8 @@ Item {
     property real surfaceOpacity: 0.85
     property real surfaceSlant: 0
     property real cornerRadius: 20
+    property vector4d cornerRadii: Qt.vector4d(cornerRadius, cornerRadius,
+                                                cornerRadius, cornerRadius)
     property bool materialActive: true
     property string selectedLocation: "Home"
     property string selectedFile: ""
@@ -43,8 +45,7 @@ Item {
         anchors.fill: parent
         backdropSource: fileWindow.backdropSource
         screenResolution: fileWindow.screenResolution
-        radii: Qt.vector4d(fileWindow.cornerRadius, fileWindow.cornerRadius,
-                            fileWindow.cornerRadius, fileWindow.cornerRadius)
+        radii: fileWindow.cornerRadii
         slant: fileWindow.surfaceSlant
         ior: fileWindow.refractiveIndex
         chromaticDispersion: fileWindow.dispersion
@@ -55,7 +56,7 @@ Item {
 
     SystaliaG2Frame {
         anchors.fill: parent
-        cornerRadius: fileWindow.cornerRadius
+        radii: fileWindow.cornerRadii
         fillGradient: LinearGradient {
             x1: 0
             y1: 0
@@ -129,7 +130,7 @@ Item {
 
     SystaliaG2Frame {
         anchors.fill: parent
-        cornerRadius: fileWindow.cornerRadius
+        radii: fileWindow.cornerRadii
         strokeColor: "#c9ffffff"
         strokeWidth: 1.5
     }
