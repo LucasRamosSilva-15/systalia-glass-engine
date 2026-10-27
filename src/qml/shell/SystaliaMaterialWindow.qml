@@ -26,14 +26,20 @@ Item {
     visible: true
     clip: false
 
-    Image {
+    BorderImage {
         x: -60
         y: -60
-        width: 821
-        height: 694
+        width: parent.width + 120
+        height: parent.height + 160
         z: -1
         source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-window-shadow.png"
         sourceSize: Qt.size(1642, 1388)
+        border.left: 60
+        border.top: 60
+        border.right: 60
+        border.bottom: 100
+        horizontalTileMode: BorderImage.Stretch
+        verticalTileMode: BorderImage.Stretch
         smooth: true
         mipmap: true
     }
@@ -54,6 +60,7 @@ Item {
     SystaliaG2Frame {
         anchors.fill: parent
         radii: materialWindow.cornerRadii
+        slant: materialWindow.surfaceSlant
         fillGradient: LinearGradient {
             x1: 0
             y1: 0
@@ -128,6 +135,7 @@ Item {
     SystaliaG2Frame {
         anchors.fill: parent
         radii: materialWindow.cornerRadii
+        slant: materialWindow.surfaceSlant
         strokeColor: "#c9ffffff"
         strokeWidth: 1.5
     }

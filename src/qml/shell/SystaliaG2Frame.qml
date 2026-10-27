@@ -10,6 +10,7 @@ Shape {
     property color fillColor: "transparent"
     property color strokeColor: "transparent"
     property real strokeWidth: 0
+    property real slant: 0
     readonly property real controlFactor: 0.91
     property alias fillGradient: framePath.fillGradient
 
@@ -19,6 +20,12 @@ Shape {
         Math.max(0, Math.min(radii.y, maxRadius)),
         Math.max(0, Math.min(radii.z, maxRadius)),
         Math.max(0, Math.min(radii.w, maxRadius)))
+
+    function xAt(x, y) {
+        const halfHeight = Math.max(height * 0.5, 1)
+        const slantFactor = 1 - ((y - halfHeight) / halfHeight) * slant * 0.25
+        return width * 0.5 + (x - width * 0.5) * Math.max(slantFactor, 0.05)
+    }
 
     antialiasing: true
     preferredRendererType: Shape.CurveRenderer
@@ -31,55 +38,55 @@ Shape {
         strokeWidth: frame.strokeWidth
         joinStyle: ShapePath.RoundJoin
         capStyle: ShapePath.FlatCap
-        startX: frame.effectiveRadii.x
+        startX: frame.xAt(frame.effectiveRadii.x, 0)
         startY: 0
 
         PathLine {
-            x: frame.width - frame.effectiveRadii.y
+            x: frame.xAt(frame.width - frame.effectiveRadii.y, 0)
             y: 0
         }
         PathCubic {
-            x: frame.width
+            x: frame.xAt(frame.width, frame.effectiveRadii.y)
             y: frame.effectiveRadii.y
-            control1X: frame.width - frame.effectiveRadii.y * (1 - frame.controlFactor)
+            control1X: frame.xAt(frame.width - frame.effectiveRadii.y * (1 - frame.controlFactor), 0)
             control1Y: 0
-            control2X: frame.width
+            control2X: frame.xAt(frame.width, frame.effectiveRadii.y * (1 - frame.controlFactor))
             control2Y: frame.effectiveRadii.y * (1 - frame.controlFactor)
         }
         PathLine {
-            x: frame.width
+            x: frame.xAt(frame.width, frame.height - frame.effectiveRadii.w)
             y: frame.height - frame.effectiveRadii.w
         }
         PathCubic {
-            x: frame.width - frame.effectiveRadii.w
+            x: frame.xAt(frame.width - frame.effectiveRadii.w, frame.height)
             y: frame.height
-            control1X: frame.width
+            control1X: frame.xAt(frame.width, frame.height - frame.effectiveRadii.w * (1 - frame.controlFactor))
             control1Y: frame.height - frame.effectiveRadii.w * (1 - frame.controlFactor)
-            control2X: frame.width - frame.effectiveRadii.w * (1 - frame.controlFactor)
+            control2X: frame.xAt(frame.width - frame.effectiveRadii.w * (1 - frame.controlFactor), frame.height)
             control2Y: frame.height
         }
         PathLine {
-            x: frame.effectiveRadii.z
+            x: frame.xAt(frame.effectiveRadii.z, frame.height)
             y: frame.height
         }
         PathCubic {
-            x: 0
+            x: frame.xAt(0, frame.height - frame.effectiveRadii.z)
             y: frame.height - frame.effectiveRadii.z
-            control1X: frame.effectiveRadii.z * (1 - frame.controlFactor)
+            control1X: frame.xAt(frame.effectiveRadii.z * (1 - frame.controlFactor), frame.height)
             control1Y: frame.height
-            control2X: 0
+            control2X: frame.xAt(0, frame.height - frame.effectiveRadii.z * (1 - frame.controlFactor))
             control2Y: frame.height - frame.effectiveRadii.z * (1 - frame.controlFactor)
         }
         PathLine {
-            x: 0
+            x: frame.xAt(0, frame.effectiveRadii.x)
             y: frame.effectiveRadii.x
         }
         PathCubic {
-            x: frame.effectiveRadii.x
+            x: frame.xAt(frame.effectiveRadii.x, 0)
             y: 0
-            control1X: 0
+            control1X: frame.xAt(0, frame.effectiveRadii.x * (1 - frame.controlFactor))
             control1Y: frame.effectiveRadii.x * (1 - frame.controlFactor)
-            control2X: frame.effectiveRadii.x * (1 - frame.controlFactor)
+            control2X: frame.xAt(frame.effectiveRadii.x * (1 - frame.controlFactor), 0)
             control2Y: 0
         }
     }

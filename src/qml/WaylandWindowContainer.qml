@@ -282,23 +282,21 @@ Item {
             border.width: 0
 
             // 1. Barra de Título SGE com Decoração Server-Side Nativa (SSD)
-            Rectangle {
+            SystaliaG2Frame {
                 id: sgeTitleBar
                 anchors.top: parent.top
                 anchors.left: parent.left
                 anchors.right: parent.right
                 height: windowContainer.titleBarHeight
-                radius: 18
-                color: windowContainer.activeFocus ? "#3000f2fe" : "#181e293b"
-
-                // Ocultar cantos inferiores arredondados da barra de título
-                Rectangle {
-                    anchors.bottom: parent.bottom
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    height: 12
-                    color: parent.color
-                }
+                radii: Qt.vector4d(
+                    windowContainer.opticalMetadata
+                        ? windowContainer.opticalMetadata.radii.x : 18,
+                    windowContainer.opticalMetadata
+                        ? windowContainer.opticalMetadata.radii.y : 18,
+                    0, 0)
+                slant: windowContainer.opticalMetadata
+                       ? windowContainer.opticalMetadata.slant : 0
+                fillColor: windowContainer.activeFocus ? "#3000f2fe" : "#181e293b"
 
                 RowLayout {
                     anchors.fill: parent
