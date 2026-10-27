@@ -131,10 +131,17 @@ private slots:
     void init();
     void cleanup();
     void globalAndDefaults();
-    void exactFixedPointAndSignals();
-    void independentSurfacesAndClients();
-    void controllerAndManagerLifecycle();
-    void surfaceAndDisconnectLifecycle();
+    void cornerRadiiRoundtripAndSignal();
+    void slantRoundtripAndSignal();
+    void opticalPropertiesRoundtripAndSignal();
+    void qmlItemTracksMetadataChanges();
+    void unchangedMetadataDoesNotEmitDuplicateSignal();
+    void surfacesWithinOneClientKeepIndependentMetadata();
+    void separateClientsKeepIndependentMetadata();
+    void destroyingControllerRemovesItsMetadata();
+    void destroyingManagerLeavesLiveControllersUsable();
+    void destroyingSurfaceInvalidatesMetadata();
+    void disconnectingClientRemovesAllMetadata();
     void duplicateControllerIsRejected();
     void invalidValues_data();
     void invalidValues();
@@ -185,7 +192,7 @@ void TestSystaliaProtocol::globalAndDefaults() {
     QCOMPARE(metadata->meniscusWidth(), 28.0f);
 }
 
-void TestSystaliaProtocol::exactFixedPointAndSignals() {
+void TestSystaliaProtocol::cornerRadiiRoundtripAndSignal() {
     MockClient client(m_compositor.get());
     QVERIFY(client.connectToServer());
     auto *surface = client.createSurface();
@@ -194,11 +201,65 @@ void TestSystaliaProtocol::exactFixedPointAndSignals() {
     auto *metadata = client.metadata(surface);
     QVERIFY(metadata);
     QSignalSpy radii(metadata, &SystaliaSurfaceResource::radiiChanged);
-    QSignalSpy slant(metadata, &SystaliaSurfaceResource::slantChanged);
-    QSignalSpy optics(metadata, &SystaliaSurfaceResource::opticalPropertiesChanged);
     QVERIFY(radii.isValid());
-    QVERIFY(slant.isValid());
-    QVERIFY(optics.isValid());
+    const QVector4D expected(16.25f, 28.5f, 32.75f, 1.0f / 256.0f);
+    z_systalia_surface_v1_set_corner_radii(controller,
+        wl_fixed_from_double(16.25), wl_fixed_from_double(28.5),
+        wl_fixed_from_double(32.75), 1);
+    QVERIFY(client.roundtrip());
+    QCOMPARE(metadata->radii(), expected);
+    QCOMPARE(radii.count(), 1);
+    QCOMPARE(radii.at(0).at(0).value<QVector4D>(), expected);
+}
+
+void TestSystaliaProtocol::slantRoundtripAndSignal() {
+    MockClient client(m_compositor.get());
+    QVERIFY(client.connectToServer());
+    auto *surface = client.createSurface();
+    auto *controller = client.createController(surface);
+    QVERIFY(client.roundtrip());
+    auto *metadata = client.metadata(surface);
+    QVERIFY(metadata);
+    QSignalSpy changed(metadata, &SystaliaSurfaceResource::slantChanged);
+    QVERIFY(changed.isValid());
+    z_systalia_surface_v1_set_slant(controller, wl_fixed_from_double(-0.375));
+    QVERIFY(client.roundtrip());
+    QCOMPARE(metadata->slant(), -0.375f);
+    QCOMPARE(changed.count(), 1);
+    QCOMPARE(changed.at(0).at(0).toFloat(), -0.375f);
+}
+
+void TestSystaliaProtocol::opticalPropertiesRoundtripAndSignal() {
+    MockClient client(m_compositor.get());
+    QVERIFY(client.connectToServer());
+    auto *surface = client.createSurface();
+    auto *controller = client.createController(surface);
+    QVERIFY(client.roundtrip());
+    auto *metadata = client.metadata(surface);
+    QVERIFY(metadata);
+    QSignalSpy changed(metadata, &SystaliaSurfaceResource::opticalPropertiesChanged);
+    QVERIFY(changed.isValid());
+    z_systalia_surface_v1_set_optical_properties(controller,
+        wl_fixed_from_double(1.5), wl_fixed_from_double(0.0625),
+        wl_fixed_from_double(32.25));
+    QVERIFY(client.roundtrip());
+    QCOMPARE(metadata->ior(), 1.5f);
+    QCOMPARE(metadata->dispersion(), 0.0625f);
+    QCOMPARE(metadata->meniscusWidth(), 32.25f);
+    QCOMPARE(changed.count(), 1);
+    QCOMPARE(changed.at(0).at(0).toFloat(), 1.5f);
+    QCOMPARE(changed.at(0).at(1).toFloat(), 0.0625f);
+    QCOMPARE(changed.at(0).at(2).toFloat(), 32.25f);
+}
+
+void TestSystaliaProtocol::qmlItemTracksMetadataChanges() {
+    MockClient client(m_compositor.get());
+    QVERIFY(client.connectToServer());
+    auto *surface = client.createSurface();
+    auto *controller = client.createController(surface);
+    QVERIFY(client.roundtrip());
+    auto *metadata = client.metadata(surface);
+    QVERIFY(metadata);
     QQmlEngine engine;
     QQmlComponent component(&engine);
     component.setData(R"(
@@ -211,71 +272,95 @@ void TestSystaliaProtocol::exactFixedPointAndSignals() {
             ior: metadata.ior
             chromaticDispersion: metadata.dispersion
         })", QUrl());
-    std::unique_ptr<QObject> item(component.createWithInitialProperties({{"metadata", QVariant::fromValue(metadata)}}));
+    std::unique_ptr<QObject> item(component.createWithInitialProperties({
+        {QStringLiteral("metadata"), QVariant::fromValue(metadata)}}));
     QVERIFY2(item, qPrintable(component.errorString()));
-    const auto apply = [controller] {
-        z_systalia_surface_v1_set_corner_radii(controller, wl_fixed_from_double(16.25),
-            wl_fixed_from_double(28.5), wl_fixed_from_double(32.75), 1);
-        z_systalia_surface_v1_set_slant(controller, wl_fixed_from_double(-0.375));
-        z_systalia_surface_v1_set_optical_properties(controller, wl_fixed_from_double(1.5),
-            wl_fixed_from_double(0.0625), wl_fixed_from_double(32.25));
-    };
-    apply();
+    z_systalia_surface_v1_set_corner_radii(controller,
+        wl_fixed_from_double(16.25), wl_fixed_from_double(28.5),
+        wl_fixed_from_double(32.75), 1);
+    z_systalia_surface_v1_set_slant(controller, wl_fixed_from_double(-0.375));
+    z_systalia_surface_v1_set_optical_properties(controller,
+        wl_fixed_from_double(1.5), wl_fixed_from_double(0.0625),
+        wl_fixed_from_double(32.25));
     QVERIFY(client.roundtrip());
-    const QVector4D expected(16.25f, 28.5f, 32.75f, 1.0f / 256.0f);
-    QCOMPARE(metadata->radii(), expected);
-    QCOMPARE(metadata->slant(), -0.375f);
-    QCOMPARE(metadata->ior(), 1.5f);
-    QCOMPARE(metadata->dispersion(), 0.0625f);
-    QCOMPARE(metadata->meniscusWidth(), 32.25f);
-    QCOMPARE(radii.count(), 1);
-    QCOMPARE(slant.count(), 1);
-    QCOMPARE(optics.count(), 1);
-    QCOMPARE(radii.at(0).at(0).value<QVector4D>(), expected);
-    QCOMPARE(optics.at(0).at(2).toFloat(), 32.25f);
-    QCOMPARE(item->property("radii").value<QVector4D>(), expected);
+    QCOMPARE(item->property("radii").value<QVector4D>(),
+             QVector4D(16.25f, 28.5f, 32.75f, 1.0f / 256.0f));
     QCOMPARE(item->property("slant").toFloat(), -0.375f);
     QCOMPARE(item->property("ior").toFloat(), 1.5f);
     QCOMPARE(item->property("chromaticDispersion").toFloat(), 0.0625f);
-    apply();
-    QVERIFY(client.roundtrip());
-    QCOMPARE(radii.count(), 1);
-    QCOMPARE(slant.count(), 1);
-    QCOMPARE(optics.count(), 1);
 }
 
-void TestSystaliaProtocol::independentSurfacesAndClients() {
-    MockClient first(m_compositor.get()), second(m_compositor.get());
-    QVERIFY(first.connectToServer());
-    QVERIFY(second.connectToServer());
-    auto *a = first.createSurface();
-    auto *b = first.createSurface();
-    auto *c = second.createSurface();
-    auto *controller = first.createController(a);
-    first.createController(b);
-    second.createController(c);
-    QVERIFY(first.roundtrip());
-    QVERIFY(second.roundtrip());
-    z_systalia_surface_v1_set_slant(controller, wl_fixed_from_double(0.5));
-    QVERIFY(first.roundtrip());
-    QCOMPARE(m_compositor->surfaceExtension()->surfaceCount(), 3);
-    QCOMPARE(first.metadata(a)->slant(), 0.5f);
-    QCOMPARE(first.metadata(b)->slant(), 0.0f);
-    QCOMPARE(second.metadata(c)->slant(), 0.0f);
-}
-
-void TestSystaliaProtocol::controllerAndManagerLifecycle() {
+void TestSystaliaProtocol::unchangedMetadataDoesNotEmitDuplicateSignal() {
     MockClient client(m_compositor.get());
     QVERIFY(client.connectToServer());
     auto *surface = client.createSurface();
     auto *controller = client.createController(surface);
     QVERIFY(client.roundtrip());
-    QPointer<SystaliaSurfaceResource> original = client.metadata(surface);
+    auto *metadata = client.metadata(surface);
+    QVERIFY(metadata);
+    QSignalSpy changed(metadata, &SystaliaSurfaceResource::radiiChanged);
+    QVERIFY(changed.isValid());
+    const auto sendRadii = [controller] {
+        z_systalia_surface_v1_set_corner_radii(controller,
+            wl_fixed_from_double(16.25), wl_fixed_from_double(28.5),
+            wl_fixed_from_double(32.75), 1);
+    };
+    sendRadii();
+    QVERIFY(client.roundtrip());
+    sendRadii();
+    QVERIFY(client.roundtrip());
+    QCOMPARE(changed.count(), 1);
+}
+
+void TestSystaliaProtocol::surfacesWithinOneClientKeepIndependentMetadata() {
+    MockClient client(m_compositor.get());
+    QVERIFY(client.connectToServer());
+    auto *firstSurface = client.createSurface();
+    auto *secondSurface = client.createSurface();
+    auto *controller = client.createController(firstSurface);
+    client.createController(secondSurface);
+    QVERIFY(client.roundtrip());
+    z_systalia_surface_v1_set_slant(controller, wl_fixed_from_double(0.5));
+    QVERIFY(client.roundtrip());
+    QCOMPARE(client.metadata(firstSurface)->slant(), 0.5f);
+    QCOMPARE(client.metadata(secondSurface)->slant(), 0.0f);
+}
+
+void TestSystaliaProtocol::separateClientsKeepIndependentMetadata() {
+    MockClient first(m_compositor.get());
+    MockClient second(m_compositor.get());
+    QVERIFY(first.connectToServer());
+    QVERIFY(second.connectToServer());
+    auto *firstSurface = first.createSurface();
+    auto *secondSurface = second.createSurface();
+    auto *controller = first.createController(firstSurface);
+    second.createController(secondSurface);
+    QVERIFY(first.roundtrip());
+    QVERIFY(second.roundtrip());
+    z_systalia_surface_v1_set_slant(controller, wl_fixed_from_double(0.5));
+    QVERIFY(first.roundtrip());
+    QCOMPARE(first.metadata(firstSurface)->slant(), 0.5f);
+    QCOMPARE(second.metadata(secondSurface)->slant(), 0.0f);
+}
+
+void TestSystaliaProtocol::destroyingControllerRemovesItsMetadata() {
+    MockClient client(m_compositor.get());
+    QVERIFY(client.connectToServer());
+    auto *surface = client.createSurface();
+    auto *controller = client.createController(surface);
+    QVERIFY(client.roundtrip());
+    QPointer<SystaliaSurfaceResource> metadata = client.metadata(surface);
     client.destroyController(controller);
     QVERIFY(client.roundtrip());
-    QVERIFY(original.isNull());
+    QVERIFY(metadata.isNull());
     QCOMPARE(m_compositor->surfaceExtension()->surfaceCount(), 0);
-    controller = client.createController(surface);
+}
+
+void TestSystaliaProtocol::destroyingManagerLeavesLiveControllersUsable() {
+    MockClient client(m_compositor.get());
+    QVERIFY(client.connectToServer());
+    auto *surface = client.createSurface();
+    auto *controller = client.createController(surface);
     QVERIFY(client.roundtrip());
     QVERIFY(client.metadata(surface));
     client.forget(client.manager);
@@ -286,7 +371,7 @@ void TestSystaliaProtocol::controllerAndManagerLifecycle() {
     QCOMPARE(client.metadata(surface)->slant(), 0.25f);
 }
 
-void TestSystaliaProtocol::surfaceAndDisconnectLifecycle() {
+void TestSystaliaProtocol::destroyingSurfaceInvalidatesMetadata() {
     MockClient client(m_compositor.get());
     QVERIFY(client.connectToServer());
     auto *surface = client.createSurface();
@@ -303,10 +388,16 @@ void TestSystaliaProtocol::surfaceAndDisconnectLifecycle() {
     client.destroyController(controller);
     QVERIFY(client.roundtrip());
     QVERIFY(metadata.isNull());
-    surface = client.createSurface();
+}
+
+void TestSystaliaProtocol::disconnectingClientRemovesAllMetadata() {
+    MockClient client(m_compositor.get());
+    QVERIFY(client.connectToServer());
+    auto *surface = client.createSurface();
     client.createController(surface);
     QVERIFY(client.roundtrip());
-    metadata = client.metadata(surface);
+    QPointer<SystaliaSurfaceResource> metadata = client.metadata(surface);
+    QVERIFY(metadata);
     client.disconnect();
     QTRY_VERIFY(metadata.isNull());
     QCOMPARE(m_compositor->surfaceExtension()->surfaceCount(), 0);

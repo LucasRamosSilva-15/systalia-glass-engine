@@ -69,8 +69,10 @@ void main() {
 
     // 1. Recorte Analítico SDF G2 e Subpixel Anti-Aliasing
     float dist = evaluateSurfaceSDF(p, halfSize, u_Radii, u_Slant);
-    float fw = max(fwidth(dist), 0.75);
-    float alphaMask = 1.0 - smoothstep(-fw * 0.5, fw * 0.5, dist);
+    // O filtro cobre a pegada completa do fragmento para manter a borda suave
+    // também em raios subpixel e escalas HiDPI.
+    float edgeWidth = max(fwidth(dist), 0.5);
+    float alphaMask = 1.0 - smoothstep(-edgeWidth, edgeWidth, dist);
     if (alphaMask <= 0.001) discard;
 
     // 2. Menisco de Tensão Superficial (Gota de 28px)
@@ -111,7 +113,11 @@ void main() {
 
     // 8. Iluminação da Borda de Gota (Bisel + Fio Zenital)
     float zenith = max(-norm.y, 0.0);
-    float rimLine = exp(-pow((dist + 1.0) / 0.75, 2.0));
+    const float RIM_SIGMA = 0.75;
+    float filteredRimSigma = sqrt(RIM_SIGMA * RIM_SIGMA
+                                  + edgeWidth * edgeWidth / 12.0);
+    float rimLine = (RIM_SIGMA / filteredRimSigma)
+                  * exp(-pow((dist + 1.0) / filteredRimSigma, 2.0));
     finalColor += vec3(0.9, 0.98, 1.0) * (rimLine * zenith * 0.90);
 
     // Borda iluminada suave ao redor de todo o chassi
@@ -134,9 +140,9 @@ void main() {
                                     max(0.0, u_Radii.w - CLIENT_INSET));
             float clientDistance = evaluateSurfaceSDF(clientPoint, clientHalfSize,
                                                       clientRadii, u_Slant);
-            float clientFw = max(fwidth(clientDistance), 0.75);
-            float clientMask = 1.0 - smoothstep(-clientFw * 0.5,
-                                                clientFw * 0.5, clientDistance);
+            float clientEdgeWidth = max(fwidth(clientDistance), 0.5);
+            float clientMask = 1.0 - smoothstep(-clientEdgeWidth,
+                                                clientEdgeWidth, clientDistance);
             vec2 clientUV = clamp(clientPosition / clientSize, vec2(0.0), vec2(1.0));
             vec4 clientPixel = texture(u_ClientTexture, clientUV);
             clientCoverage = clientMask * clientPixel.a;

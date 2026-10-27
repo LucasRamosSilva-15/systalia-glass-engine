@@ -15,7 +15,9 @@ private slots:
     void testDecorationManagerInstantiation();
     void testPreferredModeServerSide();
     void testInterfaceName();
-    void testPreferredModeSignal();
+    void preferredModeChangeEmitsSignal_data();
+    void preferredModeChangeEmitsSignal();
+    void settingCurrentPreferredModeDoesNotEmit();
 private:
     std::unique_ptr<QTemporaryDir> m_runtime;
 };
@@ -53,18 +55,45 @@ void TestXdgDecorations::testInterfaceName() {
     QCOMPARE(QByteArray(QWaylandXdgDecorationManagerV1::interface()->name), QByteArray("zxdg_decoration_manager_v1"));
 }
 
-void TestXdgDecorations::testPreferredModeSignal() {
+void TestXdgDecorations::preferredModeChangeEmitsSignal_data() {
+    QTest::addColumn<int>("initialMode");
+    QTest::addColumn<int>("requestedMode");
+    QTest::newRow("client-side")
+        << int(QWaylandXdgToplevel::ServerSideDecoration)
+        << int(QWaylandXdgToplevel::ClientSideDecoration);
+    QTest::newRow("server-side")
+        << int(QWaylandXdgToplevel::ClientSideDecoration)
+        << int(QWaylandXdgToplevel::ServerSideDecoration);
+}
+
+void TestXdgDecorations::preferredModeChangeEmitsSignal() {
+    QFETCH(int, initialMode);
+    QFETCH(int, requestedMode);
     SystaliaCompositor compositor;
-    QSignalSpy spy(compositor.decorationManager(), &QWaylandXdgDecorationManagerV1::preferredModeChanged);
-
-    compositor.decorationManager()->setPreferredMode(QWaylandXdgToplevel::ClientSideDecoration);
+    compositor.setSocketName("wayland-test-decor-mode");
+    compositor.create();
+    QVERIFY(compositor.decorationManager());
+    compositor.decorationManager()->setPreferredMode(
+        static_cast<QWaylandXdgToplevel::DecorationMode>(initialMode));
+    QSignalSpy spy(compositor.decorationManager(),
+                   &QWaylandXdgDecorationManagerV1::preferredModeChanged);
+    QVERIFY(spy.isValid());
+    compositor.decorationManager()->setPreferredMode(
+        static_cast<QWaylandXdgToplevel::DecorationMode>(requestedMode));
     QCOMPARE(spy.count(), 1);
-    QCOMPARE(compositor.decorationManager()->preferredMode(), QWaylandXdgToplevel::ClientSideDecoration);
+    QCOMPARE(int(compositor.decorationManager()->preferredMode()), requestedMode);
+}
 
-    // Reafirmar ServerSideDecoration
+void TestXdgDecorations::settingCurrentPreferredModeDoesNotEmit() {
+    SystaliaCompositor compositor;
+    compositor.setSocketName("wayland-test-decor-noop");
+    compositor.create();
+    QVERIFY(compositor.decorationManager());
+    QSignalSpy spy(compositor.decorationManager(),
+                   &QWaylandXdgDecorationManagerV1::preferredModeChanged);
+    QVERIFY(spy.isValid());
     compositor.decorationManager()->setPreferredMode(QWaylandXdgToplevel::ServerSideDecoration);
-    QCOMPARE(spy.count(), 2);
-    QCOMPARE(compositor.decorationManager()->preferredMode(), QWaylandXdgToplevel::ServerSideDecoration);
+    QCOMPARE(spy.count(), 0);
 }
 
 QTEST_MAIN(TestXdgDecorations)

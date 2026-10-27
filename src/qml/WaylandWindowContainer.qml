@@ -1,27 +1,45 @@
 import QtQuick
-import QtQuick.Controls
-import QtQuick.Layouts
 import QtWayland.Compositor
 import Systalia.Engine
+import "shell" as Shell
 
 Item {
     id: windowContainer
 
     property var toplevel: null
     property var waylandServer: null
+    property var workspace: null
     property var backdropSource: null
     property point screenResolution: Qt.point(1280, 800)
     property real animTime: 0.0
+    property point restorePosition: Qt.point(0, 0)
+    property size restoreFrameSize: Qt.size(0, 0)
+    property size restoreClientSize: Qt.size(0, 0)
+    property bool maximizedBySge: false
+    property bool restoringGeometry: false
+    property bool destructionScheduled: false
 
     width: 680
     height: 480
+    visible: !minimized && clientMapped
+    enabled: visible
 
     property int minWindowWidth: 320
     property int minWindowHeight: 220
     readonly property int borderMargin: 8
     readonly property int frameMargin: 8
-    readonly property int titleBarHeight: 36
+    readonly property int titleBarHeight: 50
     readonly property var xdgSurface: toplevel ? toplevel.xdgSurface : null
+    readonly property bool minimized: {
+        if (!waylandServer || !toplevel)
+            return false
+        const revision = waylandServer.minimizedToplevelsRevision
+        if (revision < 0)
+            return false
+        return waylandServer.isToplevelMinimized(toplevel)
+    }
+    readonly property bool clientMapped: xdgSurface && xdgSurface.surface
+                                        ? xdgSurface.surface.hasContent : false
     readonly property var opticalMetadata: {
         if (!waylandServer || !xdgSurface)
             return null
@@ -31,8 +49,11 @@ Item {
         return extension.resourceForSurface(xdgSurface.surface)
     }
     readonly property rect clientGeometry: xdgSurface ? xdgSurface.windowGeometry : Qt.rect(0, 0, 0, 0)
+    readonly property vector4d frameRadii: opticalMetadata
+                                          ? opticalMetadata.radii
+                                          : Qt.vector4d(20.0, 20.0, 20.0, 20.0)
     readonly property bool resizeEnabled: toplevel !== null && waylandServer !== null
-                                          && !toplevel.maximized && !toplevel.fullscreen
+                                          && !maximizedBySge && !toplevel.fullscreen
     property bool resizing: false
     property int resizeEdges: 0
     property bool resizeAnchored: false
@@ -48,8 +69,15 @@ Item {
             return
         width = clientGeometry.width + 2 * frameMargin
         height = clientGeometry.height + titleBarHeight + 2 * frameMargin
-        if (resizeAnchored && (resizeEdges & Qt.LeftEdge))
+        if (restoringGeometry) {
+            if (Math.round(clientGeometry.width) === restoreClientSize.width
+                    && Math.round(clientGeometry.height) === restoreClientSize.height)
+                restoreGeometryTimer.restart()
+            return
+        }
+        if (resizeAnchored && (resizeEdges & Qt.LeftEdge)) {
             x = fixedRight - width
+        }
         if (resizeAnchored && (resizeEdges & Qt.TopEdge))
             y = fixedBottom - height
     }
@@ -104,9 +132,101 @@ Item {
             waylandServer.requestToplevelResize(toplevel, requestedClientSize, false)
     }
 
+    function disposeContainer() {
+        if (destructionScheduled)
+            return
+        destructionScheduled = true
+        finishResize()
+        destroy()
+    }
+
+    function toggleMaximized() {
+        if (!toplevel || !waylandServer || !parent)
+            return
+
+        const wasMaximized = maximizedBySge
+        let clientWidth = 0
+        let clientHeight = 0
+        let nextX = x
+        let nextY = y
+
+        if (wasMaximized) {
+            const frameWidth = restoreFrameSize.width > 0 ? restoreFrameSize.width : 816
+            const frameHeight = restoreFrameSize.height > 0 ? restoreFrameSize.height : 552
+            clientWidth = Math.round(frameWidth - 2 * frameMargin)
+            clientHeight = Math.round(frameHeight - titleBarHeight - 2 * frameMargin)
+            restoreClientSize = Qt.size(clientWidth, clientHeight)
+            nextX = restorePosition.x
+            nextY = restorePosition.y
+        } else {
+            restorePosition = Qt.point(x, y)
+            restoreFrameSize = Qt.size(width, height)
+            clientWidth = Math.round(parent.width - 2 * frameMargin)
+            clientHeight = Math.round(parent.height - titleBarHeight - 2 * frameMargin)
+            nextX = 0
+            nextY = 0
+        }
+
+        if (clientWidth <= 0 || clientHeight <= 0)
+            return
+        maximizedBySge = !wasMaximized
+        restoringGeometry = wasMaximized
+        if (!waylandServer.toggleToplevelMaximized(toplevel, Qt.size(clientWidth, clientHeight))) {
+            maximizedBySge = wasMaximized
+            restoringGeometry = false
+            return
+        }
+
+        x = nextX
+        y = nextY
+        if (restoringGeometry
+                && Math.round(clientGeometry.width) === restoreClientSize.width
+                && Math.round(clientGeometry.height) === restoreClientSize.height)
+            restoreGeometryTimer.restart()
+    }
+
+    Timer {
+        id: restoreGeometryTimer
+        interval: 16
+        repeat: false
+        onTriggered: {
+            if (!windowContainer.restoringGeometry)
+                return
+            windowContainer.x = windowContainer.restorePosition.x
+            windowContainer.y = windowContainer.restorePosition.y
+            windowContainer.restoringGeometry = false
+        }
+    }
+
     onResizeEnabledChanged: {
         if (!resizeEnabled)
             finishResize()
+    }
+
+    onToplevelChanged: maximizedBySge = toplevel ? Boolean(toplevel.maximized) : false
+
+    Connections {
+        target: windowContainer.toplevel
+        function onMaximizedChanged() {
+            windowContainer.maximizedBySge = windowContainer.toplevel
+                                             ? Boolean(windowContainer.toplevel.maximized) : false
+        }
+    }
+
+    BorderImage {
+        x: -60
+        y: -60
+        width: parent.width + 120
+        height: parent.height + 160
+        z: -1
+        source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-window-shadow.png"
+        border.left: 60
+        border.top: 60
+        border.right: 60
+        border.bottom: 100
+        horizontalTileMode: BorderImage.Stretch
+        verticalTileMode: BorderImage.Stretch
+        smooth: true
     }
 
     // Chassi de Vidro Líquido Nativo do Systalia Glass Engine (SGE)
@@ -115,246 +235,114 @@ Item {
         anchors.fill: parent
 
         backdropSource: windowContainer.backdropSource
-        clientTextureSource: clientSurfaceItem
+        clientTextureSource: clientTextureCapture
         screenResolution: Qt.vector2d(windowContainer.screenResolution.x, windowContainer.screenResolution.y)
         titleBarHeight: windowContainer.titleBarHeight
 
-        radii: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.radii : Qt.vector4d(24.0, 24.0, 24.0, 24.0)
+        radii: windowContainer.frameRadii
         slant: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.slant : 0.0
         ior: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.ior : 1.25
         chromaticDispersion: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.dispersion : 0.040
-        causticIntensity: 0.70
-        surfaceOpacity: 0.90
+        causticIntensity: 0.85
+        surfaceOpacity: 0.85
         time: windowContainer.animTime
 
-        // Estrutura transparente para a SSD sobre a imagem já composta pelo shader.
-        Rectangle {
-            anchors.fill: parent
-            radius: 18
-            color: "transparent"
-            border.width: 0
+        // A fonte Wayland fica atrás do passe óptico; o shader a compõe no mesmo frame.
+        Item {
+            id: clientViewport
+            objectName: "clientViewport"
+            x: windowContainer.frameMargin
+            y: windowContainer.titleBarHeight + windowContainer.frameMargin
+            width: Math.max(0, parent.width - 2 * windowContainer.frameMargin)
+            height: Math.max(0, parent.height - windowContainer.titleBarHeight
+                             - 2 * windowContainer.frameMargin)
+            z: 1
+            clip: true
 
-            // 1. Barra de Título SGE com Decoração Server-Side Nativa (SSD)
-            Rectangle {
-                id: sgeTitleBar
-                anchors.top: parent.top
-                anchors.left: parent.left
-                anchors.right: parent.right
-                height: windowContainer.titleBarHeight
-                radius: 18
-                color: windowContainer.activeFocus ? "#3000f2fe" : "#181e293b"
+            ShellSurfaceItem {
+                id: clientSurfaceItem
+                objectName: "clientSurfaceItem"
+                x: -windowContainer.clientGeometry.x
+                y: -windowContainer.clientGeometry.y
+                width: Math.max(0, windowContainer.clientGeometry.width)
+                height: Math.max(0, windowContainer.clientGeometry.height)
+                shellSurface: windowContainer.xdgSurface
+                surface: windowContainer.xdgSurface
+                         ? windowContainer.xdgSurface.surface : null
+                focus: true
+                focusOnClick: true
+                inputEventsEnabled: !windowContainer.resizing
+                paintEnabled: true
+                moveItem: windowContainer
 
-                // Ocultar cantos inferiores arredondados da barra de título
-                Rectangle {
-                    anchors.bottom: parent.bottom
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    height: 12
-                    color: parent.color
-                }
-
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.leftMargin: 12
-                    anchors.rightMargin: 10
-                    spacing: 8
-
-                    // Ícone do Aplicativo SGE
-                    Rectangle {
-                        width: 20
-                        height: 20
-                        radius: 5
-                        gradient: Gradient {
-                            orientation: Gradient.Vertical
-                            GradientStop { position: 0.0; color: "#38bdf8" }
-                            GradientStop { position: 1.0; color: "#0284c7" }
-                        }
-                        border.color: "#80ffffff"
-                        border.width: 1
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: ">_"
-                            font.pixelSize: 10
-                            font.bold: true
-                            color: "#f8fafc"
-                        }
-                    }
-
-                    // Título do Aplicativo
-                    Text {
-                        Layout.fillWidth: true
-                        text: (windowContainer.toplevel && windowContainer.toplevel.title.length > 0)
-                              ? windowContainer.toplevel.title
-                              : ((windowContainer.toplevel && windowContainer.toplevel.appId.length > 0)
-                                 ? windowContainer.toplevel.appId
-                                 : "Aplicação Externa (SGE)")
-                        font.pixelSize: 12
-                        font.bold: true
-                        color: "#f8fafc"
-                        elide: Text.ElideRight
-                    }
-
-                    // Badge de Decoração Server-Side
-                    Rectangle {
-                        height: 18
-                        implicitWidth: badgeTxt.implicitWidth + 10
-                        radius: 4
-                        color: "#1500f2fe"
-                        border.color: "#4000f2fe"
-                        border.width: 1
-
-                        Text {
-                            id: badgeTxt
-                            anchors.centerIn: parent
-                            text: "SGE SSD"
-                            font.pixelSize: 8
-                            font.bold: true
-                            color: "#00f2fe"
-                        }
-                    }
-
-                    // Botões Canônicos de Controle de Janela SGE
-                    Row {
-                        spacing: 6
-
-                        // Botão Minimizar
-                        Rectangle {
-                            width: 24
-                            height: 20
-                            radius: 10
-                            gradient: Gradient {
-                                orientation: Gradient.Vertical
-                                GradientStop { position: 0.0; color: minMouse.containsMouse ? "#40ffffff" : "#20ffffff" }
-                                GradientStop { position: 1.0; color: minMouse.containsMouse ? "#300284c7" : "#0d1b2a" }
-                            }
-                            border.color: minMouse.containsMouse ? "#00f2fe" : "#30ffffff"
-                            border.width: 1
-
-                            Rectangle {
-                                anchors.centerIn: parent
-                                width: 8
-                                height: 2
-                                color: "#f8fafc"
-                            }
-
-                            MouseArea {
-                                id: minMouse
-                                anchors.fill: parent
-                                hoverEnabled: true
-                            }
-                        }
-
-                        // Botão Maximizar
-                        Rectangle {
-                            width: 24
-                            height: 20
-                            radius: 10
-                            gradient: Gradient {
-                                orientation: Gradient.Vertical
-                                GradientStop { position: 0.0; color: maxMouse.containsMouse ? "#40ffffff" : "#20ffffff" }
-                                GradientStop { position: 1.0; color: maxMouse.containsMouse ? "#300284c7" : "#0d1b2a" }
-                            }
-                            border.color: maxMouse.containsMouse ? "#00f2fe" : "#30ffffff"
-                            border.width: 1
-
-                            Rectangle {
-                                anchors.centerIn: parent
-                                width: 8
-                                height: 8
-                                color: "transparent"
-                                border.color: "#f8fafc"
-                                border.width: 1.2
-                            }
-
-                            MouseArea {
-                                id: maxMouse
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                onClicked: {
-                                    if (windowContainer.toplevel) {
-                                        if (windowContainer.toplevel.maximized) {
-                                            windowContainer.toplevel.sendUnmaximized()
-                                        } else {
-                                            windowContainer.toplevel.sendMaximized(Qt.size(windowContainer.width, windowContainer.height))
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        // Botão Fechar
-                        Rectangle {
-                            width: 24
-                            height: 20
-                            radius: 10
-                            gradient: Gradient {
-                                orientation: Gradient.Vertical
-                                GradientStop { position: 0.0; color: closeMouse.containsMouse ? "#ff5c7a" : "#25ffffff" }
-                                GradientStop { position: 1.0; color: closeMouse.containsMouse ? "#b91c1c" : "#0d1b2a" }
-                            }
-                            border.color: closeMouse.containsMouse ? "#fca5a5" : "#35ffffff"
-                            border.width: 1
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: "✕"
-                                font.pixelSize: 10
-                                color: "#f8fafc"
-                            }
-
-                            MouseArea {
-                                id: closeMouse
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                onClicked: {
-                                    if (windowContainer.toplevel) {
-                                        windowContainer.toplevel.sendClose()
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                DragHandler {
-                    id: windowDrag
-                    target: windowContainer
-                    enabled: !windowContainer.resizing
-                    onActiveChanged: if (active) windowContainer.resizeAnchored = false
+                onSurfaceDestroyed: {
+                    windowContainer.disposeContainer()
                 }
             }
 
-            // Clip buffer extents to xdg windowGeometry without stretching uncommitted buffers.
-            Item {
-                id: clientViewport
-                anchors.top: sgeTitleBar.bottom
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.bottom: parent.bottom
-                anchors.margins: windowContainer.frameMargin
-                clip: true
-
-                ShellSurfaceItem {
-                    id: clientSurfaceItem
-                    objectName: "clientSurfaceItem"
-                    x: -windowContainer.clientGeometry.x
-                    y: -windowContainer.clientGeometry.y
-                    shellSurface: windowContainer.xdgSurface
-                    focus: true
-                    focusOnClick: true
-                    inputEventsEnabled: !windowContainer.resizing
-                    paintEnabled: true
-                    opacity: 0.0
-                    moveItem: windowContainer
-
-                    onSurfaceDestroyed: {
-                        windowContainer.finishResize()
-                        windowContainer.destroy()
-                    }
-                }
+            ShaderEffectSource {
+                id: clientTextureCapture
+                objectName: "clientTextureCapture"
+                sourceItem: clientSurfaceItem
+                live: true
+                hideSource: false
+                recursive: false
+                visible: false
+                format: ShaderEffectSource.RGBA8
             }
         }
+
+        Shell.SystaliaWindowHeader {
+            id: sgeTitleBar
+            width: parent.width
+            height: windowContainer.titleBarHeight
+            z: 2
+            iconGlyph: "▰"
+            title: (windowContainer.toplevel && windowContainer.toplevel.title.length > 0)
+                   ? windowContainer.toplevel.title
+                   : ((windowContainer.toplevel && windowContainer.toplevel.appId.length > 0)
+                      ? windowContainer.toplevel.appId
+                      : "Aplicação Wayland")
+            badgeText: "SDE-KWIN | VALO"
+            badgeWidth: 0
+            maximized: windowContainer.maximizedBySge
+            glassSurface: true
+            radii: windowContainer.frameRadii
+            slant: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.slant : 0
+            slantReferenceWidth: windowContainer.width
+            slantReferenceHeight: windowContainer.height
+            dragEnabled: !windowContainer.resizing && !windowContainer.maximizedBySge
+                          && (!windowContainer.toplevel || !windowContainer.toplevel.fullscreen)
+            dragTarget: windowContainer
+
+            onMinimizeRequested: {
+                if (windowContainer.toplevel && windowContainer.waylandServer)
+                    windowContainer.waylandServer.minimizeToplevel(windowContainer.toplevel)
+            }
+            onMaximizeRequested: windowContainer.toggleMaximized()
+            onCloseRequested: {
+                if (windowContainer.toplevel && windowContainer.waylandServer)
+                    windowContainer.waylandServer.closeToplevel(windowContainer.toplevel)
+            }
+            onDragStarted: {
+                windowContainer.resizeAnchored = false
+                if (windowContainer.toplevel && windowContainer.waylandServer)
+                    windowContainer.waylandServer.activateToplevel(windowContainer.toplevel)
+            }
+            onHeaderTapped: {
+                if (windowContainer.toplevel && windowContainer.waylandServer)
+                    windowContainer.waylandServer.activateToplevel(windowContainer.toplevel)
+            }
+        }
+    }
+
+    Shell.SystaliaG2Frame {
+        anchors.fill: parent
+        z: 3
+        radii: windowContainer.frameRadii
+        slant: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.slant : 0
+        strokeColor: "#c9ffffff"
+        strokeWidth: 1.5
     }
 
     Repeater {
@@ -402,6 +390,10 @@ Item {
         onTapped: {
             windowContainer.forceActiveFocus()
             clientSurfaceItem.forceActiveFocus()
+            if (windowContainer.workspace)
+                windowContainer.workspace.raiseClientWindow(windowContainer)
+            if (windowContainer.waylandServer && windowContainer.toplevel)
+                windowContainer.waylandServer.activateToplevel(windowContainer.toplevel)
         }
     }
 }

@@ -16,6 +16,7 @@ find_package(Qt6 6.7 REQUIRED COMPONENTS
     QuickControls2
     ShaderTools
     WaylandCompositor
+    DBus
 )
 
 find_package(Vulkan REQUIRED)
@@ -55,6 +56,18 @@ qt_add_library(sge_core STATIC
     src/compositor/SystaliaSurfaceExtension.cpp
     src/compositor/SystaliaCompositor.hpp
     src/compositor/SystaliaCompositor.cpp
+    src/compositor/WindowStackModel.hpp
+    src/compositor/WindowStackModel.cpp
+    src/system/SystemTelemetryService.hpp
+    src/system/SystemTelemetryService.cpp
+    src/system/ProcessLauncherService.hpp
+    src/system/ProcessLauncherService.cpp
+    src/system/AppRegistryService.hpp
+    src/system/AppRegistryService.cpp
+    src/system/NotificationServer.hpp
+    src/system/NotificationServer.cpp
+    src/system/SystemControlService.hpp
+    src/system/SystemControlService.cpp
 )
 
 qt6_generate_wayland_protocol_server_sources(sge_core
@@ -66,6 +79,7 @@ target_include_directories(sge_core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gfx
     ${CMAKE_CURRENT_SOURCE_DIR}/src/compositor
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/system
 )
 
 target_link_libraries(sge_core PUBLIC
@@ -73,9 +87,48 @@ target_link_libraries(sge_core PUBLIC
     Qt6::Gui
     Qt6::Quick
     Qt6::WaylandCompositor
+    Qt6::DBus
     Vulkan::Vulkan
     sge_shaders
 )
+
+set_source_files_properties(src/qml/theme/SystaliaTheme.qml PROPERTIES
+    QT_QML_SINGLETON_TYPE TRUE
+)
+
+set(sge_valo_assets
+    src/qml/assets/figma/valo-ocean-atmosphere.png
+    src/qml/assets/figma/valo-mark.png
+    src/qml/assets/figma/valo-dock-folder.png
+    src/qml/assets/figma/valo-dock-speaker.png
+    src/qml/assets/figma/valo-dock-terminal.png
+    src/qml/assets/figma/valo-dock-code.png
+    src/qml/assets/figma/valo-dock-spark.png
+    src/qml/assets/figma/valo-file-folder-body.png
+    src/qml/assets/figma/valo-file-folder-lip.png
+    src/qml/assets/figma/valo-file-documents-art.png
+    src/qml/assets/figma/valo-file-document.png
+    src/qml/assets/figma/valo-file-download.png
+    src/qml/assets/figma/valo-file-list.png
+    src/qml/assets/figma/valo-file-check.png
+    src/qml/assets/figma/valo-files-prism.png
+    src/qml/assets/figma/valo-files-ribbon.png
+    src/qml/assets/figma/valo-files-edge.png
+    src/qml/assets/figma/valo-control-prism.png
+    src/qml/assets/figma/valo-control-ribbon.png
+    src/qml/assets/figma/valo-control-edge.png
+    src/qml/assets/figma/valo-window-action-minimize-bg.png
+    src/qml/assets/figma/valo-window-action-maximize-bg.png
+    src/qml/assets/figma/valo-window-action-close-bg.png
+    src/qml/assets/figma/valo-window-minimize.png
+    src/qml/assets/figma/valo-window-maximize.png
+    src/qml/assets/figma/valo-window-close.png
+    src/qml/assets/figma/valo-window-shadow.png
+)
+
+foreach(asset IN LISTS sge_valo_assets)
+    set_source_files_properties(${asset} PROPERTIES QT_RESOURCE_ALIAS "${asset}")
+endforeach()
 
 qt_add_qml_module(sge_core
     OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/Systalia/Engine"
@@ -84,8 +137,22 @@ qt_add_qml_module(sge_core
     RESOURCE_PREFIX "/qt/qml"
     QML_FILES
         src/qml/main.qml
+        src/qml/theme/SystaliaTheme.qml
         src/qml/WaylandClientView.qml
         src/qml/WaylandWindowContainer.qml
+        src/qml/shell/SystaliaTopBar.qml
+        src/qml/shell/SystaliaDock.qml
+        src/qml/shell/SystaliaG2Frame.qml
+        src/qml/shell/SystaliaWindowAction.qml
+        src/qml/shell/SystaliaWindowHeader.qml
+        src/qml/shell/SystaliaFilesWindow.qml
+        src/qml/shell/SystaliaMaterialWindow.qml
+        src/qml/shell/SystaliaFlowMenu.qml
+        src/qml/shell/SystaliaNotificationHost.qml
+        src/qml/shell/SystaliaControlCenter.qml
+        src/qml/shell/SystaliaTaskSwitcher.qml
+    RESOURCES
+        ${sge_valo_assets}
     NO_PLUGIN
 )
 

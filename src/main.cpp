@@ -1,9 +1,17 @@
 #include <QGuiApplication>
+#include <QJSEngine>
 #include <QQmlApplicationEngine>
+#include <QQmlEngine>
 #include <QQuickWindow>
+#include <QUrl>
 #include <QDebug>
 #include "SystaliaGlassItem.hpp"
 #include "SystaliaCompositor.hpp"
+#include "SystemTelemetryService.hpp"
+#include "ProcessLauncherService.hpp"
+#include "AppRegistryService.hpp"
+#include "NotificationServer.hpp"
+#include "SystemControlService.hpp"
 
 int main(int argc, char *argv[]) {
     // Configuração obrigatória do backend Vulkan QRhi antes de QGuiApplication
@@ -14,11 +22,35 @@ int main(int argc, char *argv[]) {
     app.setApplicationName(QStringLiteral("SystaliaGlassEngine"));
     app.setOrganizationName(QStringLiteral("Systalia"));
 
+    NotificationServer notificationServer;
+    SystemControlService systemControlService;
+
     // Registro dos tipos QML
     qmlRegisterType<SystaliaGlassItem>("Systalia.Engine", 1, 0, "SystaliaGlassItem");
     qmlRegisterType<SystaliaCompositor>("Systalia.Compositor", 1, 0, "SystaliaCompositor");
+    qmlRegisterSingletonType<SystemTelemetryService>(
+        "Systalia.System", 1, 0, "SystemTelemetry",
+        [](QQmlEngine *, QJSEngine *) -> QObject * {
+            return new SystemTelemetryService();
+        });
+    qmlRegisterSingletonType<ProcessLauncherService>(
+        "Systalia.System", 1, 0, "ProcessLauncher",
+        [](QQmlEngine *, QJSEngine *) -> QObject * {
+            return new ProcessLauncherService();
+        });
+    qmlRegisterSingletonType<AppRegistryService>(
+        "Systalia.System", 1, 0, "AppRegistry",
+        [](QQmlEngine *, QJSEngine *) -> QObject * {
+            return new AppRegistryService();
+        });
+    qmlRegisterSingletonInstance("Systalia.System", 1, 0, "Notifications",
+                                 &notificationServer);
+    qmlRegisterSingletonInstance("Systalia.System", 1, 0, "SystemControl",
+                                 &systemControlService);
 
     QQmlApplicationEngine engine;
+    engine.addImageProvider(QStringLiteral("desktopIcons"), new DesktopIconProvider());
+
     const QUrl url(QStringLiteral("qrc:/qt/qml/Systalia/Engine/src/qml/main.qml"));
 
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
