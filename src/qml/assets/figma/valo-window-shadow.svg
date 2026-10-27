@@ -1,8 +1,8 @@
 <svg width="821" height="694" viewBox="0 0 821 694" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <filter id="valo-window-shadow" x="0" y="0" width="821" height="694" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-      <feGaussianBlur in="SourceAlpha" stdDeviation="20" result="cyanBlur"/>
-      <feOffset dy="20" in="cyanBlur" result="cyanOffset"/>
+      <feGaussianBlur in="SourceAlpha" stdDeviation="8" result="cyanBlur"/>
+      <feOffset dy="0" in="cyanBlur" result="cyanOffset"/>
       <feFlood flood-color="#00E5FF" flood-opacity="0.14" result="cyanColor"/>
       <feComposite in="cyanColor" in2="cyanOffset" operator="in" result="cyanShadow"/>
       <feGaussianBlur in="SourceAlpha" stdDeviation="6" result="blackBlur"/>
@@ -15,5 +15,5 @@
       </feMerge>
     </filter>
   </defs>
-  <rect x="60" y="60" width="701" height="534" rx="20" fill="#FFFFFF" filter="url(#valo-window-shadow)"/>
+  <path d="M80 60 H741 C759.2 60 761 61.8 761 80 V574 C761 592.2 759.2 594 741 594 H80 C61.8 594 60 592.2 60 574 V80 C60 61.8 61.8 60 80 60 Z" fill="#FFFFFF" filter="url(#valo-window-shadow)"/>
 </svg>

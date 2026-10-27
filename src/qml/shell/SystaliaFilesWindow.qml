@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Shapes
 import Systalia.Engine
 import Systalia.System 1.0
 
@@ -52,17 +53,19 @@ Item {
         time: fileWindow.animationTime
     }
 
-    Rectangle {
+    SystaliaG2Frame {
         anchors.fill: parent
-        radius: fileWindow.cornerRadius
-        gradient: Gradient {
-            orientation: Gradient.Horizontal
+        cornerRadius: fileWindow.cornerRadius
+        fillGradient: LinearGradient {
+            x1: 0
+            y1: 0
+            x2: fileWindow.width
+            y2: 0
             GradientStop { position: 0.0; color: "#63264f76" }
             GradientStop { position: 0.24; color: "#754bafc7" }
             GradientStop { position: 0.52; color: "#63133a5d" }
             GradientStop { position: 1.0; color: "#6809233f" }
         }
-        antialiasing: true
     }
 
     Rectangle {
@@ -124,13 +127,11 @@ Item {
         }
     }
 
-    Rectangle {
+    SystaliaG2Frame {
         anchors.fill: parent
-        radius: fileWindow.cornerRadius
-        color: "transparent"
-        border.color: "#c9ffffff"
-        border.width: 1.5
-        antialiasing: true
+        cornerRadius: fileWindow.cornerRadius
+        strokeColor: "#c9ffffff"
+        strokeWidth: 1.5
     }
 
     Text {
