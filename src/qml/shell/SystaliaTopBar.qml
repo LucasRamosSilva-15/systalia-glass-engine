@@ -9,6 +9,7 @@ Item {
     property var backdropSource: null
     property var screenResolution: Qt.vector2d(width, height)
     property real animationTime: 0
+    property date dateNow: new Date()
 
     signal launcherRequested()
     signal controlCenterRequested()
@@ -33,37 +34,20 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: 22
-        color: "#d9071628"
+        color: "#db071628"
         border.color: "#3d74d5ee"
         border.width: 1
         antialiasing: true
     }
 
-    Rectangle {
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.top: parent.top
-        anchors.leftMargin: 25
-        anchors.rightMargin: 25
-        height: 1
-        opacity: .7
-        gradient: Gradient {
-            orientation: Gradient.Horizontal
-            GradientStop { position: 0; color: "transparent" }
-            GradientStop { position: .18; color: "#5bc5e7f0" }
-            GradientStop { position: .82; color: "#5bc5e7f0" }
-            GradientStop { position: 1; color: "transparent" }
-        }
-        antialiasing: true
-    }
-
     Image {
-        x: 14
-        anchors.verticalCenter: parent.verticalCenter
-        width: 28
-        height: 28
-        source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/systalia-mark.svg"
-        sourceSize: Qt.size(28, 28)
+        x: 17
+        y: 9
+        width: 18
+        height: 23
+        source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/systalia-mark.png"
+        sourceSize: Qt.size(112, 112)
+        fillMode: Image.PreserveAspectFit
         smooth: true
         mipmap: true
         TapHandler {
@@ -77,39 +61,36 @@ Item {
         x: 47
         anchors.verticalCenter: parent.verticalCenter
         text: "SYSTALIA"
-        color: SystaliaTheme.text
+        color: "#c6e5f8"
         font.family: SystaliaTheme.fontFamily
         font.pixelSize: 19
-        font.weight: Font.DemiBold
-        font.letterSpacing: 1.0
+        font.weight: Font.Medium
         antialiasing: true
     }
 
     Text {
         x: 189
         anchors.verticalCenter: parent.verticalCenter
-        text: "SDE-KWIN  |  VALO"
-        color: SystaliaTheme.textSecondary
+        text: "SDE-KWIN | VALO"
+        color: "#9cbad3"
         font.family: SystaliaTheme.fontFamily
         font.pixelSize: 17
-        font.letterSpacing: .55
         antialiasing: true
     }
 
     Text {
         x: 392
         anchors.verticalCenter: parent.verticalCenter
-        width: 302
+        width: 318
         text: topBar.telemetry
-              ? "CPU %1%   RAM %2 GB   FPS %3"
+              ? "CPU %1%  |  RAM %2GB  |  FPS %3"
                 .arg(Math.round(topBar.telemetry.cpuUsage))
                 .arg(topBar.telemetry.ramUsageGb.toFixed(1))
                 .arg(topBar.telemetry.fps)
-              : "CPU --%   RAM -- GB   FPS --"
-        color: SystaliaTheme.textSecondary
+              : "CPU --%  |  RAM --GB  |  FPS --"
+        color: "#9cbad3"
         font.family: SystaliaTheme.fontFamily
         font.pixelSize: 17
-        font.letterSpacing: .2
         elide: Text.ElideRight
         antialiasing: true
     }
@@ -117,24 +98,50 @@ Item {
     Text {
         x: 724
         anchors.verticalCenter: parent.verticalCenter
-        text: topBar.telemetry ? topBar.telemetry.systemTime : "--:--:--"
-        color: SystaliaTheme.text
+        width: 300
+        text: topBar.telemetry
+              ? topBar.telemetry.systemTime
+              : topBar.dateNow.toLocaleDateString(Qt.locale("en_US"), "ddd dd MMM").toUpperCase()
+                + "  >  "
+                + topBar.dateNow.toLocaleTimeString(Qt.locale("en_US"), "HH:mm:ss")
+        color: "#c2d7df"
         font.family: SystaliaTheme.fontFamily
         font.pixelSize: 17
-        font.weight: Font.Medium
         antialiasing: true
     }
 
     Row {
-        anchors.right: parent.right
-        anchors.rightMargin: 17
-        anchors.verticalCenter: parent.verticalCenter
-        spacing: 5
+        x: 1331
+        y: 7.5
+        width: 290
+        height: 30
 
-        StatusButton { glyph: "⌁"; accessibleName: "Rede"; onClicked: topBar.controlCenterRequested() }
-        StatusButton { glyph: "◖"; accessibleName: "Som"; onClicked: topBar.controlCenterRequested() }
-        StatusButton { glyph: "☼"; accessibleName: "Brilho"; onClicked: topBar.controlCenterRequested() }
-        StatusButton { glyph: "⌘"; accessibleName: "Sessão"; onClicked: topBar.controlCenterRequested() }
+        Repeater {
+            model: [
+                { glyph: "▣", name: "Estado do sistema" },
+                { glyph: ">_", name: "Terminal" },
+                { glyph: "▦", name: "Aplicativos" },
+                { glyph: "☼", name: "Brilho" },
+                { glyph: "▣", name: "Rede e som" },
+                { glyph: "⏻", name: "Energia" }
+            ]
+
+            delegate: StatusButton {
+                required property var modelData
+                width: 48
+                height: 30
+                glyph: modelData.glyph
+                accessibleName: modelData.name
+                onClicked: topBar.controlCenterRequested()
+            }
+        }
+    }
+
+    Timer {
+        interval: 1000
+        repeat: true
+        running: true
+        onTriggered: topBar.dateNow = new Date()
     }
 
     component StatusButton: ToolButton {
@@ -142,22 +149,22 @@ Item {
         property string glyph: "•"
         property string accessibleName: "Controle do sistema"
         Accessible.name: accessibleName
-        width: 32
-        height: 30
         hoverEnabled: true
+
         contentItem: Text {
             text: statusButton.glyph
-            color: statusButton.hovered ? "#f4fcff" : "#c6e5f8"
-            font.pixelSize: 16
+            color: statusButton.hovered ? "#f4fcff" : "#a0e7fa"
+            font.family: SystaliaTheme.fontFamily
+            font.pixelSize: 15
             font.weight: Font.Medium
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             antialiasing: true
         }
         background: Rectangle {
-            radius: 9
-            color: statusButton.hovered ? "#3d47a9c2" : "#1f295373"
-            border.color: statusButton.hovered ? "#7b9de0f0" : "#285e8ca8"
+            radius: 5
+            color: statusButton.hovered ? "#2747a9c2" : "transparent"
+            border.color: statusButton.hovered ? "#3d9de0f0" : "transparent"
             border.width: 1
             antialiasing: true
         }

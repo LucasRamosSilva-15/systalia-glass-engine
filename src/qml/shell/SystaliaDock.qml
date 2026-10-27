@@ -18,7 +18,7 @@ Item {
     property real caustics: 0.65
     property real surfaceOpacity: 0.88
     property bool materialActive: true
-    readonly property real pillRadius: height / 2.0
+    readonly property real pillRadius: 47
 
     width: 555
     height: 125
@@ -31,11 +31,11 @@ Item {
     signal settingsRequested()
 
     readonly property var launchers: [
-        { action: "files", label: "Systalia Files", icon: "dock-folder.svg", appIds: ["systalia-files"] },
-        { action: "audio", label: "Áudio", icon: "dock-speaker.svg", appIds: ["pavucontrol", "pwvucontrol", "org.pulseaudio.pavucontrol"] },
-        { action: "terminal", label: "Terminal", icon: "dock-terminal.svg", appIds: ["alacritty", "foot"] },
-        { action: "ide", label: "Editor de código", icon: "dock-code.svg", appIds: ["code", "codium", "com.visualstudio.code"] },
-        { action: "settings", label: "Systalia Core", icon: "dock-spark.svg", appIds: ["systalia-core"] }
+        { action: "files", label: "Systalia Files", icon: "dock-folder.png", appIds: ["systalia-files"] },
+        { action: "audio", label: "Áudio", icon: "dock-speaker.png", appIds: ["pavucontrol", "pwvucontrol", "org.pulseaudio.pavucontrol"] },
+        { action: "terminal", label: "Terminal", icon: "dock-terminal.png", appIds: ["alacritty", "foot"] },
+        { action: "ide", label: "Editor de código", icon: "dock-code.png", appIds: ["code", "codium", "com.visualstudio.code"] },
+        { action: "settings", label: "Systalia Core", icon: "dock-spark.png", appIds: ["systalia-core"] }
     ]
 
     function isRunning(appIds) {
@@ -82,22 +82,27 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: dock.pillRadius
-        color: "#2f0a213a"
-        border.color: "#9b8fcce0"
-        border.width: 1.2
+        gradient: Gradient {
+            orientation: Gradient.Vertical
+            GradientStop { position: 0.0; color: "#4a5d9fb8" }
+            GradientStop { position: 0.34; color: "#56194c70" }
+            GradientStop { position: 1.0; color: "#63102741" }
+        }
+        border.color: "#c2e8ffff"
+        border.width: 1.25
         antialiasing: true
     }
 
     Rectangle {
-        x: 25
-        y: 9
-        width: parent.width - 50
+        x: 34
+        y: 2
+        width: parent.width - 68
         height: 1
         gradient: Gradient {
             orientation: Gradient.Horizontal
             GradientStop { position: 0; color: "transparent" }
-            GradientStop { position: .18; color: "#78edffff" }
-            GradientStop { position: .82; color: "#78edffff" }
+            GradientStop { position: .18; color: "#3deeffff" }
+            GradientStop { position: .82; color: "#3deeffff" }
             GradientStop { position: 1; color: "transparent" }
         }
         antialiasing: true
@@ -105,9 +110,9 @@ Item {
 
     Row {
         id: iconsRow
-        x: 35
-        y: 22
-        spacing: 17
+        x: 33.75
+        y: 21.75
+        spacing: 16
         z: 2
 
         Repeater {
@@ -117,7 +122,7 @@ Item {
                 id: launcher
                 required property var modelData
                 width: 78
-                height: 88
+                height: 78
                 scale: pointer.hovered ? 1.08 : 1.0
 
                 Behavior on scale {
@@ -130,22 +135,10 @@ Item {
                     width: 78
                     height: 78
                     source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/" + launcher.modelData.icon
-                    sourceSize: Qt.size(78, 78)
+                    sourceSize: Qt.size(312, 312)
                     fillMode: Image.PreserveAspectFit
                     smooth: true
                     mipmap: true
-                }
-
-                Rectangle {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    anchors.bottom: parent.bottom
-                    width: 15
-                    height: 3
-                    radius: 2
-                    visible: dock.isRunning(launcher.modelData.appIds)
-                    color: "#70f5f2"
-                    opacity: .95
-                    antialiasing: true
                 }
 
                 HoverHandler { id: pointer }

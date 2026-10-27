@@ -97,18 +97,18 @@ set_source_files_properties(src/qml/theme/SystaliaTheme.qml PROPERTIES
 )
 
 set(sge_valo_assets
-    src/qml/assets/figma/valo-ocean-atmosphere.svg
-    src/qml/assets/figma/systalia-mark.svg
-    src/qml/assets/figma/file-folder.svg
-    src/qml/assets/figma/file-document.svg
-    src/qml/assets/figma/file-download.svg
-    src/qml/assets/figma/file-code.svg
-    src/qml/assets/figma/file-image.svg
-    src/qml/assets/figma/dock-folder.svg
-    src/qml/assets/figma/dock-speaker.svg
-    src/qml/assets/figma/dock-terminal.svg
-    src/qml/assets/figma/dock-code.svg
-    src/qml/assets/figma/dock-spark.svg
+    src/qml/assets/figma/valo-ocean-atmosphere.png
+    src/qml/assets/figma/systalia-mark.png
+    src/qml/assets/figma/file-folder.png
+    src/qml/assets/figma/file-document.png
+    src/qml/assets/figma/file-download.png
+    src/qml/assets/figma/file-code.png
+    src/qml/assets/figma/file-image.png
+    src/qml/assets/figma/dock-folder.png
+    src/qml/assets/figma/dock-speaker.png
+    src/qml/assets/figma/dock-terminal.png
+    src/qml/assets/figma/dock-code.png
+    src/qml/assets/figma/dock-spark.png
 )
 
 foreach(asset IN LISTS sge_valo_assets)

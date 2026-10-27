@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Layouts
 import Systalia.Engine
 import Systalia.System 1.0
 
@@ -20,11 +19,12 @@ Item {
     property real cornerRadius: 20
     property bool materialActive: true
     property string selectedLocation: "Home"
-    property string selectedFile: "All Files"
+    property string selectedFile: ""
 
     width: 701
     height: 534
     visible: true
+    clip: true
 
     SystaliaGlassItem {
         anchors.fill: parent
@@ -43,97 +43,127 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: fileWindow.cornerRadius
-        color: "#4a0c2540"
-        border.color: SystaliaTheme.border
-        border.width: 1.2
+        gradient: Gradient {
+            orientation: Gradient.Horizontal
+            GradientStop { position: 0.0; color: "#63264f76" }
+            GradientStop { position: 0.24; color: "#754bafc7" }
+            GradientStop { position: 0.52; color: "#63133a5d" }
+            GradientStop { position: 1.0; color: "#6809233f" }
+        }
         antialiasing: true
     }
 
     Rectangle {
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.top: parent.top
-        height: 62
-        radius: fileWindow.cornerRadius
-        color: "#260d2844"
+        x: 4.5
+        y: 2.5
+        width: parent.width - 9
+        height: parent.height - 10
+        radius: 14
+        gradient: Gradient {
+            orientation: Gradient.Vertical
+            GradientStop { position: 0.0; color: "#40c8ffff" }
+            GradientStop { position: 0.34; color: "#1f61f0ff" }
+            GradientStop { position: 0.72; color: "#0b155279" }
+            GradientStop { position: 1.0; color: "#001b1834" }
+        }
+        border.color: "#24c8ffff"
+        border.width: 0.8
         antialiasing: true
+    }
 
-        Rectangle {
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.bottom: parent.bottom
-            height: 1
-            color: "#497bb9d1"
+    Rectangle {
+        anchors.fill: parent
+        radius: fileWindow.cornerRadius
+        color: "transparent"
+        border.color: "#c9ffffff"
+        border.width: 1.5
+        antialiasing: true
+    }
+
+    Text {
+        x: 16.5
+        y: 8
+        width: 34
+        height: 36
+        text: "▰"
+        color: "#64d6ff"
+        font.family: SystaliaTheme.fontFamily
+        font.pixelSize: 24
+        font.weight: Font.Bold
+        antialiasing: true
+    }
+
+    Text {
+        x: 48.5
+        y: 9
+        height: 36
+        text: "Systalia Files"
+        color: "#f4fcff"
+        font.family: SystaliaTheme.fontFamily
+        font.pixelSize: 21
+        font.weight: Font.Medium
+        antialiasing: true
+    }
+
+    Rectangle {
+        x: 182.5
+        y: 12.5
+        width: 120
+        height: 26
+        radius: 6
+        color: "#b80a2c46"
+        antialiasing: true
+        Text {
+            anchors.centerIn: parent
+            text: "ABYSSUS VES"
+            color: "#86b7d9"
+            font.family: SystaliaTheme.fontFamily
+            font.pixelSize: 14
+            antialiasing: true
         }
+    }
 
-        RowLayout {
-            anchors.fill: parent
-            anchors.leftMargin: 18
-            anchors.rightMargin: 15
-            spacing: 10
-
-            Image {
-                source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/systalia-mark.svg"
-                sourceSize: Qt.size(30, 30)
-                width: 30
-                height: 30
-                smooth: true
-                mipmap: true
-            }
-
-            ColumnLayout {
-                spacing: 1
-                Text {
-                    text: "Systalia Files"
-                    color: SystaliaTheme.text
-                    font.family: SystaliaTheme.fontFamily
-                    font.pixelSize: 21
-                    font.weight: Font.DemiBold
-                    antialiasing: true
-                }
-                Text {
-                    text: "ABYSSUS VES"
-                    color: SystaliaTheme.textMuted
-                    font.family: SystaliaTheme.fontFamily
-                    font.pixelSize: 9
-                    font.letterSpacing: 1.25
-                    antialiasing: true
-                }
-            }
-
-            Item { Layout.fillWidth: true }
-
-            WindowAction {
-                accessibleName: "Minimizar Systalia Files"
-                glyph: "−"
-                onClicked: {
-                    if (fileWindow.controller)
-                        fileWindow.controller.minimizeFileWindow()
-                    else
-                        fileWindow.visible = false
-                }
-            }
-            WindowAction {
-                accessibleName: "Maximizar Systalia Files"
-                glyph: fileWindow.controller && fileWindow.controller.filesWindowMaximized ? "❐" : "□"
-                onClicked: {
-                    if (fileWindow.controller)
-                        fileWindow.controller.toggleFileWindowMaximized()
-                }
-            }
-            WindowAction {
-                accessibleName: "Fechar Systalia Files"
-                glyph: "×"
-                closeAction: true
-                onClicked: {
-                    if (fileWindow.controller)
-                        fileWindow.controller.closeFileWindow()
-                    else
-                        fileWindow.visible = false
-                }
-            }
+    WindowAction {
+        x: 578.5
+        y: 12.5
+        accessibleName: "Minimizar Systalia Files"
+        glyph: "−"
+        onClicked: {
+            if (fileWindow.controller)
+                fileWindow.controller.minimizeFileWindow()
+            else
+                fileWindow.visible = false
         }
+    }
+    WindowAction {
+        x: 616.5
+        y: 12.5
+        accessibleName: "Maximizar Systalia Files"
+        glyph: fileWindow.controller && fileWindow.controller.filesWindowMaximized ? "❐" : "□"
+        onClicked: {
+            if (fileWindow.controller)
+                fileWindow.controller.toggleFileWindowMaximized()
+        }
+    }
+    WindowAction {
+        x: 654.5
+        y: 12.5
+        accessibleName: "Fechar Systalia Files"
+        glyph: "×"
+        closeAction: true
+        onClicked: {
+            if (fileWindow.controller)
+                fileWindow.controller.closeFileWindow()
+            else
+                fileWindow.visible = false
+        }
+    }
 
+    Item {
+        x: 0
+        y: 0
+        width: 570
+        height: 49
         DragHandler {
             target: fileWindow
             enabled: fileWindow.controller ? !fileWindow.controller.filesWindowMaximized : true
@@ -148,260 +178,225 @@ Item {
     }
 
     Rectangle {
-        id: navigation
-        x: 15
-        y: 75
-        width: 174
-        height: fileWindow.height - y - 15
-        radius: 17
-        color: "#75112640"
-        border.color: "#5178b4cf"
-        border.width: 1
+        x: 8.5
+        y: 49.5
+        width: 181
+        height: 469
+        radius: 14
+        color: "#e0081a2d"
         antialiasing: true
+    }
 
-        ColumnLayout {
-            anchors.fill: parent
-            anchors.margins: 12
-            spacing: 3
+    Repeater {
+        model: [
+            { name: "Recent", icon: "◷", top: 16 },
+            { name: "Home", icon: "⌂", top: 50 },
+            { name: "Desktop", icon: "▱", top: 84 },
+            { name: "Documents", icon: "♧", top: 118 },
+            { name: "Downloads", icon: "↓", top: 152 },
+            { name: "Music", icon: "♫", top: 186 },
+            { name: "Pictures", icon: "▧", top: 220 },
+            { name: "Trash", icon: "♜", top: 254 },
+            { name: "Other Items", icon: "+", top: 306 }
+        ]
 
-            Text {
-                text: "FAVORITES"
-                color: SystaliaTheme.textMuted
-                font.family: SystaliaTheme.fontFamily
-                font.pixelSize: 10
-                font.bold: true
-                font.letterSpacing: 1.1
-                Layout.leftMargin: 8
-                Layout.bottomMargin: 4
+        delegate: Item {
+            id: navigationEntry
+            required property var modelData
+            x: 17.5
+            y: 49.5 + modelData.top - 6
+            width: 163
+            height: 33
+
+            Rectangle {
+                anchors.fill: parent
+                visible: fileWindow.selectedLocation === navigationEntry.modelData.name
+                radius: 7
+                gradient: Gradient {
+                    orientation: Gradient.Vertical
+                    GradientStop { position: 0; color: "#3d9fefff" }
+                    GradientStop { position: 0.5; color: "#6e19587d" }
+                    GradientStop { position: 1; color: "#e010334e" }
+                }
+                border.color: "#c7f9ffff"
+                border.width: 1
                 antialiasing: true
-            }
-
-            Repeater {
-                model: [
-                    { name: "Recent", icon: "◷" },
-                    { name: "Home", icon: "⌂" },
-                    { name: "Desktop", icon: "▧" },
-                    { name: "Documents", icon: "▤" },
-                    { name: "Downloads", icon: "↓" },
-                    { name: "Music", icon: "♫" },
-                    { name: "Pictures", icon: "▣" },
-                    { name: "Trash", icon: "⌫" },
-                    { name: "Other Items", icon: "···" }
-                ]
-
-                delegate: Rectangle {
-                    required property var modelData
-                    Layout.fillWidth: true
-                    height: 34
-                    radius: 9
-                    color: fileWindow.selectedLocation === modelData.name
-                           ? "#3d2bd4e8" : navHover.hovered ? "#1cffffff" : "transparent"
-                    border.color: fileWindow.selectedLocation === modelData.name ? "#697af2fa" : "transparent"
-                    border.width: 1
+                Rectangle {
+                    anchors.fill: parent
+                    radius: 7
+                    color: "transparent"
+                    border.color: "#52ffffff"
+                    border.width: 0.7
                     antialiasing: true
-
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.leftMargin: 10
-                        anchors.rightMargin: 8
-                        spacing: 11
-                        Text {
-                            text: modelData.icon
-                            color: fileWindow.selectedLocation === modelData.name ? SystaliaTheme.aqua : "#9fc4dc"
-                            font.pixelSize: 15
-                            Layout.preferredWidth: 16
-                            horizontalAlignment: Text.AlignHCenter
-                            antialiasing: true
-                        }
-                        Text {
-                            text: modelData.name
-                            color: fileWindow.selectedLocation === modelData.name ? SystaliaTheme.text : SystaliaTheme.textSecondary
-                            font.family: SystaliaTheme.fontFamily
-                            font.pixelSize: 16
-                            font.weight: fileWindow.selectedLocation === modelData.name ? Font.DemiBold : Font.Normal
-                            Layout.fillWidth: true
-                            antialiasing: true
-                        }
-                    }
-
-                    HoverHandler { id: navHover }
-                    TapHandler { onTapped: fileWindow.selectedLocation = modelData.name }
                 }
             }
 
-            Item { Layout.fillHeight: true }
-
-            Rectangle {
-                Layout.fillWidth: true
-                height: 1
-                color: "#387ba4c1"
-                Layout.bottomMargin: 5
-            }
             Text {
-                text: fileWindow.waylandServer
-                      ? "WAYLAND  ·  " + (fileWindow.waylandServer.created ? "ATIVO" : "INATIVO")
-                      : "WAYLAND  ·  SGE"
-                color: fileWindow.waylandServer && fileWindow.waylandServer.created ? "#82f2d2" : SystaliaTheme.textMuted
+                x: 0.5
+                y: 6
+                width: 150
+                height: 27
+                text: navigationEntry.modelData.icon + "  " + navigationEntry.modelData.name
+                color: fileWindow.selectedLocation === navigationEntry.modelData.name ? "#eef9ff" : "#d5e2ee"
                 font.family: SystaliaTheme.fontFamily
-                font.pixelSize: 9
-                font.letterSpacing: .6
-                Layout.leftMargin: 7
+                font.pixelSize: 16
                 antialiasing: true
+                HoverHandler { cursorShape: Qt.PointingHandCursor }
+                TapHandler {
+                    onTapped: fileWindow.selectedLocation = navigationEntry.modelData.name
+                }
             }
         }
     }
 
-    Item {
-        id: filesContent
-        x: 207
-        y: 75
-        width: fileWindow.width - x - 14
-        height: fileWindow.height - y - 15
+    Text {
+        x: 207.5
+        y: 57
+        width: 83
+        height: 44
+        text: "‹   ›"
+        color: "#c5eeff"
+        font.family: SystaliaTheme.fontFamily
+        font.pixelSize: 26
+        antialiasing: true
+    }
 
-        ColumnLayout {
-            anchors.fill: parent
-            spacing: 15
+    Rectangle {
+        x: 274.5
+        y: 58.5
+        width: 90
+        height: 30
+        radius: 7
+        color: "#d8103852"
+        antialiasing: true
+        Text {
+            x: 11
+            anchors.verticalCenter: parent.verticalCenter
+            text: "⌂ " + fileWindow.selectedLocation
+            color: "#e6fbff"
+            font.family: SystaliaTheme.fontFamily
+            font.pixelSize: 16
+            font.weight: Font.Medium
+            antialiasing: true
+        }
+    }
 
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: 9
+    Text {
+        x: 488.5
+        y: 57
+        width: 30
+        height: 38
+        text: "☷"
+        color: "#c2efff"
+        font.family: SystaliaTheme.fontFamily
+        font.pixelSize: 21
+        horizontalAlignment: Text.AlignHCenter
+        verticalAlignment: Text.AlignVCenter
+        antialiasing: true
+    }
 
-                Rectangle {
-                    Layout.fillWidth: true
-                    height: 38
-                    radius: 10
-                    color: "#53112640"
-                    border.color: "#3d86b9d0"
-                    border.width: 1
-                    antialiasing: true
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.leftMargin: 13
-                        spacing: 9
-                        Text { text: "Home"; color: SystaliaTheme.text; font.pixelSize: 12; font.bold: true; antialiasing: true }
-                        Text { text: "›"; color: SystaliaTheme.textMuted; font.pixelSize: 15; antialiasing: true }
-                        Text { text: "All files"; color: SystaliaTheme.textMuted; font.pixelSize: 12; antialiasing: true }
-                        Item { Layout.fillWidth: true }
-                        Text { text: "⌄"; color: SystaliaTheme.textMuted; font.pixelSize: 15; Layout.rightMargin: 11; antialiasing: true }
-                    }
-                }
+    TextField {
+        id: searchField
+        x: 524.5
+        y: 59.5
+        width: 157
+        height: 28
+        placeholderText: "⌕ Search"
+        color: SystaliaTheme.text
+        placeholderTextColor: "#bdcfdc"
+        font.family: SystaliaTheme.fontFamily
+        font.pixelSize: 15
+        leftPadding: 13
+        background: Rectangle {
+            radius: 14
+            color: "#ba0a2535"
+            antialiasing: true
+        }
+        selectionColor: "#7d42e9ee"
+    }
 
-                TextField {
-                    id: searchField
-                    Layout.preferredWidth: 174
-                    Layout.fillWidth: false
-                    height: 38
-                    placeholderText: "Search files"
-                    color: SystaliaTheme.text
-                    placeholderTextColor: SystaliaTheme.textMuted
-                    font.family: SystaliaTheme.fontFamily
-                        font.pixelSize: 12
-                    leftPadding: 32
-                    background: Rectangle {
-                        radius: 10
-                        color: "#53112640"
-                        border.color: searchField.activeFocus ? "#9b50e6f7" : "#3d86b9d0"
-                        border.width: 1
-                        antialiasing: true
-                    }
-                    Text { x: 12; anchors.verticalCenter: parent.verticalCenter; text: "⌕"; color: SystaliaTheme.textMuted; font.pixelSize: 19; antialiasing: true }
-                }
+    Rectangle {
+        x: 206.5
+        y: 95.5
+        width: 476
+        height: 1
+        color: "#4db2f3fd"
+        antialiasing: true
+    }
+
+    Repeater {
+        model: [
+            { name: "All Files", icon: "file-folder.png", glyph: "", left: 216.5, top: 125.5 },
+            { name: "Documents", icon: "file-document.png", glyph: "◉", left: 334.5, top: 125.5 },
+            { name: "Document", icon: "file-document.png", glyph: "</>", left: 452.5, top: 125.5 },
+            { name: "Download2", icon: "file-download.png", glyph: "⬇", left: 570.5, top: 125.5 },
+            { name: "Divides 1", icon: "file-document.png", glyph: "≡", left: 216.5, top: 245.5 },
+            { name: "Systion 4", icon: "file-document.png", glyph: "✓", left: 334.5, top: 245.5 }
+        ]
+
+        delegate: Item {
+            id: fileEntry
+            required property var modelData
+            x: fileEntry.modelData.left
+            y: fileEntry.modelData.top
+            width: 96
+            height: 106
+
+            Rectangle {
+                anchors.fill: parent
+                visible: fileWindow.selectedFile === fileEntry.modelData.name
+                radius: 8
+                color: "#182ae0ff"
+                border.color: "#507ce9f4"
+                border.width: 1
+                antialiasing: true
             }
 
-            RowLayout {
-                Layout.fillWidth: true
-                Text {
-                    text: "Home"
-                    color: SystaliaTheme.text
-                    font.family: SystaliaTheme.fontFamily
-                    font.pixelSize: 21
-                    font.weight: Font.DemiBold
-                    antialiasing: true
-                }
-                Item { Layout.fillWidth: true }
-                Text { text: "6 items"; color: SystaliaTheme.textMuted; font.pixelSize: 10; antialiasing: true }
-                Rectangle {
-                    width: 60
-                    height: 28
-                    radius: 8
-                    color: "#281b3a58"
-                    border.color: "#4a79b4cd"
-                    border.width: 1
-                    antialiasing: true
-                    Text { anchors.centerIn: parent; text: "▦   ≡"; color: SystaliaTheme.textSecondary; font.pixelSize: 13; antialiasing: true }
-                }
+            Image {
+                x: fileEntry.modelData.name === "All Files" ? 3 : 7
+                y: 0
+                width: fileEntry.modelData.name === "All Files" ? 70 : 55
+                height: 67
+                source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/" + fileEntry.modelData.icon
+                sourceSize: Qt.size(width * 4, height * 4)
+                fillMode: Image.PreserveAspectFit
+                smooth: true
+                mipmap: true
             }
 
-            GridLayout {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                columns: 3
-                rowSpacing: 9
-                columnSpacing: 8
-
-                Repeater {
-                    model: [
-                        { name: "All Files", hint: "Folders and files", icon: "file-folder.svg" },
-                        { name: "Documents", hint: "12 items", icon: "file-folder.svg" },
-                        { name: "Document", hint: "Modified today", icon: "file-document.svg" },
-                        { name: "Download2", hint: "Downloads", icon: "file-download.svg" },
-                        { name: "Divides 1", hint: "Image · 4.2 MB", icon: "file-image.svg" },
-                        { name: "Systion 4", hint: "Source files", icon: "file-code.svg" }
-                    ]
-
-                    delegate: Rectangle {
-                        required property var modelData
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        Layout.minimumHeight: 128
-                        radius: 13
-                        color: fileWindow.selectedFile === modelData.name ? "#3b1b5070" : fileHover.hovered ? "#211a4868" : "#11172e4b"
-                        border.color: fileWindow.selectedFile === modelData.name ? "#7662d8ef" : "#2b8db7ce"
-                        border.width: 1
-                        antialiasing: true
-
-                        ColumnLayout {
-                            anchors.fill: parent
-                            anchors.margins: 10
-                            spacing: 6
-                            Image {
-                                Layout.alignment: Qt.AlignHCenter
-                                Layout.preferredWidth: 55
-                                Layout.preferredHeight: 55
-                                source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/" + modelData.icon
-                                sourceSize: Qt.size(62, 64)
-                                fillMode: Image.PreserveAspectFit
-                                smooth: true
-                                mipmap: true
-                            }
-                            Text {
-                                Layout.fillWidth: true
-                                text: modelData.name
-                                color: SystaliaTheme.text
-                                font.family: SystaliaTheme.fontFamily
-                                font.pixelSize: 12
-                                font.weight: Font.DemiBold
-                                horizontalAlignment: Text.AlignHCenter
-                                elide: Text.ElideRight
-                                antialiasing: true
-                            }
-                            Text {
-                                Layout.fillWidth: true
-                                text: modelData.hint
-                                color: SystaliaTheme.textMuted
-                                font.family: SystaliaTheme.fontFamily
-                                font.pixelSize: 9
-                                horizontalAlignment: Text.AlignHCenter
-                                elide: Text.ElideRight
-                                antialiasing: true
-                            }
-                        }
-
-                        HoverHandler { id: fileHover }
-                        TapHandler { onTapped: fileWindow.selectedFile = modelData.name }
-                    }
-                }
+            Text {
+                x: 4
+                y: 15
+                width: 55
+                height: 44
+                visible: fileEntry.modelData.glyph !== ""
+                text: fileEntry.modelData.glyph
+                color: "#eb8cf1ff"
+                font.family: SystaliaTheme.fontFamily
+                font.pixelSize: fileEntry.modelData.glyph === "</>" ? 22 : 26
+                font.weight: Font.Bold
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+                antialiasing: true
             }
+
+            Text {
+                x: 0
+                y: 78
+                width: 96
+                height: 26
+                text: fileEntry.modelData.name
+                color: "#eefcff"
+                font.family: SystaliaTheme.fontFamily
+                font.pixelSize: 15
+                font.weight: Font.Medium
+                horizontalAlignment: Text.AlignHCenter
+                elide: Text.ElideRight
+                antialiasing: true
+            }
+
+            HoverHandler { cursorShape: Qt.PointingHandCursor }
+            TapHandler { onTapped: fileWindow.selectedFile = fileEntry.modelData.name }
         }
     }
 
@@ -411,23 +406,42 @@ Item {
         property string accessibleName: "Ação da janela"
         property bool closeAction: false
         Accessible.name: accessibleName
-        Layout.preferredWidth: 27
-        Layout.preferredHeight: 25
+        width: 28
+        height: 28
         hoverEnabled: true
+        ToolTip.visible: hovered
+        ToolTip.text: accessibleName
+        ToolTip.delay: 450
+
         contentItem: Text {
             text: action.glyph
-            color: action.closeAction && action.hovered ? "#fff" : SystaliaTheme.textSecondary
-            font.pixelSize: 16
+            color: action.closeAction ? "#fff6f7" : "#f2fcff"
+            font.pixelSize: 12
+            font.weight: Font.DemiBold
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             antialiasing: true
         }
+
         background: Rectangle {
+            anchors.centerIn: parent
+            width: 16
+            height: 16
             radius: 8
-            color: action.closeAction && action.hovered ? "#c94f5d78" : action.hovered ? "#4373b8d2" : "#1e8bb6ce"
-            border.color: action.hovered ? "#768ac9dc" : "#3189b6ce"
+            color: action.closeAction ? (action.hovered ? "#ff6478" : "#f22e4f")
+                                      : (action.hovered ? "#36b7ff" : "#087bc9")
+            border.color: action.closeAction ? "#ff8c9b" : "#77daff"
             border.width: 1
             antialiasing: true
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: 2
+                radius: width / 2
+                color: "transparent"
+                border.color: action.closeAction ? "#7a142d" : "#104f81"
+                border.width: 0.7
+                antialiasing: true
+            }
         }
     }
 }

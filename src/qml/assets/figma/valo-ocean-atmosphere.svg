@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1662" height="975" viewBox="0 0 1662 975">
   <defs>
-    <linearGradient id="ocean" x1="0" y1="0" x2="1" y2="1">
+    <linearGradient id="ocean" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#0a2542"/>
       <stop offset=".54" stop-color="#071b33"/>
       <stop offset="1" stop-color="#061426"/>
@@ -14,19 +14,40 @@
       <stop offset="0" stop-color="#167ec5" stop-opacity=".28"/>
       <stop offset="1" stop-color="#061426" stop-opacity="0"/>
     </radialGradient>
+    <radialGradient id="glowCenter" cx=".5" cy=".22" r=".57">
+      <stop offset="0" stop-color="#39eaff" stop-opacity=".38"/>
+      <stop offset=".34" stop-color="#1eace8" stop-opacity=".2"/>
+      <stop offset=".72" stop-color="#0c548c" stop-opacity=".06"/>
+      <stop offset="1" stop-color="#061426" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowLeft" cx=".05" cy=".48" r=".58">
+      <stop offset="0" stop-color="#149fe0" stop-opacity=".25"/>
+      <stop offset=".56" stop-color="#0b568e" stop-opacity=".1"/>
+      <stop offset="1" stop-color="#061426" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowRight" cx=".94" cy=".42" r=".52">
+      <stop offset="0" stop-color="#27c5ef" stop-opacity=".19"/>
+      <stop offset=".5" stop-color="#0e659d" stop-opacity=".08"/>
+      <stop offset="1" stop-color="#061426" stop-opacity="0"/>
+    </radialGradient>
     <linearGradient id="ray" x1="0" y1="0" x2="0" y2="1">
       <stop stop-color="#a7f8ff" stop-opacity=".24"/>
       <stop offset=".46" stop-color="#3bc7f4" stop-opacity=".07"/>
       <stop offset="1" stop-color="#39aee7" stop-opacity="0"/>
     </linearGradient>
     <filter id="blur" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="42"/>
+      <feGaussianBlur stdDeviation="58"/>
     </filter>
   </defs>
   <rect width="1662" height="975" fill="url(#ocean)"/>
   <rect width="1662" height="975" fill="url(#glowA)"/>
   <rect width="1662" height="975" fill="url(#glowB)"/>
-  <ellipse cx="1100" cy="190" rx="650" ry="240" fill="#16bdeb" opacity=".08" filter="url(#blur)"/>
+  <rect width="1662" height="975" fill="url(#glowCenter)"/>
+  <rect width="1662" height="975" fill="url(#glowLeft)"/>
+  <rect width="1662" height="975" fill="url(#glowRight)"/>
+  <ellipse cx="835" cy="245" rx="690" ry="370" fill="#16bdeb" opacity=".1" filter="url(#blur)"/>
+  <ellipse cx="285" cy="430" rx="340" ry="400" fill="#128ed1" opacity=".09" filter="url(#blur)"/>
+  <ellipse cx="1300" cy="515" rx="420" ry="390" fill="#169fd8" opacity=".07" filter="url(#blur)"/>
   <g fill="url(#ray)">
     <path d="M336 0h175l330 730H714z" opacity=".64"/>
     <path d="M620 0h84l222 664h-98z" opacity=".45"/>

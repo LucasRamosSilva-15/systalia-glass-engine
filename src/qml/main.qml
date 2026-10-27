@@ -9,13 +9,13 @@ import "shell" as Shell
 
 ApplicationWindow {
     id: rootWindow
-    width: 1280
-    height: 800
+    width: 1662
+    height: 975
     visible: true
     title: qsTr("Systalia Glass Engine — Systalia Desktop Environment")
     color: SystaliaTheme.ocean
 
-    readonly property real designScale: Math.max(0.45, Math.min(width / 1662, height / 975))
+    readonly property real designScale: Math.max(0.1, Math.min(width / 1662, height / 975))
     property bool filesWindowMaximized: false
     property rect filesWindowRestoreGeometry: Qt.rect(113, 193, 701, 534)
     property bool materialWindowMaximized: false
@@ -153,7 +153,7 @@ ApplicationWindow {
         id: wallpaper
         anchors.fill: parent
         z: -10
-        source: Qt.resolvedUrl("assets/figma/valo-ocean-atmosphere.svg")
+        source: Qt.resolvedUrl("assets/figma/valo-ocean-atmosphere.png")
         fillMode: Image.PreserveAspectFit
         asynchronous: true
         cache: true

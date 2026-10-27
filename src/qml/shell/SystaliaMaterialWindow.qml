@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Layouts
 import Systalia.Engine
 
 Item {
@@ -17,10 +16,12 @@ Item {
     property real surfaceSlant: 0
     property real cornerRadius: 20
     property bool materialActive: true
+    property string selectedSection: "Control Center"
 
     width: 700
     height: 534
     visible: true
+    clip: true
 
     SystaliaGlassItem {
         anchors.fill: parent
@@ -39,89 +40,123 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: materialWindow.cornerRadius
-        color: "#490b2039"
-        border.color: SystaliaTheme.border
-        border.width: 1.2
+        gradient: Gradient {
+            orientation: Gradient.Horizontal
+            GradientStop { position: 0.0; color: "#63264f76" }
+            GradientStop { position: 0.24; color: "#754bafc7" }
+            GradientStop { position: 0.52; color: "#63133a5d" }
+            GradientStop { position: 1.0; color: "#6809233f" }
+        }
         antialiasing: true
     }
 
     Rectangle {
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.top: parent.top
-        height: 62
-        radius: materialWindow.cornerRadius
-        color: "#250d2844"
+        x: 4.5
+        y: 2.5
+        width: parent.width - 9
+        height: parent.height - 10
+        radius: 14
+        gradient: Gradient {
+            orientation: Gradient.Vertical
+            GradientStop { position: 0.0; color: "#40c8ffff" }
+            GradientStop { position: 0.34; color: "#1f61f0ff" }
+            GradientStop { position: 0.72; color: "#0b155279" }
+            GradientStop { position: 1.0; color: "#001b1834" }
+        }
+        border.color: "#24c8ffff"
+        border.width: 0.8
         antialiasing: true
+    }
 
-        Rectangle {
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.bottom: parent.bottom
-            height: 1
-            color: "#497bb9d1"
+    Rectangle {
+        anchors.fill: parent
+        radius: materialWindow.cornerRadius
+        color: "transparent"
+        border.color: "#c9ffffff"
+        border.width: 1.5
+        antialiasing: true
+    }
+
+    Text {
+        x: 16.5
+        y: 8.5
+        width: 32
+        height: 36
+        text: "ϟ"
+        color: "#48c4ff"
+        font.family: SystaliaTheme.fontFamily
+        font.pixelSize: 23
+        font.weight: Font.Bold
+        antialiasing: true
+    }
+
+    Text {
+        x: 48.5
+        y: 9
+        width: 275
+        height: 36
+        text: "Systalia Control Center"
+        color: "#f3fbff"
+        font.family: SystaliaTheme.fontFamily
+        font.pixelSize: 20
+        font.weight: Font.Medium
+        antialiasing: true
+    }
+
+    Rectangle {
+        x: 273.5
+        y: 12.5
+        width: 172
+        height: 25
+        radius: 6
+        color: "#c70c314f"
+        antialiasing: true
+        Text {
+            anchors.centerIn: parent
+            text: "VALO & SOAR Engine"
+            color: "#87bada"
+            font.family: SystaliaTheme.fontFamily
+            font.pixelSize: 14
+            antialiasing: true
         }
+    }
 
-        RowLayout {
-            anchors.fill: parent
-            anchors.leftMargin: 19
-            anchors.rightMargin: 15
-            spacing: 11
-
-            Image {
-                source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/systalia-mark.svg"
-                sourceSize: Qt.size(30, 30)
-                width: 30
-                height: 30
-                smooth: true
-                mipmap: true
-            }
-
-            ColumnLayout {
-                spacing: 1
-                Text {
-                    text: "Systalia Control Center"
-                    color: SystaliaTheme.text
-                    font.family: SystaliaTheme.fontFamily
-                    font.pixelSize: 20
-                    font.weight: Font.DemiBold
-                    antialiasing: true
-                }
-                Text {
-                    text: "VALO & SOAR Engine"
-                    color: SystaliaTheme.textMuted
-                    font.family: SystaliaTheme.fontFamily
-                    font.pixelSize: 9
-                    font.letterSpacing: 1.15
-                    antialiasing: true
-                }
-            }
-
-            Item { Layout.fillWidth: true }
-
-            WindowAction {
-                accessibleName: "Minimizar Control Center"
-                glyph: "−"
-                onClicked: materialWindow.visible = false
-            }
-            WindowAction {
-                accessibleName: "Maximizar Control Center"
-                glyph: "□"
-                onClicked: if (materialWindow.controller) materialWindow.controller.toggleMaterialWindowMaximized()
-            }
-            WindowAction {
-                accessibleName: "Fechar Control Center"
-                glyph: "×"
-                closeAction: true
-                onClicked: {
-                    if (materialWindow.controller)
-                        materialWindow.controller.closeMaterialWindow()
-                    else
-                        materialWindow.visible = false
-                }
-            }
+    WindowAction {
+        x: 574.5
+        y: 12.5
+        accessibleName: "Minimizar Control Center"
+        glyph: "−"
+        onClicked: materialWindow.visible = false
+    }
+    WindowAction {
+        x: 612.5
+        y: 12.5
+        accessibleName: "Maximizar Control Center"
+        glyph: materialWindow.controller && materialWindow.controller.materialWindowMaximized ? "❐" : "□"
+        onClicked: {
+            if (materialWindow.controller)
+                materialWindow.controller.toggleMaterialWindowMaximized()
         }
+    }
+    WindowAction {
+        x: 650.5
+        y: 12.5
+        accessibleName: "Fechar Control Center"
+        glyph: "×"
+        closeAction: true
+        onClicked: {
+            if (materialWindow.controller)
+                materialWindow.controller.closeMaterialWindow()
+            else
+                materialWindow.visible = false
+        }
+    }
 
+    Item {
+        x: 0
+        y: 0
+        width: 566
+        height: 49
         DragHandler {
             target: materialWindow
             enabled: materialWindow.controller ? !materialWindow.controller.materialWindowMaximized : true
@@ -135,299 +170,271 @@ Item {
         }
     }
 
+    Repeater {
+        model: [
+            { name: "General", icon: "⚙", top: 6 },
+            { name: "Status", icon: "♙", top: 50 },
+            { name: "Control Center", icon: "☷", top: 94 },
+            { name: "Software", icon: "⚙", top: 138 },
+            { name: "Drivers", icon: "▣", top: 182 },
+            { name: "About", icon: "ⓘ", top: 226 }
+        ]
+
+        delegate: Item {
+            id: navigationEntry
+            required property var modelData
+            x: 10.5
+            y: 59.5 + modelData.top
+            width: 197
+            height: modelData.name === materialWindow.selectedSection ? 37 : 28
+
+            Rectangle {
+                x: -0.5
+                y: modelData.name === materialWindow.selectedSection ? -7 : 0
+                width: 180
+                height: 37
+                visible: navigationEntry.modelData.name === materialWindow.selectedSection
+                radius: 8
+                gradient: Gradient {
+                    orientation: Gradient.Vertical
+                    GradientStop { position: 0; color: "#3d9fefff" }
+                    GradientStop { position: 0.5; color: "#6e19587d" }
+                    GradientStop { position: 1; color: "#e010334e" }
+                }
+                border.color: "#c7f9ffff"
+                border.width: 1
+                antialiasing: true
+            }
+
+            Text {
+                x: 10
+                y: 0
+                width: 181
+                height: 27
+                text: navigationEntry.modelData.icon + "  " + navigationEntry.modelData.name
+                color: navigationEntry.modelData.name === materialWindow.selectedSection ? "#42e9ee" : "#d4e8ed"
+                font.family: SystaliaTheme.fontFamily
+                font.pixelSize: 16
+                antialiasing: true
+                HoverHandler { cursorShape: Qt.PointingHandCursor }
+                TapHandler {
+                    onTapped: materialWindow.selectedSection = navigationEntry.modelData.name
+                }
+            }
+        }
+    }
+
     Rectangle {
-        id: settingsNavigation
-        x: 15
-        y: 75
-        width: 174
-        height: materialWindow.height - y - 15
-        radius: 17
-        color: "#75112640"
-        border.color: "#5178b4cf"
-        border.width: 1
+        x: 204.5
+        y: 62.5
+        width: 1
+        height: 440
+        color: "#47c8f7fb"
+        antialiasing: true
+    }
+
+    Text {
+        x: 23.5
+        y: 347.5
+        width: 165
+        height: 29
+        text: "Options"
+        color: "#dceff7"
+        font.family: SystaliaTheme.fontFamily
+        font.pixelSize: 17
+        antialiasing: true
+    }
+
+    Repeater {
+        model: [
+            { label: "▣  Default", top: 378.5 },
+            { label: "⚙  Buttons", top: 423.5 },
+            { label: "Options", top: 468.5 }
+        ]
+
+        delegate: Rectangle {
+            id: optionButton
+            required property var modelData
+            x: 22.5
+            y: optionButton.modelData.top
+            width: 165
+            height: 32
+            radius: 15
+            gradient: Gradient {
+                orientation: Gradient.Vertical
+                GradientStop { position: 0; color: "#3d9fefff" }
+                GradientStop { position: 0.5; color: "#6e19587d" }
+                GradientStop { position: 1; color: "#e010334e" }
+            }
+            border.color: "#bff9ffff"
+            border.width: 1
+            antialiasing: true
+
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: 1
+                radius: 14
+                color: "transparent"
+                border.color: "#2bffffff"
+                border.width: 0.7
+                antialiasing: true
+            }
+            Text {
+                x: 17
+                anchors.verticalCenter: parent.verticalCenter
+                text: optionButton.modelData.label
+                color: "#e9f8fc"
+                font.family: SystaliaTheme.fontFamily
+                font.pixelSize: 15
+                antialiasing: true
+            }
+        }
+    }
+
+    Rectangle {
+        x: 222.5
+        y: 57.5
+        width: 454
+        height: 452
+        radius: 13
+        color: "#c2071d32"
         antialiasing: true
 
-        ColumnLayout {
-            anchors.fill: parent
-            anchors.margins: 12
-            spacing: 4
+        Text {
+            x: 22
+            y: 14
+            width: 200
+            height: 36
+            text: "Options"
+            color: "#f1faff"
+            font.family: SystaliaTheme.fontFamily
+            font.pixelSize: 21
+            font.weight: Font.Medium
+            antialiasing: true
+        }
 
-            Text {
-                text: "SYSTEM"
-                color: SystaliaTheme.textMuted
-                font.family: SystaliaTheme.fontFamily
-                font.pixelSize: 10
-                font.bold: true
-                font.letterSpacing: 1.1
-                Layout.leftMargin: 8
-                Layout.bottomMargin: 5
-                antialiasing: true
-            }
-
-            Repeater {
-                model: [
-                    { name: "General", icon: "◉" },
-                    { name: "Status", icon: "⌁" },
-                    { name: "Control Center", icon: "◈" },
-                    { name: "Software", icon: "▧" },
-                    { name: "Drivers", icon: "⌘" },
-                    { name: "About", icon: "ⓘ" }
-                ]
-
-                delegate: Rectangle {
-                    required property var modelData
-                    Layout.fillWidth: true
-                    height: 37
-                    radius: 9
-                    color: modelData.name === "Control Center" ? "#3d2bd4e8" : navHover.hovered ? "#1cffffff" : "transparent"
-                    border.color: modelData.name === "Control Center" ? "#697af2fa" : "transparent"
-                    border.width: 1
-                    antialiasing: true
-
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.leftMargin: 11
-                        spacing: 10
-                        Text {
-                            text: modelData.icon
-                            color: modelData.name === "Control Center" ? SystaliaTheme.aqua : "#9fc4dc"
-                            font.pixelSize: 15
-                            Layout.preferredWidth: 17
-                            horizontalAlignment: Text.AlignHCenter
-                            antialiasing: true
-                        }
-                        Text {
-                            text: modelData.name
-                            color: modelData.name === "Control Center" ? SystaliaTheme.text : SystaliaTheme.textSecondary
-                            font.family: SystaliaTheme.fontFamily
-                        font.pixelSize: 16
-                            font.weight: modelData.name === "Control Center" ? Font.DemiBold : Font.Normal
-                            antialiasing: true
-                        }
-                    }
-                    HoverHandler { id: navHover }
-                }
-            }
-
-            Item { Layout.fillHeight: true }
+        Item {
+            x: 344
+            y: 13
+            width: 85
+            height: 31
+            Accessible.role: Accessible.CheckBox
+            Accessible.name: "Ativar material VALO"
+            Accessible.checked: materialWindow.materialActive
 
             Rectangle {
-                Layout.fillWidth: true
-                height: 1
-                color: "#387ba4c1"
-            }
-            Text {
-                text: "SYSTALIA  ·  VALO"
-                color: SystaliaTheme.textMuted
-                font.family: SystaliaTheme.fontFamily
-                font.pixelSize: 9
-                font.letterSpacing: .7
-                Layout.leftMargin: 7
-                antialiasing: true
-            }
-        }
-    }
-
-    Item {
-        id: settingsContent
-        x: 207
-        y: 75
-        width: materialWindow.width - x - 14
-        height: materialWindow.height - y - 15
-
-        ColumnLayout {
-            anchors.fill: parent
-            spacing: 8
-
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 43
-                ColumnLayout {
-                    spacing: 1
-                    Text {
-                        text: "Live Material Controls"
-                        color: SystaliaTheme.text
-                        font.family: SystaliaTheme.fontFamily
-                        font.pixelSize: 20
-                        font.weight: Font.DemiBold
-                        antialiasing: true
-                    }
-                    Text {
-                        text: "VALO optical surface parameters"
-                        color: SystaliaTheme.textMuted
-                        font.family: SystaliaTheme.fontFamily
-                        font.pixelSize: 12
-                        antialiasing: true
-                    }
+                anchors.fill: parent
+                radius: 18
+                gradient: Gradient {
+                    orientation: Gradient.Vertical
+                    GradientStop { position: 0; color: "#3d9fefff" }
+                    GradientStop { position: 0.5; color: "#6e19587d" }
+                    GradientStop { position: 1; color: "#e010334e" }
                 }
-                Item { Layout.fillWidth: true }
+                border.color: "#c7f9ffff"
+                border.width: 1
+                antialiasing: true
                 Rectangle {
-                    width: 9
-                    height: 9
-                    radius: 5
-                    color: materialWindow.materialActive ? "#6df1c0" : "#8aa3b8"
-                    antialiasing: true
-                }
-                Text {
-                    text: materialWindow.materialActive ? "LIVE" : "PAUSED"
-                    color: materialWindow.materialActive ? "#8ef4d0" : SystaliaTheme.textMuted
-                    font.pixelSize: 9
-                    font.bold: true
-                    font.letterSpacing: .8
+                    anchors.fill: parent
+                    anchors.margins: 1
+                    radius: 17
+                    color: "transparent"
+                    border.color: "#30ffffff"
+                    border.width: 0.7
                     antialiasing: true
                 }
             }
 
             Rectangle {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 46
-                radius: 11
-                color: "#29152d4b"
-                border.color: "#407eafc9"
+                x: materialWindow.materialActive ? 60 : 4
+                y: 4
+                width: 23
+                height: 23
+                radius: 12
+                gradient: Gradient {
+                    orientation: Gradient.Vertical
+                    GradientStop { position: 0; color: "#efffffff" }
+                    GradientStop { position: 1; color: "#a8d9f4ff" }
+                }
+                border.color: "#d9ffffff"
                 border.width: 1
                 antialiasing: true
-
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.leftMargin: 13
-                    anchors.rightMargin: 10
-                    Text {
-                        text: "VALO material"
-                        color: SystaliaTheme.textSecondary
-                        font.family: SystaliaTheme.fontFamily
-                        font.pixelSize: 11
-                        font.weight: Font.DemiBold
-                        Layout.fillWidth: true
-                        antialiasing: true
-                    }
-                    Text {
-                        text: materialWindow.materialActive ? "On" : "Off"
-                        color: materialWindow.materialActive ? SystaliaTheme.aqua : SystaliaTheme.textMuted
-                        font.pixelSize: 10
-                        antialiasing: true
-                    }
-                    Switch {
-                        id: materialSwitch
-                        checked: materialWindow.materialActive
-                        onToggled: materialWindow.materialActive = checked
-                        implicitWidth: 42
-                        implicitHeight: 26
-                        indicator: Rectangle {
-                            x: (materialSwitch.width - width) / 2
-                            y: (materialSwitch.height - height) / 2
-                            width: 38
-                            height: 22
-                            radius: 12
-                            color: materialSwitch.checked ? "#208cabc2" : "#38496178"
-                            border.color: materialSwitch.checked ? "#9673eaf0" : "#516f8798"
-                            border.width: 1
-                            antialiasing: true
-                            Rectangle {
-                                x: materialSwitch.checked ? parent.width - width - 3 : 3
-                                anchors.verticalCenter: parent.verticalCenter
-                                width: 16
-                                height: 16
-                                radius: 8
-                                color: materialSwitch.checked ? "#55eced" : "#abc4d4"
-                                border.color: "#c7faff"
-                                border.width: 1
-                                antialiasing: true
-                                Behavior on x { NumberAnimation { duration: 130; easing.type: Easing.OutCubic } }
-                            }
-                        }
-                        background: Item {}
-                    }
-                }
+                Behavior on x { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
             }
 
-            ColumnLayout {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                spacing: 4
+            HoverHandler { cursorShape: Qt.PointingHandCursor }
+            TapHandler { onTapped: materialWindow.materialActive = !materialWindow.materialActive }
+        }
 
-                SettingSlider {
-                    Layout.fillWidth: true
-                    label: "Glass layer opacity"
-                    value: materialWindow.surfaceOpacity
-                    from: 0.2
-                    to: 1
-                    valueText: Math.round(materialWindow.surfaceOpacity * 100) + "%"
-                    onChanged: materialWindow.surfaceOpacity = value
-                }
-                SettingSlider {
-                    Layout.fillWidth: true
-                    label: "Refractive index (IOR)"
-                    value: materialWindow.refractiveIndex
-                    from: 1
-                    to: 1.5
-                    valueText: materialWindow.refractiveIndex.toFixed(2)
-                    onChanged: materialWindow.refractiveIndex = value
-                }
-                SettingSlider {
-                    Layout.fillWidth: true
-                    label: "Chromatic dispersion"
-                    value: materialWindow.dispersion
-                    from: 0
-                    to: 0.08
-                    valueText: materialWindow.dispersion.toFixed(3)
-                    onChanged: materialWindow.dispersion = value
-                }
-                SettingSlider {
-                    Layout.fillWidth: true
-                    label: "Caustic intensity"
-                    value: materialWindow.caustics
-                    from: 0
-                    to: 1.5
-                    valueText: materialWindow.caustics.toFixed(2)
-                    onChanged: materialWindow.caustics = value
-                }
-                SettingSlider {
-                    Layout.fillWidth: true
-                    label: "Corner radius"
-                    value: materialWindow.cornerRadius
-                    from: 10
-                    to: 34
-                    valueText: Math.round(materialWindow.cornerRadius) + " px"
-                    onChanged: materialWindow.cornerRadius = value
-                }
-                SettingSlider {
-                    Layout.fillWidth: true
-                    label: "Surface slant"
-                    value: materialWindow.surfaceSlant
-                    from: 0
-                    to: 0.2
-                    valueText: materialWindow.surfaceSlant.toFixed(2)
-                    onChanged: materialWindow.surfaceSlant = value
-                }
-            }
-
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 28
-                radius: 8
-                color: "#1f213f5b"
-                border.color: "#316e9cb8"
-                border.width: 1
-                antialiasing: true
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.leftMargin: 10
-                    spacing: 7
-                    Text { text: "✧"; color: SystaliaTheme.aqua; font.pixelSize: 12; antialiasing: true }
-                    Text {
-                        text: "Edge smoothing  ·  adaptive SDF fwidth"
-                        color: SystaliaTheme.textMuted
-                        font.family: SystaliaTheme.fontFamily
-                        font.pixelSize: 9
-                        antialiasing: true
-                    }
-                    Item { Layout.fillWidth: true }
-                }
-            }
+        SettingSlider {
+            x: 22
+            y: 55
+            width: 420
+            label: "Glass Layer Opacity"
+            value: materialWindow.surfaceOpacity
+            from: 0.2
+            to: 1
+            valueText: Math.round(materialWindow.surfaceOpacity * 100) + "%"
+            onChanged: materialWindow.surfaceOpacity = value
+        }
+        SettingSlider {
+            x: 22
+            y: 119
+            width: 420
+            label: "Refractive Index (IOR)"
+            value: materialWindow.refractiveIndex
+            from: 1
+            to: 1.5
+            valueText: materialWindow.refractiveIndex.toFixed(2)
+            onChanged: materialWindow.refractiveIndex = value
+        }
+        SettingSlider {
+            x: 22
+            y: 183
+            width: 420
+            label: "Chromatic Dispersion"
+            value: materialWindow.dispersion
+            from: 0
+            to: 0.08
+            valueText: materialWindow.dispersion.toFixed(3)
+            onChanged: materialWindow.dispersion = value
+        }
+        SettingSlider {
+            x: 22
+            y: 247
+            width: 420
+            label: "Caustic Intensity"
+            value: materialWindow.caustics
+            from: 0
+            to: 1.5
+            valueText: materialWindow.caustics.toFixed(2)
+            onChanged: materialWindow.caustics = value
+        }
+        SettingSlider {
+            x: 22
+            y: 311
+            width: 420
+            label: "Corner Radius"
+            value: materialWindow.cornerRadius
+            from: 10
+            to: 34
+            valueText: Math.round(materialWindow.cornerRadius) + " px"
+            onChanged: materialWindow.cornerRadius = value
+        }
+        SettingSlider {
+            x: 22
+            y: 375
+            width: 420
+            label: "Surface Slant"
+            value: materialWindow.surfaceSlant
+            from: 0
+            to: 0.2
+            valueText: materialWindow.surfaceSlant.toFixed(2)
+            onChanged: materialWindow.surfaceSlant = value
         }
     }
 
-    component SettingSlider: ColumnLayout {
+    component SettingSlider: Item {
         id: settingRow
         property string label: ""
         property real value: 0
@@ -435,48 +442,66 @@ Item {
         property real to: 1
         property string valueText: ""
         signal changed(real value)
-        spacing: 0
+        height: 50
 
-        RowLayout {
-            Layout.fillWidth: true
-            Text {
-                text: settingRow.label
-                color: SystaliaTheme.textSecondary
-                font.family: SystaliaTheme.fontFamily
-                font.pixelSize: 14
-                Layout.fillWidth: true
-                antialiasing: true
-            }
-            Text {
-                text: settingRow.valueText
-                color: SystaliaTheme.text
-                font.family: SystaliaTheme.fontFamily
-                font.pixelSize: 14
-                font.weight: Font.DemiBold
-                antialiasing: true
-            }
+        Text {
+            x: 0
+            y: 0
+            width: 345
+            height: 24
+            text: settingRow.label
+            color: "#e4f7ff"
+            font.family: SystaliaTheme.fontFamily
+            font.pixelSize: 16
+            antialiasing: true
+        }
+
+        Text {
+            x: 399
+            y: 25
+            width: 50
+            height: 26
+            text: settingRow.valueText
+            color: "#d9ecf7"
+            font.family: SystaliaTheme.fontFamily
+            font.pixelSize: 15
+            horizontalAlignment: Text.AlignRight
+            antialiasing: true
         }
 
         Slider {
             id: slider
-            Layout.fillWidth: true
-            implicitHeight: 24
+            x: 0
+            y: 25
+            width: 367
+            height: 24
+            leftPadding: 0
+            rightPadding: 0
+            topPadding: 0
+            bottomPadding: 0
             from: settingRow.from
             to: settingRow.to
             value: settingRow.value
+            Accessible.name: settingRow.label
             onMoved: settingRow.changed(value)
+
             background: Rectangle {
                 x: slider.leftPadding
-                y: slider.topPadding + slider.availableHeight / 2 - height / 2
+                y: slider.availableHeight / 2 - height / 2
                 width: slider.availableWidth
-                height: 4
-                radius: 2
-                color: "#4771a3bc"
+                height: 12
+                radius: 7
+                color: "#f0031529"
+                border.color: "#4273bada"
+                border.width: 0.7
                 antialiasing: true
+
                 Rectangle {
-                    width: slider.visualPosition * parent.width
-                    height: parent.height
-                    radius: 2
+                    x: 1
+                    y: 1
+                    width: Math.max(0, slider.visualPosition * (parent.width - 2))
+                    height: parent.height - 2
+                    radius: 6
                     gradient: Gradient {
                         orientation: Gradient.Horizontal
                         GradientStop { position: 0; color: "#14c4e7" }
@@ -485,16 +510,29 @@ Item {
                     antialiasing: true
                 }
             }
+
             handle: Rectangle {
                 x: slider.leftPadding + slider.visualPosition * (slider.availableWidth - width)
-                y: slider.topPadding + slider.availableHeight / 2 - height / 2
-                width: 13
-                height: 13
-                radius: 7
-                color: "#dffcff"
-                border.color: "#61dce8"
-                border.width: 1.5
+                y: slider.availableHeight / 2 - height / 2
+                width: 20
+                height: 20
+                radius: 10
+                gradient: Gradient {
+                    orientation: Gradient.Vertical
+                    GradientStop { position: 0; color: "#f0ffffff" }
+                    GradientStop { position: 1; color: "#a8d9f4ff" }
+                }
+                border.color: "#d8ffffff"
+                border.width: 1
                 antialiasing: true
+                Rectangle {
+                    anchors.centerIn: parent
+                    width: 7
+                    height: 7
+                    radius: 4
+                    color: "#55c8dff2"
+                    antialiasing: true
+                }
             }
         }
     }
@@ -505,23 +543,42 @@ Item {
         property string accessibleName: "Ação da janela"
         property bool closeAction: false
         Accessible.name: accessibleName
-        Layout.preferredWidth: 27
-        Layout.preferredHeight: 25
+        width: 27
+        height: 27
         hoverEnabled: true
+        ToolTip.visible: hovered
+        ToolTip.text: accessibleName
+        ToolTip.delay: 450
+
         contentItem: Text {
             text: action.glyph
-            color: action.closeAction && action.hovered ? "#fff" : SystaliaTheme.textSecondary
-            font.pixelSize: 16
+            color: "#f2fcff"
+            font.pixelSize: 12
+            font.weight: Font.DemiBold
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             antialiasing: true
         }
+
         background: Rectangle {
+            anchors.centerIn: parent
+            width: 16
+            height: 16
             radius: 8
-            color: action.closeAction && action.hovered ? "#c94f5d78" : action.hovered ? "#4373b8d2" : "#1e8bb6ce"
-            border.color: action.hovered ? "#768ac9dc" : "#3189b6ce"
+            color: action.closeAction ? (action.hovered ? "#ff6478" : "#f22e4f")
+                                      : (action.hovered ? "#36b7ff" : "#087bc9")
+            border.color: action.closeAction ? "#ff8c9b" : "#77daff"
             border.width: 1
             antialiasing: true
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: 2
+                radius: width / 2
+                color: "transparent"
+                border.color: action.closeAction ? "#7a142d" : "#104f81"
+                border.width: 0.7
+                antialiasing: true
+            }
         }
     }
 }
