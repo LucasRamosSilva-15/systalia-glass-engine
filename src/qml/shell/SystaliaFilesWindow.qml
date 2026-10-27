@@ -36,7 +36,6 @@ Item {
         height: parent.height + 160
         z: -1
         source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-window-shadow.png"
-        sourceSize: Qt.size(1642, 1388)
         border.left: 60
         border.top: 60
         border.right: 60
@@ -44,7 +43,6 @@ Item {
         horizontalTileMode: BorderImage.Stretch
         verticalTileMode: BorderImage.Stretch
         smooth: true
-        mipmap: true
     }
 
     SystaliaGlassItem {
@@ -143,78 +141,28 @@ Item {
         strokeWidth: 1.5
     }
 
-    Text {
-        x: 16.5
-        y: 8
-        width: 34
-        height: 36
-        text: "▰"
-        color: "#64d6ff"
-        font.family: SystaliaTheme.fontFamily
-        font.pixelSize: 24
-        font.weight: Font.Bold
-        antialiasing: true
-    }
+    SystaliaWindowHeader {
+        width: parent.width
+        height: 50
+        iconGlyph: "▰"
+        title: "Systalia Files"
+        badgeText: "ABYSSUS VES"
+        badgeWidth: 120
+        maximized: fileWindow.controller ? fileWindow.controller.filesWindowMaximized : false
+        glassSurface: false
+        actionsRightMargin: 18.5
 
-    Text {
-        x: 48.5
-        y: 9
-        height: 36
-        text: "Systalia Files"
-        color: "#f4fcff"
-        font.family: SystaliaTheme.fontFamily
-        font.pixelSize: 21
-        font.weight: Font.Medium
-        antialiasing: true
-    }
-
-    Rectangle {
-        x: 182.5
-        y: 12.5
-        width: 120
-        height: 26
-        radius: 6
-        color: "#b80a2c46"
-        antialiasing: true
-        Text {
-            anchors.centerIn: parent
-            text: "ABYSSUS VES"
-            color: "#86b7d9"
-            font.family: SystaliaTheme.fontFamily
-            font.pixelSize: 14
-            antialiasing: true
-        }
-    }
-
-    WindowAction {
-        x: 578.5
-        y: 12.5
-        accessibleName: "Minimizar Systalia Files"
-        glyph: "−"
-        onClicked: {
+        onMinimizeRequested: {
             if (fileWindow.controller)
                 fileWindow.controller.minimizeFileWindow()
             else
                 fileWindow.visible = false
         }
-    }
-    WindowAction {
-        x: 616.5
-        y: 12.5
-        accessibleName: "Maximizar Systalia Files"
-        glyph: fileWindow.controller && fileWindow.controller.filesWindowMaximized ? "❐" : "□"
-        onClicked: {
+        onMaximizeRequested: {
             if (fileWindow.controller)
                 fileWindow.controller.toggleFileWindowMaximized()
         }
-    }
-    WindowAction {
-        x: 654.5
-        y: 12.5
-        accessibleName: "Fechar Systalia Files"
-        glyph: "×"
-        closeAction: true
-        onClicked: {
+        onCloseRequested: {
             if (fileWindow.controller)
                 fileWindow.controller.closeFileWindow()
             else
@@ -490,52 +438,4 @@ Item {
         }
     }
 
-    component WindowAction: ToolButton {
-        id: action
-        property string glyph: "•"
-        property string accessibleName: "Ação da janela"
-        property bool closeAction: false
-        Accessible.name: accessibleName
-        width: 28
-        height: 28
-        hoverEnabled: true
-        ToolTip.visible: hovered
-        ToolTip.text: accessibleName
-        ToolTip.delay: 450
-
-        background: Rectangle {
-            anchors.centerIn: parent
-            width: 28
-            height: 28
-            color: "transparent"
-            Image {
-                anchors.centerIn: parent
-                width: 38
-                height: 38
-                source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-window-action-"
-                        + (action.closeAction ? "close" : action.glyph === "−" ? "minimize" : "maximize")
-                        + "-bg.png"
-                sourceSize: Qt.size(128, 128)
-                smooth: true
-                mipmap: true
-                opacity: action.hovered ? 0.92 : 1
-            }
-        }
-
-        contentItem: Item {
-            Image {
-                anchors.centerIn: parent
-                width: 16
-                height: 16
-                source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-window-"
-                        + (action.closeAction ? "close" : action.glyph === "−" ? "minimize" : "maximize")
-                        + ".png"
-                sourceSize: Qt.size(512, 512)
-                fillMode: Image.PreserveAspectFit
-                smooth: true
-                mipmap: true
-                opacity: action.hovered ? 0.92 : 1
-            }
-        }
-    }
 }

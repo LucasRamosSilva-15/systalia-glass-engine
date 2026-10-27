@@ -11,6 +11,10 @@ Shape {
     property color strokeColor: "transparent"
     property real strokeWidth: 0
     property real slant: 0
+    property real slantReferenceWidth: width
+    property real slantReferenceHeight: height
+    property real slantOffsetX: 0
+    property real slantOffsetY: 0
     readonly property real controlFactor: 0.91
     property alias fillGradient: framePath.fillGradient
 
@@ -22,9 +26,13 @@ Shape {
         Math.max(0, Math.min(radii.w, maxRadius)))
 
     function xAt(x, y) {
-        const halfHeight = Math.max(height * 0.5, 1)
-        const slantFactor = 1 - ((y - halfHeight) / halfHeight) * slant * 0.25
-        return width * 0.5 + (x - width * 0.5) * Math.max(slantFactor, 0.05)
+        const halfHeight = Math.max(slantReferenceHeight * 0.5, 1)
+        const surfaceY = y + slantOffsetY
+        const slantFactor = 1 - ((surfaceY - halfHeight) / halfHeight) * slant * 0.25
+        const halfWidth = slantReferenceWidth * 0.5
+        const surfaceX = x + slantOffsetX
+        const transformedSurfaceX = halfWidth + (surfaceX - halfWidth) * Math.max(slantFactor, 0.05)
+        return transformedSurfaceX - slantOffsetX
     }
 
     antialiasing: true

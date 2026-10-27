@@ -1,8 +1,7 @@
 import QtQuick
-import QtQuick.Controls
-import QtQuick.Layouts
 import QtWayland.Compositor
 import Systalia.Engine
+import "shell" as Shell
 
 Item {
     id: windowContainer
@@ -29,7 +28,7 @@ Item {
     property int minWindowHeight: 220
     readonly property int borderMargin: 8
     readonly property int frameMargin: 8
-    readonly property int titleBarHeight: 36
+    readonly property int titleBarHeight: 50
     readonly property var xdgSurface: toplevel ? toplevel.xdgSurface : null
     readonly property bool minimized: {
         if (!waylandServer || !toplevel)
@@ -50,6 +49,9 @@ Item {
         return extension.resourceForSurface(xdgSurface.surface)
     }
     readonly property rect clientGeometry: xdgSurface ? xdgSurface.windowGeometry : Qt.rect(0, 0, 0, 0)
+    readonly property vector4d frameRadii: opticalMetadata
+                                          ? opticalMetadata.radii
+                                          : Qt.vector4d(20.0, 20.0, 20.0, 20.0)
     readonly property bool resizeEnabled: toplevel !== null && waylandServer !== null
                                           && !maximizedBySge && !toplevel.fullscreen
     property bool resizing: false
@@ -211,6 +213,22 @@ Item {
         }
     }
 
+    BorderImage {
+        x: -60
+        y: -60
+        width: parent.width + 120
+        height: parent.height + 160
+        z: -1
+        source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-window-shadow.png"
+        border.left: 60
+        border.top: 60
+        border.right: 60
+        border.bottom: 100
+        horizontalTileMode: BorderImage.Stretch
+        verticalTileMode: BorderImage.Stretch
+        smooth: true
+    }
+
     // Chassi de Vidro Líquido Nativo do Systalia Glass Engine (SGE)
     SystaliaGlassItem {
         id: glassChassis
@@ -221,12 +239,12 @@ Item {
         screenResolution: Qt.vector2d(windowContainer.screenResolution.x, windowContainer.screenResolution.y)
         titleBarHeight: windowContainer.titleBarHeight
 
-        radii: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.radii : Qt.vector4d(24.0, 24.0, 24.0, 24.0)
+        radii: windowContainer.frameRadii
         slant: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.slant : 0.0
         ior: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.ior : 1.25
         chromaticDispersion: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.dispersion : 0.040
-        causticIntensity: 0.70
-        surfaceOpacity: 0.90
+        causticIntensity: 0.85
+        surfaceOpacity: 0.85
         time: windowContainer.animTime
 
         // A fonte Wayland fica atrás do passe óptico; o shader a compõe no mesmo frame.
@@ -274,220 +292,57 @@ Item {
             }
         }
 
-        // Estrutura transparente para a SSD sobre a imagem já composta pelo shader.
-        Rectangle {
-            anchors.fill: parent
-            radius: 18
-            color: "transparent"
-            border.width: 0
+        Shell.SystaliaWindowHeader {
+            id: sgeTitleBar
+            width: parent.width
+            height: windowContainer.titleBarHeight
+            z: 2
+            iconGlyph: "▰"
+            title: (windowContainer.toplevel && windowContainer.toplevel.title.length > 0)
+                   ? windowContainer.toplevel.title
+                   : ((windowContainer.toplevel && windowContainer.toplevel.appId.length > 0)
+                      ? windowContainer.toplevel.appId
+                      : "Aplicação Wayland")
+            badgeText: "SDE-KWIN | VALO"
+            badgeWidth: 0
+            maximized: windowContainer.maximizedBySge
+            glassSurface: true
+            radii: windowContainer.frameRadii
+            slant: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.slant : 0
+            slantReferenceWidth: windowContainer.width
+            slantReferenceHeight: windowContainer.height
+            dragEnabled: !windowContainer.resizing && !windowContainer.maximizedBySge
+                          && (!windowContainer.toplevel || !windowContainer.toplevel.fullscreen)
+            dragTarget: windowContainer
 
-            // 1. Barra de Título SGE com Decoração Server-Side Nativa (SSD)
-            SystaliaG2Frame {
-                id: sgeTitleBar
-                anchors.top: parent.top
-                anchors.left: parent.left
-                anchors.right: parent.right
-                height: windowContainer.titleBarHeight
-                radii: Qt.vector4d(
-                    windowContainer.opticalMetadata
-                        ? windowContainer.opticalMetadata.radii.x : 18,
-                    windowContainer.opticalMetadata
-                        ? windowContainer.opticalMetadata.radii.y : 18,
-                    0, 0)
-                slant: windowContainer.opticalMetadata
-                       ? windowContainer.opticalMetadata.slant : 0
-                fillColor: windowContainer.activeFocus ? "#3000f2fe" : "#181e293b"
-
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.leftMargin: 12
-                    anchors.rightMargin: 10
-                    spacing: 8
-
-                    // Ícone do Aplicativo SGE
-                    Rectangle {
-                        width: 20
-                        height: 20
-                        radius: 5
-                        gradient: Gradient {
-                            orientation: Gradient.Vertical
-                            GradientStop { position: 0.0; color: "#38bdf8" }
-                            GradientStop { position: 1.0; color: "#0284c7" }
-                        }
-                        border.color: "#80ffffff"
-                        border.width: 1
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: ">_"
-                            font.pixelSize: 10
-                            font.bold: true
-                            color: "#f8fafc"
-                        }
-                    }
-
-                    // Título do Aplicativo
-                    Text {
-                        Layout.fillWidth: true
-                        text: (windowContainer.toplevel && windowContainer.toplevel.title.length > 0)
-                              ? windowContainer.toplevel.title
-                              : ((windowContainer.toplevel && windowContainer.toplevel.appId.length > 0)
-                                 ? windowContainer.toplevel.appId
-                                 : "Aplicação Externa (SGE)")
-                        font.pixelSize: 12
-                        font.bold: true
-                        color: "#f8fafc"
-                        elide: Text.ElideRight
-                    }
-
-                    // Badge de Decoração Server-Side
-                    Rectangle {
-                        height: 18
-                        implicitWidth: badgeTxt.implicitWidth + 10
-                        radius: 4
-                        color: "#1500f2fe"
-                        border.color: "#4000f2fe"
-                        border.width: 1
-
-                        Text {
-                            id: badgeTxt
-                            anchors.centerIn: parent
-                            text: "SGE SSD"
-                            font.pixelSize: 8
-                            font.bold: true
-                            color: "#00f2fe"
-                        }
-                    }
-
-                    // Botões Canônicos de Controle de Janela SGE
-                    Row {
-                        spacing: 6
-
-                        // Botão Minimizar
-                        Rectangle {
-                            width: 24
-                            height: 20
-                            radius: 10
-                            gradient: Gradient {
-                                orientation: Gradient.Vertical
-                                GradientStop { position: 0.0; color: minMouse.containsMouse ? "#40ffffff" : "#20ffffff" }
-                                GradientStop { position: 1.0; color: minMouse.containsMouse ? "#300284c7" : "#0d1b2a" }
-                            }
-                            border.color: minMouse.containsMouse ? "#00f2fe" : "#30ffffff"
-                            border.width: 1
-
-                            Rectangle {
-                                anchors.centerIn: parent
-                                width: 8
-                                height: 2
-                                color: "#f8fafc"
-                            }
-
-                            MouseArea {
-                                id: minMouse
-                                objectName: "minimizeToplevelButton"
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                acceptedButtons: Qt.LeftButton
-                                preventStealing: true
-                                onClicked: {
-                                    if (windowContainer.toplevel && windowContainer.waylandServer)
-                                        windowContainer.waylandServer.minimizeToplevel(
-                                            windowContainer.toplevel)
-                                }
-                            }
-                        }
-
-                        // Botão Maximizar
-                        Rectangle {
-                            width: 24
-                            height: 20
-                            radius: 10
-                            gradient: Gradient {
-                                orientation: Gradient.Vertical
-                                GradientStop { position: 0.0; color: maxMouse.containsMouse ? "#40ffffff" : "#20ffffff" }
-                                GradientStop { position: 1.0; color: maxMouse.containsMouse ? "#300284c7" : "#0d1b2a" }
-                            }
-                            border.color: maxMouse.containsMouse ? "#00f2fe" : "#30ffffff"
-                            border.width: 1
-
-                            Rectangle {
-                                anchors.centerIn: parent
-                                width: 8
-                                height: 8
-                                color: "transparent"
-                                border.color: "#f8fafc"
-                                border.width: 1.2
-                                visible: !windowContainer.maximizedBySge
-                            }
-
-                            Rectangle {
-                                anchors.centerIn: parent
-                                width: 7
-                                height: 7
-                                color: "transparent"
-                                border.color: "#f8fafc"
-                                border.width: 1.2
-                                visible: windowContainer.maximizedBySge
-                            }
-
-                            MouseArea {
-                                id: maxMouse
-                                objectName: "maximizeToplevelButton"
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                acceptedButtons: Qt.LeftButton
-                                preventStealing: true
-                                onClicked: windowContainer.toggleMaximized()
-                            }
-                        }
-
-                        // Botão Fechar
-                        Rectangle {
-                            width: 24
-                            height: 20
-                            radius: 10
-                            gradient: Gradient {
-                                orientation: Gradient.Vertical
-                                GradientStop { position: 0.0; color: closeMouse.containsMouse ? "#ff5c7a" : "#25ffffff" }
-                                GradientStop { position: 1.0; color: closeMouse.containsMouse ? "#b91c1c" : "#0d1b2a" }
-                            }
-                            border.color: closeMouse.containsMouse ? "#fca5a5" : "#35ffffff"
-                            border.width: 1
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: "✕"
-                                font.pixelSize: 10
-                                color: "#f8fafc"
-                            }
-
-                            MouseArea {
-                                id: closeMouse
-                                objectName: "closeToplevelButton"
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                acceptedButtons: Qt.LeftButton
-                                preventStealing: true
-                                onClicked: {
-                                    if (windowContainer.toplevel && windowContainer.waylandServer) {
-                                        windowContainer.waylandServer.closeToplevel(windowContainer.toplevel)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                DragHandler {
-                    id: windowDrag
-                    target: windowContainer
-                    enabled: !windowContainer.resizing
-                    onActiveChanged: if (active) windowContainer.resizeAnchored = false
-                }
+            onMinimizeRequested: {
+                if (windowContainer.toplevel && windowContainer.waylandServer)
+                    windowContainer.waylandServer.minimizeToplevel(windowContainer.toplevel)
             }
-
+            onMaximizeRequested: windowContainer.toggleMaximized()
+            onCloseRequested: {
+                if (windowContainer.toplevel && windowContainer.waylandServer)
+                    windowContainer.waylandServer.closeToplevel(windowContainer.toplevel)
+            }
+            onDragStarted: {
+                windowContainer.resizeAnchored = false
+                if (windowContainer.toplevel && windowContainer.waylandServer)
+                    windowContainer.waylandServer.activateToplevel(windowContainer.toplevel)
+            }
+            onHeaderTapped: {
+                if (windowContainer.toplevel && windowContainer.waylandServer)
+                    windowContainer.waylandServer.activateToplevel(windowContainer.toplevel)
+            }
         }
+    }
+
+    Shell.SystaliaG2Frame {
+        anchors.fill: parent
+        z: 3
+        radii: windowContainer.frameRadii
+        slant: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.slant : 0
+        strokeColor: "#c9ffffff"
+        strokeWidth: 1.5
     }
 
     Repeater {

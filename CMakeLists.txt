@@ -143,6 +143,8 @@ qt_add_qml_module(sge_core
         src/qml/shell/SystaliaTopBar.qml
         src/qml/shell/SystaliaDock.qml
         src/qml/shell/SystaliaG2Frame.qml
+        src/qml/shell/SystaliaWindowAction.qml
+        src/qml/shell/SystaliaWindowHeader.qml
         src/qml/shell/SystaliaFilesWindow.qml
         src/qml/shell/SystaliaMaterialWindow.qml
         src/qml/shell/SystaliaFlowMenu.qml

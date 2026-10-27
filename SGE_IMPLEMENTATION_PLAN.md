@@ -64,7 +64,8 @@ Fonte: [SYSTALIA — VALO | Desktop Concept](https://www.figma.com/design/kax6ai
 | Componente/estado | Cobertura no Figma | Resultado da auditoria |
 |---|---|---|
 | Desktop, wallpaper, TopBar, Files, janela VALO/SOAR e dock | Visíveis em `Page 1` | Medidas e aparência estática registadas acima. |
-| Launcher, notificações, task switcher, moldura SSD e clientes externos | Não aparecem | Pedir frames/estados ou confirmar que ficam fora do redesign. |
+| Launcher, notificações e task switcher | Não aparecem | Pedir frames/estados ou confirmar que ficam fora do redesign. |
+| Moldura SSD e clientes externos | Não aparecem | Aplicar ao chrome a linguagem das janelas VALO; o conteúdo e a transparência interna continuam sob controle da aplicação cliente. |
 | Hover, focus, pressed, disabled, teclado, animações e responsividade | Não especificados | Não inferir aparência ou comportamento a partir do código atual. |
 | Variáveis e estilos compartilhados | Nenhuma variável devolvida para `2:2` | Consolidar valores em tema QML depois de fechar decisões de arte e escala. |
 
@@ -78,7 +79,8 @@ Fonte: [SYSTALIA — VALO | Desktop Concept](https://www.figma.com/design/kax6ai
 | Systalia Files | Navegação + grade de arquivos em janela editável. | `SystaliaFilesWindow.qml`: Home ativo, busca, seis itens e ações da janela; arte e botões usam vetores exportados do frame. | Navegação real de arquivos não fazia parte do componente anterior; estado inicial confere a composição do frame. |
 | Control Center | Janela de ajustes ópticos VALO/SOAR com seis sliders. | `SystaliaMaterialWindow.qml` controla seis propriedades reais do `SystaliaGlassItem`; `SystaliaControlCenter.qml` preserva os ajustes de sistema. | Mapeamento separado do quick panel, sem sliders para parâmetros sem suporte. |
 | Dock | 555 × 125; slots 78 × 78 e cinco ícones ilustrados. | `SystaliaDock.qml`: dimensões, raio 47, ícones PNG 4× rasterizados dos vetores Figma e cinco ações reais. | Geometria e arte conferidas na captura. |
-| Launcher, notificações, task switcher e janelas externas | Sem referências no frame disponível. | Componentes e serviços já existem. | Não redesenhar sem referências ou decisão explícita de escopo. |
+| Launcher, notificações e task switcher | Sem referências no frame disponível. | Componentes e serviços já existem. | Não redesenhar sem referências ou decisão explícita de escopo. |
+| Janelas externas | Sem clientes no frame disponível. | `WaylandWindowContainer.qml` compartilha o cabeçalho e os botões VALO, com raio padrão 20 px, contorno branco de 1,5 px, sombra 9-slice e barra de título de 50 px. | A moldura unificada é uma decisão visual derivada dos tokens Figma; a área de conteúdo segue o buffer original do aplicativo. |
 | Material VALO | Gloss, refrações e assets vetoriais visíveis. | Material/shader nativos com ABI `std140` de 128 bytes e geometria G2. | Manter contratos; mapear parâmetros visuais somente depois de validar o design e os valores do motor. |
 
 O frame mede 1662 × 975 px e não mostra uma escala alternativa. A aplicação inicia nessa dimensão e usa escala uniforme calculada pelo menor fator entre largura e altura da janela. A captura nessa dimensão foi conferida; resoluções menores seguem pendentes.
@@ -96,7 +98,7 @@ O frame mede 1662 × 975 px e não mostra uma escala alternativa. A aplicação 
 | Flow Launcher | `src/qml/shell/SystaliaFlowMenu.qml` | Não aparece no frame. Preservar busca/modelo/execução; solicitar referência antes de mudar aparência. |
 | Notificações | `src/qml/shell/SystaliaNotificationHost.qml` | Não aparece no frame. Preservar D-Bus, timers, fechar e ordem; solicitar referência antes de mudar aparência. |
 | Alternador | `src/qml/shell/SystaliaTaskSwitcher.qml` | Não aparece no frame. Preservar seleção MRU e atalhos; solicitar referência antes de mudar aparência. |
-| Janelas clientes | `src/qml/WaylandWindowContainer.qml` | Sem frame ou estado externo no Figma auditado. Preservar buffer, SSD, foco, resize e ações da janela. |
+| Janelas clientes | `src/qml/WaylandWindowContainer.qml` | Clientes não aparecem no Figma. Compartilhar `SystaliaWindowHeader.qml` e `SystaliaWindowAction.qml` com as janelas da shell; preservar buffer, foco, resize e ações XDG. A área de conteúdo continua sendo fornecida pelo aplicativo. |
 | Motor óptico | `src/gfx/` e `shaders/` | ABI `std140` de 128 bytes e geometria G2 preservadas. `fwidth`/`smoothstep` filtram o contorno óptico e o recorte de cliente; cada componente fornece quatro raios independentes para vidro e moldura, que acompanha a inclinação. |
 
 `SystaliaTheme.qml` é singleton QML e reúne cores e família tipográfica base observadas. O build do executável e a captura em Xvfb/Vulkan a 1662 × 975 passaram; o runtime registrou sessão D-Bus indisponível e falha EGL do compositor Wayland. A captura não valida GPU física, clientes Wayland externos ou escalas menores. CTest não foi executado.
@@ -107,8 +109,10 @@ O frame mede 1662 × 975 px e não mostra uma escala alternativa. A aplicação 
 - `SystaliaFilesWindow.qml` e `SystaliaMaterialWindow.qml` seguem as posições do frame. O painel Material mantém controles reais para opacidade, IOR, dispersão cromática, cáusticas, raio e slant do glass item.
 - `SystaliaTopBar.qml` usa as medidas do frame e mantém CPU/RAM/FPS/hora ligados a `SystemTelemetry`.
 - `SystaliaDock.qml` usa as dimensões ilustradas e mantém os cinco launchers existentes.
-- `main.cpp` não procura mais o wallpaper Carina; o PNG VALO 2×, os ícones 4×, os botões e as refrações são recursos QML rasterizados de SVGs exportados do frame. A sombra externa é desenhada em SVG com os valores de sombra observados no frame. `backdropGrab` continua ativo.
-- O shader mantém ABI `std140` de 128 bytes e geometria G2. `fwidth`/`smoothstep` usam cobertura de fragmento para suavizar o contorno e o fio de brilho; `SystaliaG2Frame.qml` usa `CurveRenderer`, acompanha a inclinação e compartilha raios independentes por canto com o vidro de cada componente. A sombra das janelas preserva os cantos ao redimensionar.
+- `SystaliaWindowHeader.qml` e `SystaliaWindowAction.qml` fornecem o mesmo título, badge e botões VALO às janelas internas e externas. `WaylandWindowContainer.qml` alinha o raio do shader e da borda a 20 px por padrão, usa contorno branco de 1,5 px e sombra 9-slice. O `titleBarHeight` uniforme de 50 px mantém a origem do buffer cliente e o recorte do shader alinhados.
+- O build do alvo principal passou. A inicialização QML em modo offscreen não encontrou erros após remover propriedades inválidas das sombras `BorderImage`; a criação do socket Wayland foi bloqueada pelo sandbox, então a moldura externa ainda precisa de captura no ambiente alvo.
+- `main.cpp` não procura mais o wallpaper Carina; o PNG VALO 2×, os ícones 4×, os botões e as refrações são recursos QML rasterizados de SVGs exportados do frame. A sombra externa usa o PNG local do frame em nove fatias. `backdropGrab` continua ativo.
+- O shader mantém ABI `std140` de 128 bytes e geometria G2. `fwidth`/`smoothstep` usam cobertura de fragmento para suavizar o contorno e o fio de brilho; `SystaliaG2Frame.qml` usa `CurveRenderer` e calcula o slant de formas internas nas dimensões da superfície inteira para alinhar o cabeçalho à borda do shader. A sombra das janelas preserva os cantos ao redimensionar.
 - Os endpoints temporários de asset do Figma retornam HTTP 403 pelo proxy. Os vetores necessários foram exportados diretamente dos nós do frame pela API do Figma e guardados em `src/qml/assets/figma`; os PNGs 2×/4× são rasterizações desses SVGs para o runtime Qt sem suporte a SVG.
 - `cmake --build build --target systalia_glass_engine` concluiu e a captura de runtime mostrou wallpaper, ícones, janelas e dock. D-Bus de sessão e EGL Wayland não inicializaram no Xvfb; CTest e clientes externos não foram executados.
 
@@ -151,7 +155,7 @@ O frame principal está implementado nestes componentes:
 2. Janela VALO/SOAR e controles de material.
 3. Janela Systalia Files.
 
-Flow Launcher, notificações, task switcher e janelas externas continuam com a aparência anterior porque o frame não especifica esses componentes.
+Flow Launcher, notificações e task switcher continuam com a aparência anterior porque o frame não os especifica. O Figma também não mostra conteúdo de clientes externos; suas molduras usam agora o cabeçalho e as ações comuns derivados das janelas VALO, enquanto cada aplicativo conserva seu próprio conteúdo.
 
 ### Etapa E — Serviços e integração
 
