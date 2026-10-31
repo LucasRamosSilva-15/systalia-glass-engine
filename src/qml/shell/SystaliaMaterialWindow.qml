@@ -418,8 +418,8 @@ Item {
     Rectangle {
         x: 222.5
         y: 57.5
-        width: 454
-        height: 452
+        width: Math.max(454, parent.width - 245)
+        height: Math.max(452, parent.height - 75)
         radius: 13
         color: "#c2071d32"
         antialiasing: true
@@ -438,7 +438,8 @@ Item {
         }
 
         Item {
-            x: 344
+            anchors.right: parent.right
+            anchors.rightMargin: 25
             y: 13
             width: 85
             height: 31
@@ -582,7 +583,7 @@ Item {
         SettingSlider {
             x: 22
             y: 55
-            width: 420
+            width: parent.width - 44
             label: "Glass Layer Opacity"
             value: materialWindow.surfaceOpacity
             from: 0.2
@@ -593,7 +594,7 @@ Item {
         SettingSlider {
             x: 22
             y: 119
-            width: 420
+            width: parent.width - 44
             label: "Refractive Index (IOR)"
             value: materialWindow.refractiveIndex
             from: 1
@@ -604,7 +605,7 @@ Item {
         SettingSlider {
             x: 22
             y: 183
-            width: 420
+            width: parent.width - 44
             label: "Chromatic Dispersion"
             value: materialWindow.dispersion
             from: 0
@@ -615,7 +616,7 @@ Item {
         SettingSlider {
             x: 22
             y: 247
-            width: 420
+            width: parent.width - 44
             label: "Caustic Intensity"
             value: materialWindow.caustics
             from: 0
@@ -626,7 +627,7 @@ Item {
         SettingSlider {
             x: 22
             y: 311
-            width: 420
+            width: parent.width - 44
             label: "Corner Radius"
             value: materialWindow.cornerRadius
             from: 10
@@ -637,7 +638,7 @@ Item {
         SettingSlider {
             x: 22
             y: 375
-            width: 420
+            width: parent.width - 44
             label: "Surface Slant"
             value: materialWindow.surfaceSlant
             from: 0
@@ -690,7 +691,7 @@ Item {
             id: slider
             x: 0
             y: 20
-            width: 345
+            width: Math.max(100, parent.width - 65)
             height: 24
             leftPadding: 0
             rightPadding: 0

@@ -192,7 +192,7 @@ Item {
         x: 10
         y: 51
         width: 181
-        height: 469
+        height: Math.max(469, parent.height - 65)
         radius: 14
         color: "#e0081a2d"
         antialiasing: true
@@ -366,26 +366,11 @@ Item {
         }
     }
 
-    // Alternador de visualização em grade/lista (style.css: left: 490px, top: 65px, font-size: 21px, color: #C2EFFF)
-    Text {
-        x: 490
-        y: 62
-        width: 30
-        height: 28
-        text: "≡"
-        color: "#c2efff"
-        font.family: SystaliaTheme.fontFamily
-        font.pixelSize: 22
-        horizontalAlignment: Text.AlignHCenter
-        verticalAlignment: Text.AlignVCenter
-        antialiasing: true
-        HoverHandler { cursorShape: Qt.PointingHandCursor }
-    }
-
     // Campo de busca (style.css: width: 157px, height: 28px, left: 526px, top: 61px, background: rgba(10, 37, 53, 0.73))
     TextField {
         id: searchField
-        x: 526
+        anchors.right: parent.right
+        anchors.rightMargin: 18
         y: 61
         width: 157
         height: 28
@@ -408,36 +393,64 @@ Item {
         selectionColor: "#7d42e9ee"
     }
 
+    // Alternador de visualização em grade/lista (style.css: left: 490px, top: 65px, font-size: 21px, color: #C2EFFF)
+    Text {
+        anchors.right: searchField.left
+        anchors.rightMargin: 6
+        y: 62
+        width: 30
+        height: 28
+        text: "≡"
+        color: "#c2efff"
+        font.family: SystaliaTheme.fontFamily
+        font.pixelSize: 22
+        horizontalAlignment: Text.AlignHCenter
+        verticalAlignment: Text.AlignVCenter
+        antialiasing: true
+        HoverHandler { cursorShape: Qt.PointingHandCursor }
+    }
+
     // Linha divisória horizontal (style.css: width: 476px, height: 1px, left: 208px, top: 97px, background: rgba(178, 243, 253, 0.3))
     Rectangle {
         x: 208
         y: 97
-        width: 476
+        width: Math.max(476, parent.width - 226)
         height: 1
         color: "#4db2f3fd"
         antialiasing: true
     }
 
-    Repeater {
+    GridView {
+        id: filesGrid
+        x: 216
+        y: 115
+        width: Math.max(460, parent.width - 235)
+        height: Math.max(400, parent.height - 130)
+        cellWidth: 118
+        cellHeight: 120
+        clip: true
+        interactive: true
+        boundsBehavior: Flickable.StopAtBounds
+
         model: [
-            { name: "All Files", icon: "valo-file-document.png", glyph: "", left: 216.5, top: 125.5 },
-            { name: "Documents", icon: "valo-file-documents-art.png", glyph: "◉", left: 334.5, top: 125.5 },
-            { name: "Document", icon: "valo-file-document.png", glyph: "</>", left: 452.5, top: 125.5 },
-            { name: "Download2", icon: "valo-file-download.png", glyph: "⬇", left: 570.5, top: 125.5 },
-            { name: "Divides 1", icon: "valo-file-list.png", glyph: "≡", left: 216.5, top: 245.5 },
-            { name: "Systion 4", icon: "valo-file-check.png", glyph: "✓", left: 334.5, top: 245.5 }
+            { name: "All Files", icon: "valo-file-document.png", glyph: "" },
+            { name: "Documents", icon: "valo-file-documents-art.png", glyph: "◉" },
+            { name: "Document", icon: "valo-file-document.png", glyph: "</>" },
+            { name: "Download2", icon: "valo-file-download.png", glyph: "⬇" },
+            { name: "Divides 1", icon: "valo-file-list.png", glyph: "≡" },
+            { name: "Systion 4", icon: "valo-file-check.png", glyph: "✓" }
         ]
 
         delegate: Item {
             id: fileEntry
             required property var modelData
-            x: fileEntry.modelData.left
-            y: fileEntry.modelData.top
-            width: 96
-            height: 106
+            width: filesGrid.cellWidth
+            height: filesGrid.cellHeight
 
             Rectangle {
-                anchors.fill: parent
+                anchors.centerIn: parent
+                width: 96
+                height: 106
                 visible: fileWindow.selectedFile === fileEntry.modelData.name
                 radius: 8
                 color: "#182ae0ff"
@@ -446,74 +459,80 @@ Item {
                 antialiasing: true
             }
 
-            Image {
-                x: -7
-                y: -10
-                width: 82
-                height: 87
-                visible: fileEntry.modelData.name === "All Files"
-                source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-file-folder-body.png"
-                sourceSize: Qt.size(512, 543)
-                fillMode: Image.PreserveAspectFit
-                smooth: true
-                mipmap: true
-            }
-
-            Image {
-                x: -7
-                y: 10
-                width: 90
-                height: 67
-                visible: fileEntry.modelData.name === "All Files"
-                source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-file-folder-lip.png"
-                sourceSize: Qt.size(512, 381)
-                fillMode: Image.PreserveAspectFit
-                smooth: true
-                mipmap: true
-            }
-
-            Image {
-                x: fileEntry.modelData.name === "Documents" ? 3 : 2
-                y: fileEntry.modelData.name === "Documents" ? -13.5 : -14.5
-                width: fileEntry.modelData.name === "Documents" ? 75 : 77
-                height: fileEntry.modelData.name === "Documents" ? 94 : 96
-                visible: fileEntry.modelData.name !== "All Files"
-                source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/" + fileEntry.modelData.icon
-                sourceSize: Qt.size(512, 642)
-                fillMode: Image.PreserveAspectFit
-                smooth: true
-                mipmap: true
-            }
-
-            Text {
-                x: 20
-                y: 16
-                width: 55
-                height: 44
-                visible: fileEntry.modelData.glyph !== ""
-                text: fileEntry.modelData.glyph
-                color: "#8cf1ff"
-                font.family: SystaliaTheme.fontFamily
-                font.pixelSize: fileEntry.modelData.glyph === "</>" ? 22 : 26
-                font.weight: Font.Bold
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
-                antialiasing: true
-            }
-
-            Text {
-                x: 0
-                y: 78
+            Item {
+                anchors.centerIn: parent
                 width: 96
-                height: 26
-                text: fileEntry.modelData.name
-                color: "#eefcff"
-                font.family: SystaliaTheme.fontFamily
-                font.pixelSize: 15
-                font.weight: Font.Medium
-                horizontalAlignment: Text.AlignHCenter
-                elide: Text.ElideRight
-                antialiasing: true
+                height: 106
+
+                Image {
+                    x: -7
+                    y: -10
+                    width: 82
+                    height: 87
+                    visible: fileEntry.modelData.name === "All Files"
+                    source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-file-folder-body.png"
+                    sourceSize: Qt.size(512, 543)
+                    fillMode: Image.PreserveAspectFit
+                    smooth: true
+                    mipmap: true
+                }
+
+                Image {
+                    x: -7
+                    y: 10
+                    width: 90
+                    height: 67
+                    visible: fileEntry.modelData.name === "All Files"
+                    source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-file-folder-lip.png"
+                    sourceSize: Qt.size(512, 381)
+                    fillMode: Image.PreserveAspectFit
+                    smooth: true
+                    mipmap: true
+                }
+
+                Image {
+                    x: fileEntry.modelData.name === "Documents" ? 3 : 2
+                    y: fileEntry.modelData.name === "Documents" ? -13.5 : -14.5
+                    width: fileEntry.modelData.name === "Documents" ? 75 : 77
+                    height: fileEntry.modelData.name === "Documents" ? 94 : 96
+                    visible: fileEntry.modelData.name !== "All Files"
+                    source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/" + fileEntry.modelData.icon
+                    sourceSize: Qt.size(512, 642)
+                    fillMode: Image.PreserveAspectFit
+                    smooth: true
+                    mipmap: true
+                }
+
+                Text {
+                    x: 20
+                    y: 16
+                    width: 55
+                    height: 44
+                    visible: fileEntry.modelData.glyph !== ""
+                    text: fileEntry.modelData.glyph
+                    color: "#8cf1ff"
+                    font.family: SystaliaTheme.fontFamily
+                    font.pixelSize: fileEntry.modelData.glyph === "</>" ? 22 : 26
+                    font.weight: Font.Bold
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                    antialiasing: true
+                }
+
+                Text {
+                    x: 0
+                    y: 78
+                    width: 96
+                    height: 26
+                    text: fileEntry.modelData.name
+                    color: "#eefcff"
+                    font.family: SystaliaTheme.fontFamily
+                    font.pixelSize: 15
+                    font.weight: Font.Medium
+                    horizontalAlignment: Text.AlignHCenter
+                    elide: Text.ElideRight
+                    antialiasing: true
+                }
             }
 
             HoverHandler { cursorShape: Qt.PointingHandCursor }
