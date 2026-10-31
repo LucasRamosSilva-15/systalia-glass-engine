@@ -49,24 +49,6 @@ Item {
         strokeWidth: 1
     }
 
-    // Camada superior de brilho / gloss perimetral VALO
-    Rectangle {
-        x: 4
-        y: 2
-        width: parent.width - 8
-        height: parent.height - 4
-        radius: 20
-        gradient: Gradient {
-            orientation: Gradient.Vertical
-            GradientStop { position: 0.0; color: "#35c8ffff" }
-            GradientStop { position: 0.45; color: "#1061f0ff" }
-            GradientStop { position: 1.0; color: "#00155279" }
-        }
-        border.color: "#24c8ffff"
-        border.width: 0.8
-        antialiasing: true
-    }
-
     Image {
         x: 17
         y: 9
