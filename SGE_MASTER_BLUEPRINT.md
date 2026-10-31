@@ -125,7 +125,7 @@ O frame principal do redesign está em `src/qml/`: duas janelas de vidro, TopBar
 | 3.2 | Dock e lançamento de processos | Componente e serviço presentes. |
 | 3.3/3.4 | Integração de clientes, foco e lançador de aplicações | Handshake, catálogo, filtro, foco e testes presentes; a apresentação de buffers GPU segue como risco aberto. |
 | 3.5 | Notificações D-Bus e controles rápidos | Serviço, modelo e componentes presentes; conflito com outro dono do serviço D-Bus é uma condição de execução. |
-| 3.6 | Alternador de tarefas | Modelo MRU, atalhos e QML presentes; correções recentes de foco e dimensão do frame aguardam validação no ambiente alvo. |
+| 3.6 | Alternador de tarefas e foco de teclado | Modelo MRU, atalhos e QML presentes (tst_task_switcher 100% aprovado). Roteamento direto de teclado via QWaylandSeat::sendFullKeyEvent implementado para garantir que clientes Wayland recebam digitação e atalhos de forma robusta. |
 | 3.7 | Revisão, ASan/UBSan e benchmark | Pendente como auditoria completa; a expansão de testes não substitui profiling ou análise de leaks. |
 | Redesign VALO/SDE | Nova linguagem visual a partir do Figma | Composição principal e vetores exportados implementados e capturados em 1662 × 975; comparação em outras escalas e validação no host alvo seguem pendentes. Control Center de material separado do quick panel. |
 | Fases 4–6 | Workspaces, tiling, multi-monitor, sessão autônoma, áudio e terminal | Roadmap; não implementado integralmente. |

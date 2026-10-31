@@ -1,4 +1,5 @@
 #include "SystaliaGlassMaterial.hpp"
+#include <QDebug>
 #include <cstring>
 #include <functional>
 
@@ -16,16 +17,34 @@ bool SystaliaGlassMaterialShader::updateUniformData(RenderState &state,
         return false;
     }
 
+    auto *mat = static_cast<SystaliaGlassMaterial *>(newMaterial);
+    if (!mat) {
+        return false;
+    }
+
+    SystaliaSurfaceProps props = mat->props();
+    props.matrix = state.combinedMatrix();
+
+    // Otimização QRhi: só transferir para o UBO se os bytes tiverem sofrido alteração real
+    if (buf->size() >= static_cast<qsizetype>(sizeof(SystaliaSurfaceProps))
+        && std::memcmp(buf->constData(), &props, sizeof(SystaliaSurfaceProps)) == 0) {
+        return false;
+    }
+
     if (buf->size() < static_cast<qsizetype>(sizeof(SystaliaSurfaceProps))) {
         buf->resize(sizeof(SystaliaSurfaceProps));
     }
 
-    auto *mat = static_cast<SystaliaGlassMaterial *>(newMaterial);
-    SystaliaSurfaceProps props = mat->props();
-
-    props.matrix = state.combinedMatrix();
-
     std::memcpy(buf->data(), &props, sizeof(SystaliaSurfaceProps));
+
+    static const bool s_perfDebug = qEnvironmentVariableIntValue("SGE_DEBUG_PERF") == 1;
+    if (s_perfDebug) {
+        static quint64 s_uniformUploads = 0;
+        if ((++s_uniformUploads % 300) == 1) {
+            qDebug().noquote() << "[SGE-PERF-UBO] Upload de buffer uniforme RHI realizado (total:" << s_uniformUploads << ")";
+        }
+    }
+
     return true;
 }
 
@@ -38,12 +57,22 @@ void SystaliaGlassMaterialShader::updateSampledImage(RenderState &state,
     Q_UNUSED(oldMaterial);
 
     auto *mat = static_cast<SystaliaGlassMaterial *>(newMaterial);
-    if (!mat)
+    if (!mat || !texture)
         return;
-    if (binding == 1 && mat->texture()) {
-        *texture = mat->texture();
-    } else if (binding == 2 && mat->clientTexture()) {
-        *texture = mat->clientTexture();
+
+    QSGTexture *targetTexture = nullptr;
+    if (binding == 1) {
+        targetTexture = mat->texture();
+    } else if (binding == 2) {
+        targetTexture = mat->clientTexture();
+    }
+
+    if (targetTexture && *texture != targetTexture) {
+        *texture = targetTexture;
+        static const bool s_perfDebug = qEnvironmentVariableIntValue("SGE_DEBUG_PERF") == 1;
+        if (s_perfDebug) {
+            qDebug().noquote() << "[SGE-PERF-RHI] Vinculada nova textura RHI no binding:" << binding;
+        }
     }
 }
 

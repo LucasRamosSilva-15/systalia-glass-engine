@@ -84,6 +84,17 @@ Item {
 
     onClientGeometryChanged: syncClientGeometry()
 
+    onClientMappedChanged: {
+        if (clientMapped) {
+            syncClientGeometry()
+            if (workspace)
+                workspace.raiseClientWindow(windowContainer)
+            if (waylandServer && toplevel)
+                waylandServer.activateToplevel(toplevel)
+            clientSurfaceItem.takeFocus()
+        }
+    }
+
     function beginResize(edges, position) {
         if (!resizeEnabled || resizing)
             return
@@ -275,6 +286,15 @@ Item {
                 paintEnabled: true
                 moveItem: windowContainer
 
+                onActiveFocusChanged: {
+                    if (activeFocus) {
+                        if (windowContainer.workspace)
+                            windowContainer.workspace.raiseClientWindow(windowContainer)
+                        if (windowContainer.waylandServer && windowContainer.toplevel)
+                            windowContainer.waylandServer.activateToplevel(windowContainer.toplevel)
+                    }
+                }
+
                 onSurfaceDestroyed: {
                     windowContainer.disposeContainer()
                 }
@@ -326,12 +346,18 @@ Item {
             }
             onDragStarted: {
                 windowContainer.resizeAnchored = false
+                if (windowContainer.workspace)
+                    windowContainer.workspace.raiseClientWindow(windowContainer)
                 if (windowContainer.toplevel && windowContainer.waylandServer)
                     windowContainer.waylandServer.activateToplevel(windowContainer.toplevel)
+                clientSurfaceItem.takeFocus()
             }
             onHeaderTapped: {
+                if (windowContainer.workspace)
+                    windowContainer.workspace.raiseClientWindow(windowContainer)
                 if (windowContainer.toplevel && windowContainer.waylandServer)
                     windowContainer.waylandServer.activateToplevel(windowContainer.toplevel)
+                clientSurfaceItem.takeFocus()
             }
         }
     }
@@ -386,14 +412,4 @@ Item {
         }
     }
 
-    TapHandler {
-        onTapped: {
-            windowContainer.forceActiveFocus()
-            clientSurfaceItem.forceActiveFocus()
-            if (windowContainer.workspace)
-                windowContainer.workspace.raiseClientWindow(windowContainer)
-            if (windowContainer.waylandServer && windowContainer.toplevel)
-                windowContainer.waylandServer.activateToplevel(windowContainer.toplevel)
-        }
-    }
 }

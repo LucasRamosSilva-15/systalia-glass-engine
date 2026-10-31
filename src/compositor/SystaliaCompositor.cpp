@@ -2,6 +2,7 @@
 #include <QDebug>
 #include <QFile>
 #include <QKeyEvent>
+#include <QQuickItem>
 #include <QQuickWindow>
 #include <QtWaylandCompositor/QWaylandKeyboard>
 #include <utility>
@@ -229,7 +230,8 @@ bool SystaliaCompositor::eventFilter(QObject *watched, QEvent *event) {
         if (event->type() == QEvent::ShortcutOverride) {
             auto *keyEvent = static_cast<QKeyEvent *>(event);
             if (keyEvent->key() == Qt::Key_Tab
-                && keyEvent->modifiers().testFlag(Qt::AltModifier)) {
+                && (keyEvent->modifiers().testFlag(Qt::AltModifier)
+                    || keyEvent->modifiers().testFlag(Qt::MetaModifier))) {
                 keyEvent->accept();
                 return true;
             }
@@ -238,6 +240,39 @@ bool SystaliaCompositor::eventFilter(QObject *watched, QEvent *event) {
             && handleTaskSwitcherKeyEvent(static_cast<QKeyEvent *>(event))) {
             event->accept();
             return true;
+        }
+
+        // Encaminhamento direto de teclado para a superfície de cliente Wayland com foco
+        if (event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease) {
+            auto *keyEvent = static_cast<QKeyEvent *>(event);
+            QWaylandSeat *seat = defaultSeat();
+            QWaylandSurface *kbFocus = seat ? seat->keyboardFocus() : nullptr;
+            QQuickItem *focusItem = m_taskSwitcherWindow ? m_taskSwitcherWindow->activeFocusItem() : nullptr;
+            const bool shellInputHasFocus = focusItem
+                && (focusItem->inherits("QQuickTextInput") || focusItem->inherits("QQuickTextField"));
+
+            if (seat && !kbFocus && m_windowStackModel) {
+                auto *topWindow = qobject_cast<QWaylandXdgToplevel *>(m_windowStackModel->currentWindow());
+                if (topWindow && topWindow->xdgSurface() && topWindow->xdgSurface()->surface()) {
+                    activateToplevel(topWindow);
+                    kbFocus = seat->keyboardFocus();
+                }
+            }
+
+            qWarning().noquote() << "[SGE-KEY]"
+                                 << (event->type() == QEvent::KeyPress ? "PRESS" : "RELEASE")
+                                 << "key:" << Qt::Key(keyEvent->key())
+                                 << "nativeScan:" << keyEvent->nativeScanCode()
+                                 << "kbFocus:" << (kbFocus ? "OK" : "NULL")
+                                 << "shellInput:" << shellInputHasFocus;
+
+            if (seat && kbFocus) {
+                if (!shellInputHasFocus) {
+                    seat->sendFullKeyEvent(keyEvent);
+                    event->accept();
+                    return true;
+                }
+            }
         }
     }
     return QWaylandCompositor::eventFilter(watched, event);
@@ -248,12 +283,13 @@ bool SystaliaCompositor::handleTaskSwitcherKeyEvent(QKeyEvent *event) {
         return false;
 
     if (event->type() == QEvent::KeyPress) {
-        if (event->key() == Qt::Key_Alt) {
+        if (event->key() == Qt::Key_Alt || event->key() == Qt::Key_Meta) {
             m_altPressWasForwarded = true;
             return false;
         }
         if (event->key() == Qt::Key_Tab) {
-            if (event->modifiers().testFlag(Qt::AltModifier)) {
+            if (event->modifiers().testFlag(Qt::AltModifier)
+                || event->modifiers().testFlag(Qt::MetaModifier)) {
                 const int direction = event->modifiers().testFlag(Qt::ShiftModifier) ? -1 : 1;
                 return m_windowStackModel->beginTaskSwitch(direction);
             }
@@ -265,7 +301,7 @@ bool SystaliaCompositor::handleTaskSwitcherKeyEvent(QKeyEvent *event) {
     if (event->type() != QEvent::KeyRelease)
         return false;
 
-    if (event->key() == Qt::Key_Alt) {
+    if (event->key() == Qt::Key_Alt || event->key() == Qt::Key_Meta) {
         if (!m_windowStackModel->taskSwitcherVisible()) {
             m_altPressWasForwarded = false;
             return false;
@@ -273,7 +309,7 @@ bool SystaliaCompositor::handleTaskSwitcherKeyEvent(QKeyEvent *event) {
 
         QWaylandSeat *seat = defaultSeat();
         if (m_altPressWasForwarded && seat && seat->keyboard()) {
-            const uint scanCode = seat->keyboard()->keyToScanCode(Qt::Key_Alt);
+            const uint scanCode = seat->keyboard()->keyToScanCode(event->key());
             if (scanCode != 0)
                 seat->sendKeyReleaseEvent(scanCode);
         }
