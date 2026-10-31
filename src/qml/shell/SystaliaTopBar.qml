@@ -22,7 +22,7 @@ Item {
     // Sombra luminosa externa ciano conforme style.css: box-shadow: 0px 4px 18px rgba(9, 186, 237, 0.2)
     Rectangle {
         anchors.fill: parent
-        radius: 22
+        radius: topBar.cornerRadii.x
         color: "#3309baed"
         z: -1
     }
@@ -32,6 +32,7 @@ Item {
         backdropSource: topBar.backdropSource
         screenResolution: topBar.screenResolution
         radii: topBar.cornerRadii
+        circularCorners: true
         slant: 0
         ior: 1.10
         chromaticDispersion: 0.012
@@ -43,7 +44,7 @@ Item {
     // Contorno único de precisão conforme style.css: border: 1px solid rgba(116, 213, 238, 0.24)
     Rectangle {
         anchors.fill: parent
-        radius: 22
+        radius: topBar.cornerRadii.x
         color: "#db071628"
         border.color: "#3d74d5ee"
         border.width: 1

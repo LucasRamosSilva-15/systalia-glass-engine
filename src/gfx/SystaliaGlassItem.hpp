@@ -23,6 +23,7 @@ class SystaliaGlassItem : public QQuickItem {
     Q_PROPERTY(QQuickItem* clientTextureSource READ clientTextureSource WRITE setClientTextureSource NOTIFY clientTextureSourceChanged)
     Q_PROPERTY(QVector2D screenResolution READ screenResolution WRITE setScreenResolution NOTIFY screenResolutionChanged)
     Q_PROPERTY(float titleBarHeight READ titleBarHeight WRITE setTitleBarHeight NOTIFY titleBarHeightChanged)
+    Q_PROPERTY(bool circularCorners READ circularCorners WRITE setCircularCorners NOTIFY circularCornersChanged)
 
 public:
     explicit SystaliaGlassItem(QQuickItem *parent = nullptr);
@@ -61,6 +62,9 @@ public:
     float titleBarHeight() const { return m_titleBarHeight; }
     void setTitleBarHeight(float height);
 
+    bool circularCorners() const { return m_circularCorners; }
+    void setCircularCorners(bool enable);
+
     QSGTexture *ensureFallbackTexture();
     QSGTexture *ensureFallbackClientTexture();
     void releaseResources() override;
@@ -77,6 +81,7 @@ signals:
     void clientTextureSourceChanged();
     void screenResolutionChanged();
     void titleBarHeightChanged();
+    void circularCornersChanged();
 
 protected:
     QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *data) override;
@@ -89,6 +94,7 @@ private:
     float m_causticIntensity = 0.65f;
     float m_surfaceOpacity = 1.0f;
     float m_time = 0.0f;
+    bool m_circularCorners = false;
 
     QPointer<QQuickItem> m_backdropSource;
     QPointer<QQuickItem> m_clientTextureSource;

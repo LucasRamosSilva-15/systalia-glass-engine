@@ -37,11 +37,21 @@ float sdRoundedBox4G2(vec2 p, vec2 b, vec4 r) {
     return (q.x > 0.0 && q.y > 0.0) ? cornerDist : (max(q.x, q.y) - rad);
 }
 
+// SDF Euclidiana circular de precisão L2 para elementos como a TopBar
+float sdRoundedBox2(vec2 p, vec2 b, vec4 r) {
+    float rad = selectRadius(p, r);
+    rad = clamp(rad, 0.0, min(b.x, b.y));
+    vec2 q = abs(p) - b + vec2(rad);
+    return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - rad;
+}
+
 float evaluateSurfaceSDF(vec2 p, vec2 halfSize, vec4 radii, float slant) {
     vec2 p_mod = p;
     float slantFactor = 1.0 - (p.y / max(halfSize.y, 1.0)) * slant * 0.25;
     p_mod.x /= max(slantFactor, 0.05);
-    float dist = sdRoundedBox4G2(p_mod, halfSize, radii);
+    float dist = (u_TitleBarHeight < 0.0)
+                 ? sdRoundedBox2(p_mod, halfSize, radii)
+                 : sdRoundedBox4G2(p_mod, halfSize, radii);
     return dist * slantFactor;
 }
 

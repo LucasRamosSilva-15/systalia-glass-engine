@@ -116,6 +116,14 @@ void SystaliaGlassItem::setTitleBarHeight(float height) {
     }
 }
 
+void SystaliaGlassItem::setCircularCorners(bool enable) {
+    if (m_circularCorners != enable) {
+        m_circularCorners = enable;
+        emit circularCornersChanged();
+        update();
+    }
+}
+
 QSGTexture *SystaliaGlassItem::ensureFallbackTexture() {
     if (!m_fallbackTexture && window()) {
         QImage fallbackImg(4, 4, QImage::Format_RGBA8888);
@@ -264,7 +272,7 @@ QSGNode *SystaliaGlassItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeDat
     props.opacity = m_surfaceOpacity;
     props.time = m_time;
     props.hasClientTexture = hasClientTexture ? 1.0f : 0.0f;
-    props.titleBarHeight = m_titleBarHeight;
+    props.titleBarHeight = m_circularCorners ? -1.0f : m_titleBarHeight;
 
     material->setProps(props);
     node->markDirty(QSGNode::DirtyMaterial);
