@@ -336,44 +336,133 @@ Item {
             Accessible.name: "Ativar material VALO"
             Accessible.checked: materialWindow.materialActive
 
+            // Sombra de queda base do toggle track (0px 3px 5px rgba(0, 16, 29, 0.35))
             Rectangle {
                 anchors.fill: parent
+                anchors.topMargin: 2
                 radius: 18
-                gradient: Gradient {
-                    orientation: Gradient.Vertical
-                    GradientStop { position: 0; color: "#3d9fefff" }
-                    GradientStop { position: 0.5; color: "#6e19587d" }
-                    GradientStop { position: 1; color: "#e010334e" }
-                }
-                border.color: "#c7f9ffff"
-                border.width: 1
-                antialiasing: true
-                Rectangle {
-                    anchors.fill: parent
-                    anchors.margins: 1
-                    radius: 17
-                    color: "transparent"
-                    border.color: "#30ffffff"
-                    border.width: 0.7
-                    antialiasing: true
+                color: "#5900101d"
+            }
+
+            // Trilho com gradiente 135deg nativo
+            Shape {
+                anchors.fill: parent
+                layer.enabled: true
+                layer.samples: 4
+
+                ShapePath {
+                    strokeWidth: 0
+                    fillGradient: LinearGradient {
+                        x1: 0; y1: 0
+                        x2: 85; y2: 31
+                        GradientStop { position: 0.1389; color: "#3d9fefff" }
+                        GradientStop { position: 0.2778; color: "#6e5bbce5" }
+                        GradientStop { position: 0.5208; color: "#b819587d" }
+                        GradientStop { position: 0.8333; color: "#e010334e" }
+                    }
+                    startX: 15.5; startY: 0
+                    PathLine { x: 69.5; y: 0 }
+                    PathArc { x: 85; y: 15.5; radiusX: 15.5; radiusY: 15.5 }
+                    PathArc { x: 69.5; y: 31; radiusX: 15.5; radiusY: 15.5 }
+                    PathLine { x: 15.5; y: 31 }
+                    PathArc { x: 0; y: 15.5; radiusX: 15.5; radiusY: 15.5 }
+                    PathArc { x: 15.5; y: 0; radiusX: 15.5; radiusY: 15.5 }
                 }
             }
 
+            // Inset highlight superior (inset 0px 1px 1px rgba(255, 255, 255, 0.32))
             Rectangle {
-                x: materialWindow.materialActive ? 60 : 4
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.top: parent.top
+                anchors.topMargin: 1
+                width: parent.width - 20
+                height: 1
+                color: "#52ffffff"
+            }
+
+            // Inset shadow inferior (inset 0px -2px 4px rgba(6, 24, 45, 0.4))
+            Rectangle {
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: 1
+                width: parent.width - 20
+                height: 3
+                gradient: Gradient {
+                    orientation: Gradient.Vertical
+                    GradientStop { position: 0; color: "#0006182d" }
+                    GradientStop { position: 1; color: "#6606182d" }
+                }
+            }
+
+            // Borda do trilho
+            Rectangle {
+                anchors.fill: parent
+                radius: 18
+                color: "transparent"
+                border.color: "#30ffffff"
+                border.width: 0.8
+                antialiasing: true
+            }
+
+            // Manípulo esférico (Knob) de 23px x 23px com gradiente radial do style.css
+            Item {
+                x: materialWindow.materialActive ? 58 : 4
                 y: 4
                 width: 23
                 height: 23
-                radius: 12
-                gradient: Gradient {
-                    orientation: Gradient.Vertical
-                    GradientStop { position: 0; color: "#efffffff" }
-                    GradientStop { position: 1; color: "#a8d9f4ff" }
+                Behavior on x {
+                    NumberAnimation { duration: 160; easing.type: Easing.OutCubic }
                 }
-                border.color: "#d9ffffff"
-                border.width: 1
-                antialiasing: true
-                Behavior on x { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
+
+                // Sombra do manípulo (0px 2px 4px rgba(0, 0, 0, 0.55))
+                Rectangle {
+                    anchors.centerIn: parent
+                    anchors.verticalCenterOffset: 2
+                    width: 21
+                    height: 21
+                    radius: 10.5
+                    color: "#8c000000"
+                }
+
+                // Esfera 3D via RadialGradient
+                Shape {
+                    anchors.centerIn: parent
+                    width: 23
+                    height: 23
+                    layer.enabled: true
+                    layer.samples: 4
+
+                    ShapePath {
+                        strokeWidth: 0
+                        fillGradient: RadialGradient {
+                            centerX: 11.5
+                            centerY: 11.5
+                            focalX: 11.5
+                            focalY: 11.5
+                            centerRadius: 11.5
+                            focalRadius: 0
+                            // #FFFFFF 0%, #DBFBFF 30%, #8CE6F4 68%, #4387BA 100%
+                            GradientStop { position: 0.0; color: "#ffffff" }
+                            GradientStop { position: 0.30; color: "#dbfbff" }
+                            GradientStop { position: 0.68; color: "#8ce6f4" }
+                            GradientStop { position: 1.0; color: "#4387ba" }
+                        }
+                        startX: 0
+                        startY: 11.5
+                        PathArc { x: 23; y: 11.5; radiusX: 11.5; radiusY: 11.5 }
+                        PathArc { x: 0; y: 11.5; radiusX: 11.5; radiusY: 11.5 }
+                    }
+                }
+
+                // Borda do manípulo (border: 1px solid rgba(232, 255, 255, 0.8))
+                Rectangle {
+                    anchors.fill: parent
+                    radius: 11.5
+                    color: "transparent"
+                    border.color: "#cce8ffff"
+                    border.width: 1
+                    antialiasing: true
+                }
             }
 
             HoverHandler { cursorShape: Qt.PointingHandCursor }
@@ -456,12 +545,13 @@ Item {
         property real to: 1
         property string valueText: ""
         signal changed(real value)
+        width: 410
         height: 50
 
         Text {
             x: 0
             y: 0
-            width: 345
+            width: 320
             height: 24
             text: settingRow.label
             color: "#e4f7ff"
@@ -470,24 +560,27 @@ Item {
             antialiasing: true
         }
 
+        // Valor numérico (ex: 85%, 1.25, etc.) alinhado perfeitamente dentro do painel
         Text {
-            x: 399
-            y: 25
-            width: 50
-            height: 26
+            anchors.right: parent.right
+            anchors.rightMargin: 0
+            y: 20
+            width: 55
+            height: 24
             text: settingRow.valueText
             color: "#d9ecf7"
             font.family: SystaliaTheme.fontFamily
             font.pixelSize: 15
             horizontalAlignment: Text.AlignRight
+            verticalAlignment: Text.AlignVCenter
             antialiasing: true
         }
 
         Slider {
             id: slider
             x: 0
-            y: 25
-            width: 367
+            y: 20
+            width: 345
             height: 24
             leftPadding: 0
             rightPadding: 0
@@ -504,47 +597,112 @@ Item {
                 y: slider.availableHeight / 2 - height / 2
                 width: slider.availableWidth
                 height: 12
-                radius: 7
+                radius: 8
+                // Fundo do trilho conforme style.css:
+                // background: linear-gradient(135deg, rgba(3, 21, 41, 0.94) 13.89%, rgba(12, 39, 62, 0.96) 48.61%, rgba(23, 57, 85, 0.83) 83.33%);
+                // border: 0.7px solid rgba(115, 186, 218, 0.26);
+                // box-shadow: inset 0px -1px 1px rgba(230, 255, 255, 0.12), inset 0px 2px 3px rgba(0, 0, 0, 0.64);
                 color: "#f0031529"
                 border.color: "#4273bada"
                 border.width: 0.7
                 antialiasing: true
 
+                // Inset shadow de profundidade interna no trilho
                 Rectangle {
-                    x: 1
-                    y: 1
-                    width: Math.max(0, slider.visualPosition * (parent.width - 2))
-                    height: parent.height - 2
-                    radius: 6
+                    anchors.fill: parent
+                    radius: 8
+                    color: "transparent"
+                    border.color: "#50000000"
+                    border.width: 1
+                }
+
+                // Progresso preenchido conforme style.css:
+                // background: linear-gradient(180deg, #14C4E7 0%, #17F5DF 100%);
+                Rectangle {
+                    x: 0
+                    y: 0
+                    width: Math.max(0, slider.visualPosition * parent.width)
+                    height: parent.height
+                    radius: 8
                     gradient: Gradient {
-                        orientation: Gradient.Horizontal
-                        GradientStop { position: 0; color: "#14c4e7" }
-                        GradientStop { position: 1; color: "#17f5df" }
+                        orientation: Gradient.Vertical
+                        GradientStop { position: 0.0; color: "#14c4e7" }
+                        GradientStop { position: 1.0; color: "#17f5df" }
                     }
                     antialiasing: true
                 }
             }
 
-            handle: Rectangle {
+            // Manípulo esférico 3D (Thumb) de 20px x 20px conforme style.css:
+            // background: radial-gradient(50% 50% at 50% 50%, #FFFFFF 0%, #DBFBFF 30%, #8CE6F4 68%, #4387BA 100%);
+            // border: 1px solid rgba(232, 255, 255, 0.8);
+            // box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.55), inset 0px 1px 1px rgba(255, 255, 255, 0.5);
+            handle: Item {
                 x: slider.leftPadding + slider.visualPosition * (slider.availableWidth - width)
                 y: slider.availableHeight / 2 - height / 2
                 width: 20
                 height: 20
-                radius: 10
-                gradient: Gradient {
-                    orientation: Gradient.Vertical
-                    GradientStop { position: 0; color: "#f0ffffff" }
-                    GradientStop { position: 1; color: "#a8d9f4ff" }
-                }
-                border.color: "#d8ffffff"
-                border.width: 1
-                antialiasing: true
+
+                // Sombra de queda base (0px 2px 4px rgba(0, 0, 0, 0.55))
                 Rectangle {
                     anchors.centerIn: parent
-                    width: 7
-                    height: 7
-                    radius: 4
-                    color: "#55c8dff2"
+                    anchors.verticalCenterOffset: 2
+                    width: 18
+                    height: 18
+                    radius: 9
+                    color: "#8c000000"
+                }
+
+                // Esfera 3D via RadialGradient
+                Shape {
+                    anchors.centerIn: parent
+                    width: 20
+                    height: 20
+                    layer.enabled: true
+                    layer.samples: 4
+
+                    ShapePath {
+                        strokeWidth: 0
+                        fillGradient: RadialGradient {
+                            centerX: 10
+                            centerY: 10
+                            focalX: 10
+                            focalY: 10
+                            centerRadius: 10
+                            focalRadius: 0
+                            GradientStop { position: 0.0; color: "#ffffff" }
+                            GradientStop { position: 0.30; color: "#dbfbff" }
+                            GradientStop { position: 0.68; color: "#8ce6f4" }
+                            GradientStop { position: 1.0; color: "#4387ba" }
+                        }
+                        startX: 0
+                        startY: 10
+                        PathArc { x: 20; y: 10; radiusX: 10; radiusY: 10 }
+                        PathArc { x: 0; y: 10; radiusX: 10; radiusY: 10 }
+                    }
+                }
+
+                // Inset highlight no topo do manípulo (inset 0px 1px 1px rgba(255, 255, 255, 0.5))
+                Rectangle {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.top: parent.top
+                    anchors.topMargin: 1
+                    width: 14
+                    height: 6
+                    radius: 3
+                    gradient: Gradient {
+                        GradientStop { position: 0.0; color: "#80ffffff" }
+                        GradientStop { position: 1.0; color: "#00ffffff" }
+                    }
+                }
+
+                // Borda perimetral (border: 1px solid rgba(232, 255, 255, 0.8))
+                Rectangle {
+                    anchors.fill: parent
+                    radius: 10
+                    color: "transparent"
+                    border.color: "#cce8ffff"
+                    border.width: 1
                     antialiasing: true
                 }
             }

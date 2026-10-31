@@ -87,10 +87,10 @@ Item {
     }
 
     Text {
-        x: 16.5
-        width: 28
-        height: 36
-        anchors.verticalCenter: parent.verticalCenter
+        x: 18
+        y: 13
+        width: 34
+        height: 38
         text: header.iconGlyph
         color: header.iconColor
         font.family: SystaliaTheme.fontFamily
@@ -101,17 +101,20 @@ Item {
         antialiasing: true
     }
 
-    RowLayout {
+    Item {
         id: titleContent
         anchors.left: parent.left
-        anchors.leftMargin: 48.5
+        anchors.leftMargin: 50
         anchors.right: actions.left
         anchors.rightMargin: 12
-        anchors.verticalCenter: parent.verticalCenter
-        spacing: 12
+        anchors.top: parent.top
+        anchors.topMargin: 13
+        height: 34
 
         Text {
             id: titleLabel
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
             text: header.title
             color: header.titleColor
             font.family: SystaliaTheme.fontFamily
@@ -120,35 +123,25 @@ Item {
             elide: Text.ElideRight
             verticalAlignment: Text.AlignVCenter
             antialiasing: true
-            Layout.minimumWidth: 48
-            Layout.preferredWidth: Math.min(
-                                       implicitWidth,
-                                       Math.max(48, titleContent.width
-                                                - (badge.visible
-                                                   ? header.badgePreferredWidth + titleContent.spacing
-                                                   : 0)))
-            Layout.maximumWidth: Math.max(
-                                     48, titleContent.width
-                                     - (badge.visible
-                                        ? header.badgePreferredWidth + titleContent.spacing
-                                        : 0))
         }
 
         Rectangle {
             id: badge
             visible: header.badgeText.length > 0
-            height: 26
+            anchors.left: titleLabel.right
+            anchors.leftMargin: 14
+            anchors.verticalCenter: parent.verticalCenter
+            height: 25
+            width: header.badgeWidth > 0 ? header.badgeWidth : badgeLabel.implicitWidth + 18
             radius: 6
             color: "#b80a2c46"
             antialiasing: true
-            Layout.preferredWidth: header.badgePreferredWidth
-            Layout.maximumWidth: Math.max(90, header.width * 0.34)
 
             Text {
                 id: badgeLabel
                 anchors.fill: parent
-                anchors.leftMargin: 9
-                anchors.rightMargin: 9
+                anchors.leftMargin: 8
+                anchors.rightMargin: 8
                 text: header.badgeText
                 color: header.badgeTextColor
                 font.family: SystaliaTheme.fontFamily

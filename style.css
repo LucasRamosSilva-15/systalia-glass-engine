@@ -1,0 +1,4191 @@
+/* SYSTALIA / VALO — Main Desktop */
+
+position: relative;
+width: 1662px;
+height: 975px;
+
+background: linear-gradient(180deg, #0A2542 0%, #061426 100%);
+
+
+/* Vibrant / Luminous ocean atmosphere */
+
+position: absolute;
+width: 1662px;
+height: 975px;
+left: 0px;
+top: 0px;
+
+background: linear-gradient(180deg, #052843 0%, #071A36 100%);
+
+
+/* Soft cyan upper light */
+
+position: absolute;
+width: 1070px;
+height: 890px;
+left: 310px;
+top: -390px;
+
+background: rgba(24, 215, 242, 0.12);
+
+
+/* Central ambient glow */
+
+position: absolute;
+width: 660px;
+height: 710px;
+left: 540px;
+top: 30px;
+
+background: rgba(8, 212, 245, 0.12);
+
+
+/* Deep blue edge */
+
+position: absolute;
+width: 680px;
+height: 900px;
+left: -250px;
+top: 130px;
+
+background: rgba(4, 114, 163, 0.11);
+
+
+/* Atmospheric particle 1 */
+
+position: absolute;
+width: 5px;
+height: 5px;
+left: 93px;
+top: 115px;
+
+background: rgba(217, 252, 255, 0.2);
+
+
+/* Atmospheric particle 5 */
+
+position: absolute;
+width: 5px;
+height: 5px;
+left: 1025px;
+top: 671px;
+
+background: rgba(54, 223, 247, 0.56);
+
+
+/* Atmospheric particle 6 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 1258px;
+top: 810px;
+
+background: rgba(54, 223, 247, 0.65);
+
+
+/* Atmospheric particle 7 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 1491px;
+top: 79px;
+
+background: rgba(217, 252, 255, 0.2);
+
+
+/* Atmospheric particle 12 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 1046px;
+top: 774px;
+
+background: rgba(54, 223, 247, 0.65);
+
+
+/* Atmospheric particle 13 */
+
+position: absolute;
+width: 5px;
+height: 5px;
+left: 1279px;
+top: 43px;
+
+background: rgba(217, 252, 255, 0.2);
+
+
+/* Atmospheric particle 14 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 1512px;
+top: 182px;
+
+background: rgba(54, 223, 247, 0.29);
+
+
+/* Atmospheric particle 19 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 1067px;
+top: 877px;
+
+background: rgba(217, 252, 255, 0.2);
+
+
+/* Atmospheric particle 20 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 1300px;
+top: 146px;
+
+background: rgba(54, 223, 247, 0.29);
+
+
+/* Atmospheric particle 21 */
+
+position: absolute;
+width: 5px;
+height: 5px;
+left: 1533px;
+top: 285px;
+
+background: rgba(54, 223, 247, 0.38);
+
+
+/* Atmospheric particle 25 */
+
+position: absolute;
+width: 5px;
+height: 5px;
+left: 855px;
+top: 841px;
+
+background: rgba(217, 252, 255, 0.2);
+
+
+/* Atmospheric particle 26 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 1088px;
+top: 110px;
+
+background: rgba(54, 223, 247, 0.29);
+
+
+/* Atmospheric particle 27 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 1321px;
+top: 249px;
+
+background: rgba(54, 223, 247, 0.38);
+
+
+/* Atmospheric particle 28 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 1554px;
+top: 388px;
+
+background: rgba(217, 252, 255, 0.47);
+
+
+/* Atmospheric particle 31 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 643px;
+top: 805px;
+
+background: rgba(217, 252, 255, 0.2);
+
+
+/* Atmospheric particle 32 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 876px;
+top: 74px;
+
+background: rgba(54, 223, 247, 0.29);
+
+
+/* Atmospheric particle 33 */
+
+position: absolute;
+width: 5px;
+height: 5px;
+left: 1109px;
+top: 213px;
+
+background: rgba(54, 223, 247, 0.38);
+
+
+/* Atmospheric particle 34 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 1342px;
+top: 352px;
+
+background: rgba(217, 252, 255, 0.47);
+
+
+/* Atmospheric particle 35 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 1575px;
+top: 491px;
+
+background: rgba(54, 223, 247, 0.56);
+
+
+/* Atmospheric particle 38 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 664px;
+top: 38px;
+
+background: rgba(54, 223, 247, 0.29);
+
+
+/* Atmospheric particle 39 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 897px;
+top: 177px;
+
+background: rgba(54, 223, 247, 0.38);
+
+
+/* Atmospheric particle 40 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 1130px;
+top: 316px;
+
+background: rgba(217, 252, 255, 0.47);
+
+
+/* Atmospheric particle 41 */
+
+position: absolute;
+width: 5px;
+height: 5px;
+left: 1363px;
+top: 455px;
+
+background: rgba(54, 223, 247, 0.56);
+
+
+/* Atmospheric particle 42 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 1596px;
+top: 594px;
+
+background: rgba(54, 223, 247, 0.65);
+
+
+/* Atmospheric particle 44 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 452px;
+top: 872px;
+
+background: rgba(54, 223, 247, 0.29);
+
+
+/* Atmospheric particle 45 */
+
+position: absolute;
+width: 5px;
+height: 5px;
+left: 685px;
+top: 141px;
+
+background: rgba(54, 223, 247, 0.38);
+
+
+/* Atmospheric particle 46 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 918px;
+top: 280px;
+
+background: rgba(217, 252, 255, 0.47);
+
+
+/* Atmospheric particle 47 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 1151px;
+top: 419px;
+
+background: rgba(54, 223, 247, 0.56);
+
+
+/* Atmospheric particle 48 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 1384px;
+top: 558px;
+
+background: rgba(54, 223, 247, 0.65);
+
+
+/* Atmospheric particle 49 */
+
+position: absolute;
+width: 5px;
+height: 5px;
+left: 1617px;
+top: 697px;
+
+background: rgba(217, 252, 255, 0.2);
+
+
+/* Atmospheric particle 50 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 240px;
+top: 836px;
+
+background: rgba(54, 223, 247, 0.29);
+
+
+/* Atmospheric particle 51 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 473px;
+top: 105px;
+
+background: rgba(54, 223, 247, 0.38);
+
+
+/* Atmospheric particle 53 */
+
+position: absolute;
+width: 5px;
+height: 5px;
+left: 939px;
+top: 383px;
+
+background: rgba(54, 223, 247, 0.56);
+
+
+/* Atmospheric particle 54 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 1172px;
+top: 522px;
+
+background: rgba(54, 223, 247, 0.65);
+
+
+/* Atmospheric particle 55 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 1405px;
+top: 661px;
+
+background: rgba(217, 252, 255, 0.2);
+
+
+/* Atmospheric particle 56 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 28px;
+top: 800px;
+
+background: rgba(54, 223, 247, 0.29);
+
+
+/* Atmospheric particle 57 */
+
+position: absolute;
+width: 5px;
+height: 5px;
+left: 261px;
+top: 69px;
+
+background: rgba(54, 223, 247, 0.38);
+
+
+/* Atmospheric particle 60 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 960px;
+top: 486px;
+
+background: rgba(54, 223, 247, 0.65);
+
+
+/* Atmospheric particle 61 */
+
+position: absolute;
+width: 5px;
+height: 5px;
+left: 1193px;
+top: 625px;
+
+background: rgba(217, 252, 255, 0.2);
+
+
+/* Atmospheric particle 62 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 1426px;
+top: 764px;
+
+background: rgba(54, 223, 247, 0.29);
+
+
+/* Atmospheric particle 63 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 49px;
+top: 33px;
+
+background: rgba(54, 223, 247, 0.38);
+
+
+/* Light ray 0 */
+
+position: absolute;
+width: 5px;
+height: 590px;
+left: 208.21px;
+top: -140px;
+
+background: rgba(87, 234, 250, 0.035);
+border-radius: 10px;
+transform: rotate(20deg);
+
+
+/* Light ray 1 */
+
+position: absolute;
+width: 10px;
+height: 590px;
+left: 345.37px;
+top: -140px;
+
+background: rgba(87, 234, 250, 0.035);
+border-radius: 10px;
+transform: rotate(16deg);
+
+
+/* Light ray 2 */
+
+position: absolute;
+width: 15px;
+height: 590px;
+left: 483.33px;
+top: -140px;
+
+background: rgba(87, 234, 250, 0.035);
+border-radius: 10px;
+transform: rotate(12deg);
+
+
+/* Light ray 3 */
+
+position: absolute;
+width: 5px;
+height: 590px;
+left: 621.89px;
+top: -140px;
+
+background: rgba(87, 234, 250, 0.035);
+border-radius: 10px;
+transform: rotate(8deg);
+
+
+/* Light ray 4 */
+
+position: absolute;
+width: 10px;
+height: 590px;
+left: 760.84px;
+top: -140px;
+
+background: rgba(87, 234, 250, 0.035);
+border-radius: 10px;
+transform: rotate(4deg);
+
+
+/* Light ray 5 */
+
+position: absolute;
+width: 15px;
+height: 590px;
+left: 900px;
+top: -140px;
+
+background: rgba(87, 234, 250, 0.035);
+border-radius: 10px;
+
+
+/* Light ray 6 */
+
+position: absolute;
+width: 5px;
+height: 590px;
+left: 998px;
+top: -140.35px;
+
+background: rgba(87, 234, 250, 0.035);
+border-radius: 10px;
+transform: rotate(-4deg);
+
+
+/* Light ray 7 */
+
+position: absolute;
+width: 10px;
+height: 590px;
+left: 1096px;
+top: -141.39px;
+
+background: rgba(87, 234, 250, 0.035);
+border-radius: 10px;
+transform: rotate(-8deg);
+
+
+/* Light ray 8 */
+
+position: absolute;
+width: 15px;
+height: 590px;
+left: 1194px;
+top: -143.12px;
+
+background: rgba(87, 234, 250, 0.035);
+border-radius: 10px;
+transform: rotate(-12deg);
+
+
+/* VALO Wallpaper / Descending volumetric ray 1 */
+
+position: absolute;
+width: 55px;
+height: 650px;
+left: 91.77px;
+top: -115px;
+
+background: linear-gradient(90deg, rgba(207, 255, 255, 0.16) 0%, rgba(94, 235, 255, 0.095) 25%, rgba(21, 199, 237, 0.035) 65%, rgba(29, 141, 219, 0) 100%);
+filter: blur(25px);
+border-radius: 35px;
+transform: rotate(15deg);
+
+
+/* VALO Wallpaper / Descending volumetric ray 2 */
+
+position: absolute;
+width: 87px;
+height: 770px;
+left: 264.91px;
+top: -115px;
+
+background: linear-gradient(90deg, rgba(207, 255, 255, 0.16) 0%, rgba(94, 235, 255, 0.095) 25%, rgba(21, 199, 237, 0.035) 65%, rgba(29, 141, 219, 0) 100%);
+filter: blur(25px);
+border-radius: 35px;
+transform: rotate(12deg);
+
+
+/* VALO Wallpaper / Descending volumetric ray 3 */
+
+position: absolute;
+width: 119px;
+height: 650px;
+left: 488.32px;
+top: -115px;
+
+background: linear-gradient(90deg, rgba(207, 255, 255, 0.16) 0%, rgba(94, 235, 255, 0.095) 25%, rgba(21, 199, 237, 0.035) 65%, rgba(29, 141, 219, 0) 100%);
+filter: blur(25px);
+border-radius: 35px;
+transform: rotate(9deg);
+
+
+/* VALO Wallpaper / Descending volumetric ray 4 */
+
+position: absolute;
+width: 55px;
+height: 770px;
+left: 674.51px;
+top: -115px;
+
+background: linear-gradient(90deg, rgba(207, 255, 255, 0.16) 0%, rgba(94, 235, 255, 0.095) 25%, rgba(21, 199, 237, 0.035) 65%, rgba(29, 141, 219, 0) 100%);
+filter: blur(25px);
+border-radius: 35px;
+transform: rotate(6deg);
+
+
+/* VALO Wallpaper / Descending volumetric ray 5 */
+
+position: absolute;
+width: 87px;
+height: 650px;
+left: 885.98px;
+top: -115px;
+
+background: linear-gradient(90deg, rgba(207, 255, 255, 0.16) 0%, rgba(94, 235, 255, 0.095) 25%, rgba(21, 199, 237, 0.035) 65%, rgba(29, 141, 219, 0) 100%);
+filter: blur(25px);
+border-radius: 35px;
+transform: rotate(3deg);
+
+
+/* VALO Wallpaper / Descending volumetric ray 6 */
+
+position: absolute;
+width: 119px;
+height: 770px;
+left: 1085px;
+top: -115px;
+
+background: linear-gradient(90deg, rgba(207, 255, 255, 0.16) 0%, rgba(94, 235, 255, 0.095) 25%, rgba(21, 199, 237, 0.035) 65%, rgba(29, 141, 219, 0) 100%);
+filter: blur(25px);
+border-radius: 35px;
+
+
+/* VALO Wallpaper / Descending volumetric ray 7 */
+
+position: absolute;
+width: 55px;
+height: 650px;
+left: 1250px;
+top: -117.88px;
+
+background: linear-gradient(90deg, rgba(207, 255, 255, 0.16) 0%, rgba(94, 235, 255, 0.095) 25%, rgba(21, 199, 237, 0.035) 65%, rgba(29, 141, 219, 0) 100%);
+filter: blur(25px);
+border-radius: 35px;
+transform: rotate(-3deg);
+
+
+/* VALO Wallpaper / Soft luminous halo 1 */
+
+position: absolute;
+width: 640px;
+height: 480px;
+left: 290px;
+top: -190px;
+
+background: radial-gradient(50% 50% at 50% 50%, rgba(56, 223, 243, 0.13) 0%, rgba(62, 140, 203, 0.055) 50%, rgba(10, 55, 97, 0) 100%);
+filter: blur(17.5px);
+
+
+/* VALO Wallpaper / Soft luminous halo 2 */
+
+position: absolute;
+width: 640px;
+height: 480px;
+left: 630px;
+top: -95px;
+
+background: radial-gradient(50% 50% at 50% 50%, rgba(126, 237, 255, 0.13) 0%, rgba(62, 140, 203, 0.055) 50%, rgba(10, 55, 97, 0) 100%);
+filter: blur(17.5px);
+
+
+/* VALO Wallpaper / Soft luminous halo 3 */
+
+position: absolute;
+width: 640px;
+height: 480px;
+left: 970px;
+top: 0px;
+
+background: radial-gradient(50% 50% at 50% 50%, rgba(56, 223, 243, 0.13) 0%, rgba(62, 140, 203, 0.055) 50%, rgba(10, 55, 97, 0) 100%);
+filter: blur(17.5px);
+
+
+/* VALO Wallpaper / Bioluminescent particle 1 */
+
+position: absolute;
+width: 5px;
+height: 5px;
+left: 157px;
+top: 65px;
+
+background: rgba(189, 254, 255, 0.27);
+
+
+/* VALO Wallpaper / Bioluminescent particle 4 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 874px;
+top: 584px;
+
+background: rgba(189, 254, 255, 0.57);
+
+
+/* VALO Wallpaper / Bioluminescent particle 5 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 1113px;
+top: 757px;
+
+background: rgba(50, 216, 247, 0.27);
+
+
+/* VALO Wallpaper / Bioluminescent particle 6 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 1352px;
+top: 20px;
+
+background: rgba(50, 216, 247, 0.37);
+
+
+/* VALO Wallpaper / Bioluminescent particle 7 */
+
+position: absolute;
+width: 5px;
+height: 5px;
+left: 1591px;
+top: 193px;
+
+background: rgba(189, 254, 255, 0.47);
+
+
+/* VALO Wallpaper / Bioluminescent particle 11 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 927px;
+top: 885px;
+
+background: rgba(50, 216, 247, 0.47);
+
+
+/* VALO Wallpaper / Bioluminescent particle 12 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 1166px;
+top: 148px;
+
+background: rgba(50, 216, 247, 0.57);
+
+
+/* VALO Wallpaper / Bioluminescent particle 13 */
+
+position: absolute;
+width: 5px;
+height: 5px;
+left: 1405px;
+top: 321px;
+
+background: rgba(189, 254, 255, 0.27);
+
+
+/* VALO Wallpaper / Bioluminescent particle 14 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 24px;
+top: 494px;
+
+background: rgba(50, 216, 247, 0.37);
+
+
+/* VALO Wallpaper / Bioluminescent particle 16 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 502px;
+top: 840px;
+
+background: rgba(189, 254, 255, 0.57);
+
+
+/* VALO Wallpaper / Bioluminescent particle 17 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 741px;
+top: 103px;
+
+background: rgba(50, 216, 247, 0.27);
+
+
+/* VALO Wallpaper / Bioluminescent particle 18 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 980px;
+top: 276px;
+
+background: rgba(50, 216, 247, 0.37);
+
+
+/* VALO Wallpaper / Bioluminescent particle 19 */
+
+position: absolute;
+width: 5px;
+height: 5px;
+left: 1219px;
+top: 449px;
+
+background: rgba(189, 254, 255, 0.47);
+
+
+/* VALO Wallpaper / Bioluminescent particle 20 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 1458px;
+top: 622px;
+
+background: rgba(50, 216, 247, 0.57);
+
+
+/* VALO Wallpaper / Bioluminescent particle 21 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 77px;
+top: 795px;
+
+background: rgba(50, 216, 247, 0.27);
+
+
+/* VALO Wallpaper / Bioluminescent particle 22 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 316px;
+top: 58px;
+
+background: rgba(189, 254, 255, 0.37);
+
+
+/* VALO Wallpaper / Bioluminescent particle 25 */
+
+position: absolute;
+width: 5px;
+height: 5px;
+left: 1033px;
+top: 577px;
+
+background: rgba(189, 254, 255, 0.27);
+
+
+/* VALO Wallpaper / Bioluminescent particle 26 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 1272px;
+top: 750px;
+
+background: rgba(50, 216, 247, 0.37);
+
+
+/* VALO Wallpaper / Bioluminescent particle 27 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 1511px;
+top: 13px;
+
+background: rgba(50, 216, 247, 0.47);
+
+
+/* VALO Wallpaper / Bioluminescent particle 32 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 1086px;
+top: 878px;
+
+background: rgba(50, 216, 247, 0.57);
+
+
+/* VALO Wallpaper / Bioluminescent particle 33 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 1325px;
+top: 141px;
+
+background: rgba(50, 216, 247, 0.27);
+
+
+/* VALO Wallpaper / Bioluminescent particle 34 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 1564px;
+top: 314px;
+
+background: rgba(189, 254, 255, 0.37);
+
+
+/* Frame 1 */
+
+position: absolute;
+width: 410px;
+height: 527px;
+left: 351px;
+top: 270px;
+
+
+
+/* Atmospheric particle 3 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 208px;
+top: 123px;
+
+background: rgba(54, 223, 247, 0.38);
+
+
+/* Atmospheric particle 10 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 229px;
+top: 226px;
+
+background: rgba(217, 252, 255, 0.47);
+
+
+/* Atmospheric particle 16 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 17px;
+top: 190px;
+
+background: rgba(217, 252, 255, 0.47);
+
+
+/* Atmospheric particle 17 */
+
+position: absolute;
+width: 5px;
+height: 5px;
+left: 250px;
+top: 329px;
+
+background: rgba(54, 223, 247, 0.56);
+
+
+/* Atmospheric particle 23 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 38px;
+top: 293px;
+
+background: rgba(54, 223, 247, 0.56);
+
+
+/* Atmospheric particle 24 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 271px;
+top: 432px;
+
+background: rgba(54, 223, 247, 0.65);
+
+
+/* Atmospheric particle 30 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 59px;
+top: 396px;
+
+background: rgba(54, 223, 247, 0.65);
+
+
+/* Atmospheric particle 37 */
+
+position: absolute;
+width: 5px;
+height: 5px;
+left: 80px;
+top: 499px;
+
+background: rgba(217, 252, 255, 0.2);
+
+
+/* Atmospheric particle 59 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 376px;
+top: 77px;
+
+background: rgba(54, 223, 247, 0.56);
+
+
+/* Atmospheric particle 65 */
+
+position: absolute;
+width: 5px;
+height: 5px;
+left: 164px;
+top: 41px;
+
+background: rgba(54, 223, 247, 0.56);
+
+
+/* VALO Wallpaper / Bioluminescent particle 3 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 284px;
+top: 141px;
+
+background: rgba(50, 216, 247, 0.47);
+
+
+/* VALO Wallpaper / Bioluminescent particle 9 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 98px;
+top: 269px;
+
+background: rgba(50, 216, 247, 0.27);
+
+
+/* VALO Wallpaper / Bioluminescent particle 10 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 337px;
+top: 442px;
+
+background: rgba(189, 254, 255, 0.37);
+
+
+/* VALO Wallpaper / Bioluminescent particle 29 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 18px;
+top: 89px;
+
+background: rgba(50, 216, 247, 0.27);
+
+
+/* VALO Wallpaper / Bioluminescent particle 30 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 257px;
+top: 262px;
+
+background: rgba(50, 216, 247, 0.37);
+
+
+/* VALO Wallpaper / Bioluminescent particle 36 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 71px;
+top: 390px;
+
+background: rgba(50, 216, 247, 0.57);
+
+
+/* Frame 2 */
+
+position: absolute;
+width: 778px;
+height: 615px;
+left: 80px;
+top: 154px;
+
+
+
+/* Atmospheric particle 2 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 246px;
+top: 100px;
+
+background: rgba(54, 223, 247, 0.29);
+
+
+/* Atmospheric particle 4 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 712px;
+top: 378px;
+
+background: rgba(217, 252, 255, 0.47);
+
+
+/* Atmospheric particle 8 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 34px;
+top: 64px;
+
+background: rgba(54, 223, 247, 0.29);
+
+
+/* Atmospheric particle 9 */
+
+position: absolute;
+width: 5px;
+height: 5px;
+left: 267px;
+top: 203px;
+
+background: rgba(54, 223, 247, 0.38);
+
+
+/* Atmospheric particle 11 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 733px;
+top: 481px;
+
+background: rgba(54, 223, 247, 0.56);
+
+
+/* Atmospheric particle 15 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 55px;
+top: 167px;
+
+background: rgba(54, 223, 247, 0.38);
+
+
+/* Atmospheric particle 18 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 754px;
+top: 584px;
+
+background: rgba(54, 223, 247, 0.65);
+
+
+/* Atmospheric particle 22 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 76px;
+top: 270px;
+
+background: rgba(217, 252, 255, 0.47);
+
+
+/* Atmospheric particle 29 */
+
+position: absolute;
+width: 5px;
+height: 5px;
+left: 97px;
+top: 373px;
+
+background: rgba(54, 223, 247, 0.56);
+
+
+/* Atmospheric particle 36 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 118px;
+top: 476px;
+
+background: rgba(54, 223, 247, 0.65);
+
+
+/* Atmospheric particle 43 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 139px;
+top: 579px;
+
+background: rgba(217, 252, 255, 0.2);
+
+
+/* Atmospheric particle 52 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 626px;
+top: 90px;
+
+background: rgba(217, 252, 255, 0.47);
+
+
+/* Atmospheric particle 58 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 414px;
+top: 54px;
+
+background: rgba(217, 252, 255, 0.47);
+
+
+/* Atmospheric particle 64 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 202px;
+top: 18px;
+
+background: rgba(217, 252, 255, 0.47);
+
+
+/* VALO Wallpaper / Bioluminescent particle 2 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 316px;
+top: 84px;
+
+background: rgba(50, 216, 247, 0.37);
+
+
+/* VALO Wallpaper / Bioluminescent particle 8 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 130px;
+top: 212px;
+
+background: rgba(50, 216, 247, 0.57);
+
+
+/* VALO Wallpaper / Bioluminescent particle 15 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 183px;
+top: 513px;
+
+background: rgba(50, 216, 247, 0.47);
+
+
+/* VALO Wallpaper / Bioluminescent particle 23 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 475px;
+top: 77px;
+
+background: rgba(50, 216, 247, 0.47);
+
+
+/* VALO Wallpaper / Bioluminescent particle 24 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 714px;
+top: 250px;
+
+background: rgba(50, 216, 247, 0.57);
+
+
+/* VALO Wallpaper / Bioluminescent particle 28 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 50px;
+top: 32px;
+
+background: rgba(189, 254, 255, 0.57);
+
+
+/* VALO Wallpaper / Bioluminescent particle 31 */
+
+position: absolute;
+width: 5px;
+height: 5px;
+left: 767px;
+top: 551px;
+
+background: rgba(189, 254, 255, 0.47);
+
+
+/* VALO Wallpaper / Bioluminescent particle 35 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 103px;
+top: 333px;
+
+background: rgba(50, 216, 247, 0.47);
+
+
+/* Top System Bar */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 1646px;
+height: 45px;
+left: 8px;
+top: 4px;
+
+background: rgba(7, 22, 40, 0.86);
+border: 1px solid rgba(116, 213, 238, 0.24);
+box-shadow: 0px 4px 18px rgba(9, 186, 237, 0.2);
+border-radius: 22px;
+
+
+/* Systalia Mark */
+
+position: absolute;
+width: 18px;
+height: 23px;
+left: 18px;
+top: 10px;
+
+background: linear-gradient(180deg, #39F5F4 0%, #127FD0 100%);
+
+
+/* Brand */
+
+position: absolute;
+width: 115px;
+height: 32.3px;
+left: 48px;
+top: 12px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 500;
+font-size: 19px;
+line-height: 23px;
+
+color: #C6E5F8;
+
+
+
+/* Compositor */
+
+position: absolute;
+width: 200px;
+height: 28.9px;
+left: 190px;
+top: 13px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 17px;
+line-height: 21px;
+
+color: #9CBAD3;
+
+
+
+/* Monitor */
+
+position: absolute;
+width: 318px;
+height: 28.9px;
+left: 393px;
+top: 13px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 17px;
+line-height: 21px;
+
+color: #9CBAD3;
+
+
+
+/* Clock */
+
+position: absolute;
+width: 300px;
+height: 28.9px;
+left: 725px;
+top: 13px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 17px;
+line-height: 21px;
+
+color: #C2D7DF;
+
+
+
+/* Status Icons */
+
+position: absolute;
+width: 290px;
+height: 32.3px;
+left: 1340px;
+top: 11px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 19px;
+line-height: 23px;
+
+color: #A0E7FA;
+
+
+
+/* Systalia Files — editable window */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 701px;
+height: 534px;
+left: 113px;
+top: 193px;
+
+background: linear-gradient(123.69deg, rgba(0, 239, 255, 0.1) 8%, rgba(245, 255, 255, 0.12) 31.2%, rgba(248, 196, 123, 0.07) 56%, rgba(158, 119, 255, 0.08) 88%), linear-gradient(123.69deg, rgba(25, 79, 118, 0.39) 8%, rgba(75, 175, 199, 0.27) 24%, rgba(19, 58, 93, 0.27) 50.4%, rgba(9, 35, 63, 0.41) 88%);
+box-shadow: 0px 20px 40px rgba(0, 229, 255, 0.14), 0px 8px 12px rgba(0, 0, 0, 0.45), inset 0px -2px 4px rgba(0, 10, 27, 0.4), inset 0px 1px 0px rgba(255, 255, 255, 0.26);
+backdrop-filter: blur(18px);
+/* Observação: filtro de pano de fundo tem suporte de navegação mínimo */
+border-radius: 20px;
+
+
+/* Upper cyan gloss */
+
+position: absolute;
+width: 689px;
+height: 524px;
+left: 6px;
+top: 4px;
+
+background: linear-gradient(130.23deg, rgba(200, 255, 255, 0.25) 13.02%, rgba(97, 240, 255, 0.13) 45.8%, rgba(21, 82, 121, 0.03) 74.83%, rgba(11, 24, 52, 0) 106.67%);
+box-shadow: inset 0px 1px 1px rgba(255, 255, 255, 0.21);
+border-radius: 14px;
+
+
+/* VALO / Internal caustic prism */
+
+position: absolute;
+width: 476.68px;
+height: 309.72px;
+left: -7.42px;
+top: 101.46px;
+
+background: linear-gradient(123.69deg, rgba(0, 242, 255, 0.13) 8%, rgba(255, 255, 255, 0.17) 28.8%, rgba(255, 233, 162, 0.09) 50.4%, rgba(168, 136, 255, 0.1) 72%, rgba(255, 255, 255, 0) 88%);
+opacity: 0.7;
+filter: blur(20px);
+transform: rotate(27deg);
+
+
+/* VALO / Spectral caustic ribbon — editable */
+
+position: absolute;
+width: 532.76px;
+height: 277.68px;
+left: -86.94px;
+top: 69.42px;
+
+background: linear-gradient(130.54deg, rgba(0, 235, 255, 0) 10.64%, rgba(0, 239, 255, 0.12) 22.7%, rgba(249, 255, 255, 0.21) 33.33%, rgba(255, 201, 120, 0.075) 46.1%, rgba(167, 123, 255, 0.11) 60.28%, rgba(57, 215, 255, 0) 81.56%);
+filter: blur(22px);
+transform: rotate(31deg);
+
+
+/* VALO / Violet cyan edge refraction */
+
+position: absolute;
+width: 294.42px;
+height: 443.22px;
+left: 198.27px;
+top: 15px;
+
+background: linear-gradient(130.54deg, rgba(93, 239, 255, 0) 10.64%, rgba(120, 237, 255, 0.07) 35.46%, rgba(238, 214, 255, 0.14) 49.65%, rgba(255, 212, 171, 0.075) 63.83%, rgba(162, 133, 255, 0) 81.56%);
+filter: blur(14.5px);
+transform: rotate(24deg);
+
+
+/* Files header icon */
+
+position: absolute;
+width: 34px;
+height: 40.8px;
+left: 18px;
+top: 13px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 24px;
+line-height: 29px;
+
+color: #64D6FF;
+
+
+
+/* Title */
+
+position: absolute;
+width: 210px;
+height: 35.7px;
+left: 50px;
+top: 14px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 500;
+font-size: 21px;
+line-height: 25px;
+
+color: #F4FCFF;
+
+
+
+/* Label */
+
+position: absolute;
+width: 120px;
+height: 26px;
+left: 184px;
+top: 14px;
+
+background: rgba(10, 44, 70, 0.72);
+border-radius: 6px;
+
+
+/* VES Badge */
+
+position: absolute;
+width: 115px;
+height: 23.8px;
+left: 193px;
+top: 18px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 17px;
+
+color: #86B7D9;
+
+
+
+/* Window action 0 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 28px;
+height: 28px;
+left: 580px;
+top: 14px;
+
+background: radial-gradient(50% 50% at 50% 50%, #B0FAFF 0%, #00C8FF 25%, #007DFC 62%, #073E9E 100%);
+border: 1px solid rgba(217, 249, 255, 0.56);
+box-shadow: 0px 3px 5px rgba(0, 16, 27, 0.5), inset 0px -1.5px 2px rgba(0, 35, 76, 0.55), inset 0px 1.5px 2px rgba(255, 255, 255, 0.46);
+
+
+/* Window action 1 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 28px;
+height: 28px;
+left: 618px;
+top: 14px;
+
+background: radial-gradient(50% 50% at 50% 50%, #B0FAFF 0%, #00C8FF 25%, #007DFC 62%, #073E9E 100%);
+border: 1px solid rgba(217, 249, 255, 0.56);
+box-shadow: 0px 3px 5px rgba(0, 16, 27, 0.5), inset 0px -1.5px 2px rgba(0, 35, 76, 0.55), inset 0px 1.5px 2px rgba(255, 255, 255, 0.46);
+
+
+/* Window action 2 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 28px;
+height: 28px;
+left: 656px;
+top: 14px;
+
+background: radial-gradient(50% 50% at 50% 50%, #FFB1CB 0%, #FF3B60 27%, #9E1448 72%, #540D30 100%);
+border: 1px solid rgba(217, 249, 255, 0.56);
+box-shadow: 0px 3px 5px rgba(0, 16, 27, 0.5), inset 0px -1.5px 2px rgba(0, 35, 76, 0.55), inset 0px 1.5px 2px rgba(255, 255, 255, 0.46);
+
+
+/* Sidebar — navigation */
+
+position: absolute;
+width: 181px;
+height: 469px;
+left: 10px;
+top: 51px;
+
+background: rgba(8, 26, 45, 0.88);
+border-radius: 14px;
+
+
+/* Nav: ◷  Recent */
+
+position: absolute;
+width: 150px;
+height: 27.2px;
+left: 18px;
+top: 16px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 16px;
+line-height: 19px;
+
+color: #D5E2EE;
+
+
+
+/* Active Home */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 163px;
+height: 33px;
+left: 9px;
+top: 44px;
+
+background: linear-gradient(135deg, rgba(159, 239, 255, 0.24) 13.89%, rgba(91, 188, 229, 0.43) 27.78%, rgba(25, 88, 125, 0.72) 52.08%, rgba(16, 51, 78, 0.88) 83.33%);
+box-shadow: 0px 3px 5px rgba(0, 16, 29, 0.35), inset 0px -2px 4px rgba(6, 24, 45, 0.4), inset 0px 1px 1px rgba(255, 255, 255, 0.32);
+border-radius: 7px;
+
+
+/* Nav: ⌂  Home */
+
+position: absolute;
+width: 150px;
+height: 27.2px;
+left: 18px;
+top: 50px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 16px;
+line-height: 19px;
+
+color: #EEF9FF;
+
+
+
+/* Nav: ▱  Desktop */
+
+position: absolute;
+width: 150px;
+height: 27.2px;
+left: 18px;
+top: 84px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 16px;
+line-height: 19px;
+
+color: #D5E2EE;
+
+
+
+/* Nav: ♧  Documents */
+
+position: absolute;
+width: 150px;
+height: 27.2px;
+left: 18px;
+top: 118px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 16px;
+line-height: 19px;
+
+color: #D5E2EE;
+
+
+
+/* Nav: ↓  Downloads */
+
+position: absolute;
+width: 150px;
+height: 27.2px;
+left: 18px;
+top: 152px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 16px;
+line-height: 19px;
+
+color: #D5E2EE;
+
+
+
+/* Nav: ♫  Music */
+
+position: absolute;
+width: 150px;
+height: 27.2px;
+left: 18px;
+top: 186px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 16px;
+line-height: 19px;
+
+color: #D5E2EE;
+
+
+
+/* Nav: ▧  Pictures */
+
+position: absolute;
+width: 150px;
+height: 27.2px;
+left: 18px;
+top: 220px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 16px;
+line-height: 19px;
+
+color: #D5E2EE;
+
+
+
+/* Nav: ♜  Trash */
+
+position: absolute;
+width: 150px;
+height: 27.2px;
+left: 18px;
+top: 254px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 16px;
+line-height: 19px;
+
+color: #D5E2EE;
+
+
+
+/* Nav: +  Other Items */
+
+position: absolute;
+width: 150px;
+height: 27.2px;
+left: 18px;
+top: 306px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 16px;
+line-height: 19px;
+
+color: #D5E2EE;
+
+
+
+/* Arrows */
+
+position: absolute;
+width: 83px;
+height: 44.2px;
+left: 209px;
+top: 62px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 26px;
+line-height: 31px;
+
+color: #C5EEFF;
+
+
+
+/* Home Breadcrumb */
+
+position: absolute;
+width: 90px;
+height: 30px;
+left: 276px;
+top: 60px;
+
+background: rgba(16, 56, 82, 0.85);
+border-radius: 7px;
+
+
+/* Current folder */
+
+position: absolute;
+width: 75px;
+height: 27.2px;
+left: 287px;
+top: 66px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 500;
+font-size: 16px;
+line-height: 19px;
+
+color: #E6FBFF;
+
+
+
+/* View toggle */
+
+position: absolute;
+width: 30px;
+height: 35.7px;
+left: 490px;
+top: 65px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 21px;
+line-height: 25px;
+
+color: #C2EFFF;
+
+
+
+/* Search */
+
+position: absolute;
+width: 157px;
+height: 28px;
+left: 526px;
+top: 61px;
+
+background: rgba(10, 37, 53, 0.73);
+border-radius: 14px;
+
+
+/* Search hint */
+
+position: absolute;
+width: 130px;
+height: 25.5px;
+left: 540px;
+top: 66px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 15px;
+line-height: 18px;
+
+color: #BDCFDC;
+
+
+
+/* Divider */
+
+position: absolute;
+width: 476px;
+height: 1px;
+left: 208px;
+top: 97px;
+
+background: rgba(178, 243, 253, 0.3);
+
+
+/* File icon / All Files */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 62px;
+height: 67px;
+left: 221px;
+top: 127px;
+
+background: linear-gradient(135deg, rgba(208, 248, 255, 0.86) 13.89%, rgba(84, 222, 251, 0.91) 27.08%, rgba(35, 133, 202, 0.83) 52.08%, rgba(66, 116, 176, 0.82) 68.06%, rgba(20, 54, 91, 0.9) 83.33%);
+box-shadow: 0px 7px 10px rgba(0, 21, 43, 0.54), inset 0px -2px 3px rgba(5, 44, 83, 0.45), inset 0px 2px 2px rgba(255, 255, 255, 0.4);
+border-radius: 8px;
+
+
+/* Folder lip 0 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 70px;
+height: 47px;
+left: 221px;
+top: 147px;
+
+background: linear-gradient(135deg, rgba(208, 248, 255, 0.86) 13.89%, rgba(84, 222, 251, 0.91) 27.08%, rgba(35, 133, 202, 0.83) 52.08%, rgba(66, 116, 176, 0.82) 68.06%, rgba(20, 54, 91, 0.9) 83.33%);
+box-shadow: 0px 7px 10px rgba(0, 21, 43, 0.54), inset 0px -2px 3px rgba(5, 44, 83, 0.45), inset 0px 2px 2px rgba(255, 255, 255, 0.4);
+border-radius: 7px;
+
+
+/* Filename 0 */
+
+position: absolute;
+width: 96px;
+height: 25.5px;
+left: 218px;
+top: 205px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 500;
+font-size: 15px;
+line-height: 18px;
+
+color: #EEFCFF;
+
+
+
+/* File icon / Documents */
+
+box-sizing: border-box;
+
+position: absolute;
+visibility: hidden;
+width: 55px;
+height: 67px;
+left: 349px;
+top: 127px;
+
+background: linear-gradient(135deg, rgba(208, 248, 255, 0.86) 13.89%, rgba(84, 222, 251, 0.91) 27.08%, rgba(35, 133, 202, 0.83) 52.08%, rgba(66, 116, 176, 0.82) 68.06%, rgba(20, 54, 91, 0.9) 83.33%);
+border-radius: 8px;
+
+
+/* Filename 1 */
+
+position: absolute;
+width: 96px;
+height: 25.5px;
+left: 336px;
+top: 205px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 500;
+font-size: 15px;
+line-height: 18px;
+
+color: #EEFCFF;
+
+
+
+/* File icon / Document */
+
+box-sizing: border-box;
+
+position: absolute;
+visibility: hidden;
+width: 55px;
+height: 67px;
+left: 467px;
+top: 127px;
+
+background: linear-gradient(135deg, rgba(208, 248, 255, 0.86) 13.89%, rgba(84, 222, 251, 0.91) 27.08%, rgba(35, 133, 202, 0.83) 52.08%, rgba(66, 116, 176, 0.82) 68.06%, rgba(20, 54, 91, 0.9) 83.33%);
+border-radius: 8px;
+
+
+/* Filename 2 */
+
+position: absolute;
+width: 96px;
+height: 25.5px;
+left: 454px;
+top: 205px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 500;
+font-size: 15px;
+line-height: 18px;
+
+color: #EEFCFF;
+
+
+
+/* File icon / Download2 */
+
+box-sizing: border-box;
+
+position: absolute;
+visibility: hidden;
+width: 55px;
+height: 67px;
+left: 585px;
+top: 127px;
+
+background: linear-gradient(135deg, rgba(208, 248, 255, 0.86) 13.89%, rgba(84, 222, 251, 0.91) 27.08%, rgba(35, 133, 202, 0.83) 52.08%, rgba(66, 116, 176, 0.82) 68.06%, rgba(20, 54, 91, 0.9) 83.33%);
+border-radius: 8px;
+
+
+/* Filename 3 */
+
+position: absolute;
+width: 96px;
+height: 25.5px;
+left: 572px;
+top: 205px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 500;
+font-size: 15px;
+line-height: 18px;
+
+color: #EEFCFF;
+
+
+
+/* File icon / Divides 1 */
+
+box-sizing: border-box;
+
+position: absolute;
+visibility: hidden;
+width: 55px;
+height: 67px;
+left: 231px;
+top: 247px;
+
+background: linear-gradient(135deg, rgba(208, 248, 255, 0.86) 13.89%, rgba(84, 222, 251, 0.91) 27.08%, rgba(35, 133, 202, 0.83) 52.08%, rgba(66, 116, 176, 0.82) 68.06%, rgba(20, 54, 91, 0.9) 83.33%);
+border-radius: 8px;
+
+
+/* Filename 4 */
+
+position: absolute;
+width: 96px;
+height: 25.5px;
+left: 218px;
+top: 325px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 500;
+font-size: 15px;
+line-height: 18px;
+
+color: #EEFCFF;
+
+
+
+/* File icon / Systion 4 */
+
+box-sizing: border-box;
+
+position: absolute;
+visibility: hidden;
+width: 55px;
+height: 67px;
+left: 349px;
+top: 247px;
+
+background: linear-gradient(135deg, rgba(208, 248, 255, 0.86) 13.89%, rgba(84, 222, 251, 0.91) 27.08%, rgba(35, 133, 202, 0.83) 52.08%, rgba(66, 116, 176, 0.82) 68.06%, rgba(20, 54, 91, 0.9) 83.33%);
+border-radius: 8px;
+
+
+/* Filename 5 */
+
+position: absolute;
+width: 96px;
+height: 25.5px;
+left: 336px;
+top: 325px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 500;
+font-size: 15px;
+line-height: 18px;
+
+color: #EEFCFF;
+
+
+
+/* VALO / Folded translucent sheet File icon / Document */
+
+position: absolute;
+width: 55px;
+height: 67px;
+left: 467px;
+top: 127px;
+
+background: linear-gradient(130.54deg, rgba(242, 255, 255, 0.25) 10.64%, rgba(133, 246, 255, 0.18) 26.95%, rgba(61, 151, 206, 0.14) 47.52%, rgba(171, 151, 238, 0.16) 65.96%, rgba(27, 81, 142, 0.3) 81.56%);
+box-shadow: 0px 0px 10px rgba(77, 234, 251, 0.13), 0px 7px 10px rgba(0, 16, 32, 0.54), inset 0px -3px 5px rgba(0, 29, 61, 0.42), inset 0px 2px 2px rgba(255, 255, 255, 0.38);
+
+
+/* VALO / Paper fold */
+
+position: absolute;
+width: 16px;
+height: 16px;
+left: 506px;
+top: 127px;
+
+background: rgba(230, 255, 255, 0.39);
+border: 0.8px solid rgba(217, 250, 255, 0.65);
+
+
+/* Glyph 2 */
+
+position: absolute;
+width: 55px;
+height: 44.2px;
+left: 474px;
+top: 143px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 26px;
+line-height: 31px;
+
+color: rgba(140, 241, 255, 0.92);
+
+
+
+/* VALO / Folded translucent sheet File icon / Download2 */
+
+position: absolute;
+width: 55px;
+height: 67px;
+left: 585px;
+top: 127px;
+
+background: linear-gradient(130.54deg, rgba(242, 255, 255, 0.25) 10.64%, rgba(133, 246, 255, 0.18) 26.95%, rgba(61, 151, 206, 0.14) 47.52%, rgba(171, 151, 238, 0.16) 65.96%, rgba(27, 81, 142, 0.3) 81.56%);
+box-shadow: 0px 0px 10px rgba(77, 234, 251, 0.13), 0px 7px 10px rgba(0, 16, 32, 0.54), inset 0px -3px 5px rgba(0, 29, 61, 0.42), inset 0px 2px 2px rgba(255, 255, 255, 0.38);
+
+
+/* VALO / Paper fold */
+
+position: absolute;
+width: 16px;
+height: 16px;
+left: 624px;
+top: 127px;
+
+background: rgba(230, 255, 255, 0.39);
+border: 0.8px solid rgba(217, 250, 255, 0.65);
+
+
+/* Glyph 3 */
+
+position: absolute;
+width: 55px;
+height: 44.2px;
+left: 592px;
+top: 143px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 26px;
+line-height: 31px;
+
+color: rgba(140, 241, 255, 0.92);
+
+
+
+/* VALO / Folded translucent sheet File icon / Divides 1 */
+
+position: absolute;
+width: 55px;
+height: 67px;
+left: 231px;
+top: 247px;
+
+background: linear-gradient(130.54deg, rgba(242, 255, 255, 0.25) 10.64%, rgba(133, 246, 255, 0.18) 26.95%, rgba(61, 151, 206, 0.14) 47.52%, rgba(171, 151, 238, 0.16) 65.96%, rgba(27, 81, 142, 0.3) 81.56%);
+box-shadow: 0px 0px 10px rgba(77, 234, 251, 0.13), 0px 7px 10px rgba(0, 16, 32, 0.54), inset 0px -3px 5px rgba(0, 29, 61, 0.42), inset 0px 2px 2px rgba(255, 255, 255, 0.38);
+
+
+/* VALO / Paper fold */
+
+position: absolute;
+width: 16px;
+height: 16px;
+left: 270px;
+top: 247px;
+
+background: rgba(230, 255, 255, 0.39);
+border: 0.8px solid rgba(217, 250, 255, 0.65);
+
+
+/* Glyph 4 */
+
+position: absolute;
+width: 55px;
+height: 44.2px;
+left: 238px;
+top: 263px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 26px;
+line-height: 31px;
+
+color: rgba(140, 241, 255, 0.92);
+
+
+
+/* VALO / Folded translucent sheet File icon / Systion 4 */
+
+position: absolute;
+width: 55px;
+height: 67px;
+left: 349px;
+top: 247px;
+
+background: linear-gradient(130.54deg, rgba(242, 255, 255, 0.25) 10.64%, rgba(133, 246, 255, 0.18) 26.95%, rgba(61, 151, 206, 0.14) 47.52%, rgba(171, 151, 238, 0.16) 65.96%, rgba(27, 81, 142, 0.3) 81.56%);
+box-shadow: 0px 0px 10px rgba(77, 234, 251, 0.13), 0px 7px 10px rgba(0, 16, 32, 0.54), inset 0px -3px 5px rgba(0, 29, 61, 0.42), inset 0px 2px 2px rgba(255, 255, 255, 0.38);
+
+
+/* VALO / Paper fold */
+
+position: absolute;
+width: 16px;
+height: 16px;
+left: 388px;
+top: 247px;
+
+background: rgba(230, 255, 255, 0.39);
+border: 0.8px solid rgba(217, 250, 255, 0.65);
+
+
+/* Glyph 5 */
+
+position: absolute;
+width: 55px;
+height: 44.2px;
+left: 356px;
+top: 263px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 26px;
+line-height: 31px;
+
+color: rgba(140, 241, 255, 0.92);
+
+
+
+/* VALO / Minimize vector */
+
+position: absolute;
+width: 16px;
+height: 16px;
+left: 586px;
+top: 20px;
+
+filter: drop-shadow(0px 1px 1px rgba(0, 0, 0, 0.4));
+
+
+/* Vector */
+
+position: absolute;
+left: 18.75%;
+right: 18.75%;
+top: 50%;
+bottom: 50%;
+
+border: 1.65px solid rgba(249, 254, 255, 0.93);
+
+
+/* VALO / Maximize vector */
+
+position: absolute;
+width: 16px;
+height: 16px;
+left: 624px;
+top: 20px;
+
+filter: drop-shadow(0px 1px 1px rgba(0, 0, 0, 0.4));
+
+
+/* Vector */
+
+position: absolute;
+left: 20.31%;
+right: 20.31%;
+top: 20.31%;
+bottom: 20.31%;
+
+border: 1.5px solid rgba(249, 254, 255, 0.93);
+
+
+/* VALO / Close vector */
+
+position: absolute;
+width: 16px;
+height: 16px;
+left: 662px;
+top: 20px;
+
+filter: drop-shadow(0px 1px 1px rgba(0, 0, 0, 0.4));
+
+
+/* Vector */
+
+position: absolute;
+left: 21.88%;
+right: 21.88%;
+top: 21.88%;
+bottom: 21.88%;
+
+border: 1.6px solid rgba(255, 255, 255, 0.94);
+
+
+/* Documents / folded acrylic paper */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 55px;
+height: 67px;
+left: 349px;
+top: 127px;
+
+background: linear-gradient(130.54deg, rgba(242, 255, 255, 0.25) 10.64%, rgba(133, 246, 255, 0.18) 26.95%, rgba(61, 151, 206, 0.14) 47.52%, rgba(171, 151, 238, 0.16) 65.96%, rgba(27, 81, 142, 0.3) 81.56%);
+box-shadow: 0px 0px 10px rgba(77, 234, 251, 0.13), 0px 7px 10px rgba(0, 16, 32, 0.54), inset 0px -3px 5px rgba(0, 29, 61, 0.42), inset 0px 2px 2px rgba(255, 255, 255, 0.38);
+
+
+/* Vector */
+
+position: absolute;
+left: 1.82%;
+right: 1.82%;
+top: 1.49%;
+bottom: 1.49%;
+
+background: linear-gradient(135deg, rgba(221, 255, 255, 0.4) 0%, rgba(86, 232, 255, 0.18) 50%, rgba(58, 102, 215, 0.34) 100%);
+border: 1.2px solid rgba(184, 249, 255, 0.85);
+
+
+/* Vector */
+
+position: absolute;
+left: 70.91%;
+right: 1.82%;
+top: 1.49%;
+bottom: 76.12%;
+
+background: rgba(211, 249, 255, 0.35);
+border: 1.2px solid rgba(203, 250, 255, 0.85);
+
+
+/* Glyph 1 */
+
+position: absolute;
+width: 55px;
+height: 44.2px;
+left: 356px;
+top: 143px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 26px;
+line-height: 31px;
+
+color: #74F1FF;
+
+
+
+/* VALO / Document acrylic glint */
+
+position: absolute;
+width: 38.5px;
+height: 18.09px;
+left: 465.11px;
+top: 131px;
+
+background: linear-gradient(130.54deg, rgba(255, 255, 255, 0.35) 10.64%, rgba(162, 248, 255, 0.15) 46.1%, rgba(255, 255, 255, 0) 81.56%);
+filter: blur(3.5px);
+transform: rotate(19deg);
+
+
+/* VALO / Document acrylic glint */
+
+position: absolute;
+width: 38.5px;
+height: 18.09px;
+left: 583.11px;
+top: 131px;
+
+background: linear-gradient(130.54deg, rgba(255, 255, 255, 0.35) 10.64%, rgba(162, 248, 255, 0.15) 46.1%, rgba(255, 255, 255, 0) 81.56%);
+filter: blur(3.5px);
+transform: rotate(19deg);
+
+
+/* VALO / Document acrylic glint */
+
+position: absolute;
+width: 38.5px;
+height: 18.09px;
+left: 229.11px;
+top: 251px;
+
+background: linear-gradient(130.54deg, rgba(255, 255, 255, 0.35) 10.64%, rgba(162, 248, 255, 0.15) 46.1%, rgba(255, 255, 255, 0) 81.56%);
+filter: blur(3.5px);
+transform: rotate(19deg);
+
+
+/* VALO / Document acrylic glint */
+
+position: absolute;
+width: 38.5px;
+height: 18.09px;
+left: 347.11px;
+top: 251px;
+
+background: linear-gradient(130.54deg, rgba(255, 255, 255, 0.35) 10.64%, rgba(162, 248, 255, 0.15) 46.1%, rgba(255, 255, 255, 0) 81.56%);
+filter: blur(3.5px);
+transform: rotate(19deg);
+
+
+/* VALO / Document acrylic glint */
+
+position: absolute;
+width: 38.5px;
+height: 18.09px;
+left: 347.11px;
+top: 131px;
+
+background: linear-gradient(130.54deg, rgba(255, 255, 255, 0.35) 10.64%, rgba(162, 248, 255, 0.15) 46.1%, rgba(255, 255, 255, 0) 81.56%);
+filter: blur(3.5px);
+transform: rotate(19deg);
+
+
+/* Systalia Control Center — editable window */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 700px;
+height: 534px;
+left: 864px;
+top: 193px;
+
+background: linear-gradient(123.69deg, rgba(0, 239, 255, 0.1) 8%, rgba(245, 255, 255, 0.12) 31.2%, rgba(248, 196, 123, 0.07) 56%, rgba(158, 119, 255, 0.08) 88%), linear-gradient(123.69deg, rgba(25, 79, 118, 0.39) 8%, rgba(75, 175, 199, 0.27) 24%, rgba(19, 58, 93, 0.27) 50.4%, rgba(9, 35, 63, 0.41) 88%);
+box-shadow: 0px 20px 40px rgba(0, 229, 255, 0.14), 0px 8px 12px rgba(0, 0, 0, 0.45), inset 0px -2px 4px rgba(0, 10, 27, 0.4), inset 0px 1px 0px rgba(255, 255, 255, 0.26);
+backdrop-filter: blur(18px);
+/* Observação: filtro de pano de fundo tem suporte de navegação mínimo */
+border-radius: 20px;
+
+
+/* Upper cyan gloss */
+
+position: absolute;
+width: 688px;
+height: 524px;
+left: 6px;
+top: 4px;
+
+background: linear-gradient(128.8deg, rgba(200, 255, 255, 0.25) 12.87%, rgba(97, 240, 255, 0.13) 45.33%, rgba(21, 82, 121, 0.03) 74.09%, rgba(11, 24, 52, 0) 105.62%);
+box-shadow: inset 0px 1px 1px rgba(255, 255, 255, 0.21);
+border-radius: 14px;
+
+
+/* VALO / Internal caustic prism */
+
+position: absolute;
+width: 476px;
+height: 309.72px;
+left: -7.61px;
+top: 101.46px;
+
+background: linear-gradient(123.69deg, rgba(0, 242, 255, 0.13) 8%, rgba(255, 255, 255, 0.17) 28.8%, rgba(255, 233, 162, 0.09) 50.4%, rgba(168, 136, 255, 0.1) 72%, rgba(255, 255, 255, 0) 88%);
+opacity: 0.7;
+filter: blur(20px);
+transform: rotate(27deg);
+
+
+/* VALO / Spectral caustic ribbon — editable */
+
+position: absolute;
+width: 532px;
+height: 277.68px;
+left: -87.02px;
+top: 69.42px;
+
+background: linear-gradient(130.54deg, rgba(0, 235, 255, 0) 10.64%, rgba(0, 239, 255, 0.12) 22.7%, rgba(249, 255, 255, 0.21) 33.33%, rgba(255, 201, 120, 0.075) 46.1%, rgba(167, 123, 255, 0.11) 60.28%, rgba(57, 215, 255, 0) 81.56%);
+filter: blur(22px);
+transform: rotate(31deg);
+
+
+/* VALO / Violet cyan edge refraction */
+
+position: absolute;
+width: 294px;
+height: 443.22px;
+left: 197.73px;
+top: 15px;
+
+background: linear-gradient(130.54deg, rgba(93, 239, 255, 0) 10.64%, rgba(120, 237, 255, 0.07) 35.46%, rgba(238, 214, 255, 0.14) 49.65%, rgba(255, 212, 171, 0.075) 63.83%, rgba(162, 133, 255, 0) 81.56%);
+filter: blur(14.5px);
+transform: rotate(24deg);
+
+
+/* Systalia icon */
+
+position: absolute;
+width: 32px;
+height: 39.1px;
+left: 18px;
+top: 14px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 23px;
+line-height: 28px;
+
+color: #48C4FF;
+
+
+
+/* Panel Title */
+
+position: absolute;
+width: 275px;
+height: 34px;
+left: 50px;
+top: 14px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 500;
+font-size: 20px;
+line-height: 24px;
+
+color: #F3FBFF;
+
+
+
+/* Engine badge */
+
+position: absolute;
+width: 172px;
+height: 25px;
+left: 275px;
+top: 14px;
+
+background: rgba(12, 49, 79, 0.78);
+border-radius: 6px;
+
+
+/* Engine */
+
+position: absolute;
+width: 165px;
+height: 23.8px;
+left: 286px;
+top: 19px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 17px;
+
+color: #87BADA;
+
+
+
+/* Window control 0 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 27px;
+height: 27px;
+left: 576px;
+top: 14px;
+
+background: radial-gradient(50% 50% at 50% 50%, #B0FAFF 0%, #00C8FF 25%, #007DFC 62%, #073E9E 100%);
+border: 1px solid rgba(217, 249, 255, 0.56);
+box-shadow: 0px 3px 5px rgba(0, 16, 27, 0.5), inset 0px -1.5px 2px rgba(0, 35, 76, 0.55), inset 0px 1.5px 2px rgba(255, 255, 255, 0.46);
+
+
+/* Window control 1 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 27px;
+height: 27px;
+left: 614px;
+top: 14px;
+
+background: radial-gradient(50% 50% at 50% 50%, #B0FAFF 0%, #00C8FF 25%, #007DFC 62%, #073E9E 100%);
+border: 1px solid rgba(217, 249, 255, 0.56);
+box-shadow: 0px 3px 5px rgba(0, 16, 27, 0.5), inset 0px -1.5px 2px rgba(0, 35, 76, 0.55), inset 0px 1.5px 2px rgba(255, 255, 255, 0.46);
+
+
+/* Window control 2 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 27px;
+height: 27px;
+left: 652px;
+top: 14px;
+
+background: radial-gradient(50% 50% at 50% 50%, #FFB1CB 0%, #FF3B60 27%, #9E1448 72%, #540D30 100%);
+border: 1px solid rgba(217, 249, 255, 0.56);
+box-shadow: 0px 3px 5px rgba(0, 16, 27, 0.5), inset 0px -1.5px 2px rgba(0, 35, 76, 0.55), inset 0px 1.5px 2px rgba(255, 255, 255, 0.46);
+
+
+/* Settings navigation */
+
+position: absolute;
+width: 197px;
+height: 448px;
+left: 12px;
+top: 61px;
+
+
+
+/* Settings / ⚙  General */
+
+position: absolute;
+width: 181px;
+height: 27.2px;
+left: 10px;
+top: 6px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 16px;
+line-height: 19px;
+
+color: #D4E8ED;
+
+
+
+/* Settings / ♙  Status */
+
+position: absolute;
+width: 181px;
+height: 27.2px;
+left: 10px;
+top: 50px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 16px;
+line-height: 19px;
+
+color: #D4E8ED;
+
+
+
+/* Selected settings */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 180px;
+height: 37px;
+left: 0px;
+top: 87px;
+
+background: linear-gradient(135deg, rgba(159, 239, 255, 0.24) 13.89%, rgba(91, 188, 229, 0.43) 27.78%, rgba(25, 88, 125, 0.72) 52.08%, rgba(16, 51, 78, 0.88) 83.33%);
+box-shadow: 0px 3px 5px rgba(0, 16, 29, 0.35), inset 0px -2px 4px rgba(6, 24, 45, 0.4), inset 0px 1px 1px rgba(255, 255, 255, 0.32);
+border-radius: 8px;
+
+
+/* Settings / ☷  Control Center */
+
+position: absolute;
+width: 181px;
+height: 27.2px;
+left: 10px;
+top: 94px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 16px;
+line-height: 19px;
+
+color: #42E9EE;
+
+
+
+/* Settings / ⚙  Software */
+
+position: absolute;
+width: 181px;
+height: 27.2px;
+left: 10px;
+top: 138px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 16px;
+line-height: 19px;
+
+color: #D4E8ED;
+
+
+
+/* Settings / ▣  Drivers */
+
+position: absolute;
+width: 181px;
+height: 27.2px;
+left: 10px;
+top: 182px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 16px;
+line-height: 19px;
+
+color: #D4E8ED;
+
+
+
+/* Settings / ⓘ  About */
+
+position: absolute;
+width: 181px;
+height: 27.2px;
+left: 10px;
+top: 226px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 16px;
+line-height: 19px;
+
+color: #D4E8ED;
+
+
+
+/* Menu divider */
+
+position: absolute;
+width: 1px;
+height: 440px;
+left: 206px;
+top: 64px;
+
+background: rgba(200, 247, 251, 0.28);
+
+
+/* Options menu label */
+
+position: absolute;
+width: 165px;
+height: 28.9px;
+left: 25px;
+top: 349px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 17px;
+line-height: 21px;
+
+color: #DCEFF7;
+
+
+
+/* Dropdown 0 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 165px;
+height: 32px;
+left: 24px;
+top: 380px;
+
+background: linear-gradient(135deg, rgba(159, 239, 255, 0.24) 13.89%, rgba(91, 188, 229, 0.43) 27.78%, rgba(25, 88, 125, 0.72) 52.08%, rgba(16, 51, 78, 0.88) 83.33%);
+box-shadow: 0px 3px 5px rgba(0, 16, 29, 0.35), inset 0px -2px 4px rgba(6, 24, 45, 0.4), inset 0px 1px 1px rgba(255, 255, 255, 0.32);
+border-radius: 15px;
+
+
+/* Dropdown text 0 */
+
+position: absolute;
+width: 135px;
+height: 25.5px;
+left: 41px;
+top: 387px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 15px;
+line-height: 18px;
+
+color: #E9F8FC;
+
+
+
+/* Dropdown 1 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 165px;
+height: 32px;
+left: 24px;
+top: 425px;
+
+background: linear-gradient(135deg, rgba(159, 239, 255, 0.24) 13.89%, rgba(91, 188, 229, 0.43) 27.78%, rgba(25, 88, 125, 0.72) 52.08%, rgba(16, 51, 78, 0.88) 83.33%);
+box-shadow: 0px 3px 5px rgba(0, 16, 29, 0.35), inset 0px -2px 4px rgba(6, 24, 45, 0.4), inset 0px 1px 1px rgba(255, 255, 255, 0.32);
+border-radius: 15px;
+
+
+/* Dropdown text 1 */
+
+position: absolute;
+width: 135px;
+height: 25.5px;
+left: 41px;
+top: 432px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 15px;
+line-height: 18px;
+
+color: #E9F8FC;
+
+
+
+/* Dropdown 2 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 165px;
+height: 32px;
+left: 24px;
+top: 470px;
+
+background: linear-gradient(135deg, rgba(159, 239, 255, 0.24) 13.89%, rgba(91, 188, 229, 0.43) 27.78%, rgba(25, 88, 125, 0.72) 52.08%, rgba(16, 51, 78, 0.88) 83.33%);
+box-shadow: 0px 3px 5px rgba(0, 16, 29, 0.35), inset 0px -2px 4px rgba(6, 24, 45, 0.4), inset 0px 1px 1px rgba(255, 255, 255, 0.32);
+border-radius: 15px;
+
+
+/* Dropdown text 2 */
+
+position: absolute;
+width: 135px;
+height: 25.5px;
+left: 41px;
+top: 477px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 15px;
+line-height: 18px;
+
+color: #E9F8FC;
+
+
+
+/* Live Material Controls */
+
+position: absolute;
+width: 454px;
+height: 452px;
+left: 224px;
+top: 59px;
+
+background: rgba(7, 29, 50, 0.76);
+border-radius: 13px;
+
+
+/* Options title */
+
+position: absolute;
+width: 200px;
+height: 35.7px;
+left: 22px;
+top: 14px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 500;
+font-size: 21px;
+line-height: 25px;
+
+color: #F1FAFF;
+
+
+
+/* Toggle track */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 85px;
+height: 31px;
+left: 344px;
+top: 13px;
+
+background: linear-gradient(135deg, rgba(159, 239, 255, 0.24) 13.89%, rgba(91, 188, 229, 0.43) 27.78%, rgba(25, 88, 125, 0.72) 52.08%, rgba(16, 51, 78, 0.88) 83.33%);
+box-shadow: 0px 3px 5px rgba(0, 16, 29, 0.35), inset 0px -2px 4px rgba(6, 24, 45, 0.4), inset 0px 1px 1px rgba(255, 255, 255, 0.32);
+border-radius: 18px;
+
+
+/* Toggle handle */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 23px;
+height: 23px;
+left: 402px;
+top: 17px;
+
+background: radial-gradient(50% 50% at 50% 50%, #FFFFFF 0%, #DBFBFF 30%, #8CE6F4 68%, #4387BA 100%);
+border: 1px solid rgba(232, 255, 255, 0.8);
+box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.55), inset 0px 1px 1px rgba(255, 255, 255, 0.5);
+
+
+/* Backdrop Blur Filter label */
+
+position: absolute;
+width: 345px;
+height: 27.2px;
+left: 22px;
+top: 55px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 16px;
+line-height: 19px;
+
+color: #E4F7FF;
+
+
+
+/* Backdrop Blur Filter track */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 367px;
+height: 12px;
+left: 22px;
+top: 86px;
+
+background: linear-gradient(135deg, rgba(3, 21, 41, 0.94) 13.89%, rgba(12, 39, 62, 0.96) 48.61%, rgba(23, 57, 85, 0.83) 83.33%);
+border: 0.7px solid rgba(115, 186, 218, 0.26);
+box-shadow: inset 0px -1px 1px rgba(230, 255, 255, 0.12), inset 0px 2px 3px rgba(0, 0, 0, 0.64);
+border-radius: 8px;
+
+
+/* Backdrop Blur Filter progress */
+
+position: absolute;
+width: 238.55px;
+height: 12px;
+left: 22px;
+top: 86px;
+
+background: linear-gradient(180deg, #14C4E7 0%, #17F5DF 100%);
+border-radius: 8px;
+
+
+/* Backdrop Blur Filter thumb */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 20px;
+height: 20px;
+left: 250.55px;
+top: 81px;
+
+background: radial-gradient(50% 50% at 50% 50%, #FFFFFF 0%, #DBFBFF 30%, #8CE6F4 68%, #4387BA 100%);
+border: 1px solid rgba(232, 255, 255, 0.8);
+box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.55), inset 0px 1px 1px rgba(255, 255, 255, 0.5);
+
+
+/* Backdrop Blur Filter value */
+
+position: absolute;
+width: 50px;
+height: 25.5px;
+left: 397px;
+top: 80px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 15px;
+line-height: 18px;
+text-align: right;
+
+color: #D9ECF7;
+
+
+
+/* Glass Layer Opacity label */
+
+position: absolute;
+width: 345px;
+height: 27.2px;
+left: 22px;
+top: 119px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 16px;
+line-height: 19px;
+
+color: #E4F7FF;
+
+
+
+/* Glass Layer Opacity track */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 367px;
+height: 12px;
+left: 22px;
+top: 150px;
+
+background: linear-gradient(135deg, rgba(3, 21, 41, 0.94) 13.89%, rgba(12, 39, 62, 0.96) 48.61%, rgba(23, 57, 85, 0.83) 83.33%);
+border: 0.7px solid rgba(115, 186, 218, 0.26);
+box-shadow: inset 0px -1px 1px rgba(230, 255, 255, 0.12), inset 0px 2px 3px rgba(0, 0, 0, 0.64);
+border-radius: 8px;
+
+
+/* Glass Layer Opacity progress */
+
+position: absolute;
+width: 238.55px;
+height: 12px;
+left: 22px;
+top: 150px;
+
+background: linear-gradient(180deg, #14C4E7 0%, #17F5DF 100%);
+border-radius: 8px;
+
+
+/* Glass Layer Opacity thumb */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 20px;
+height: 20px;
+left: 250.55px;
+top: 145px;
+
+background: radial-gradient(50% 50% at 50% 50%, #FFFFFF 0%, #DBFBFF 30%, #8CE6F4 68%, #4387BA 100%);
+border: 1px solid rgba(232, 255, 255, 0.8);
+box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.55), inset 0px 1px 1px rgba(255, 255, 255, 0.5);
+
+
+/* Glass Layer Opacity value */
+
+position: absolute;
+width: 50px;
+height: 25.5px;
+left: 399px;
+top: 144px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 15px;
+line-height: 18px;
+
+color: #D9ECF7;
+
+
+
+/* Glass Layer Opacity · Secondary label */
+
+position: absolute;
+width: 345px;
+height: 27.2px;
+left: 22px;
+top: 183px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 16px;
+line-height: 19px;
+
+color: #E4F7FF;
+
+
+
+/* Glass Layer Opacity · Secondary track */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 367px;
+height: 12px;
+left: 22px;
+top: 214px;
+
+background: linear-gradient(135deg, rgba(3, 21, 41, 0.94) 13.89%, rgba(12, 39, 62, 0.96) 48.61%, rgba(23, 57, 85, 0.83) 83.33%);
+border: 0.7px solid rgba(115, 186, 218, 0.26);
+box-shadow: inset 0px -1px 1px rgba(230, 255, 255, 0.12), inset 0px 2px 3px rgba(0, 0, 0, 0.64);
+border-radius: 8px;
+
+
+/* Glass Layer Opacity · Secondary progress */
+
+position: absolute;
+width: 264.24px;
+height: 12px;
+left: 22px;
+top: 214px;
+
+background: linear-gradient(180deg, #14C4E7 0%, #17F5DF 100%);
+border-radius: 8px;
+
+
+/* Glass Layer Opacity · Secondary thumb */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 20px;
+height: 20px;
+left: 276.24px;
+top: 209px;
+
+background: radial-gradient(50% 50% at 50% 50%, #FFFFFF 0%, #DBFBFF 30%, #8CE6F4 68%, #4387BA 100%);
+border: 1px solid rgba(232, 255, 255, 0.8);
+box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.55), inset 0px 1px 1px rgba(255, 255, 255, 0.5);
+
+
+/* Glass Layer Opacity · Secondary value */
+
+position: absolute;
+width: 50px;
+height: 25.5px;
+left: 399px;
+top: 208px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 15px;
+line-height: 18px;
+
+color: #D9ECF7;
+
+
+
+/* Ambient Halo Dispersion label */
+
+position: absolute;
+width: 345px;
+height: 27.2px;
+left: 22px;
+top: 247px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 16px;
+line-height: 19px;
+
+color: #E4F7FF;
+
+
+
+/* Ambient Halo Dispersion track */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 367px;
+height: 12px;
+left: 22px;
+top: 278px;
+
+background: linear-gradient(135deg, rgba(3, 21, 41, 0.94) 13.89%, rgba(12, 39, 62, 0.96) 48.61%, rgba(23, 57, 85, 0.83) 83.33%);
+border: 0.7px solid rgba(115, 186, 218, 0.26);
+box-shadow: inset 0px -1px 1px rgba(230, 255, 255, 0.12), inset 0px 2px 3px rgba(0, 0, 0, 0.64);
+border-radius: 8px;
+
+
+/* Ambient Halo Dispersion progress */
+
+position: absolute;
+width: 190.84px;
+height: 12px;
+left: 22px;
+top: 278px;
+
+background: linear-gradient(180deg, #14C4E7 0%, #17F5DF 100%);
+border-radius: 8px;
+
+
+/* Ambient Halo Dispersion thumb */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 20px;
+height: 20px;
+left: 202.84px;
+top: 273px;
+
+background: radial-gradient(50% 50% at 50% 50%, #FFFFFF 0%, #DBFBFF 30%, #8CE6F4 68%, #4387BA 100%);
+border: 1px solid rgba(232, 255, 255, 0.8);
+box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.55), inset 0px 1px 1px rgba(255, 255, 255, 0.5);
+
+
+/* Ambient Halo Dispersion value */
+
+position: absolute;
+width: 50px;
+height: 25.5px;
+left: 399px;
+top: 272px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 15px;
+line-height: 18px;
+
+color: #D9ECF7;
+
+
+
+/* Ambient Halo Filters label */
+
+position: absolute;
+width: 345px;
+height: 27.2px;
+left: 22px;
+top: 311px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 16px;
+line-height: 19px;
+
+color: #E4F7FF;
+
+
+
+/* Ambient Halo Filters track */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 367px;
+height: 12px;
+left: 22px;
+top: 342px;
+
+background: linear-gradient(135deg, rgba(3, 21, 41, 0.94) 13.89%, rgba(12, 39, 62, 0.96) 48.61%, rgba(23, 57, 85, 0.83) 83.33%);
+border: 0.7px solid rgba(115, 186, 218, 0.26);
+box-shadow: inset 0px -1px 1px rgba(230, 255, 255, 0.12), inset 0px 2px 3px rgba(0, 0, 0, 0.64);
+border-radius: 8px;
+
+
+/* Ambient Halo Filters progress */
+
+position: absolute;
+width: 176.16px;
+height: 12px;
+left: 22px;
+top: 342px;
+
+background: linear-gradient(180deg, #14C4E7 0%, #17F5DF 100%);
+border-radius: 8px;
+
+
+/* Ambient Halo Filters thumb */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 20px;
+height: 20px;
+left: 188.16px;
+top: 337px;
+
+background: radial-gradient(50% 50% at 50% 50%, #FFFFFF 0%, #DBFBFF 30%, #8CE6F4 68%, #4387BA 100%);
+border: 1px solid rgba(232, 255, 255, 0.8);
+box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.55), inset 0px 1px 1px rgba(255, 255, 255, 0.5);
+
+
+/* Ambient Halo Filters value */
+
+position: absolute;
+width: 50px;
+height: 25.5px;
+left: 399px;
+top: 336px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 15px;
+line-height: 18px;
+
+color: #D9ECF7;
+
+
+
+/* Ambient Halo Dispersion · Strength label */
+
+position: absolute;
+width: 345px;
+height: 27.2px;
+left: 22px;
+top: 376px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 16px;
+line-height: 19px;
+
+color: #E4F7FF;
+
+
+
+/* Ambient Halo Dispersion · Strength track */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 367px;
+height: 12px;
+left: 22px;
+top: 407px;
+
+background: linear-gradient(135deg, rgba(3, 21, 41, 0.94) 13.89%, rgba(12, 39, 62, 0.96) 48.61%, rgba(23, 57, 85, 0.83) 83.33%);
+border: 0.7px solid rgba(115, 186, 218, 0.26);
+box-shadow: inset 0px -1px 1px rgba(230, 255, 255, 0.12), inset 0px 2px 3px rgba(0, 0, 0, 0.64);
+border-radius: 8px;
+
+
+/* Ambient Halo Dispersion · Strength progress */
+
+position: absolute;
+width: 267.91px;
+height: 12px;
+left: 22px;
+top: 407px;
+
+background: linear-gradient(180deg, #14C4E7 0%, #17F5DF 100%);
+border-radius: 8px;
+
+
+/* Ambient Halo Dispersion · Strength thumb */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 20px;
+height: 20px;
+left: 279.91px;
+top: 402px;
+
+background: radial-gradient(50% 50% at 50% 50%, #FFFFFF 0%, #DBFBFF 30%, #8CE6F4 68%, #4387BA 100%);
+border: 1px solid rgba(232, 255, 255, 0.8);
+box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.55), inset 0px 1px 1px rgba(255, 255, 255, 0.5);
+
+
+/* Ambient Halo Dispersion · Strength value */
+
+position: absolute;
+width: 50px;
+height: 25.5px;
+left: 399px;
+top: 401px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 15px;
+line-height: 18px;
+
+color: #D9ECF7;
+
+
+
+/* VALO / Minimize vector */
+
+position: absolute;
+width: 16px;
+height: 16px;
+left: 581.5px;
+top: 19.5px;
+
+filter: drop-shadow(0px 1px 1px rgba(0, 0, 0, 0.4));
+
+
+/* Vector */
+
+position: absolute;
+left: 18.75%;
+right: 18.75%;
+top: 50%;
+bottom: 50%;
+
+border: 1.65px solid rgba(249, 254, 255, 0.93);
+
+
+/* VALO / Maximize vector */
+
+position: absolute;
+width: 16px;
+height: 16px;
+left: 619.5px;
+top: 19.5px;
+
+filter: drop-shadow(0px 1px 1px rgba(0, 0, 0, 0.4));
+
+
+/* Vector */
+
+position: absolute;
+left: 20.31%;
+right: 20.31%;
+top: 20.31%;
+bottom: 20.31%;
+
+border: 1.5px solid rgba(249, 254, 255, 0.93);
+
+
+/* VALO / Close vector */
+
+position: absolute;
+width: 16px;
+height: 16px;
+left: 657.5px;
+top: 19.5px;
+
+filter: drop-shadow(0px 1px 1px rgba(0, 0, 0, 0.4));
+
+
+/* Vector */
+
+position: absolute;
+left: 21.88%;
+right: 21.88%;
+top: 21.88%;
+bottom: 21.88%;
+
+border: 1.6px solid rgba(255, 255, 255, 0.94);
+
+
+/* Floating Dock / organic glass */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 555px;
+height: 125px;
+left: 555px;
+top: 817px;
+
+background: linear-gradient(135deg, rgba(93, 159, 184, 0.29) 7.14%, rgba(25, 76, 112, 0.34) 35.71%, rgba(10, 39, 65, 0.39) 78.57%);
+box-shadow: 0px 12px 20px rgba(0, 13, 33, 0.35), inset 0px -3px 5px rgba(6, 19, 38, 0.35), inset 0px 2px 2px rgba(255, 255, 255, 0.25);
+backdrop-filter: blur(18px);
+/* Observação: filtro de pano de fundo tem suporte de navegação mínimo */
+border-radius: 47px;
+
+
+/* App Icon tile 0 */
+
+box-sizing: border-box;
+
+position: absolute;
+visibility: hidden;
+width: 72px;
+height: 72px;
+left: 38px;
+top: 20px;
+
+background: linear-gradient(135deg, rgba(208, 248, 255, 0.86) 13.89%, rgba(84, 222, 251, 0.91) 27.08%, rgba(35, 133, 202, 0.83) 52.08%, rgba(66, 116, 176, 0.82) 68.06%, rgba(20, 54, 91, 0.9) 83.33%);
+border-radius: 17px;
+
+
+/* App glyph 0 */
+
+position: absolute;
+visibility: hidden;
+width: 60px;
+height: 47.6px;
+left: 46px;
+top: 37px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 28px;
+line-height: 34px;
+
+color: #60E9FE;
+
+
+
+/* App Icon tile 1 */
+
+box-sizing: border-box;
+
+position: absolute;
+visibility: hidden;
+width: 72px;
+height: 72px;
+left: 132px;
+top: 20px;
+
+background: linear-gradient(135deg, rgba(208, 248, 255, 0.86) 13.89%, rgba(84, 222, 251, 0.91) 27.08%, rgba(35, 133, 202, 0.83) 52.08%, rgba(66, 116, 176, 0.82) 68.06%, rgba(20, 54, 91, 0.9) 83.33%);
+border-radius: 17px;
+
+
+/* App glyph 1 */
+
+position: absolute;
+visibility: hidden;
+width: 60px;
+height: 47.6px;
+left: 140px;
+top: 37px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 28px;
+line-height: 34px;
+
+color: #173C5E;
+
+
+
+/* App Icon tile 2 */
+
+box-sizing: border-box;
+
+position: absolute;
+visibility: hidden;
+width: 72px;
+height: 72px;
+left: 226px;
+top: 20px;
+
+background: linear-gradient(135deg, rgba(208, 248, 255, 0.86) 13.89%, rgba(84, 222, 251, 0.91) 27.08%, rgba(35, 133, 202, 0.83) 52.08%, rgba(66, 116, 176, 0.82) 68.06%, rgba(20, 54, 91, 0.9) 83.33%);
+border-radius: 17px;
+
+
+/* App glyph 2 */
+
+position: absolute;
+visibility: hidden;
+width: 60px;
+height: 47.6px;
+left: 234px;
+top: 37px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 28px;
+line-height: 34px;
+
+color: #60E9FE;
+
+
+
+/* App Icon tile 3 */
+
+box-sizing: border-box;
+
+position: absolute;
+visibility: hidden;
+width: 72px;
+height: 72px;
+left: 320px;
+top: 20px;
+
+background: linear-gradient(135deg, rgba(208, 248, 255, 0.86) 13.89%, rgba(84, 222, 251, 0.91) 27.08%, rgba(35, 133, 202, 0.83) 52.08%, rgba(66, 116, 176, 0.82) 68.06%, rgba(20, 54, 91, 0.9) 83.33%);
+border-radius: 17px;
+
+
+/* App glyph 3 */
+
+position: absolute;
+visibility: hidden;
+width: 60px;
+height: 47.6px;
+left: 328px;
+top: 37px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 28px;
+line-height: 34px;
+
+color: #60E9FE;
+
+
+
+/* App Icon tile 4 */
+
+box-sizing: border-box;
+
+position: absolute;
+visibility: hidden;
+width: 72px;
+height: 72px;
+left: 414px;
+top: 20px;
+
+background: linear-gradient(135deg, rgba(208, 248, 255, 0.86) 13.89%, rgba(84, 222, 251, 0.91) 27.08%, rgba(35, 133, 202, 0.83) 52.08%, rgba(66, 116, 176, 0.82) 68.06%, rgba(20, 54, 91, 0.9) 83.33%);
+border-radius: 17px;
+
+
+/* App glyph 4 */
+
+position: absolute;
+visibility: hidden;
+width: 60px;
+height: 47.6px;
+left: 422px;
+top: 37px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 28px;
+line-height: 34px;
+
+color: #60E9FE;
+
+
+
+/* Dock / Blue acrylic folder */
+
+box-sizing: border-box;
+
+position: absolute;
+visibility: hidden;
+width: 74px;
+height: 49px;
+left: 38px;
+top: 39px;
+
+background: linear-gradient(135deg, rgba(179, 251, 255, 0.92) 14.14%, rgba(39, 204, 246, 0.94) 42.43%, rgba(17, 122, 197, 0.94) 84.87%);
+border: 1px solid rgba(217, 250, 255, 0.7);
+border-radius: 9px;
+
+
+/* Dock / Folder tab */
+
+position: absolute;
+visibility: hidden;
+width: 37px;
+height: 17px;
+left: 44px;
+top: 28px;
+
+background: rgba(64, 207, 248, 0.95);
+border-radius: 5px;
+
+
+/* Dock / Silver speaker */
+
+position: absolute;
+visibility: hidden;
+width: 56px;
+height: 56px;
+left: 145px;
+top: 37px;
+
+background: linear-gradient(135deg, rgba(255, 255, 255, 0.94) 14.14%, rgba(177, 215, 229, 0.97) 42.43%, rgba(58, 96, 124, 0.93) 84.87%);
+
+
+/* Dock / Sound waves */
+
+position: absolute;
+visibility: hidden;
+width: 60px;
+height: 35.2px;
+left: 149px;
+top: 46px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 21px;
+line-height: 25px;
+
+color: #11618D;
+
+
+
+/* Dock / Dark terminal chassis */
+
+box-sizing: border-box;
+
+position: absolute;
+visibility: hidden;
+width: 70px;
+height: 69px;
+left: 228px;
+top: 27px;
+
+background: #121820;
+border: 1.3px solid rgba(144, 233, 247, 0.54);
+border-radius: 15px;
+
+
+/* Dock / Terminal prompt */
+
+position: absolute;
+visibility: hidden;
+width: 55px;
+height: 43.2px;
+left: 239px;
+top: 41px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 27px;
+line-height: 33px;
+
+color: #35F1DC;
+
+
+
+/* Dock / Cyan code icon */
+
+position: absolute;
+visibility: hidden;
+width: 92px;
+height: 54.4px;
+left: 314px;
+top: 42px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 34px;
+line-height: 41px;
+
+color: #29F3FD;
+
+
+
+/* Dock / Magenta star */
+
+position: absolute;
+visibility: hidden;
+width: 70px;
+height: 104px;
+left: 419px;
+top: 25px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 54px;
+line-height: 65px;
+
+background: linear-gradient(135deg, #FF2D75 14.14%, #9B51E0 84.87%);
+-webkit-background-clip: text;
+-webkit-text-fill-color: transparent;
+background-clip: text;
+text-fill-color: transparent;
+
+
+
+/* VALO Dock / Folder acrylic */
+
+position: absolute;
+width: 78px;
+height: 78px;
+left: 35px;
+top: 23px;
+
+filter: drop-shadow(0px 5px 8px rgba(0, 13, 36, 0.33));
+
+
+/* Vector */
+
+position: absolute;
+left: 8.97%;
+right: 12.82%;
+top: 14.1%;
+bottom: 16.67%;
+
+background: #168CC5;
+border: 1.2px solid #A2EFFF;
+
+
+/* Vector */
+
+position: absolute;
+left: 8.97%;
+right: 10.04%;
+top: 32.05%;
+bottom: 16.67%;
+
+background: linear-gradient(141.34deg, #9AF4FF 0%, #30CFF8 43.73%, #1678BB 91.11%);
+border: 1.5px solid #D3FCFF;
+
+
+/* Vector */
+
+position: absolute;
+left: 16.67%;
+right: 19.23%;
+top: 38.46%;
+bottom: 61.54%;
+
+background: #000000;
+border: 2px solid rgba(248, 255, 255, 0.55);
+
+
+/* VALO Dock / Speaker metallic */
+
+position: absolute;
+width: 78px;
+height: 78px;
+left: 130px;
+top: 23px;
+
+filter: drop-shadow(0px 5px 8px rgba(0, 13, 36, 0.33));
+
+
+/* Vector */
+
+position: absolute;
+left: 11.54%;
+right: 44.87%;
+top: 21.92%;
+bottom: 22.49%;
+
+background: linear-gradient(135deg, #F8FEFF 0%, #9CCFE3 52%, #477B9E 100%);
+border: 1.5px solid #E6FEFF;
+
+
+/* Vector */
+
+position: absolute;
+left: 65.38%;
+right: 13.46%;
+top: 25.64%;
+bottom: 25.64%;
+
+border: 4px solid #37DDFA;
+
+
+/* Vector */
+
+position: absolute;
+left: 20.51%;
+right: 69.23%;
+top: 43.59%;
+bottom: 56.41%;
+
+background: #000000;
+border: 2px solid rgba(255, 255, 255, 0.5);
+
+
+/* VALO Dock / Terminal */
+
+position: absolute;
+width: 78px;
+height: 78px;
+left: 224px;
+top: 23px;
+
+filter: drop-shadow(0px 5px 8px rgba(0, 13, 36, 0.33));
+
+
+/* Vector */
+
+position: absolute;
+left: 7.69%;
+right: 7.69%;
+top: 7.69%;
+bottom: 7.69%;
+
+background: linear-gradient(180deg, #263C4C 0%, #0C1420 100%);
+border: 1.4px solid #A3DEF3;
+
+
+/* Vector */
+
+position: absolute;
+left: 14.1%;
+right: 14.1%;
+top: 14.1%;
+bottom: 14.1%;
+
+background: #101820;
+border: 1px solid rgba(74, 131, 152, 0.45);
+
+
+/* Vector */
+
+position: absolute;
+left: 29.49%;
+right: 55.13%;
+top: 37.18%;
+bottom: 37.18%;
+
+border: 4px solid #38F4D8;
+
+
+/* Vector */
+
+position: absolute;
+left: 51.28%;
+right: 29.49%;
+top: 64.1%;
+bottom: 35.9%;
+
+background: #000000;
+border: 3.5px solid #46F4EF;
+
+
+/* VALO Dock / Code glyph */
+
+position: absolute;
+width: 78px;
+height: 78px;
+left: 318px;
+top: 23px;
+
+filter: drop-shadow(0px 5px 8px rgba(0, 13, 36, 0.33));
+
+
+/* Vector */
+
+position: absolute;
+left: 16.67%;
+right: 16.67%;
+top: 29.49%;
+bottom: 29.49%;
+
+border: 5px solid #49F3FC;
+
+
+/* Vector */
+
+position: absolute;
+left: 43.59%;
+right: 43.59%;
+top: 21.79%;
+bottom: 21.79%;
+
+background: #000000;
+border: 4.5px solid #7FECFF;
+
+
+/* Vector */
+
+position: absolute;
+left: 20.51%;
+right: 20.51%;
+top: 50%;
+bottom: 34.62%;
+
+background: #000000;
+border: 1.5px solid rgba(255, 255, 255, 0.18);
+
+
+/* VALO Dock / Magenta spark */
+
+position: absolute;
+width: 78px;
+height: 78px;
+left: 412px;
+top: 23px;
+
+filter: drop-shadow(0px 2px 13px rgba(242, 41, 148, 0.46));
+
+
+/* Vector */
+
+position: absolute;
+left: 6.41%;
+right: 6.41%;
+top: 6.41%;
+bottom: 6.41%;
+
+background: linear-gradient(135deg, #FF8CB9 0%, #FF2D75 45%, #9B51E0 100%);
+border: 1.3px solid rgba(255, 181, 235, 0.65);
+
+
+/* Vector */
+
+position: absolute;
+left: 50%;
+right: 24.36%;
+top: 20.51%;
+bottom: 50%;
+
+border: 1.7px solid rgba(255, 255, 255, 0.35);

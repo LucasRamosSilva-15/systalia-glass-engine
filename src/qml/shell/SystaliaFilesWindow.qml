@@ -189,8 +189,8 @@ Item {
     }
 
     Rectangle {
-        x: 8.5
-        y: 49.5
+        x: 10
+        y: 51
         width: 181
         height: 469
         radius: 14
@@ -214,43 +214,98 @@ Item {
         delegate: Item {
             id: navigationEntry
             required property var modelData
-            x: 17.5
-            y: 49.5 + modelData.top - 6
+            x: 19
+            y: 51 + modelData.top - 6
             width: 163
             height: 33
 
-            Rectangle {
+            // Fundo do item selecionado (Active Home / Item no style.css: 135deg, inset shadows, raio 7px)
+            Item {
                 anchors.fill: parent
                 visible: fileWindow.selectedLocation === navigationEntry.modelData.name
-                radius: 7
-                gradient: Gradient {
-                    orientation: Gradient.Vertical
-                    GradientStop { position: 0; color: "#3d9fefff" }
-                    GradientStop { position: 0.5; color: "#6e19587d" }
-                    GradientStop { position: 1; color: "#e010334e" }
+
+                // Sombra de queda base (0px 3px 5px rgba(0, 16, 29, 0.35))
+                Rectangle {
+                    anchors.fill: parent
+                    anchors.topMargin: 2
+                    radius: 7
+                    color: "#5900101d"
                 }
-                border.color: "#c7f9ffff"
-                border.width: 1
-                antialiasing: true
+
+                // Corpo com gradiente 135deg nativo
+                Shape {
+                    anchors.fill: parent
+                    layer.enabled: true
+                    layer.samples: 4
+
+                    ShapePath {
+                        strokeWidth: 0
+                        fillGradient: LinearGradient {
+                            x1: 0; y1: 0
+                            x2: 163; y2: 33
+                            GradientStop { position: 0.1389; color: "#3d9fefff" }
+                            GradientStop { position: 0.2778; color: "#6e5bbce5" }
+                            GradientStop { position: 0.5208; color: "#b819587d" }
+                            GradientStop { position: 0.8333; color: "#e010334e" }
+                        }
+                        startX: 7; startY: 0
+                        PathLine { x: 156; y: 0 }
+                        PathArc { x: 163; y: 7; radiusX: 7; radiusY: 7 }
+                        PathLine { x: 163; y: 26 }
+                        PathArc { x: 156; y: 33; radiusX: 7; radiusY: 7 }
+                        PathLine { x: 7; y: 33 }
+                        PathArc { x: 0; y: 26; radiusX: 7; radiusY: 7 }
+                        PathLine { x: 0; y: 7 }
+                        PathArc { x: 7; y: 0; radiusX: 7; radiusY: 7 }
+                    }
+                }
+
+                // Inset highlight superior (inset 0px 1px 1px rgba(255, 255, 255, 0.32))
+                Rectangle {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.top: parent.top
+                    anchors.topMargin: 1
+                    width: parent.width - 10
+                    height: 1
+                    radius: 0.5
+                    color: "#52ffffff"
+                }
+
+                // Inset shadow inferior (inset 0px -2px 4px rgba(6, 24, 45, 0.4))
+                Rectangle {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.bottom: parent.bottom
+                    anchors.bottomMargin: 1
+                    width: parent.width - 8
+                    height: 3
+                    radius: 1.5
+                    gradient: Gradient {
+                        orientation: Gradient.Vertical
+                        GradientStop { position: 0; color: "#0006182d" }
+                        GradientStop { position: 1; color: "#6606182d" }
+                    }
+                }
+
+                // Borda perimetral sutil
                 Rectangle {
                     anchors.fill: parent
                     radius: 7
                     color: "transparent"
-                    border.color: "#52ffffff"
-                    border.width: 0.7
+                    border.color: "#30ffffff"
+                    border.width: 0.8
                     antialiasing: true
                 }
             }
 
             Text {
-                x: 0.5
-                y: 6
+                x: 9
+                anchors.verticalCenter: parent.verticalCenter
                 width: 150
-                height: 27
                 text: navigationEntry.modelData.icon + "  " + navigationEntry.modelData.name
                 color: fileWindow.selectedLocation === navigationEntry.modelData.name ? "#eef9ff" : "#d5e2ee"
                 font.family: SystaliaTheme.fontFamily
                 font.pixelSize: 16
+                font.weight: fileWindow.selectedLocation === navigationEntry.modelData.name ? Font.Medium : Font.Normal
                 antialiasing: true
                 HoverHandler { cursorShape: Qt.PointingHandCursor }
                 TapHandler {
