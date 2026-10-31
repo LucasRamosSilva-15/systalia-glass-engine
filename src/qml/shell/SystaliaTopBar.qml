@@ -22,7 +22,6 @@ Item {
     // Sombra luminosa externa ciano conforme style.css: box-shadow: 0px 4px 18px rgba(9, 186, 237, 0.2)
     Rectangle {
         anchors.fill: parent
-        anchors.topMargin: 4
         radius: 22
         color: "#3309baed"
         z: -1
@@ -34,19 +33,20 @@ Item {
         screenResolution: topBar.screenResolution
         radii: topBar.cornerRadii
         slant: 0
-        ior: 1.12
-        chromaticDispersion: 0.018
-        causticIntensity: 0.18
-        surfaceOpacity: 0.72
+        ior: 1.10
+        chromaticDispersion: 0.012
+        causticIntensity: 0.12
+        surfaceOpacity: 0.86
         time: topBar.animationTime
     }
 
-    SystaliaG2Frame {
+    // Contorno único de precisão conforme style.css: border: 1px solid rgba(116, 213, 238, 0.24)
+    Rectangle {
         anchors.fill: parent
-        radii: topBar.cornerRadii
-        fillColor: "#db071628"
-        strokeColor: "#3d74d5ee"
-        strokeWidth: 1
+        radius: 22
+        color: "#db071628"
+        border.color: "#3d74d5ee"
+        border.width: 1
     }
 
     Image {

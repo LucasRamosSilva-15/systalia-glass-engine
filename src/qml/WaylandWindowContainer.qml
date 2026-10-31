@@ -28,7 +28,7 @@ Item {
     property int minWindowHeight: 220
     readonly property int borderMargin: 8
     readonly property int frameMargin: 8
-    readonly property int titleBarHeight: 50
+    readonly property int titleBarHeight: 36
     readonly property var xdgSurface: toplevel ? toplevel.xdgSurface : null
     readonly property bool minimized: {
         if (!waylandServer || !toplevel)
@@ -49,6 +49,28 @@ Item {
         return extension.resourceForSurface(xdgSurface.surface)
     }
     readonly property rect clientGeometry: xdgSurface ? xdgSurface.windowGeometry : Qt.rect(0, 0, 0, 0)
+    readonly property int effectiveClientWidth: {
+        if (clientGeometry.width > 0)
+            return clientGeometry.width
+        if (xdgSurface && xdgSurface.surface) {
+            if (xdgSurface.surface.destinationSize.width > 0)
+                return xdgSurface.surface.destinationSize.width
+            if (xdgSurface.surface.bufferSize.width > 0)
+                return xdgSurface.surface.bufferSize.width
+        }
+        return 800
+    }
+    readonly property int effectiveClientHeight: {
+        if (clientGeometry.height > 0)
+            return clientGeometry.height
+        if (xdgSurface && xdgSurface.surface) {
+            if (xdgSurface.surface.destinationSize.height > 0)
+                return xdgSurface.surface.destinationSize.height
+            if (xdgSurface.surface.bufferSize.height > 0)
+                return xdgSurface.surface.bufferSize.height
+        }
+        return 500
+    }
     readonly property vector4d frameRadii: opticalMetadata
                                           ? opticalMetadata.radii
                                           : Qt.vector4d(20.0, 20.0, 20.0, 20.0)
@@ -87,7 +109,7 @@ Item {
     onClientMappedChanged: {
         if (clientMapped) {
             syncClientGeometry()
-            if (workspace)
+            if (workspace && typeof workspace.raiseClientWindow === "function")
                 workspace.raiseClientWindow(windowContainer)
             if (waylandServer && toplevel)
                 waylandServer.activateToplevel(toplevel)
@@ -275,8 +297,8 @@ Item {
                 objectName: "clientSurfaceItem"
                 x: -windowContainer.clientGeometry.x
                 y: -windowContainer.clientGeometry.y
-                width: Math.max(0, windowContainer.clientGeometry.width)
-                height: Math.max(0, windowContainer.clientGeometry.height)
+                width: windowContainer.effectiveClientWidth
+                height: windowContainer.effectiveClientHeight
                 shellSurface: windowContainer.xdgSurface
                 surface: windowContainer.xdgSurface
                          ? windowContainer.xdgSurface.surface : null
@@ -288,7 +310,7 @@ Item {
 
                 onActiveFocusChanged: {
                     if (activeFocus) {
-                        if (windowContainer.workspace)
+                        if (windowContainer.workspace && typeof windowContainer.workspace.raiseClientWindow === "function")
                             windowContainer.workspace.raiseClientWindow(windowContainer)
                         if (windowContainer.waylandServer && windowContainer.toplevel)
                             windowContainer.waylandServer.activateToplevel(windowContainer.toplevel)
@@ -346,14 +368,14 @@ Item {
             }
             onDragStarted: {
                 windowContainer.resizeAnchored = false
-                if (windowContainer.workspace)
+                if (windowContainer.workspace && typeof windowContainer.workspace.raiseClientWindow === "function")
                     windowContainer.workspace.raiseClientWindow(windowContainer)
                 if (windowContainer.toplevel && windowContainer.waylandServer)
                     windowContainer.waylandServer.activateToplevel(windowContainer.toplevel)
                 clientSurfaceItem.takeFocus()
             }
             onHeaderTapped: {
-                if (windowContainer.workspace)
+                if (windowContainer.workspace && typeof windowContainer.workspace.raiseClientWindow === "function")
                     windowContainer.workspace.raiseClientWindow(windowContainer)
                 if (windowContainer.toplevel && windowContainer.waylandServer)
                     windowContainer.waylandServer.activateToplevel(windowContainer.toplevel)

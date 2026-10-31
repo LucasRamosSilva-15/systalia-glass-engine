@@ -182,7 +182,14 @@ bool SystaliaCompositor::activateToplevel(QObject *toplevelObject) {
     m_windowStackModel->promoteWindow(toplevel);
 
     const auto configureSize = [](QWaylandXdgToplevel *window) {
-        return window->xdgSurface()->windowGeometry().size();
+        if (!window || !window->xdgSurface())
+            return QSize(0, 0);
+        QSize s = window->xdgSurface()->windowGeometry().size();
+        if (s.width() <= 0 || s.height() <= 0) {
+            if (window->xdgSurface()->surface())
+                s = window->xdgSurface()->surface()->destinationSize();
+        }
+        return s;
     };
 
     for (QWaylandXdgToplevel *candidate : std::as_const(m_activeToplevels)) {
@@ -190,9 +197,6 @@ bool SystaliaCompositor::activateToplevel(QObject *toplevelObject) {
             continue;
         }
         const QSize currentSize = configureSize(candidate);
-        if (currentSize.width() <= 0 || currentSize.height() <= 0) {
-            continue;
-        }
         QList<QWaylandXdgToplevel::State> states = candidate->states();
         states.removeAll(QWaylandXdgToplevel::ActivatedState);
         candidate->sendConfigure(currentSize, states);
@@ -203,9 +207,7 @@ bool SystaliaCompositor::activateToplevel(QObject *toplevelObject) {
         states.append(QWaylandXdgToplevel::ActivatedState);
     }
     const QSize currentSize = configureSize(toplevel);
-    if (currentSize.width() > 0 && currentSize.height() > 0) {
-        toplevel->sendConfigure(currentSize, states);
-    }
+    toplevel->sendConfigure(currentSize, states);
     return true;
 }
 
@@ -302,11 +304,6 @@ bool SystaliaCompositor::handleTaskSwitcherKeyEvent(QKeyEvent *event) {
         return false;
 
     if (event->key() == Qt::Key_Alt || event->key() == Qt::Key_Meta) {
-        if (!m_windowStackModel->taskSwitcherVisible()) {
-            m_altPressWasForwarded = false;
-            return false;
-        }
-
         QWaylandSeat *seat = defaultSeat();
         if (m_altPressWasForwarded && seat && seat->keyboard()) {
             const uint scanCode = seat->keyboard()->keyToScanCode(event->key());
@@ -314,6 +311,10 @@ bool SystaliaCompositor::handleTaskSwitcherKeyEvent(QKeyEvent *event) {
                 seat->sendKeyReleaseEvent(scanCode);
         }
         m_altPressWasForwarded = false;
+
+        if (!m_windowStackModel->taskSwitcherVisible()) {
+            return false;
+        }
 
         QObject *selected = m_windowStackModel->commitTaskSwitch();
         if (selected)

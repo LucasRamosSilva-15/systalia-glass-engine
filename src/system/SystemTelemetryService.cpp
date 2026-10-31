@@ -236,8 +236,22 @@ void SystemTelemetryService::sampleSystem() {
     const int currentFps = static_cast<int>(std::clamp(
         std::lround(measuredFps), 0L,
         static_cast<long>(std::numeric_limits<int>::max())));
+    const float currentFrameTimeMs = measuredFps > 0.0
+                                         ? static_cast<float>(1000.0 / measuredFps)
+                                         : 0.0f;
     setFps(currentFps);
+    setFrameTimeMs(currentFrameTimeMs);
     setSystemTime(formatSystemTime(QDateTime::currentDateTime()));
+
+    static const bool s_perfDebug = qEnvironmentVariableIntValue("SGE_DEBUG_PERF") == 1;
+    if (s_perfDebug) {
+        qDebug().noquote() << QStringLiteral("[SGE-PERF] FPS: %1 | FrameTime: %2 ms | CPU: %3% | RAM: %4 / %5 GB")
+                                  .arg(currentFps)
+                                  .arg(QString::number(currentFrameTimeMs, 'f', 2))
+                                  .arg(QString::number(m_cpuUsage, 'f', 1))
+                                  .arg(QString::number(m_ramUsageGb, 'f', 2))
+                                  .arg(QString::number(m_ramTotalGb, 'f', 2));
+    }
 }
 
 void SystemTelemetryService::setCpuUsage(float value) {
@@ -263,6 +277,13 @@ void SystemTelemetryService::setFps(int value) {
         return;
     m_fps = value;
     emit fpsChanged();
+}
+
+void SystemTelemetryService::setFrameTimeMs(float value) {
+    if (qFuzzyCompare(m_frameTimeMs + 1.0f, value + 1.0f))
+        return;
+    m_frameTimeMs = value;
+    emit frameTimeMsChanged();
 }
 
 void SystemTelemetryService::setSystemTime(const QString &value) {

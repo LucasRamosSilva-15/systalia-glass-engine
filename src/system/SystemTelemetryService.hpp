@@ -19,6 +19,7 @@ class SystemTelemetryService final : public QObject {
     Q_PROPERTY(float ramUsageGb READ ramUsageGb NOTIFY ramUsageGbChanged)
     Q_PROPERTY(float ramTotalGb READ ramTotalGb NOTIFY ramTotalGbChanged)
     Q_PROPERTY(int fps READ fps NOTIFY fpsChanged)
+    Q_PROPERTY(float frameTimeMs READ frameTimeMs NOTIFY frameTimeMsChanged)
     Q_PROPERTY(QString systemTime READ systemTime NOTIFY systemTimeChanged)
 
 public:
@@ -38,6 +39,7 @@ public:
     float ramUsageGb() const { return m_ramUsageGb; }
     float ramTotalGb() const { return m_ramTotalGb; }
     int fps() const { return m_fps; }
+    float frameTimeMs() const { return m_frameTimeMs; }
     QString systemTime() const { return m_systemTime; }
 
     Q_INVOKABLE void attachWindow(QQuickWindow *window);
@@ -54,6 +56,7 @@ signals:
     void ramUsageGbChanged();
     void ramTotalGbChanged();
     void fpsChanged();
+    void frameTimeMsChanged();
     void systemTimeChanged();
 
 private slots:
@@ -65,6 +68,7 @@ private:
     void setCpuUsage(float value);
     void setMemory(float usedGb, float totalGb);
     void setFps(int value);
+    void setFrameTimeMs(float value);
     void setSystemTime(const QString &value);
 
     QFile m_cpuStatFile{QStringLiteral("/proc/stat")};
@@ -80,5 +84,6 @@ private:
     float m_ramUsageGb = 0.0f;
     float m_ramTotalGb = 0.0f;
     int m_fps = 0;
+    float m_frameTimeMs = 0.0f;
     QString m_systemTime;
 };
