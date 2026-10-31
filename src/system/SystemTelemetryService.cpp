@@ -3,6 +3,7 @@
 #include <QIODevice>
 #include <QLocale>
 #include <QQuickWindow>
+#include <QScreen>
 #include <algorithm>
 #include <array>
 #include <charconv>
@@ -229,15 +230,28 @@ void SystemTelemetryService::sampleSystem() {
 
     const quint32 frames = m_pendingFrames.exchange(0, std::memory_order_relaxed);
     const qint64 elapsedMs = m_fpsSamplingClock.restart();
-    const double measuredFps = elapsedMs > 0
-                                   ? static_cast<double>(frames) * 1000.0
-                                         / static_cast<double>(elapsedMs)
-                                   : 0.0;
+
+    // O Systalia Desktop Environment opera com o alvo padrão de composição em 60 FPS (Figma SDE-KWIN | VALO).
+    // Mesmo em monitores com taxa de varredura elevada (ex: 100 Hz, 144 Hz) e com eventos de mouse
+    // disparando repaints frequentes ao mover ou redimensionar janelas, o teto da métrica de
+    // telemetria do compositor permanece estritamente fixado em 60 FPS.
+    constexpr double kTargetCompositorFps = 60.0;
+
+    double measuredFps = 0.0;
+    if (elapsedMs > 0 && frames > 0) {
+        measuredFps = static_cast<double>(frames) * 1000.0 / static_cast<double>(elapsedMs);
+    }
+
+    // Limitar ao teto alvo do compositor (60 FPS)
+    if (measuredFps > kTargetCompositorFps) {
+        measuredFps = kTargetCompositorFps;
+    }
+
     const int currentFps = static_cast<int>(std::clamp(
-        std::lround(measuredFps), 0L,
-        static_cast<long>(std::numeric_limits<int>::max())));
-    const float currentFrameTimeMs = measuredFps > 0.0
-                                         ? static_cast<float>(1000.0 / measuredFps)
+        std::lround(measuredFps), 0L, 60L));
+
+    const float currentFrameTimeMs = currentFps > 0
+                                         ? static_cast<float>(1000.0 / currentFps)
                                          : 0.0f;
     setFps(currentFps);
     setFrameTimeMs(currentFrameTimeMs);
