@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Shapes
 import Systalia.Engine
 import Systalia.System 1.0
 
@@ -11,7 +12,7 @@ Item {
     property var backdropSource: null
     property var screenResolution: Qt.vector2d(width, height)
     property real animationTime: 0.0
-    property vector4d cornerRadii: Qt.vector4d(22, 22, 22, 22)
+    property vector4d cornerRadii: Qt.vector4d(20, 20, 20, 20)
 
     anchors.fill: parent
     z: 115
@@ -42,9 +43,9 @@ Item {
 
     Item {
         id: panel
-        width: 358
-        height: 508
-        x: controlCenter.width - width - 16
+        width: 360
+        height: 520
+        x: controlCenter.width - width - 18
         y: controlCenter.opened ? 48 : -height - 12
         clip: true
 
@@ -58,19 +59,38 @@ Item {
             screenResolution: controlCenter.screenResolution
             radii: controlCenter.cornerRadii
             slant: 0.0
-            ior: 1.27
-            chromaticDispersion: 0.04
-            causticIntensity: 0.62
-            surfaceOpacity: 0.9
+            ior: 1.25
+            chromaticDispersion: 0.040
+            causticIntensity: 0.85
+            surfaceOpacity: 0.85
             time: controlCenter.animationTime
         }
 
         SystaliaG2Frame {
             anchors.fill: parent
             radii: controlCenter.cornerRadii
-            fillColor: "#d00b1b2d"
-            strokeColor: "#7880e9f5"
-            strokeWidth: 1
+            fillColor: "#e6071628"
+            strokeColor: "#c9ffffff"
+            strokeWidth: 1.25
+        }
+
+        // Camada superior de brilho / gloss perimetral VALO
+        Rectangle {
+            x: 4
+            y: 2.5
+            width: parent.width - 8
+            height: parent.height - 8
+            radius: 18
+            gradient: Gradient {
+                orientation: Gradient.Vertical
+                GradientStop { position: 0.0; color: "#40c8ffff" }
+                GradientStop { position: 0.34; color: "#1f61f0ff" }
+                GradientStop { position: 0.72; color: "#0b155279" }
+                GradientStop { position: 1.0; color: "#001b1834" }
+            }
+            border.color: "#24c8ffff"
+            border.width: 0.8
+            antialiasing: true
         }
 
         ColumnLayout {
@@ -97,15 +117,31 @@ Item {
                         font.pixelSize: 9
                     }
                 }
-                ToolButton {
-                    text: "×"
-                    Accessible.name: "Fechar central de controlo"
-                    onClicked: controlCenter.close()
-                    contentItem: Text {
-                        text: parent.text
-                        color: "#d9f7ff"
-                        font.pixelSize: 18
-                        horizontalAlignment: Text.AlignHCenter
+                Item {
+                    width: 26
+                    height: 26
+                    Rectangle {
+                        anchors.centerIn: parent
+                        width: 22
+                        height: 22
+                        radius: 11
+                        color: closeMouse.containsMouse ? "#66ff3b60" : "#30ff3b60"
+                        border.color: closeMouse.containsMouse ? "#ffb1cb" : "#70ff3b60"
+                        border.width: 1
+                        Text {
+                            anchors.centerIn: parent
+                            text: "✕"
+                            color: "#ffffff"
+                            font.pixelSize: 11
+                            font.bold: true
+                        }
+                    }
+                    MouseArea {
+                        id: closeMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: controlCenter.close()
                     }
                 }
             }
@@ -180,26 +216,82 @@ Item {
                         x: volumeSlider.leftPadding
                         y: volumeSlider.topPadding + volumeSlider.availableHeight / 2 - height / 2
                         width: volumeSlider.availableWidth
-                        height: 5
-                        radius: 3
-                        color: "#46566f80"
+                        height: 12
+                        radius: 8
+                        color: "#f0031529"
+                        border.color: "#4273bada"
+                        border.width: 0.7
+                        antialiasing: true
+
                         Rectangle {
-                            width: volumeSlider.visualPosition * parent.width
+                            anchors.fill: parent
+                            radius: 8
+                            color: "transparent"
+                            border.color: "#50000000"
+                            border.width: 1
+                        }
+
+                        Rectangle {
+                            x: 0
+                            y: 0
+                            width: Math.max(0, volumeSlider.visualPosition * parent.width)
                             height: parent.height
-                            radius: 3
-                            color: "#29c8e6"
+                            radius: 8
+                            gradient: Gradient {
+                                orientation: Gradient.Vertical
+                                GradientStop { position: 0.0; color: "#14c4e7" }
+                                GradientStop { position: 1.0; color: "#17f5df" }
+                            }
+                            antialiasing: true
                         }
                     }
-                    handle: Rectangle {
+                    handle: Item {
                         x: volumeSlider.leftPadding + volumeSlider.visualPosition
                            * (volumeSlider.availableWidth - width)
                         y: volumeSlider.topPadding + volumeSlider.availableHeight / 2 - height / 2
-                        width: 17
-                        height: 17
-                        radius: 9
-                        color: "#d6fbff"
-                        border.color: "#41cce8"
-                        border.width: 2
+                        width: 20
+                        height: 20
+
+                        Rectangle {
+                            anchors.centerIn: parent
+                            anchors.verticalCenterOffset: 2
+                            width: 18
+                            height: 18
+                            radius: 9
+                            color: "#8c000000"
+                        }
+
+                        Shape {
+                            anchors.centerIn: parent
+                            width: 20
+                            height: 20
+                            layer.enabled: true
+                            layer.samples: 4
+                            ShapePath {
+                                strokeWidth: 0
+                                fillGradient: RadialGradient {
+                                    centerX: 10; centerY: 10
+                                    focalX: 10; focalY: 10
+                                    centerRadius: 10; focalRadius: 0
+                                    GradientStop { position: 0.0; color: "#ffffff" }
+                                    GradientStop { position: 0.30; color: "#dbfbff" }
+                                    GradientStop { position: 0.68; color: "#8ce6f4" }
+                                    GradientStop { position: 1.0; color: "#4387ba" }
+                                }
+                                startX: 0; startY: 10
+                                PathArc { x: 20; y: 10; radiusX: 10; radiusY: 10 }
+                                PathArc { x: 0; y: 10; radiusX: 10; radiusY: 10 }
+                            }
+                        }
+
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: 10
+                            color: "transparent"
+                            border.color: "#cce8ffff"
+                            border.width: 1
+                            antialiasing: true
+                        }
                     }
                 }
             }
@@ -235,26 +327,82 @@ Item {
                         x: brightnessSlider.leftPadding
                         y: brightnessSlider.topPadding + brightnessSlider.availableHeight / 2 - height / 2
                         width: brightnessSlider.availableWidth
-                        height: 5
-                        radius: 3
-                        color: "#46566f80"
+                        height: 12
+                        radius: 8
+                        color: "#f0031529"
+                        border.color: "#4273bada"
+                        border.width: 0.7
+                        antialiasing: true
+
                         Rectangle {
-                            width: brightnessSlider.visualPosition * parent.width
+                            anchors.fill: parent
+                            radius: 8
+                            color: "transparent"
+                            border.color: "#50000000"
+                            border.width: 1
+                        }
+
+                        Rectangle {
+                            x: 0
+                            y: 0
+                            width: Math.max(0, brightnessSlider.visualPosition * parent.width)
                             height: parent.height
-                            radius: 3
-                            color: "#29c8e6"
+                            radius: 8
+                            gradient: Gradient {
+                                orientation: Gradient.Vertical
+                                GradientStop { position: 0.0; color: "#14c4e7" }
+                                GradientStop { position: 1.0; color: "#17f5df" }
+                            }
+                            antialiasing: true
                         }
                     }
-                    handle: Rectangle {
+                    handle: Item {
                         x: brightnessSlider.leftPadding + brightnessSlider.visualPosition
                            * (brightnessSlider.availableWidth - width)
                         y: brightnessSlider.topPadding + brightnessSlider.availableHeight / 2 - height / 2
-                        width: 17
-                        height: 17
-                        radius: 9
-                        color: "#d6fbff"
-                        border.color: "#41cce8"
-                        border.width: 2
+                        width: 20
+                        height: 20
+
+                        Rectangle {
+                            anchors.centerIn: parent
+                            anchors.verticalCenterOffset: 2
+                            width: 18
+                            height: 18
+                            radius: 9
+                            color: "#8c000000"
+                        }
+
+                        Shape {
+                            anchors.centerIn: parent
+                            width: 20
+                            height: 20
+                            layer.enabled: true
+                            layer.samples: 4
+                            ShapePath {
+                                strokeWidth: 0
+                                fillGradient: RadialGradient {
+                                    centerX: 10; centerY: 10
+                                    focalX: 10; focalY: 10
+                                    centerRadius: 10; focalRadius: 0
+                                    GradientStop { position: 0.0; color: "#ffffff" }
+                                    GradientStop { position: 0.30; color: "#dbfbff" }
+                                    GradientStop { position: 0.68; color: "#8ce6f4" }
+                                    GradientStop { position: 1.0; color: "#4387ba" }
+                                }
+                                startX: 0; startY: 10
+                                PathArc { x: 20; y: 10; radiusX: 10; radiusY: 10 }
+                                PathArc { x: 0; y: 10; radiusX: 10; radiusY: 10 }
+                            }
+                        }
+
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: 10
+                            color: "transparent"
+                            border.color: "#cce8ffff"
+                            border.width: 1
+                            antialiasing: true
+                        }
                     }
                 }
             }
@@ -307,7 +455,7 @@ Item {
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: toggleButton.glyph
-                color: toggleButton.active ? "#f1fcff" : "#a8c2d1"
+                color: toggleButton.active ? "#ffffff" : "#a8c2d1"
                 font.pixelSize: 19
                 font.bold: true
             }
@@ -321,35 +469,110 @@ Item {
                 elide: Text.ElideRight
             }
         }
-        background: Rectangle {
-            radius: 13
-            color: toggleButton.active ? "#3c26a8c8" : "#2925364b"
-            border.color: toggleButton.active ? "#8168e1f0" : "#314d687a"
-            border.width: 1
+        background: Item {
+            anchors.fill: parent
+
+            // Sombra quando ativo
+            Rectangle {
+                anchors.fill: parent
+                anchors.topMargin: 2
+                radius: 13
+                visible: toggleButton.active
+                color: "#5900101d"
+            }
+
+            // Corpo ativo com gradiente diagonal 135deg
+            Shape {
+                anchors.fill: parent
+                visible: toggleButton.active
+                layer.enabled: true
+                layer.samples: 4
+                ShapePath {
+                    strokeWidth: 0
+                    fillGradient: LinearGradient {
+                        x1: 0; y1: 0
+                        x2: toggleButton.width; y2: toggleButton.height
+                        GradientStop { position: 0.1389; color: "#3d9fefff" }
+                        GradientStop { position: 0.2778; color: "#6e5bbce5" }
+                        GradientStop { position: 0.5208; color: "#b819587d" }
+                        GradientStop { position: 0.8333; color: "#e010334e" }
+                    }
+                    startX: 13; startY: 0
+                    PathLine { x: toggleButton.width - 13; y: 0 }
+                    PathArc { x: toggleButton.width; y: 13; radiusX: 13; radiusY: 13 }
+                    PathLine { x: toggleButton.width; y: toggleButton.height - 13 }
+                    PathArc { x: toggleButton.width - 13; y: toggleButton.height; radiusX: 13; radiusY: 13 }
+                    PathLine { x: 13; y: toggleButton.height }
+                    PathArc { x: 0; y: toggleButton.height - 13; radiusX: 13; radiusY: 13 }
+                    PathLine { x: 0; y: 13 }
+                    PathArc { x: 13; y: 0; radiusX: 13; radiusY: 13 }
+                }
+            }
+
+            // Inset highlight superior (ativo)
+            Rectangle {
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.top: parent.top
+                anchors.topMargin: 1
+                width: parent.width - 14
+                height: 1
+                color: "#52ffffff"
+                visible: toggleButton.active
+            }
+
+            // Inativo
+            Rectangle {
+                anchors.fill: parent
+                radius: 13
+                visible: !toggleButton.active
+                color: toggleButton.hovered ? "#2419354d" : "#180d2235"
+                border.color: toggleButton.hovered ? "#4a7e9fc0" : "#244d6c82"
+                border.width: 1
+            }
+
+            // Borda ativa
+            Rectangle {
+                anchors.fill: parent
+                radius: 13
+                visible: toggleButton.active
+                color: "transparent"
+                border.color: "#c7f9ffff"
+                border.width: 1.1
+            }
         }
     }
 
     component StatusPill: Rectangle {
         property string label: ""
         property bool active: false
-        implicitHeight: 29
+        implicitHeight: 30
         radius: 14
-        color: active ? "#252c9cbb" : "#202a3b4a"
-        border.color: active ? "#4d74d8e7" : "#2c526274"
+        color: active ? "#250b4460" : "#1a091c2c"
+        border.color: active ? "#5edbf5" : "#2c526274"
+        border.width: 1
         Row {
             anchors.centerIn: parent
-            spacing: 5
+            spacing: 6
             Rectangle {
                 anchors.verticalCenter: parent.verticalCenter
-                width: 6
-                height: 6
-                radius: 3
-                color: active ? "#4de3c6" : "#657d8c"
+                width: 7
+                height: 7
+                radius: 3.5
+                color: active ? "#17f5df" : "#506e80"
+                Rectangle {
+                    anchors.centerIn: parent
+                    width: 13
+                    height: 13
+                    radius: 6.5
+                    color: "#3017f5df"
+                    visible: active
+                }
             }
             Text {
                 text: parent.parent.label
-                color: "#c3dbe7"
-                font.pixelSize: 8
+                color: active ? "#ebf9ff" : "#9db3c1"
+                font.pixelSize: 9
+                font.bold: active
             }
         }
     }

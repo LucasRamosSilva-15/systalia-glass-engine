@@ -19,6 +19,15 @@ Item {
     height: 45
     z: 100
 
+    // Sombra luminosa externa ciano conforme style.css: box-shadow: 0px 4px 18px rgba(9, 186, 237, 0.2)
+    Rectangle {
+        anchors.fill: parent
+        anchors.topMargin: 4
+        radius: 22
+        color: "#3309baed"
+        z: -1
+    }
+
     SystaliaGlassItem {
         anchors.fill: parent
         backdropSource: topBar.backdropSource
@@ -38,6 +47,24 @@ Item {
         fillColor: "#db071628"
         strokeColor: "#3d74d5ee"
         strokeWidth: 1
+    }
+
+    // Camada superior de brilho / gloss perimetral VALO
+    Rectangle {
+        x: 4
+        y: 2
+        width: parent.width - 8
+        height: parent.height - 4
+        radius: 20
+        gradient: Gradient {
+            orientation: Gradient.Vertical
+            GradientStop { position: 0.0; color: "#35c8ffff" }
+            GradientStop { position: 0.45; color: "#1061f0ff" }
+            GradientStop { position: 1.0; color: "#00155279" }
+        }
+        border.color: "#24c8ffff"
+        border.width: 0.8
+        antialiasing: true
     }
 
     Image {
@@ -111,10 +138,11 @@ Item {
     }
 
     Row {
-        x: 1331
-        y: 7.5
-        width: 290
+        anchors.right: parent.right
+        anchors.rightMargin: 18
+        anchors.verticalCenter: parent.verticalCenter
         height: 30
+        spacing: 4
 
         Repeater {
             model: [
@@ -128,7 +156,7 @@ Item {
 
             delegate: StatusButton {
                 required property var modelData
-                width: 48
+                width: 44
                 height: 30
                 glyph: modelData.glyph
                 accessibleName: modelData.name
@@ -162,9 +190,9 @@ Item {
             antialiasing: true
         }
         background: Rectangle {
-            radius: 5
-            color: statusButton.hovered ? "#2747a9c2" : "transparent"
-            border.color: statusButton.hovered ? "#3d9de0f0" : "transparent"
+            radius: 8
+            color: statusButton.hovered ? "#2b3d8ea8" : "transparent"
+            border.color: statusButton.hovered ? "#60a8eaf5" : "transparent"
             border.width: 1
             antialiasing: true
         }

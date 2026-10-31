@@ -32,6 +32,15 @@ Item {
     signal ideRequested()
     signal settingsRequested()
 
+    // Sombra de queda base conforme style.css: box-shadow: 0px 12px 20px rgba(0, 13, 33, 0.35)
+    Rectangle {
+        anchors.fill: parent
+        anchors.topMargin: 12
+        radius: dock.pillRadius
+        color: "#59000d21"
+        z: -1
+    }
+
     readonly property var launchers: [
         { action: "files", label: "Systalia Files", icon: "valo-dock-folder.png", appIds: ["systalia-files"] },
         { action: "audio", label: "Áudio", icon: "valo-dock-speaker.png", appIds: ["pavucontrol", "pwvucontrol", "org.pulseaudio.pavucontrol"] },
@@ -84,30 +93,50 @@ Item {
     SystaliaG2Frame {
         anchors.fill: parent
         radii: dock.cornerRadii
+        // Gradiente a 135deg conforme style.css:
+        // linear-gradient(135deg, rgba(93, 159, 184, 0.29) 7.14%, rgba(25, 76, 112, 0.34) 35.71%, rgba(10, 39, 65, 0.39) 78.57%)
         fillGradient: LinearGradient {
             x1: 0
             y1: 0
-            x2: 0
+            x2: dock.width
             y2: dock.height
-            GradientStop { position: 0.0; color: "#4a5d9fb8" }
-            GradientStop { position: 0.34; color: "#56194c70" }
-            GradientStop { position: 1.0; color: "#63102741" }
+            GradientStop { position: 0.0714; color: "#4a5d9fb8" }
+            GradientStop { position: 0.3571; color: "#57194c70" }
+            GradientStop { position: 0.7857; color: "#630a2741" }
         }
         strokeColor: "#c2e8ffff"
         strokeWidth: 1.25
     }
 
+    // Inset highlight superior conforme style.css (inset 0px 2px 2px rgba(255, 255, 255, 0.25))
     Rectangle {
-        x: 34
+        x: 47
         y: 2
-        width: parent.width - 68
-        height: 1
+        width: parent.width - 94
+        height: 2
+        radius: 1
         gradient: Gradient {
             orientation: Gradient.Horizontal
             GradientStop { position: 0; color: "transparent" }
-            GradientStop { position: .18; color: "#3deeffff" }
-            GradientStop { position: .82; color: "#3deeffff" }
+            GradientStop { position: .2; color: "#40ffffff" }
+            GradientStop { position: .8; color: "#40ffffff" }
             GradientStop { position: 1; color: "transparent" }
+        }
+        antialiasing: true
+    }
+
+    // Inset shadow inferior conforme style.css (inset 0px -3px 5px rgba(6, 19, 38, 0.35))
+    Rectangle {
+        x: 47
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 2
+        width: parent.width - 94
+        height: 4
+        radius: 2
+        gradient: Gradient {
+            orientation: Gradient.Vertical
+            GradientStop { position: 0; color: "#00061326" }
+            GradientStop { position: 1; color: "#59061326" }
         }
         antialiasing: true
     }
