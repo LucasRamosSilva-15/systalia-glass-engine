@@ -315,56 +315,78 @@ Item {
         }
     }
 
-    Text {
-        x: 207.5
-        y: 57
-        width: 83
-        height: 44
-        text: "‹   ›"
-        color: "#c5eeff"
-        font.family: SystaliaTheme.fontFamily
-        font.pixelSize: 26
-        antialiasing: true
+    // Botões de navegação voltar/avançar (style.css: left: 207px, top: 60px, color: rgba(140, 241, 255, 0.92))
+    Row {
+        x: 207
+        y: 60
+        spacing: 12
+
+        Text {
+            text: "‹"
+            color: "#eb8cf1ff"
+            font.family: SystaliaTheme.fontFamily
+            font.pixelSize: 26
+            font.weight: Font.Bold
+            antialiasing: true
+            HoverHandler { cursorShape: Qt.PointingHandCursor }
+        }
+
+        Text {
+            text: "›"
+            color: "#668cf1ff"
+            font.family: SystaliaTheme.fontFamily
+            font.pixelSize: 26
+            font.weight: Font.Bold
+            antialiasing: true
+            HoverHandler { cursorShape: Qt.PointingHandCursor }
+        }
     }
 
+    // Pasta atual no breadcrumb (style.css: width: 90px, height: 30px, left: 276px, top: 60px, background: rgba(16, 56, 82, 0.85))
     Rectangle {
-        x: 274.5
-        y: 58.5
-        width: 90
+        x: 276
+        y: 60
+        width: Math.max(90, folderNameText.implicitWidth + 24)
         height: 30
         radius: 7
-        color: "#d8103852"
+        color: "#d9103852"
+        border.color: "#28ffffff"
+        border.width: 0.8
         antialiasing: true
+
         Text {
-            x: 11
-            anchors.verticalCenter: parent.verticalCenter
-            text: "⌂ " + fileWindow.selectedLocation
+            id: folderNameText
+            anchors.centerIn: parent
+            text: "⌂  " + fileWindow.selectedLocation
             color: "#e6fbff"
             font.family: SystaliaTheme.fontFamily
-            font.pixelSize: 16
+            font.pixelSize: 15
             font.weight: Font.Medium
             antialiasing: true
         }
     }
 
+    // Alternador de visualização em grade/lista (style.css: left: 490px, top: 65px, font-size: 21px, color: #C2EFFF)
     Text {
-        x: 488.5
-        y: 57
+        x: 490
+        y: 62
         width: 30
-        height: 38
-        text: "☷"
+        height: 28
+        text: "≡"
         color: "#c2efff"
         font.family: SystaliaTheme.fontFamily
-        font.pixelSize: 21
+        font.pixelSize: 22
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
         antialiasing: true
+        HoverHandler { cursorShape: Qt.PointingHandCursor }
     }
 
+    // Campo de busca (style.css: width: 157px, height: 28px, left: 526px, top: 61px, background: rgba(10, 37, 53, 0.73))
     TextField {
         id: searchField
-        x: 524.5
-        y: 59.5
+        x: 526
+        y: 61
         width: 157
         height: 28
         placeholderText: "⌕ Search"
@@ -372,18 +394,24 @@ Item {
         placeholderTextColor: "#bdcfdc"
         font.family: SystaliaTheme.fontFamily
         font.pixelSize: 15
-        leftPadding: 13
+        leftPadding: 14
+        topPadding: 0
+        bottomPadding: 0
+        verticalAlignment: TextInput.AlignVCenter
         background: Rectangle {
             radius: 14
             color: "#ba0a2535"
+            border.color: "#26ffffff"
+            border.width: 0.8
             antialiasing: true
         }
         selectionColor: "#7d42e9ee"
     }
 
+    // Linha divisória horizontal (style.css: width: 476px, height: 1px, left: 208px, top: 97px, background: rgba(178, 243, 253, 0.3))
     Rectangle {
-        x: 206.5
-        y: 95.5
+        x: 208
+        y: 97
         width: 476
         height: 1
         color: "#4db2f3fd"

@@ -197,38 +197,95 @@ Item {
         delegate: Item {
             id: navigationEntry
             required property var modelData
-            x: 10.5
-            y: 59.5 + modelData.top
-            width: 197
-            height: modelData.name === materialWindow.selectedSection ? 37 : 28
+            x: 12
+            y: 61 + modelData.top - 6
+            width: 180
+            height: 37
 
-            Rectangle {
-                x: -0.5
-                y: modelData.name === materialWindow.selectedSection ? -7 : 0
-                width: 180
-                height: 37
+            Item {
+                anchors.fill: parent
                 visible: navigationEntry.modelData.name === materialWindow.selectedSection
-                radius: 8
-                gradient: Gradient {
-                    orientation: Gradient.Vertical
-                    GradientStop { position: 0; color: "#3d9fefff" }
-                    GradientStop { position: 0.5; color: "#6e19587d" }
-                    GradientStop { position: 1; color: "#e010334e" }
+
+                // Sombra de queda base (0px 3px 5px rgba(0, 16, 29, 0.35))
+                Rectangle {
+                    anchors.fill: parent
+                    anchors.topMargin: 2
+                    radius: 8
+                    color: "#5900101d"
                 }
-                border.color: "#c7f9ffff"
-                border.width: 1
-                antialiasing: true
+
+                // Corpo com gradiente 135deg nativo
+                Shape {
+                    anchors.fill: parent
+                    layer.enabled: true
+                    layer.samples: 4
+
+                    ShapePath {
+                        strokeWidth: 0
+                        fillGradient: LinearGradient {
+                            x1: 0; y1: 0
+                            x2: 180; y2: 37
+                            GradientStop { position: 0.1389; color: "#3d9fefff" }
+                            GradientStop { position: 0.2778; color: "#6e5bbce5" }
+                            GradientStop { position: 0.5208; color: "#b819587d" }
+                            GradientStop { position: 0.8333; color: "#e010334e" }
+                        }
+                        startX: 8; startY: 0
+                        PathLine { x: 172; y: 0 }
+                        PathArc { x: 180; y: 8; radiusX: 8; radiusY: 8 }
+                        PathLine { x: 180; y: 29 }
+                        PathArc { x: 172; y: 37; radiusX: 8; radiusY: 8 }
+                        PathLine { x: 8; y: 37 }
+                        PathArc { x: 0; y: 29; radiusX: 8; radiusY: 8 }
+                        PathLine { x: 0; y: 8 }
+                        PathArc { x: 8; y: 0; radiusX: 8; radiusY: 8 }
+                    }
+                }
+
+                // Inset highlight superior (inset 0px 1px 1px rgba(255, 255, 255, 0.32))
+                Rectangle {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.top: parent.top
+                    anchors.topMargin: 1
+                    width: parent.width - 12
+                    height: 1
+                    color: "#52ffffff"
+                }
+
+                // Inset shadow inferior (inset 0px -2px 4px rgba(6, 24, 45, 0.4))
+                Rectangle {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.bottom: parent.bottom
+                    anchors.bottomMargin: 1
+                    width: parent.width - 10
+                    height: 3
+                    gradient: Gradient {
+                        orientation: Gradient.Vertical
+                        GradientStop { position: 0; color: "#0006182d" }
+                        GradientStop { position: 1; color: "#6606182d" }
+                    }
+                }
+
+                // Borda perimetral
+                Rectangle {
+                    anchors.fill: parent
+                    radius: 8
+                    color: "transparent"
+                    border.color: "#30ffffff"
+                    border.width: 0.8
+                    antialiasing: true
+                }
             }
 
             Text {
                 x: 10
-                y: 0
-                width: 181
-                height: 27
+                anchors.verticalCenter: parent.verticalCenter
+                width: 160
                 text: navigationEntry.modelData.icon + "  " + navigationEntry.modelData.name
                 color: navigationEntry.modelData.name === materialWindow.selectedSection ? "#42e9ee" : "#d4e8ed"
                 font.family: SystaliaTheme.fontFamily
                 font.pixelSize: 16
+                font.weight: navigationEntry.modelData.name === materialWindow.selectedSection ? Font.Medium : Font.Normal
                 antialiasing: true
                 HoverHandler { cursorShape: Qt.PointingHandCursor }
                 TapHandler {
@@ -261,38 +318,89 @@ Item {
 
     Repeater {
         model: [
-            { label: "▣  Default", top: 378.5 },
-            { label: "⚙  Buttons", top: 423.5 },
-            { label: "Options", top: 468.5 }
+            { label: "▣  Default", top: 380 },
+            { label: "⚙  Buttons", top: 425 },
+            { label: "Options", top: 470 }
         ]
 
-        delegate: Rectangle {
+        delegate: Item {
             id: optionButton
             required property var modelData
-            x: 22.5
+            x: 24
             y: optionButton.modelData.top
             width: 165
             height: 32
-            radius: 15
-            gradient: Gradient {
-                orientation: Gradient.Vertical
-                GradientStop { position: 0; color: "#3d9fefff" }
-                GradientStop { position: 0.5; color: "#6e19587d" }
-                GradientStop { position: 1; color: "#e010334e" }
-            }
-            border.color: "#bff9ffff"
-            border.width: 1
-            antialiasing: true
 
+            // Sombra de queda base (0px 3px 5px rgba(0, 16, 29, 0.35))
             Rectangle {
                 anchors.fill: parent
-                anchors.margins: 1
-                radius: 14
+                anchors.topMargin: 2
+                radius: 15
+                color: "#5900101d"
+            }
+
+            // Corpo com gradiente 135deg (style.css: Dropdown 0/1/2)
+            Shape {
+                anchors.fill: parent
+                layer.enabled: true
+                layer.samples: 4
+
+                ShapePath {
+                    strokeWidth: 0
+                    fillGradient: LinearGradient {
+                        x1: 0; y1: 0
+                        x2: 165; y2: 32
+                        GradientStop { position: 0.1389; color: "#3d9fefff" }
+                        GradientStop { position: 0.2778; color: "#6e5bbce5" }
+                        GradientStop { position: 0.5208; color: "#b819587d" }
+                        GradientStop { position: 0.8333; color: "#e010334e" }
+                    }
+                    startX: 15; startY: 0
+                    PathLine { x: 150; y: 0 }
+                    PathArc { x: 165; y: 15; radiusX: 15; radiusY: 15 }
+                    PathLine { x: 165; y: 17 }
+                    PathArc { x: 150; y: 32; radiusX: 15; radiusY: 15 }
+                    PathLine { x: 15; y: 32 }
+                    PathArc { x: 0; y: 17; radiusX: 15; radiusY: 15 }
+                    PathLine { x: 0; y: 15 }
+                    PathArc { x: 15; y: 0; radiusX: 15; radiusY: 15 }
+                }
+            }
+
+            // Inset highlight superior (inset 0px 1px 1px rgba(255, 255, 255, 0.32))
+            Rectangle {
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.top: parent.top
+                anchors.topMargin: 1
+                width: parent.width - 24
+                height: 1
+                color: "#52ffffff"
+            }
+
+            // Inset shadow inferior (inset 0px -2px 4px rgba(6, 24, 45, 0.4))
+            Rectangle {
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: 1
+                width: parent.width - 20
+                height: 3
+                gradient: Gradient {
+                    orientation: Gradient.Vertical
+                    GradientStop { position: 0; color: "#0006182d" }
+                    GradientStop { position: 1; color: "#6606182d" }
+                }
+            }
+
+            // Borda do botão
+            Rectangle {
+                anchors.fill: parent
+                radius: 15
                 color: "transparent"
-                border.color: "#2bffffff"
-                border.width: 0.7
+                border.color: "#30ffffff"
+                border.width: 0.8
                 antialiasing: true
             }
+
             Text {
                 x: 17
                 anchors.verticalCenter: parent.verticalCenter
@@ -302,6 +410,8 @@ Item {
                 font.pixelSize: 15
                 antialiasing: true
             }
+
+            HoverHandler { cursorShape: Qt.PointingHandCursor }
         }
     }
 
