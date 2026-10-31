@@ -66,11 +66,59 @@ Item {
             x1: 0
             y1: 0
             x2: fileWindow.width
-            y2: 0
-            GradientStop { position: 0.0; color: "#63264f76" }
-            GradientStop { position: 0.24; color: "#754bafc7" }
-            GradientStop { position: 0.52; color: "#63133a5d" }
-            GradientStop { position: 1.0; color: "#6809233f" }
+            y2: fileWindow.height * 0.75
+            GradientStop { position: 0.08; color: "#4d264f76" }
+            GradientStop { position: 0.24; color: "#554bafc7" }
+            GradientStop { position: 0.52; color: "#48133a5d" }
+            GradientStop { position: 0.88; color: "#5509233f" }
+        }
+    }
+
+    // Camada de dispersão cromática e feixes cáusticos de refração
+    Item {
+        anchors.fill: parent
+        clip: true
+
+        // Prisma interno cáustico (âmbar dourado e ciano)
+        Image {
+            x: -8.92
+            y: 99.96
+            width: 565.335
+            height: 492.371
+            source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-files-prism.png"
+            sourceSize: Qt.size(1056, 804)
+            fillMode: Image.Stretch
+            smooth: true
+            mipmap: true
+            opacity: 1.85
+        }
+
+        // Fita espectral cáustica (dispersão ciano, dourada e violeta)
+        Image {
+            x: -88.44
+            y: 67.92
+            width: 599.68
+            height: 512.41
+            source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-files-ribbon.png"
+            sourceSize: Qt.size(994, 868)
+            fillMode: Image.Stretch
+            smooth: true
+            mipmap: true
+            opacity: 2.1
+        }
+
+        // Refração de borda violeta-ciano
+        Image {
+            x: 196.77
+            y: 13.5
+            width: 449.24
+            height: 524.653
+            source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-files-edge.png"
+            sourceSize: Qt.size(764, 962)
+            fillMode: Image.Stretch
+            smooth: true
+            mipmap: true
+            opacity: 1.65
         }
     }
 
@@ -92,53 +140,12 @@ Item {
         antialiasing: true
     }
 
-    Item {
-        anchors.fill: parent
-        clip: true
-
-        Image {
-            x: -8.92
-            y: 99.96
-            width: 565.335
-            height: 492.371
-            source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-files-prism.png"
-            sourceSize: Qt.size(1056, 804)
-            fillMode: Image.Stretch
-            smooth: true
-            mipmap: true
-        }
-
-        Image {
-            x: -88.44
-            y: 67.92
-            width: 599.68
-            height: 512.41
-            source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-files-ribbon.png"
-            sourceSize: Qt.size(994, 868)
-            fillMode: Image.Stretch
-            smooth: true
-            mipmap: true
-        }
-
-        Image {
-            x: 196.77
-            y: 13.5
-            width: 449.24
-            height: 524.653
-            source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-files-edge.png"
-            sourceSize: Qt.size(764, 962)
-            fillMode: Image.Stretch
-            smooth: true
-            mipmap: true
-        }
-    }
-
     SystaliaG2Frame {
         anchors.fill: parent
         radii: fileWindow.cornerRadii
         slant: fileWindow.surfaceSlant
-        strokeColor: "#c9ffffff"
-        strokeWidth: 1.5
+        strokeColor: "#a8ffffff"
+        strokeWidth: 1.25
     }
 
     SystaliaWindowHeader {

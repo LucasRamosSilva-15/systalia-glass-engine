@@ -104,8 +104,8 @@ Item {
             GradientStop { position: 0.3571; color: "#57194c70" }
             GradientStop { position: 0.7857; color: "#630a2741" }
         }
-        strokeColor: "#c2e8ffff"
-        strokeWidth: 1.25
+        strokeColor: "transparent"
+        strokeWidth: 0
     }
 
     // Inset highlight superior conforme style.css (inset 0px 2px 2px rgba(255, 255, 255, 0.25))

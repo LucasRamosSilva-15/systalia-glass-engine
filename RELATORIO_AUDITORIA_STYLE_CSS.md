@@ -155,3 +155,26 @@ Esta seção aprofunda os elementos da shell do sistema especificados no `style.
   - Squircles de ícones com gradiente de 4 stops, profundidade tridimensional e borda vítrea `#CCE8FFFF`.
 * **Badge e Tecla ESC:**
   - Inclusão do badge `VALO LAUNCHER` e tecla de atalho `ESC` em estilo keycap acrílico.
+
+---
+
+## 6. Calibração Fotométrica 1:1 com o Figma (style.css)
+
+### 6.1 Dispersão Cromática e Feixes Cáusticos Internos
+* **Problema anterior:** A área de conteúdo interno das janelas aparecia como azul oceânico uniforme, pois as camadas de prisma e fitas cáusticas tinham opacidade nativa muito baixa (`max alpha: 29` a `45`) e o gradiente de fundo da janela era horizontal simples.
+* **Solução implementada:**
+  - Injeção do **gradiente diagonal a 123.69°** (`fillGradient`) na superelipse G2 de ambas as janelas (`#4d264f76` → `#554bafc7` → `#48133a5d` → `#5509233f`).
+  - Elevação calibrada da opacidade dos feixes de refração (`valo-files-prism` / `valo-control-prism` em 1.85, `valo-files-ribbon` / `valo-control-ribbon` em 2.1 e `valo-files-edge` / `valo-control-edge` em 1.65), trazendo à tona o feixe diagonal âmbar dourado e a dispersão violeta característicos do vidro óptico VALO.
+  - Suavização do contorno perimetral das janelas para `#a8ffffff` com `1.25px`.
+
+### 6.2 Floating Dock (Cápsula Orgânica)
+* **Remoção da borda rígida externa:** De acordo com o CSS do Figma (linha 3649), a cápsula da Dock não possui borda vetorial externa (`border: none`), sendo delimitada exclusivamente pelo gradiente a 135°, a sombra externa (`box-shadow: 0px 12px 20px rgba(0, 13, 33, 0.35)`), o destaque especular superior de 2px e a sombra de base inferior. A remoção de `strokeColor` eliminou o contorno artificial que criava um aspecto de cápsula dupla.
+
+### 6.3 Paridade de Controles na Central de Materiais (`SystaliaMaterialWindow.qml`)
+* **Alinhamento dos Sliders com o Mockup do Figma:**
+  1. `Backdrop Blur Filter` — `65%` (governando o IOR)
+  2. `Glass Layer Opacity` — `100` (governando a opacidade de superfície)
+  3. `Glass Layer Opacity · Secondary` — `75%`
+  4. `Ambient Halo Dispersion` — `On` (governando a dispersão cromática)
+  5. `Ambient Halo Filters` — `10` (governando o relevo cáustico)
+  6. `Ambient Halo Dispersion · Strength` — `100%`

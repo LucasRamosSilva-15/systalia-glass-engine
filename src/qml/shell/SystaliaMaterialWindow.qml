@@ -63,11 +63,59 @@ Item {
             x1: 0
             y1: 0
             x2: materialWindow.width
-            y2: 0
-            GradientStop { position: 0.0; color: "#63264f76" }
-            GradientStop { position: 0.24; color: "#754bafc7" }
-            GradientStop { position: 0.52; color: "#63133a5d" }
-            GradientStop { position: 1.0; color: "#6809233f" }
+            y2: materialWindow.height * 0.75
+            GradientStop { position: 0.08; color: "#4d264f76" }
+            GradientStop { position: 0.24; color: "#554bafc7" }
+            GradientStop { position: 0.52; color: "#48133a5d" }
+            GradientStop { position: 0.88; color: "#5509233f" }
+        }
+    }
+
+    // Camada de dispersão cromática e feixes cáusticos de refração
+    Item {
+        anchors.fill: parent
+        clip: true
+
+        // Prisma interno cáustico (âmbar dourado e ciano)
+        Image {
+            x: -9.11
+            y: 99.96
+            width: 564.729
+            height: 492.062
+            source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-control-prism.png"
+            sourceSize: Qt.size(1054, 804)
+            fillMode: Image.Stretch
+            smooth: true
+            mipmap: true
+            opacity: 1.85
+        }
+
+        // Fita espectral cáustica (dispersão ciano, dourada e violeta)
+        Image {
+            x: -88.52
+            y: 67.92
+            width: 599.029
+            height: 512.018
+            source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-control-ribbon.png"
+            sourceSize: Qt.size(992, 870)
+            fillMode: Image.Stretch
+            smooth: true
+            mipmap: true
+            opacity: 2.1
+        }
+
+        // Refração de borda violeta-ciano
+        Image {
+            x: 196.23
+            y: 13.5
+            width: 448.856
+            height: 524.482
+            source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-control-edge.png"
+            sourceSize: Qt.size(764, 962)
+            fillMode: Image.Stretch
+            smooth: true
+            mipmap: true
+            opacity: 1.65
         }
     }
 
@@ -89,53 +137,12 @@ Item {
         antialiasing: true
     }
 
-    Item {
-        anchors.fill: parent
-        clip: true
-
-        Image {
-            x: -9.11
-            y: 99.96
-            width: 564.729
-            height: 492.062
-            source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-control-prism.png"
-            sourceSize: Qt.size(1054, 804)
-            fillMode: Image.Stretch
-            smooth: true
-            mipmap: true
-        }
-
-        Image {
-            x: -88.52
-            y: 67.92
-            width: 599.029
-            height: 512.018
-            source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-control-ribbon.png"
-            sourceSize: Qt.size(992, 870)
-            fillMode: Image.Stretch
-            smooth: true
-            mipmap: true
-        }
-
-        Image {
-            x: 196.23
-            y: 13.5
-            width: 448.856
-            height: 524.482
-            source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-control-edge.png"
-            sourceSize: Qt.size(764, 962)
-            fillMode: Image.Stretch
-            smooth: true
-            mipmap: true
-        }
-    }
-
     SystaliaG2Frame {
         anchors.fill: parent
         radii: materialWindow.cornerRadii
         slant: materialWindow.surfaceSlant
-        strokeColor: "#c9ffffff"
-        strokeWidth: 1.5
+        strokeColor: "#a8ffffff"
+        strokeWidth: 1.25
     }
 
     SystaliaWindowHeader {
@@ -584,67 +591,65 @@ Item {
             x: 22
             y: 55
             width: parent.width - 44
-            label: "Glass Layer Opacity"
-            value: materialWindow.surfaceOpacity
-            from: 0.2
-            to: 1
-            valueText: Math.round(materialWindow.surfaceOpacity * 100) + "%"
-            onChanged: materialWindow.surfaceOpacity = value
+            label: "Backdrop Blur Filter"
+            value: materialWindow.refractiveIndex
+            from: 1.0
+            to: 1.5
+            valueText: Math.round(52 + (value - 1.0) * 26) + "%"
+            onChanged: materialWindow.refractiveIndex = value
         }
         SettingSlider {
             x: 22
             y: 119
             width: parent.width - 44
-            label: "Refractive Index (IOR)"
-            value: materialWindow.refractiveIndex
-            from: 1
-            to: 1.5
-            valueText: materialWindow.refractiveIndex.toFixed(2)
-            onChanged: materialWindow.refractiveIndex = value
+            label: "Glass Layer Opacity"
+            value: materialWindow.surfaceOpacity
+            from: 0.2
+            to: 1.0
+            valueText: Math.round(value * 100).toString()
+            onChanged: materialWindow.surfaceOpacity = value
         }
         SettingSlider {
             x: 22
             y: 183
             width: parent.width - 44
-            label: "Chromatic Dispersion"
-            value: materialWindow.dispersion
-            from: 0
-            to: 0.08
-            valueText: materialWindow.dispersion.toFixed(3)
-            onChanged: materialWindow.dispersion = value
+            label: "Glass Layer Opacity · Secondary"
+            value: 0.75
+            from: 0.2
+            to: 1.0
+            valueText: Math.round(value * 100) + "%"
         }
         SettingSlider {
             x: 22
             y: 247
             width: parent.width - 44
-            label: "Caustic Intensity"
-            value: materialWindow.caustics
+            label: "Ambient Halo Dispersion"
+            value: materialWindow.dispersion
             from: 0
-            to: 1.5
-            valueText: materialWindow.caustics.toFixed(2)
-            onChanged: materialWindow.caustics = value
+            to: 0.08
+            valueText: value > 0.01 ? "On" : "Off"
+            onChanged: materialWindow.dispersion = value
         }
         SettingSlider {
             x: 22
             y: 311
             width: parent.width - 44
-            label: "Corner Radius"
-            value: materialWindow.cornerRadius
-            from: 10
-            to: 34
-            valueText: Math.round(materialWindow.cornerRadius) + " px"
-            onChanged: materialWindow.cornerRadius = value
+            label: "Ambient Halo Filters"
+            value: materialWindow.caustics
+            from: 0
+            to: 1.5
+            valueText: Math.round(value * 12).toString()
+            onChanged: materialWindow.caustics = value
         }
         SettingSlider {
             x: 22
             y: 375
             width: parent.width - 44
-            label: "Surface Slant"
-            value: materialWindow.surfaceSlant
-            from: 0
-            to: 0.2
-            valueText: materialWindow.surfaceSlant.toFixed(2)
-            onChanged: materialWindow.surfaceSlant = value
+            label: "Ambient Halo Dispersion · Strength"
+            value: 1.0
+            from: 0.2
+            to: 1.0
+            valueText: Math.round(value * 100) + "%"
         }
     }
 
