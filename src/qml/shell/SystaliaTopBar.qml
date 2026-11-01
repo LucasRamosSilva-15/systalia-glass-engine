@@ -6,6 +6,7 @@ Item {
     id: topBar
 
     property var telemetry: null
+    property var workspaceManager: null
     property var backdropSource: null
     property var screenResolution: Qt.vector2d(width, height)
     property real animationTime: 0
@@ -14,6 +15,7 @@ Item {
 
     signal launcherRequested()
     signal controlCenterRequested()
+    signal workspaceSelected(int index)
 
     width: 1646
     height: 45
@@ -108,7 +110,7 @@ Item {
     Text {
         x: 724
         anchors.verticalCenter: parent.verticalCenter
-        width: 300
+        width: 220
         text: topBar.telemetry
               ? topBar.telemetry.systemTime
               : topBar.dateNow.toLocaleDateString(Qt.locale("en_US"), "ddd dd MMM").toUpperCase()
@@ -118,6 +120,97 @@ Item {
         font.family: SystaliaTheme.fontFamily
         font.pixelSize: 17
         antialiasing: true
+    }
+
+    // Régua de 4 cápsulas translúcidas para os Espaços de Trabalho Virtuais (Etapa 4.1)
+    Rectangle {
+        id: workspaceIndicatorTrack
+        x: 960
+        anchors.verticalCenter: parent.verticalCenter
+        width: workspacePillsRow.implicitWidth + 16
+        height: 26
+        radius: 13
+        color: "#220a243d"
+        border.color: "#3374d5ee"
+        border.width: 1
+
+        Row {
+            id: workspacePillsRow
+            anchors.centerIn: parent
+            spacing: 8
+
+            Repeater {
+                model: topBar.workspaceManager ? topBar.workspaceManager.totalWorkspaces : 4
+
+                delegate: Rectangle {
+                    id: workspacePill
+                    required property int index
+                    readonly property bool isActive: topBar.workspaceManager
+                                                     ? (topBar.workspaceManager.currentWorkspace === index)
+                                                     : (index === 0)
+                    readonly property bool hasWindows: {
+                        if (!topBar.workspaceManager)
+                            return index === 0
+                        const rev = topBar.workspaceManager.workspaceWindowsRevision
+                        return rev >= 0 && topBar.workspaceManager.hasWindowsInWorkspace(index)
+                    }
+
+                    width: isActive ? 26 : 18
+                    height: 12
+                    radius: 6
+                    color: isActive ? "#00f0ff" : (pillHover.hovered ? "#4d74d5ee" : "#2674d5ee")
+                    border.color: isActive ? "#b3ffffff" : "#5574d5ee"
+                    border.width: 1
+                    scale: isActive ? 1.15 : (pillHover.hovered ? 1.05 : 1.0)
+                    antialiasing: true
+
+                    Behavior on width {
+                        NumberAnimation {
+                            duration: 180
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+
+                    Behavior on scale {
+                        NumberAnimation {
+                            duration: 180
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: 150
+                        }
+                    }
+
+                    // Ponto central indicador para espaços com janelas abertas
+                    Rectangle {
+                        width: 4
+                        height: 4
+                        radius: 2
+                        anchors.centerIn: parent
+                        visible: workspacePill.hasWindows
+                        color: workspacePill.isActive ? "#06182c" : "#00f0ff"
+                        antialiasing: true
+                    }
+
+                    HoverHandler {
+                        id: pillHover
+                        cursorShape: Qt.PointingHandCursor
+                    }
+
+                    TapHandler {
+                        cursorShape: Qt.PointingHandCursor
+                        onTapped: {
+                            if (topBar.workspaceManager)
+                                topBar.workspaceManager.switchToWorkspace(workspacePill.index)
+                            topBar.workspaceSelected(workspacePill.index)
+                        }
+                    }
+                }
+            }
+        }
     }
 
     Row {

@@ -68,6 +68,8 @@ qt_add_library(sge_core STATIC
     src/system/NotificationServer.cpp
     src/system/SystemControlService.hpp
     src/system/SystemControlService.cpp
+    src/system/WorkspaceManagerService.hpp
+    src/system/WorkspaceManagerService.cpp
 )
 
 qt6_generate_wayland_protocol_server_sources(sge_core
@@ -137,6 +139,7 @@ qt_add_qml_module(sge_core
     RESOURCE_PREFIX "/qt/qml"
     QML_FILES
         src/qml/main.qml
+        src/qml/WorkspaceViewport.qml
         src/qml/theme/SystaliaTheme.qml
         src/qml/WaylandClientView.qml
         src/qml/WaylandWindowContainer.qml

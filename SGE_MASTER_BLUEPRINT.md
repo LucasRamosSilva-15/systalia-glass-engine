@@ -128,7 +128,8 @@ O frame principal do redesign está em `src/qml/`: duas janelas de vidro, TopBar
 | 3.6 | Alternador de tarefas e foco de teclado | Modelo MRU, atalhos e QML presentes (tst_task_switcher 100% aprovado). Roteamento direto de teclado via QWaylandSeat::sendFullKeyEvent implementado para garantir que clientes Wayland recebam digitação e atalhos de forma robusta. |
 | 3.7 | Auditoria de performance Vulkan/RHI, profiling e vazamento de recursos | Implementado e auditado; pipeline RHI otimizado com eliminação de uploads UBO redundantes (`updateUniformData`), amostragem condicional de texturas, métrica de frametime em tempo real na telemetria e teste fechado `tst_resource_leak_audit` (100 iterações em loop) integrado com 24/24 testes (100%) aprovados no CTest. |
 | Redesign VALO/SDE | Nova linguagem visual a partir do Figma | Composição principal e vetores exportados implementados e capturados em 1662 × 975; comparação em outras escalas e validação no host alvo seguem pendentes. Control Center de material separado do quick panel. |
-| Fases 4–6 | Workspaces, tiling, multi-monitor, sessão autônoma, áudio e terminal | Roadmap; não implementado integralmente. |
+| 4.1 | Espaços de trabalho virtuais (Workspaces) e transição hidrodinâmica | Implementado; `WorkspaceManagerService`, `WorkspaceViewport.qml`, indicador de cápsulas na TopBar, isolamento de foco MRU por workspace, atalhos globais (`Super+Ctrl+Left/Right`, `Super+1..4`, `Super+Shift+1..4`), culling de Scene Graph e `tst_workspace_manager` com 25/25 testes aprovados. |
+| Fases 4.2–6 | Tiling, multi-monitor, sessão autônoma, áudio e terminal | Roadmap; não implementado integralmente. |
 
 ### Risco de execução conhecido
 

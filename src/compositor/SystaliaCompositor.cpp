@@ -15,7 +15,9 @@ SystaliaCompositor::SystaliaCompositor(QObject *parent)
             this, &SystaliaCompositor::onSurfaceAboutToBeDestroyed);
 
     m_surfaceExtension = new SystaliaSurfaceExtension(this);
-    m_xdgShell = new QWaylandXdgShell(this);
+    m_xdgShell = new QWaylandXdgShell();
+    m_xdgShell->setParent(this);
+    m_xdgShell->setExtensionContainer(this);
     connect(m_xdgShell, &QWaylandXdgShell::toplevelCreated,
             this, &SystaliaCompositor::onToplevelCreated);
     connect(m_xdgShell, &QWaylandXdgShell::popupCreated,
@@ -30,6 +32,46 @@ SystaliaCompositor::SystaliaCompositor(QObject *parent)
             this, &SystaliaCompositor::windowCountChanged);
     connect(m_windowStackModel, &WindowStackModel::windowSelected,
             this, &SystaliaCompositor::windowSelected);
+
+    m_workspaceManager = WorkspaceManagerService::instance();
+    if (!m_workspaceManager) {
+        m_workspaceManager = new WorkspaceManagerService(this);
+    }
+    connect(m_workspaceManager, &WorkspaceManagerService::currentWorkspaceChanged,
+            this, [this](int) {
+                syncFocusForCurrentWorkspace();
+                emit activeToplevelStateChanged();
+            });
+    connect(m_workspaceManager, &WorkspaceManagerService::objectWorkspaceChanged,
+            this, [this](QObject *obj, int ws) {
+                emit toplevelWorkspaceChanged(obj, ws);
+                emit activeToplevelStateChanged();
+            });
+    connect(m_workspaceManager, &WorkspaceManagerService::activeWindowMoveRequested,
+            this, [this](int targetIndex) {
+                QWaylandXdgToplevel *targetToplevel = nullptr;
+                if (QWaylandSeat *seat = defaultSeat()) {
+                    targetToplevel = toplevelForSurface(seat->keyboardFocus());
+                }
+                if (!targetToplevel && m_windowStackModel) {
+                    const int currentWs = m_workspaceManager->currentWorkspace();
+                    for (int i = 0; i < m_windowStackModel->windowCount(); ++i) {
+                        auto *candidate = qobject_cast<QWaylandXdgToplevel *>(
+                            m_windowStackModel->windowAt(i));
+                        if (candidate && !m_minimizedToplevels.contains(candidate)
+                            && m_workspaceManager->objectWorkspace(candidate) == currentWs) {
+                            targetToplevel = candidate;
+                            break;
+                        }
+                    }
+                }
+                if (targetToplevel) {
+                    m_workspaceManager->setObjectWorkspace(targetToplevel, targetIndex);
+                    if (targetIndex != m_workspaceManager->currentWorkspace()) {
+                        syncFocusForCurrentWorkspace();
+                    }
+                }
+            });
 
     // Instanciação e configuração forçada de Server-Side Decoration (zxdg_decoration_manager_v1)
     m_decorationManager = new QWaylandXdgDecorationManagerV1();
@@ -128,10 +170,13 @@ bool SystaliaCompositor::minimizeToplevel(QObject *toplevelObject) {
     if (!seat || !surface || seat->keyboardFocus() != surface)
         return true;
 
+    const int currentWs = m_workspaceManager ? m_workspaceManager->currentWorkspace() : 0;
     for (int index = 0; index < m_windowStackModel->windowCount(); ++index) {
         auto *candidate = qobject_cast<QWaylandXdgToplevel *>(
             m_windowStackModel->windowAt(index));
         if (!candidate || candidate == toplevel || m_minimizedToplevels.contains(candidate))
+            continue;
+        if (m_workspaceManager && m_workspaceManager->objectWorkspace(candidate) != currentWs)
             continue;
         if (activateToplevel(candidate))
             return true;
@@ -237,6 +282,15 @@ bool SystaliaCompositor::eventFilter(QObject *watched, QEvent *event) {
                 keyEvent->accept();
                 return true;
             }
+            if (keyEvent->modifiers().testFlag(Qt::MetaModifier)) {
+                keyEvent->accept();
+                return true;
+            }
+        }
+        if ((event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease)
+            && handleWorkspaceKeyEvent(static_cast<QKeyEvent *>(event))) {
+            event->accept();
+            return true;
         }
         if ((event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease)
             && handleTaskSwitcherKeyEvent(static_cast<QKeyEvent *>(event))) {
@@ -244,7 +298,7 @@ bool SystaliaCompositor::eventFilter(QObject *watched, QEvent *event) {
             return true;
         }
 
-        // Encaminhamento direto de teclado para a superfície de cliente Wayland com foco
+        // Encaminhamento direto de teclado para a superfície de cliente Wayland com foco no workspace ativo
         if (event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease) {
             auto *keyEvent = static_cast<QKeyEvent *>(event);
             QWaylandSeat *seat = defaultSeat();
@@ -253,20 +307,18 @@ bool SystaliaCompositor::eventFilter(QObject *watched, QEvent *event) {
             const bool shellInputHasFocus = focusItem
                 && (focusItem->inherits("QQuickTextInput") || focusItem->inherits("QQuickTextField"));
 
-            if (seat && !kbFocus && m_windowStackModel) {
-                auto *topWindow = qobject_cast<QWaylandXdgToplevel *>(m_windowStackModel->currentWindow());
-                if (topWindow && topWindow->xdgSurface() && topWindow->xdgSurface()->surface()) {
-                    activateToplevel(topWindow);
-                    kbFocus = seat->keyboardFocus();
+            const int currentWs = m_workspaceManager ? m_workspaceManager->currentWorkspace() : 0;
+            if (kbFocus && m_workspaceManager) {
+                QWaylandXdgToplevel *focusedTl = toplevelForSurface(kbFocus);
+                if (focusedTl && m_workspaceManager->objectWorkspace(focusedTl) != currentWs) {
+                    kbFocus = nullptr;
                 }
             }
 
-            qWarning().noquote() << "[SGE-KEY]"
-                                 << (event->type() == QEvent::KeyPress ? "PRESS" : "RELEASE")
-                                 << "key:" << Qt::Key(keyEvent->key())
-                                 << "nativeScan:" << keyEvent->nativeScanCode()
-                                 << "kbFocus:" << (kbFocus ? "OK" : "NULL")
-                                 << "shellInput:" << shellInputHasFocus;
+            if (seat && !kbFocus && m_windowStackModel) {
+                syncFocusForCurrentWorkspace();
+                kbFocus = seat->keyboardFocus();
+            }
 
             if (seat && kbFocus) {
                 if (!shellInputHasFocus) {
@@ -278,6 +330,76 @@ bool SystaliaCompositor::eventFilter(QObject *watched, QEvent *event) {
         }
     }
     return QWaylandCompositor::eventFilter(watched, event);
+}
+
+bool SystaliaCompositor::handleWorkspaceKeyEvent(QKeyEvent *event) {
+    if (!event || !m_workspaceManager) {
+        return false;
+    }
+
+    const Qt::KeyboardModifiers mods = event->modifiers();
+    if (!mods.testFlag(Qt::MetaModifier)) {
+        return false;
+    }
+
+    // Super + Ctrl + Seta Esquerda / Direita
+    if (mods.testFlag(Qt::ControlModifier) && !mods.testFlag(Qt::AltModifier)) {
+        if (event->key() == Qt::Key_Left) {
+            if (event->type() == QEvent::KeyPress) {
+                m_workspaceManager->previousWorkspace();
+            }
+            return true;
+        }
+        if (event->key() == Qt::Key_Right) {
+            if (event->type() == QEvent::KeyPress) {
+                m_workspaceManager->nextWorkspace();
+            }
+            return true;
+        }
+    }
+
+    // Super + 1..4 ou Super + Shift + 1..4
+    if (!mods.testFlag(Qt::ControlModifier) && !mods.testFlag(Qt::AltModifier)) {
+        int targetWorkspace = -1;
+        const quint32 scanCode = event->nativeScanCode();
+        switch (event->key()) {
+        case Qt::Key_1:
+        case Qt::Key_Exclam:
+            targetWorkspace = 0;
+            break;
+        case Qt::Key_2:
+        case Qt::Key_At:
+        case Qt::Key_QuoteDbl:
+            targetWorkspace = 1;
+            break;
+        case Qt::Key_3:
+        case Qt::Key_NumberSign:
+            targetWorkspace = 2;
+            break;
+        case Qt::Key_4:
+        case Qt::Key_Dollar:
+            targetWorkspace = 3;
+            break;
+        default:
+            if (scanCode >= 10 && scanCode <= 13) {
+                targetWorkspace = static_cast<int>(scanCode - 10);
+            }
+            break;
+        }
+
+        if (targetWorkspace >= 0 && targetWorkspace < m_workspaceManager->totalWorkspaces()) {
+            if (event->type() == QEvent::KeyPress) {
+                if (mods.testFlag(Qt::ShiftModifier)) {
+                    m_workspaceManager->moveActiveWindowToWorkspace(targetWorkspace);
+                } else {
+                    m_workspaceManager->switchToWorkspace(targetWorkspace);
+                }
+            }
+            return true;
+        }
+    }
+
+    return false;
 }
 
 bool SystaliaCompositor::handleTaskSwitcherKeyEvent(QKeyEvent *event) {
@@ -374,6 +496,68 @@ void SystaliaCompositor::requestToplevelResize(QWaylandXdgToplevel *toplevel,
     toplevel->sendConfigure(size, states);
 }
 
+int SystaliaCompositor::toplevelWorkspace(QObject *toplevelObject) const {
+    if (!m_workspaceManager || !toplevelObject) {
+        return 0;
+    }
+    return m_workspaceManager->objectWorkspace(toplevelObject);
+}
+
+void SystaliaCompositor::setToplevelWorkspace(QObject *toplevelObject, int workspaceIndex) {
+    if (!m_workspaceManager || !toplevelObject) {
+        return;
+    }
+    m_workspaceManager->setObjectWorkspace(toplevelObject, workspaceIndex);
+}
+
+QWaylandXdgToplevel *SystaliaCompositor::toplevelForSurface(QWaylandSurface *surface) const {
+    if (!surface) {
+        return nullptr;
+    }
+    for (QWaylandXdgToplevel *toplevel : std::as_const(m_activeToplevels)) {
+        if (toplevel && toplevel->xdgSurface() && toplevel->xdgSurface()->surface() == surface) {
+            return toplevel;
+        }
+    }
+    return nullptr;
+}
+
+void SystaliaCompositor::syncFocusForCurrentWorkspace() {
+    if (!m_windowStackModel) {
+        return;
+    }
+    const int currentWs = m_workspaceManager ? m_workspaceManager->currentWorkspace() : 0;
+
+    for (int index = 0; index < m_windowStackModel->windowCount(); ++index) {
+        auto *candidate = qobject_cast<QWaylandXdgToplevel *>(
+            m_windowStackModel->windowAt(index));
+        if (!candidate || m_minimizedToplevels.contains(candidate)) {
+            continue;
+        }
+        if (m_workspaceManager && m_workspaceManager->objectWorkspace(candidate) != currentWs) {
+            continue;
+        }
+        if (activateToplevel(candidate)) {
+            return;
+        }
+    }
+
+    if (QWaylandSeat *seat = defaultSeat()) {
+        seat->setKeyboardFocus(nullptr);
+    }
+    for (QWaylandXdgToplevel *candidate : std::as_const(m_activeToplevels)) {
+        if (!candidate || !candidate->xdgSurface()) {
+            continue;
+        }
+        const QSize currentSize = candidate->xdgSurface()->windowGeometry().size();
+        if (currentSize.width() > 0 && currentSize.height() > 0) {
+            QList<QWaylandXdgToplevel::State> states = candidate->states();
+            states.removeAll(QWaylandXdgToplevel::ActivatedState);
+            candidate->sendConfigure(currentSize, states);
+        }
+    }
+}
+
 void SystaliaCompositor::onSurfaceCreated(QWaylandSurface *surface) {
     if (surface) {
         m_activeSurfaces.insert(surface);
@@ -394,6 +578,9 @@ void SystaliaCompositor::onToplevelCreated(QWaylandXdgToplevel *toplevel, QWayla
     if (toplevel) {
         m_activeToplevels.insert(toplevel);
         m_windowStackModel->registerWindow(toplevel);
+        if (m_workspaceManager) {
+            m_workspaceManager->setObjectWorkspace(toplevel, m_workspaceManager->currentWorkspace());
+        }
         connect(toplevel, &QWaylandXdgToplevel::appIdChanged, this, [this]() {
             emit activeAppIdsChanged();
         });
@@ -402,6 +589,9 @@ void SystaliaCompositor::onToplevelCreated(QWaylandXdgToplevel *toplevel, QWayla
         });
         connect(toplevel, &QObject::destroyed, this, [this, toplevel]() {
             m_activeToplevels.remove(toplevel);
+            if (m_workspaceManager) {
+                m_workspaceManager->unregisterObject(toplevel);
+            }
             if (m_minimizedToplevels.remove(toplevel) > 0) {
                 ++m_minimizedToplevelsRevision;
                 emit minimizedToplevelsChanged();
@@ -457,9 +647,12 @@ QStringList SystaliaCompositor::activeAppIds() const {
 }
 
 bool SystaliaCompositor::hasMaximizedToplevel() const {
+    const int currentWs = m_workspaceManager ? m_workspaceManager->currentWorkspace() : 0;
     for (QWaylandXdgToplevel *toplevel : m_activeToplevels) {
         if (toplevel && !m_minimizedToplevels.contains(toplevel) && toplevel->maximized()) {
-            return true;
+            if (!m_workspaceManager || m_workspaceManager->objectWorkspace(toplevel) == currentWs) {
+                return true;
+            }
         }
     }
     return false;

@@ -18,11 +18,14 @@ Item {
     property bool maximizedBySge: false
     property bool restoringGeometry: false
     property bool destructionScheduled: false
+    property int workspaceIndex: 0
+    property bool inActiveWorkspace: true
+    property bool workspaceTransitioning: false
 
     width: 680
     height: 480
-    visible: !minimized && clientMapped
-    enabled: visible
+    visible: !minimized && clientMapped && (inActiveWorkspace || workspaceTransitioning)
+    enabled: !minimized && clientMapped && inActiveWorkspace && !workspaceTransitioning
 
     property int minWindowWidth: 320
     property int minWindowHeight: 220
@@ -109,11 +112,13 @@ Item {
     onClientMappedChanged: {
         if (clientMapped) {
             syncClientGeometry()
-            if (workspace && typeof workspace.raiseClientWindow === "function")
-                workspace.raiseClientWindow(windowContainer)
-            if (waylandServer && toplevel)
-                waylandServer.activateToplevel(toplevel)
-            clientSurfaceItem.takeFocus()
+            if (inActiveWorkspace) {
+                if (workspace && typeof workspace.raiseClientWindow === "function")
+                    workspace.raiseClientWindow(windowContainer)
+                if (waylandServer && toplevel)
+                    waylandServer.activateToplevel(toplevel)
+                clientSurfaceItem.takeFocus()
+            }
         }
     }
 

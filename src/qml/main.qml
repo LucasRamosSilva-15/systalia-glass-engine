@@ -22,6 +22,7 @@ ApplicationWindow {
     property rect materialWindowRestoreGeometry: Qt.rect(864, 193, 700, 534)
 
     function raiseFileWindow() {
+        WorkspaceManager.switchToWorkspace(0)
         glassChassis.visible = true
         windowCanvas.z = 30
         glassChassis.z = 20
@@ -59,6 +60,7 @@ ApplicationWindow {
     }
 
     function raiseMaterialWindow() {
+        WorkspaceManager.switchToWorkspace(0)
         materialWindow.visible = true
         windowCanvas.z = 30
         materialWindow.z = 21
@@ -94,11 +96,14 @@ ApplicationWindow {
     function raiseClientWindow(windowContainer) {
         if (!windowContainer)
             return
+        WorkspaceManager.setActiveWindow(windowContainer)
         windowCanvas.z = 10
         clientWindowsLayer.z = 40
         clientWindowsLayer.topZIndex += 1
         windowContainer.z = clientWindowsLayer.topZIndex
     }
+
+    property var trackedClientContainers: []
 
     Component.onCompleted: {
         SystemTelemetry.attachWindow(rootWindow)
@@ -119,12 +124,16 @@ ApplicationWindow {
 
                 const comp = Qt.createComponent("WaylandWindowContainer.qml")
                 if (comp.status === Component.Ready) {
-                    const offset = (clientWindowsLayer.children.length * 36) % 180
-                    const clientWindow = comp.createObject(clientWindowsLayer, {
+                    const wsIndex = WorkspaceManager.currentWorkspace
+                    const targetPage = clientWindowsLayer.workspacePageAt(wsIndex)
+                    const parentLayer = targetPage ? targetPage : clientWindowsLayer
+                    const offset = (parentLayer.children.length * 36) % 180
+                    const clientWindow = comp.createObject(parentLayer, {
                         toplevel: toplevelObject,
                         waylandServer: waylandServer,
                         workspace: rootWindow,
                         backdropSource: backdropGrab,
+                        workspaceIndex: wsIndex,
                         screenResolution: Qt.point(rootWindow.width * rootWindow.devicePixelRatio,
                                                    rootWindow.height * rootWindow.devicePixelRatio),
                         animTime: animTimer.tick,
@@ -132,6 +141,20 @@ ApplicationWindow {
                         y: Math.round(80 + offset)
                     })
                     if (clientWindow) {
+                        clientWindow.inActiveWorkspace = Qt.binding(() => {
+                            return clientWindow.workspaceIndex === WorkspaceManager.currentWorkspace
+                        })
+                        clientWindow.workspaceTransitioning = Qt.binding(() => {
+                            return WorkspaceManager.isTransitioning
+                        })
+                        WorkspaceManager.setWindowWorkspace(clientWindow, wsIndex)
+                        const list = rootWindow.trackedClientContainers.slice()
+                        list.push(clientWindow)
+                        rootWindow.trackedClientContainers = list
+                        clientWindow.Component.destruction.connect(() => {
+                            const updated = rootWindow.trackedClientContainers.filter(w => w !== clientWindow)
+                            rootWindow.trackedClientContainers = updated
+                        })
                         rootWindow.raiseClientWindow(clientWindow)
                         Qt.callLater(() => waylandServer.activateToplevel(toplevelObject))
                     }
@@ -149,23 +172,47 @@ ApplicationWindow {
         window: rootWindow
     }
 
-    Image {
-        id: wallpaper
+    Item {
+        id: wallpaperBackdropRoot
         anchors.fill: parent
         z: -10
-        source: Qt.resolvedUrl("assets/figma/valo-ocean-atmosphere.png")
-        fillMode: Image.PreserveAspectFit
-        asynchronous: true
-        cache: true
-        smooth: true
-        mipmap: true
-        visible: status === Image.Ready
+
+        Image {
+            id: wallpaper
+            width: parent.width
+            height: parent.height
+            x: clientWindowsLayer.parallaxOffset * 0.12
+            y: 0
+            source: Qt.resolvedUrl("assets/figma/valo-ocean-atmosphere.png")
+            fillMode: Image.PreserveAspectFit
+            asynchronous: true
+            cache: true
+            smooth: true
+            mipmap: true
+            visible: status === Image.Ready
+        }
+
+        Image {
+            id: wallpaperParallaxExtension
+            width: parent.width
+            height: parent.height
+            x: wallpaper.x + wallpaper.width
+            y: 0
+            mirror: true
+            source: wallpaper.source
+            fillMode: Image.PreserveAspectFit
+            asynchronous: true
+            cache: true
+            smooth: true
+            mipmap: true
+            visible: wallpaper.status === Image.Ready && wallpaper.x < 0
+        }
     }
 
     ShaderEffectSource {
         id: backdropGrab
-        anchors.fill: wallpaper
-        sourceItem: wallpaper
+        anchors.fill: wallpaperBackdropRoot
+        sourceItem: wallpaperBackdropRoot
         textureSize: Qt.size(Math.max(1, rootWindow.width * rootWindow.devicePixelRatio),
                              Math.max(1, rootWindow.height * rootWindow.devicePixelRatio))
         live: true
@@ -196,10 +243,12 @@ ApplicationWindow {
         width: 1662
         height: 975
         scale: rootWindow.designScale
-        x: (rootWindow.width - width * scale) / 2
+        x: (rootWindow.width - width * scale) / 2 + clientWindowsLayer.viewportOffset
         y: (rootWindow.height - height * scale) / 2
         transformOrigin: Item.TopLeft
         z: 10
+        visible: (WorkspaceManager.currentWorkspace === 0) || WorkspaceManager.isTransitioning
+        enabled: (WorkspaceManager.currentWorkspace === 0) && !WorkspaceManager.isTransitioning
 
         Shell.SystaliaFilesWindow {
             id: glassChassis
@@ -234,11 +283,15 @@ ApplicationWindow {
         }
     }
 
-    Item {
+    WorkspaceViewport {
         id: clientWindowsLayer
         anchors.fill: workspace
         z: 20
         property int topZIndex: 0
+        currentWorkspace: WorkspaceManager.currentWorkspace
+        totalWorkspaces: WorkspaceManager.totalWorkspaces
+        isTransitioning: WorkspaceManager.isTransitioning
+        parallaxFactor: 0.35
     }
 
     Item {
@@ -256,6 +309,7 @@ ApplicationWindow {
             x: 8
             y: 4
             telemetry: SystemTelemetry
+            workspaceManager: WorkspaceManager
             backdropSource: backdropGrab
             screenResolution: Qt.vector2d(rootWindow.width * rootWindow.devicePixelRatio,
                                           rootWindow.height * rootWindow.devicePixelRatio)
@@ -335,12 +389,38 @@ ApplicationWindow {
     Connections {
         target: waylandServer
         function onWindowSelected(toplevelObject) {
-            for (let index = 0; index < clientWindowsLayer.children.length; ++index) {
-                const windowContainer = clientWindowsLayer.children[index]
-                if (windowContainer.toplevel === toplevelObject) {
+            for (let index = 0; index < rootWindow.trackedClientContainers.length; ++index) {
+                const windowContainer = rootWindow.trackedClientContainers[index]
+                if (windowContainer && windowContainer.toplevel === toplevelObject) {
+                    WorkspaceManager.switchToWorkspace(windowContainer.workspaceIndex)
                     rootWindow.raiseClientWindow(windowContainer)
                     break
                 }
+            }
+        }
+        function onToplevelWorkspaceChanged(toplevelObject, workspaceIndex) {
+            for (let index = 0; index < rootWindow.trackedClientContainers.length; ++index) {
+                const windowContainer = rootWindow.trackedClientContainers[index]
+                if (windowContainer && windowContainer.toplevel === toplevelObject) {
+                    windowContainer.workspaceIndex = workspaceIndex
+                    const targetPage = clientWindowsLayer.workspacePageAt(workspaceIndex)
+                    if (targetPage && windowContainer.parent !== targetPage) {
+                        windowContainer.parent = targetPage
+                    }
+                    break
+                }
+            }
+        }
+    }
+
+    Connections {
+        target: WorkspaceManager
+        function onWindowWorkspaceChanged(windowItem, workspaceIndex) {
+            if (!windowItem)
+                return
+            const targetPage = clientWindowsLayer.workspacePageAt(workspaceIndex)
+            if (targetPage && windowItem.parent !== targetPage) {
+                windowItem.parent = targetPage
             }
         }
     }

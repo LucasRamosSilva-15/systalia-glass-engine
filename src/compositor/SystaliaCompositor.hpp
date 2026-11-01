@@ -8,6 +8,7 @@
 #include <QtWaylandCompositor/QWaylandXdgDecorationManagerV1>
 #include "SystaliaSurfaceExtension.hpp"
 #include "WindowStackModel.hpp"
+#include "WorkspaceManagerService.hpp"
 #include <QMetaObject>
 #include <QPointer>
 #include <QQuickWindow>
@@ -24,6 +25,7 @@ class SystaliaCompositor : public QWaylandCompositor {
     QML_ELEMENT
     Q_PROPERTY(SystaliaSurfaceExtension *surfaceExtension READ surfaceExtension CONSTANT)
     Q_PROPERTY(WindowStackModel *windowStackModel READ windowStackModel CONSTANT)
+    Q_PROPERTY(WorkspaceManagerService *workspaceManager READ workspaceManager CONSTANT)
     Q_PROPERTY(int clientCount READ clientCount NOTIFY clientCountChanged)
     Q_PROPERTY(bool taskSwitcherVisible READ taskSwitcherVisible NOTIFY taskSwitcherVisibleChanged)
     Q_PROPERTY(int taskSwitcherIndex READ taskSwitcherIndex NOTIFY taskSwitcherIndexChanged)
@@ -41,6 +43,7 @@ public:
 
     SystaliaSurfaceExtension *surfaceExtension() const { return m_surfaceExtension; }
     WindowStackModel *windowStackModel() const { return m_windowStackModel; }
+    WorkspaceManagerService *workspaceManager() const { return m_workspaceManager; }
     int clientCount() const { return m_clientCount; }
     bool taskSwitcherVisible() const { return m_windowStackModel->taskSwitcherVisible(); }
     int taskSwitcherIndex() const { return m_windowStackModel->taskSwitcherIndex(); }
@@ -62,6 +65,8 @@ public:
                                               const QSize &size);
     Q_INVOKABLE void requestToplevelResize(QWaylandXdgToplevel *toplevel,
                                            const QSize &newSize, bool isResizing);
+    Q_INVOKABLE int toplevelWorkspace(QObject *toplevelObject) const;
+    Q_INVOKABLE void setToplevelWorkspace(QObject *toplevelObject, int workspaceIndex);
 
 signals:
     void clientCountChanged();
@@ -70,6 +75,7 @@ signals:
     void windowCountChanged();
     void minimizedToplevelsChanged();
     void windowSelected(QObject *toplevelObject);
+    void toplevelWorkspaceChanged(QObject *toplevelObject, int workspaceIndex);
     void activeAppIdsChanged();
     void activeToplevelStateChanged();
     void toplevelCreated(QWaylandXdgToplevel *toplevel);
@@ -84,11 +90,15 @@ private slots:
 
 private:
     void recalculateClientCount();
+    void syncFocusForCurrentWorkspace();
+    QWaylandXdgToplevel *toplevelForSurface(QWaylandSurface *surface) const;
+    bool handleWorkspaceKeyEvent(QKeyEvent *event);
     bool handleTaskSwitcherKeyEvent(QKeyEvent *event);
     bool eventFilter(QObject *watched, QEvent *event) override;
 
     SystaliaSurfaceExtension *m_surfaceExtension = nullptr;
     WindowStackModel *m_windowStackModel = nullptr;
+    WorkspaceManagerService *m_workspaceManager = nullptr;
     int m_clientCount = 0;
     QSet<QWaylandSurface *> m_activeSurfaces;
     QSet<QWaylandXdgToplevel *> m_activeToplevels;
