@@ -5,6 +5,7 @@
 #include <QQuickItem>
 #include <QQuickWindow>
 #include <QtWaylandCompositor/QWaylandKeyboard>
+#include <QtWaylandCompositor/QWaylandViewporter>
 #include <utility>
 
 SystaliaCompositor::SystaliaCompositor(QObject *parent)
@@ -79,6 +80,11 @@ SystaliaCompositor::SystaliaCompositor(QObject *parent)
     m_decorationManager->setExtensionContainer(this);
     m_decorationManager->setPreferredMode(QWaylandXdgToplevel::ServerSideDecoration);
 
+    // Protocolo de Viewporter (wp_viewporter) para clientes modernos (Java AWT / JetBrains, Chromium, etc.)
+    m_viewporter = new QWaylandViewporter();
+    m_viewporter->setParent(this);
+    m_viewporter->setExtensionContainer(this);
+
     m_outputManager = OutputManagerService::instance();
     if (m_outputManager) {
         m_outputManager->attachCompositor(this);
@@ -133,12 +139,19 @@ void SystaliaCompositor::create() {
         m_decorationManager->initialize();
     }
 
+    // Inicializa a extensão Viewporter (wp_viewporter) no registro global
+    if (m_viewporter && !m_viewporter->isInitialized()) {
+        m_viewporter->initialize();
+    }
+
     if (isCreated()) {
         m_surfaceExtension->initialize();
         qInfo().noquote() << "[SGE-WAYLAND] Servidor ativo em:" << socketName();
         qInfo().noquote() << "[SGE-WAYLAND] XDG Shell registrado:" << (m_xdgShell && m_xdgShell->isInitialized());
         qInfo().noquote() << "[SGE-WAYLAND] XDG Decoration Manager registrado (SSD forçado):"
                           << (m_decorationManager && m_decorationManager->isInitialized());
+        qInfo().noquote() << "[SGE-WAYLAND] Viewporter (wp_viewporter) registrado:"
+                          << (m_viewporter && m_viewporter->isInitialized());
         qInfo().noquote() << "[SGE-WAYLAND] Assento padrão inicializado com teclado e ponteiro.";
     } else {
         qWarning().noquote() << "[SGE-WAYLAND] Falha ao inicializar servidor no socket:" << socketName();

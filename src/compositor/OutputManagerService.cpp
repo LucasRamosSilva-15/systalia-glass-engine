@@ -56,6 +56,10 @@ void OutputManagerService::attachCompositor(QWaylandCompositor *compositor) {
         m_xdgOutputManager->setExtensionContainer(m_compositor);
     }
 
+    connect(m_compositor, &QWaylandCompositor::outputAdded, this, [this](QWaylandOutput *out) {
+        ensureXdgOutputFor(out);
+    });
+
     if (m_compositor->isCreated()) {
         initializeWaylandExtensions();
     } else {
@@ -444,6 +448,57 @@ QVector2D OutputManagerService::computePhysicalResolution(const QSize &logicalSi
     return QVector2D(physW, physH);
 }
 
+void OutputManagerService::ensureXdgOutputFor(QWaylandOutput *output) {
+    if (!output || !m_xdgOutputManager) {
+        return;
+    }
+    if (m_outputXdgMap.contains(output) && m_outputXdgMap.value(output)) {
+        return;
+    }
+    if (!m_xdgOutputManager->isInitialized()) {
+        m_xdgOutputManager->initialize();
+    }
+
+    QString name = output->model();
+    if (name.isEmpty()) {
+        name = QStringLiteral("SGE-Output-%1").arg(m_outputXdgMap.size());
+    }
+    QString desc = output->manufacturer();
+    if (desc.isEmpty()) {
+        desc = QStringLiteral("Systalia Glass Engine Display");
+    }
+
+    QPoint pos = output->position();
+    QSize size = output->geometry().size();
+    if (!size.isValid() || size.width() <= 0 || size.height() <= 0) {
+        if (!m_outputs.isEmpty()) {
+            size = m_outputs.first().geometry.size();
+        } else {
+            size = QSize(1920, 1080);
+        }
+    }
+
+    auto *xdgOut = new QWaylandXdgOutputV1(output, m_xdgOutputManager);
+    xdgOut->setName(name);
+    xdgOut->setDescription(desc);
+    xdgOut->setLogicalPosition(pos);
+    xdgOut->setLogicalSize(size);
+
+    m_outputXdgMap.insert(output, xdgOut);
+
+    connect(output, &QWaylandOutput::positionChanged, xdgOut, [output, xdgOut]() {
+        xdgOut->setLogicalPosition(output->position());
+    });
+    connect(output, &QWaylandOutput::geometryChanged, xdgOut, [output, xdgOut]() {
+        if (output->geometry().size().isValid()) {
+            xdgOut->setLogicalSize(output->geometry().size());
+        }
+    });
+    connect(output, &QObject::destroyed, this, [this, output]() {
+        m_outputXdgMap.remove(output);
+    });
+}
+
 void OutputManagerService::createWaylandOutputForEntry(ManagedOutputInfo &entry) {
     if (!m_compositor || !m_compositor->isCreated()) {
         return;
@@ -464,19 +519,9 @@ void OutputManagerService::createWaylandOutputForEntry(ManagedOutputInfo &entry)
         entry.waylandOutput = wlOut;
     }
 
-    if (m_xdgOutputManager && m_xdgOutputManager->isInitialized() && !entry.xdgOutput
-            && entry.waylandOutput) {
-        auto *xdgOut = new QWaylandXdgOutputV1(entry.waylandOutput, m_xdgOutputManager);
-        xdgOut->setName(entry.name);
-        xdgOut->setDescription(
-            QStringLiteral("%1 (%2x%3 @ %4x)")
-                .arg(entry.name)
-                .arg(entry.geometry.width())
-                .arg(entry.geometry.height())
-                .arg(entry.scale, 0, 'f', 2));
-        xdgOut->setLogicalPosition(entry.geometry.topLeft());
-        xdgOut->setLogicalSize(entry.geometry.size());
-        entry.xdgOutput = xdgOut;
+    ensureXdgOutputFor(entry.waylandOutput);
+    if (!entry.xdgOutput) {
+        entry.xdgOutput = m_outputXdgMap.value(entry.waylandOutput);
     }
 }
 
@@ -487,6 +532,10 @@ void OutputManagerService::initializeWaylandExtensions() {
 
     if (m_xdgOutputManager && !m_xdgOutputManager->isInitialized()) {
         m_xdgOutputManager->initialize();
+    }
+
+    for (QWaylandOutput *out : m_compositor->outputs()) {
+        ensureXdgOutputFor(out);
     }
 
     for (auto &entry : m_outputs) {

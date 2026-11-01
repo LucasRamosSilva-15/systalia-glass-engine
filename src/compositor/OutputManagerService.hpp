@@ -97,6 +97,7 @@ signals:
                                   int previousScreenIndex, qreal newScale);
 
 private:
+    void ensureXdgOutputFor(QWaylandOutput *output);
     void createWaylandOutputForEntry(ManagedOutputInfo &entry);
     void initializeWaylandExtensions();
     void unregisterWindowObject(QObject *obj);
@@ -104,6 +105,7 @@ private:
     QPointer<QWaylandCompositor> m_compositor;
     QWaylandXdgOutputManagerV1 *m_xdgOutputManager = nullptr;
     QList<ManagedOutputInfo> m_outputs;
+    QHash<QWaylandOutput *, QPointer<QWaylandXdgOutputV1>> m_outputXdgMap;
     QHash<QObject *, int> m_windowScreenMap;
     int m_activeCursorScreen = 0;
     bool m_replicateTopBarOnAllScreens = false;

@@ -21,6 +21,7 @@
 
 class QEvent;
 class QKeyEvent;
+class QWaylandViewporter;
 class SystaliaCompositor : public QWaylandCompositor {
     Q_OBJECT
     QML_ELEMENT
@@ -110,6 +111,7 @@ private:
     int m_minimizedToplevelsRevision = 0;
     QWaylandXdgShell *m_xdgShell = nullptr;
     QWaylandXdgDecorationManagerV1 *m_decorationManager = nullptr;
+    QWaylandViewporter *m_viewporter = nullptr;
     QPointer<QQuickWindow> m_taskSwitcherWindow;
     QMetaObject::Connection m_keyboardFocusConnection;
     bool m_altPressWasForwarded = false;
