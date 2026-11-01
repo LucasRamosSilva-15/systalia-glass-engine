@@ -81,7 +81,6 @@ private:
     QPointer<QQuickItem> m_activeWindow;
     QHash<QQuickItem *, int> m_windowWorkspaces;
     QHash<QObject *, int> m_objectWorkspaces;
-    QSet<QQuickItem *> m_culledWindows;
     QTimer m_transitionTimer;
 };
 

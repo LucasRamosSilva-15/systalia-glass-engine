@@ -24,6 +24,7 @@ private slots:
     void compositorInterceptsWorkspaceKeyboardShortcuts();
     void workspaceViewportTranslatesWithParallax();
     void userClosedOrMinimizedWindowsPreservedDuringCullingAndNewClientRegistration();
+    void openWindowsReappearWhenSwitchingWorkspacesBackAndForth();
 };
 
 void TestWorkspaceManager::initialStateIsDefault() {
@@ -268,6 +269,44 @@ void TestWorkspaceManager::userClosedOrMinimizedWindowsPreservedDuringCullingAnd
     QCOMPARE(filesWin->isVisible(), false);
     QCOMPARE(controlCenterWin->isVisible(), false);
     QCOMPARE(terminal->isVisible(), true);
+}
+
+void TestWorkspaceManager::openWindowsReappearWhenSwitchingWorkspacesBackAndForth() {
+    WorkspaceManagerService manager;
+    QQuickItem root;
+
+    auto filesWin = std::make_unique<QQuickItem>(&root);
+    filesWin->setProperty("windowOpen", true);
+    filesWin->setVisible(true);
+
+    auto controlCenterWin = std::make_unique<QQuickItem>(&root);
+    controlCenterWin->setProperty("windowOpen", true);
+    controlCenterWin->setVisible(true);
+
+    manager.setWindowWorkspace(filesWin.get(), 0);
+    manager.setWindowWorkspace(controlCenterWin.get(), 0);
+
+    // Initial state on workspace 0: both visible
+    QCOMPARE(filesWin->isVisible(), true);
+    QCOMPARE(controlCenterWin->isVisible(), true);
+
+    // Switch to Workspace 1 (quadro 2)
+    manager.switchToWorkspace(1);
+    manager.setTransitioning(false);
+    manager.applyViewportCulling(-1920.0, 1920.0);
+
+    // On workspace 1, workspace 0 windows are culled (not visible)
+    QCOMPARE(filesWin->isVisible(), false);
+    QCOMPARE(controlCenterWin->isVisible(), false);
+
+    // Switch back to Workspace 0 (primeiro quadro)
+    manager.switchToWorkspace(0);
+    manager.setTransitioning(false);
+    manager.applyViewportCulling(0.0, 1920.0);
+
+    // They MUST reappear!
+    QCOMPARE(filesWin->isVisible(), true);
+    QCOMPARE(controlCenterWin->isVisible(), true);
 }
 
 QTEST_MAIN(TestWorkspaceManager)
