@@ -15,11 +15,10 @@ ApplicationWindow {
     title: qsTr("Systalia Glass Engine — Systalia Desktop Environment")
     color: SystaliaTheme.ocean
 
-    readonly property real designScale: Math.max(0.1, Math.min(width / 1662, height / 975))
     property bool filesWindowMaximized: false
-    property rect filesWindowRestoreGeometry: Qt.rect(113, 193, 701, 534)
+    property rect filesWindowRestoreGeometry: Qt.rect(80, 80, 701, 534)
     property bool materialWindowMaximized: false
-    property rect materialWindowRestoreGeometry: Qt.rect(864, 193, 700, 534)
+    property rect materialWindowRestoreGeometry: Qt.rect(810, 80, 700, 534)
 
     function raiseFileWindow() {
         WorkspaceManager.switchToWorkspace(0)
@@ -51,10 +50,10 @@ ApplicationWindow {
 
         filesWindowRestoreGeometry = Qt.rect(glassChassis.x, glassChassis.y,
                                              glassChassis.width, glassChassis.height)
-        glassChassis.x = 18
-        glassChassis.y = 66
-        glassChassis.width = 1626
-        glassChassis.height = 720
+        glassChassis.x = 8
+        glassChassis.y = 8
+        glassChassis.width = workspace.width - 16
+        glassChassis.height = workspace.height - 16
         filesWindowMaximized = true
         raiseFileWindow()
     }
@@ -85,10 +84,10 @@ ApplicationWindow {
 
         materialWindowRestoreGeometry = Qt.rect(materialWindow.x, materialWindow.y,
                                                  materialWindow.width, materialWindow.height)
-        materialWindow.x = 18
-        materialWindow.y = 66
-        materialWindow.width = 1626
-        materialWindow.height = 720
+        materialWindow.x = 8
+        materialWindow.y = 8
+        materialWindow.width = workspace.width - 16
+        materialWindow.height = workspace.height - 16
         materialWindowMaximized = true
         raiseMaterialWindow()
     }
@@ -104,7 +103,7 @@ ApplicationWindow {
     }
 
     readonly property rect workspaceAvailableArea: Qt.rect(0, 0, workspace.width, workspace.height)
-    readonly property rect shellCanvasAvailableArea: Qt.rect(18, 66, 1626, 720)
+    readonly property rect shellCanvasAvailableArea: Qt.rect(8, 8, workspace.width - 16, workspace.height - 16)
 
     function updateShellWindowDrag(win, scenePos) {
         if (!win)
@@ -318,20 +317,16 @@ ApplicationWindow {
 
     Item {
         id: windowCanvas
-        width: 1662
-        height: 975
-        scale: rootWindow.designScale
-        x: (rootWindow.width - width * scale) / 2 + clientWindowsLayer.viewportOffset
-        y: (rootWindow.height - height * scale) / 2
-        transformOrigin: Item.TopLeft
+        anchors.fill: workspace
+        x: clientWindowsLayer.viewportOffset
         z: 10
         visible: (WorkspaceManager.currentWorkspace === 0) || WorkspaceManager.isTransitioning
         enabled: (WorkspaceManager.currentWorkspace === 0) && !WorkspaceManager.isTransitioning
 
         Shell.SystaliaFilesWindow {
             id: glassChassis
-            x: 113
-            y: 193
+            x: 80
+            y: 80
             z: 10
             backdropSource: backdropGrab
             screenResolution: Qt.vector2d(rootWindow.width * rootWindow.devicePixelRatio,
@@ -350,8 +345,8 @@ ApplicationWindow {
 
         Shell.SystaliaMaterialWindow {
             id: materialWindow
-            x: 864
-            y: 193
+            x: 810
+            y: 80
             z: 10
             backdropSource: backdropGrab
             screenResolution: Qt.vector2d(rootWindow.width * rootWindow.devicePixelRatio,
