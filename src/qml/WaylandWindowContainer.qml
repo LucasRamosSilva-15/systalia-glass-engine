@@ -10,8 +10,11 @@ Item {
     property var waylandServer: null
     property var workspace: null
     property var tilingService: null
+    property var outputManager: null
     property var backdropSource: null
     property point screenResolution: Qt.point(1280, 800)
+    property int currentScreenIndex: 0
+    property real currentScreenScale: 1.0
     property real animTime: 0.0
     property point restorePosition: Qt.point(0, 0)
     property size restoreFrameSize: Qt.size(0, 0)
@@ -141,6 +144,7 @@ Item {
     onClientMappedChanged: {
         if (clientMapped) {
             syncClientGeometry()
+            syncOutputRouting()
             if (inActiveWorkspace) {
                 if (workspace && typeof workspace.raiseClientWindow === "function")
                     workspace.raiseClientWindow(windowContainer)
@@ -148,6 +152,21 @@ Item {
                     waylandServer.activateToplevel(toplevel)
                 clientSurfaceItem.takeFocus()
             }
+        }
+    }
+
+    function syncOutputRouting() {
+        if (!outputManager || typeof outputManager.updateWindowOutputRouting !== "function")
+            return
+        const surfaceObj = (xdgSurface && xdgSurface.surface) ? xdgSurface.surface : null
+        const winRect = Qt.rect(x, y, width, height)
+        const nextScreen = outputManager.updateWindowOutputRouting(windowContainer, surfaceObj, winRect)
+        if (nextScreen >= 0) {
+            currentScreenIndex = nextScreen
+            currentScreenScale = outputManager.screenScaleAt(nextScreen)
+            const phys = outputManager.physicalResolutionAt(nextScreen)
+            if (phys.x > 0 && phys.y > 0)
+                screenResolution = Qt.point(phys.x, phys.y)
         }
     }
 
@@ -353,6 +372,7 @@ Item {
         backdropSource: windowContainer.backdropSource
         clientTextureSource: clientTextureCapture
         screenResolution: Qt.vector2d(windowContainer.screenResolution.x, windowContainer.screenResolution.y)
+        devicePixelRatio: windowContainer.currentScreenScale
         titleBarHeight: windowContainer.titleBarHeight
 
         radii: windowContainer.frameRadii
@@ -483,6 +503,7 @@ Item {
                     if (snapTarget !== 0)
                         windowContainer.snapToZone(snapTarget)
                 }
+                windowContainer.syncOutputRouting()
             }
             onHeaderTapped: {
                 if (windowContainer.workspace && typeof windowContainer.workspace.raiseClientWindow === "function")

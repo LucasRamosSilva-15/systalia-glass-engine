@@ -130,7 +130,8 @@ O frame principal do redesign está em `src/qml/`: duas janelas de vidro, TopBar
 | Redesign VALO/SDE | Nova linguagem visual a partir do Figma | Composição principal e vetores exportados implementados e capturados em 1662 × 975; comparação em outras escalas e validação no host alvo seguem pendentes. Control Center de material separado do quick panel. |
 | 4.1 | Espaços de trabalho virtuais (Workspaces) e transição hidrodinâmica | Implementado; `WorkspaceManagerService`, `WorkspaceViewport.qml`, indicador de cápsulas na TopBar, isolamento de foco MRU por workspace, atalhos globais (`Super+Ctrl+Left/Right`, `Super+1..4`, `Super+Shift+1..4`), culling de Scene Graph e `tst_workspace_manager` com 25/25 testes aprovados. |
 | 4.2 | Sistema híbrido "Liquid Tiling" e snapping magnético | Implementado; `LiquidTilingService`, fusão hidrodinâmica de meniscos $G^2$ (`calculateFusedRadii`), `SnapPreviewOverlay.qml`, `TileSplitter.qml` com redimensionamento simultâneo em tempo real (`splitRatio` 0.20–0.80), desacoplamento orgânico ao arrastar e `tst_liquid_tiling` com 26/26 testes aprovados. |
-| Fases 4.3–6 | Multi-monitor, sessão autônoma, áudio e terminal | Roadmap; não implementado integralmente. |
+| 4.3 | Suporte multi-monitor e escalonamento fracionário (Fractional Scaling) | Implementado; `OutputManagerService` com `QWaylandXdgOutputManagerV1` / `QWaylandXdgOutputV1`, mapeamento de canvas unificado multi-ecrã, transição `wl_surface.enter` / `wl_surface.leave` entre monitores, adaptação de derivadas `fwidth` / `devicePixelRatio` em `valo_optical.frag` e `SystaliaGlassItem`, réplicas de TopBar por `Instantiator`, migração de Dock e `tst_output_manager` com 27/27 testes aprovados. |
+| Fases 4.4–6 | Auditoria de IPC, sessão autônoma, áudio e terminal | Roadmap; não implementado integralmente. |
 
 ### Risco de execução conhecido
 

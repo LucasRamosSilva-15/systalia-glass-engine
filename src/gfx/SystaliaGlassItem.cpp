@@ -107,6 +107,30 @@ void SystaliaGlassItem::setScreenResolution(const QVector2D &res) {
     }
 }
 
+void SystaliaGlassItem::setDevicePixelRatio(qreal dpr) {
+    const qreal clamped = std::clamp(dpr, 0.5, 4.0);
+    if (!qFuzzyCompare(m_devicePixelRatio, clamped)) {
+        m_devicePixelRatio = clamped;
+        emit devicePixelRatioChanged();
+        update();
+    }
+}
+
+QVector2D SystaliaGlassItem::effectivePhysicalResolution() const {
+    if (m_screenResolution.x() > 0.0f && m_screenResolution.y() > 0.0f) {
+        return m_screenResolution;
+    }
+    if (window()) {
+        const float dpr = static_cast<float>(
+            m_devicePixelRatio > 0.0 ? m_devicePixelRatio : window()->devicePixelRatio());
+        return QVector2D(static_cast<float>(window()->width()) * dpr,
+                         static_cast<float>(window()->height()) * dpr);
+    }
+    const float dpr = static_cast<float>(std::max(0.5, m_devicePixelRatio));
+    return QVector2D(static_cast<float>(width()) * dpr,
+                     static_cast<float>(height()) * dpr);
+}
+
 void SystaliaGlassItem::setTitleBarHeight(float height) {
     const float boundedHeight = std::max(0.0f, height);
     if (!qFuzzyCompare(m_titleBarHeight, boundedHeight)) {
@@ -253,16 +277,7 @@ QSGNode *SystaliaGlassItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeDat
     // Alimentar buffer uniforme std140
     SystaliaSurfaceProps props;
     props.windowSize = QVector2D(static_cast<float>(w), static_cast<float>(h));
-
-    if (m_screenResolution.x() > 0.0f && m_screenResolution.y() > 0.0f) {
-        props.screenResolution = m_screenResolution;
-    } else if (window()) {
-        const float dpr = static_cast<float>(window()->devicePixelRatio());
-        props.screenResolution = QVector2D(static_cast<float>(window()->width()) * dpr,
-                                           static_cast<float>(window()->height()) * dpr);
-    } else {
-        props.screenResolution = props.windowSize;
-    }
+    props.screenResolution = effectivePhysicalResolution();
 
     props.radii = m_radii;
     props.slant = m_slant;

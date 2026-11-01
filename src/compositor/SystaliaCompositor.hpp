@@ -9,6 +9,7 @@
 #include "SystaliaSurfaceExtension.hpp"
 #include "WindowStackModel.hpp"
 #include "WorkspaceManagerService.hpp"
+#include "OutputManagerService.hpp"
 #include <QMetaObject>
 #include <QPointer>
 #include <QQuickWindow>
@@ -26,6 +27,7 @@ class SystaliaCompositor : public QWaylandCompositor {
     Q_PROPERTY(SystaliaSurfaceExtension *surfaceExtension READ surfaceExtension CONSTANT)
     Q_PROPERTY(WindowStackModel *windowStackModel READ windowStackModel CONSTANT)
     Q_PROPERTY(WorkspaceManagerService *workspaceManager READ workspaceManager CONSTANT)
+    Q_PROPERTY(OutputManagerService *outputManager READ outputManager CONSTANT)
     Q_PROPERTY(int clientCount READ clientCount NOTIFY clientCountChanged)
     Q_PROPERTY(bool taskSwitcherVisible READ taskSwitcherVisible NOTIFY taskSwitcherVisibleChanged)
     Q_PROPERTY(int taskSwitcherIndex READ taskSwitcherIndex NOTIFY taskSwitcherIndexChanged)
@@ -44,6 +46,7 @@ public:
     SystaliaSurfaceExtension *surfaceExtension() const { return m_surfaceExtension; }
     WindowStackModel *windowStackModel() const { return m_windowStackModel; }
     WorkspaceManagerService *workspaceManager() const { return m_workspaceManager; }
+    OutputManagerService *outputManager() const { return m_outputManager; }
     int clientCount() const { return m_clientCount; }
     bool taskSwitcherVisible() const { return m_windowStackModel->taskSwitcherVisible(); }
     int taskSwitcherIndex() const { return m_windowStackModel->taskSwitcherIndex(); }
@@ -99,6 +102,7 @@ private:
     SystaliaSurfaceExtension *m_surfaceExtension = nullptr;
     WindowStackModel *m_windowStackModel = nullptr;
     WorkspaceManagerService *m_workspaceManager = nullptr;
+    OutputManagerService *m_outputManager = nullptr;
     int m_clientCount = 0;
     QSet<QWaylandSurface *> m_activeSurfaces;
     QSet<QWaylandXdgToplevel *> m_activeToplevels;

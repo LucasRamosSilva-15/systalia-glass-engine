@@ -77,12 +77,11 @@ void main() {
     vec2 halfSize = u_WindowSize * 0.5;
     vec2 p = v_Position - halfSize;
 
-    // 1. Recorte Analítico SDF G2 e Subpixel Anti-Aliasing
+    // 1. Recorte Analítico SDF G2 e Subpixel Anti-Aliasing com compensação HiDPI
     float dist = evaluateSurfaceSDF(p, halfSize, u_Radii, u_Slant);
-    // O filtro cobre a pegada completa do fragmento para manter a borda suave
-    // também em raios subpixel e escalas HiDPI.
-    float edgeWidth = max(fwidth(dist), 0.5);
-    float alphaMask = 1.0 - smoothstep(-edgeWidth, edgeWidth, dist);
+    float u_DevicePixelRatio = clamp(1.0 / max(fwidth(v_Position.x), 0.25), 1.0, 4.0);
+    float edgeWidth = max(fwidth(dist), 0.75 * u_DevicePixelRatio);
+    float alphaMask = 1.0 - smoothstep(-edgeWidth * 0.5, edgeWidth * 0.5, dist);
     if (alphaMask <= 0.001) discard;
 
     // 2. Menisco de Tensão Superficial (Gota de 28px)
@@ -96,8 +95,11 @@ void main() {
     float refrStrength = meniscus * (u_Ior - 1.0) * 45.0;
     vec2 refrOffset = norm * refrStrength * texelSize;
 
-    // 4. Amostragem em Screen-Space com Dispersão de Cauchy Fluida (sem moiré)
-    vec2 screenUV = clamp(gl_FragCoord.xy / max(u_ScreenResolution, vec2(1.0)), vec2(0.0), vec2(1.0));
+    // 4. Amostragem em Screen-Space Normalizada (Multi-Monitor) com Dispersão de Cauchy
+    vec2 rawScreenUV = gl_FragCoord.xy / max(u_ScreenResolution, vec2(1.0));
+    vec2 screenUV = (rawScreenUV.x > 1.0 || rawScreenUV.y > 1.0)
+                    ? fract(rawScreenUV)
+                    : clamp(rawScreenUV, vec2(0.0), vec2(1.0));
     float disp = u_ChromaticDispersion * meniscus * 30.0 * texelSize.x;
 
     float colR = texture(u_BackdropTexture, clamp(screenUV + refrOffset + norm * disp, vec2(0.002), vec2(0.998))).r;

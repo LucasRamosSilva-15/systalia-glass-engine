@@ -78,6 +78,11 @@ SystaliaCompositor::SystaliaCompositor(QObject *parent)
     m_decorationManager->setParent(this);
     m_decorationManager->setExtensionContainer(this);
     m_decorationManager->setPreferredMode(QWaylandXdgToplevel::ServerSideDecoration);
+
+    m_outputManager = OutputManagerService::instance();
+    if (m_outputManager) {
+        m_outputManager->attachCompositor(this);
+    }
 }
 
 SystaliaCompositor::~SystaliaCompositor() {

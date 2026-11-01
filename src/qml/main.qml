@@ -209,6 +209,7 @@ ApplicationWindow {
                         waylandServer: waylandServer,
                         workspace: rootWindow,
                         tilingService: LiquidTiling,
+                        outputManager: OutputManager,
                         backdropSource: backdropGrab,
                         workspaceIndex: wsIndex,
                         screenResolution: Qt.point(rootWindow.width * rootWindow.devicePixelRatio,
@@ -426,13 +427,43 @@ ApplicationWindow {
         }
     }
 
+    // Réplica configurável da TopBar em monitores secundários via Instantiator
+    Instantiator {
+        id: multiMonitorTopBarInstantiator
+        active: OutputManager.replicateTopBarOnAllScreens && OutputManager.screenCount > 1
+        model: OutputManager.screenGeometries
+        delegate: Shell.SystaliaTopBar {
+            required property int index
+            required property rect modelData
+            parent: rootWindow.contentItem
+            visible: index > 0 && multiMonitorTopBarInstantiator.active
+            x: modelData.x + 8
+            y: modelData.y + 4
+            z: 100
+            telemetry: SystemTelemetry
+            workspaceManager: WorkspaceManager
+            backdropSource: backdropGrab
+            screenResolution: OutputManager.physicalResolutionAt(index)
+            animationTime: animTimer.tick
+        }
+    }
+
     Item {
         id: dockCanvas
         width: 1662
         height: 975
         scale: rootWindow.designScale
-        x: (rootWindow.width - width * scale) / 2
+        readonly property rect activeScreenRect: OutputManager.screenCount > 0
+            ? OutputManager.screenGeometryAt(OutputManager.activeCursorScreen)
+            : Qt.rect(0, 0, rootWindow.width, rootWindow.height)
+        x: activeScreenRect.x + (rootWindow.width - width * scale) / 2
         y: (rootWindow.height - height * scale) / 2
+        Behavior on x {
+            NumberAnimation {
+                duration: 240
+                easing.type: Easing.OutCubic
+            }
+        }
         transformOrigin: Item.TopLeft
         z: 95
 

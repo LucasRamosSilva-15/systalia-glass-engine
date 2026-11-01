@@ -22,6 +22,7 @@ class SystaliaGlassItem : public QQuickItem {
     Q_PROPERTY(QQuickItem* backdropSource READ backdropSource WRITE setBackdropSource NOTIFY backdropSourceChanged)
     Q_PROPERTY(QQuickItem* clientTextureSource READ clientTextureSource WRITE setClientTextureSource NOTIFY clientTextureSourceChanged)
     Q_PROPERTY(QVector2D screenResolution READ screenResolution WRITE setScreenResolution NOTIFY screenResolutionChanged)
+    Q_PROPERTY(qreal devicePixelRatio READ devicePixelRatio WRITE setDevicePixelRatio NOTIFY devicePixelRatioChanged)
     Q_PROPERTY(float titleBarHeight READ titleBarHeight WRITE setTitleBarHeight NOTIFY titleBarHeightChanged)
     Q_PROPERTY(bool circularCorners READ circularCorners WRITE setCircularCorners NOTIFY circularCornersChanged)
 
@@ -59,6 +60,10 @@ public:
     QVector2D screenResolution() const { return m_screenResolution; }
     void setScreenResolution(const QVector2D &res);
 
+    qreal devicePixelRatio() const { return m_devicePixelRatio; }
+    void setDevicePixelRatio(qreal dpr);
+    QVector2D effectivePhysicalResolution() const;
+
     float titleBarHeight() const { return m_titleBarHeight; }
     void setTitleBarHeight(float height);
 
@@ -80,6 +85,7 @@ signals:
     void backdropSourceChanged();
     void clientTextureSourceChanged();
     void screenResolutionChanged();
+    void devicePixelRatioChanged();
     void titleBarHeightChanged();
     void circularCornersChanged();
 
@@ -99,6 +105,7 @@ private:
     QPointer<QQuickItem> m_backdropSource;
     QPointer<QQuickItem> m_clientTextureSource;
     QVector2D m_screenResolution = QVector2D(0.0f, 0.0f);
+    qreal m_devicePixelRatio = 1.0;
     float m_titleBarHeight = 36.0f;
 
     QPointer<QSGTextureProvider> m_connectedProvider;

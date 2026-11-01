@@ -58,6 +58,8 @@ qt_add_library(sge_core STATIC
     src/compositor/SystaliaCompositor.cpp
     src/compositor/WindowStackModel.hpp
     src/compositor/WindowStackModel.cpp
+    src/compositor/OutputManagerService.hpp
+    src/compositor/OutputManagerService.cpp
     src/system/SystemTelemetryService.hpp
     src/system/SystemTelemetryService.cpp
     src/system/ProcessLauncherService.hpp
