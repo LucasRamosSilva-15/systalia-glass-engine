@@ -22,6 +22,7 @@ Item {
     property bool maximizedBySge: false
     property bool restoringGeometry: false
     property bool destructionScheduled: false
+    property bool hadEverMapped: false
     property int workspaceIndex: 0
     property bool inActiveWorkspace: true
     property bool workspaceTransitioning: false
@@ -146,6 +147,7 @@ Item {
 
     onClientMappedChanged: {
         if (clientMapped) {
+            hadEverMapped = true
             syncClientGeometry()
             syncOutputRouting()
             if (inActiveWorkspace) {
@@ -273,6 +275,21 @@ Item {
         if (destructionScheduled)
             return
         destructionScheduled = true
+        visible = false
+        enabled = false
+        if (clientSurfaceItem) {
+            clientSurfaceItem.paintEnabled = false
+            clientSurfaceItem.surface = null
+            clientSurfaceItem.shellSurface = null
+        }
+        if (clientTextureCapture) {
+            clientTextureCapture.live = false
+            clientTextureCapture.sourceItem = null
+        }
+        if (glassChassis) {
+            glassChassis.clientTextureSource = null
+            glassChassis.occluded = true
+        }
         if (tilingService && typeof tilingService.unregisterWindowSnap === "function")
             tilingService.unregisterWindowSnap(windowContainer)
         finishResize()
@@ -342,13 +359,38 @@ Item {
             finishResize()
     }
 
-    onToplevelChanged: maximizedBySge = toplevel ? Boolean(toplevel.maximized) : false
+    onToplevelChanged: {
+        maximizedBySge = toplevel ? Boolean(toplevel.maximized) : false
+        if (!toplevel)
+            disposeContainer()
+    }
+
+    Timer {
+        id: closeFallbackTimer
+        interval: 220
+        repeat: false
+        onTriggered: {
+            if (!windowContainer.destructionScheduled)
+                windowContainer.disposeContainer()
+        }
+    }
 
     Connections {
         target: windowContainer.toplevel
+        ignoreUnknownSignals: true
         function onMaximizedChanged() {
             windowContainer.maximizedBySge = windowContainer.toplevel
                                              ? Boolean(windowContainer.toplevel.maximized) : false
+        }
+    }
+
+    Connections {
+        target: windowContainer.waylandServer
+        ignoreUnknownSignals: true
+        function onWindowRemoved(toplevelObj) {
+            if (toplevelObj === windowContainer.toplevel) {
+                windowContainer.disposeContainer()
+            }
         }
     }
 
@@ -479,6 +521,7 @@ Item {
             onCloseRequested: {
                 if (windowContainer.toplevel && windowContainer.waylandServer)
                     windowContainer.waylandServer.closeToplevel(windowContainer.toplevel)
+                closeFallbackTimer.restart()
             }
             onDragStarted: {
                 windowContainer.resizeAnchored = false

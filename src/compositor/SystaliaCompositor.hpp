@@ -82,6 +82,7 @@ signals:
     void toplevelWorkspaceChanged(QObject *toplevelObject, int workspaceIndex);
     void activeAppIdsChanged();
     void activeToplevelStateChanged();
+    void windowRemoved(QObject *toplevelObject);
     void toplevelCreated(QWaylandXdgToplevel *toplevel);
     void toplevelCreatedForQml(QObject *toplevelObject);
     void popupCreated(QWaylandXdgPopup *popup);
@@ -93,6 +94,7 @@ private slots:
     void onPopupCreated(QWaylandXdgPopup *popup, QWaylandXdgSurface *xdgSurface);
 
 private:
+    void removeToplevel(QWaylandXdgToplevel *toplevel);
     void recalculateClientCount();
     void syncFocusForCurrentWorkspace();
     QWaylandXdgToplevel *toplevelForSurface(QWaylandSurface *surface) const;

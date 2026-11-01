@@ -310,13 +310,16 @@ void WorkspaceManagerService::unregisterObject(QObject *object) {
         return;
     }
     bool changed = false;
-    if (auto *item = qobject_cast<QQuickItem *>(object)) {
-        if (m_windowWorkspaces.remove(item) > 0) {
-            changed = true;
-        }
-    }
     if (m_objectWorkspaces.remove(object) > 0) {
         changed = true;
+    }
+    for (auto it = m_windowWorkspaces.begin(); it != m_windowWorkspaces.end(); ) {
+        if (static_cast<QObject *>(it.key()) == object) {
+            it = m_windowWorkspaces.erase(it);
+            changed = true;
+        } else {
+            ++it;
+        }
     }
     if (changed) {
         bumpWorkspaceWindowsRevision();

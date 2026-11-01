@@ -51,6 +51,7 @@ private slots:
     void destroyingWindowRemovesItsModelRow();
     void invalidSelectionLeavesTheStackUnchanged();
     void singleWindowDoesNotOpenTheSwitcher();
+    void unregisterWindowAndWindowRemovedSignal();
 
 private:
     static bool populateThreeWindows(WindowStackModel &model,
@@ -226,6 +227,36 @@ void TestTaskSwitcher::singleWindowDoesNotOpenTheSwitcher() {
     sendKey(rootWindow, QEvent::KeyPress, Qt::Key_Tab, Qt::AltModifier);
     QVERIFY(!compositor.taskSwitcherVisible());
     QCOMPARE(compositor.taskSwitcherIndex(), 0);
+}
+
+void TestTaskSwitcher::unregisterWindowAndWindowRemovedSignal() {
+    SystaliaCompositor compositor;
+    WindowStackModel *model = compositor.windowStackModel();
+    QVERIFY(model);
+
+    QSignalSpy removedSpy(&compositor, &SystaliaCompositor::windowRemoved);
+    QVERIFY(removedSpy.isValid());
+
+    auto win1 = std::make_unique<MockToplevel>(QStringLiteral("App 1"), QStringLiteral("app1"));
+    auto win2 = std::make_unique<MockToplevel>(QStringLiteral("App 2"), QStringLiteral("app2"));
+    QVERIFY(model->registerWindow(win1.get()));
+    QVERIFY(model->registerWindow(win2.get()));
+    QCOMPARE(model->windowCount(), 2);
+
+    // Unregister explicitamente via model
+    QVERIFY(model->unregisterWindow(win1.get()));
+    QCOMPARE(model->windowCount(), 1);
+    QCOMPARE(model->currentWindow(), static_cast<QObject *>(win2.get()));
+    QCOMPARE(model->taskSwitcherIndex(), 0);
+
+    // Unregister de ponteiro nulo (deve retornar false e não travar)
+    QVERIFY(!model->unregisterWindow(nullptr));
+
+    // Reset do win2
+    win2.reset();
+    QCOMPARE(model->windowCount(), 0);
+    QCOMPARE(model->selectedWindow(), nullptr);
+    QCOMPARE(model->taskSwitcherIndex(), 0);
 }
 
 QTEST_MAIN(TestTaskSwitcher)

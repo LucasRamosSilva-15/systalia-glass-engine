@@ -129,7 +129,7 @@ Item {
                     id: liveSurfacePreview
                     anchors.fill: parent
                     surface: taskCard.surface
-                    paintEnabled: true
+                    paintEnabled: Boolean(taskCard.surface)
                     inputEventsEnabled: false
                     touchEventsEnabled: false
                     focusOnClick: false
@@ -207,7 +207,7 @@ Item {
     Connections {
         target: taskSwitcher.waylandServer
         function onTaskSwitcherIndexChanged() {
-            if (itemsList.currentIndex >= 0)
+            if (itemsList.currentIndex >= 0 && itemsList.currentIndex < itemsList.count)
                 itemsList.positionViewAtIndex(itemsList.currentIndex, ListView.Contain)
         }
     }

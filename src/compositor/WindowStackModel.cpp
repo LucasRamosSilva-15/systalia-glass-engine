@@ -112,9 +112,27 @@ bool WindowStackModel::registerWindow(QObject *window) {
 }
 
 bool WindowStackModel::unregisterWindow(QObject *window) {
+    if (!window) {
+        bool anyRemoved = false;
+        for (int i = m_windows.size() - 1; i >= 0; --i) {
+            if (!m_windows.at(i).window) {
+                unregisterWindowById(m_windows.at(i).id);
+                anyRemoved = true;
+            }
+        }
+        return anyRemoved;
+    }
     const int row = indexOf(window);
-    if (row < 0)
-        return false;
+    if (row < 0) {
+        bool anyRemoved = false;
+        for (int i = m_windows.size() - 1; i >= 0; --i) {
+            if (!m_windows.at(i).window) {
+                unregisterWindowById(m_windows.at(i).id);
+                anyRemoved = true;
+            }
+        }
+        return anyRemoved;
+    }
     unregisterWindowById(m_windows.at(row).id);
     return true;
 }

@@ -251,11 +251,14 @@ bool SystaliaCompositor::activateToplevel(QObject *toplevelObject) {
 
     const auto configureSize = [](QWaylandXdgToplevel *window) {
         if (!window || !window->xdgSurface())
-            return QSize(0, 0);
+            return QSize(800, 500);
         QSize s = window->xdgSurface()->windowGeometry().size();
         if (s.width() <= 0 || s.height() <= 0) {
             if (window->xdgSurface()->surface())
                 s = window->xdgSurface()->surface()->destinationSize();
+        }
+        if (s.width() <= 0 || s.height() <= 0) {
+            s = QSize(800, 500);
         }
         return s;
     };
@@ -566,7 +569,9 @@ void SystaliaCompositor::syncFocusForCurrentWorkspace() {
     }
 
     if (QWaylandSeat *seat = defaultSeat()) {
-        seat->setKeyboardFocus(nullptr);
+        if (seat->keyboardFocus()) {
+            seat->setKeyboardFocus(nullptr);
+        }
     }
     for (QWaylandXdgToplevel *candidate : std::as_const(m_activeToplevels)) {
         if (!candidate || !candidate->xdgSurface()) {
@@ -581,6 +586,31 @@ void SystaliaCompositor::syncFocusForCurrentWorkspace() {
     }
 }
 
+void SystaliaCompositor::removeToplevel(QWaylandXdgToplevel *toplevel) {
+    if (!toplevel) {
+        return;
+    }
+    const bool wasActive = m_activeToplevels.remove(toplevel);
+    const bool wasMinimized = m_minimizedToplevels.remove(toplevel) > 0;
+    if (m_workspaceManager) {
+        m_workspaceManager->unregisterObject(toplevel);
+    }
+    if (m_windowStackModel) {
+        m_windowStackModel->unregisterWindow(toplevel);
+    }
+    if (wasMinimized) {
+        ++m_minimizedToplevelsRevision;
+        emit minimizedToplevelsChanged();
+    }
+    if (wasActive || wasMinimized) {
+        emit windowRemoved(toplevel);
+        recalculateClientCount();
+        emit activeAppIdsChanged();
+        emit activeToplevelStateChanged();
+        syncFocusForCurrentWorkspace();
+    }
+}
+
 void SystaliaCompositor::onSurfaceCreated(QWaylandSurface *surface) {
     if (surface) {
         m_activeSurfaces.insert(surface);
@@ -591,6 +621,9 @@ void SystaliaCompositor::onSurfaceCreated(QWaylandSurface *surface) {
 
 void SystaliaCompositor::onSurfaceAboutToBeDestroyed(QWaylandSurface *surface) {
     if (surface) {
+        if (QWaylandXdgToplevel *toplevel = toplevelForSurface(surface)) {
+            removeToplevel(toplevel);
+        }
         m_activeSurfaces.remove(surface);
         recalculateClientCount();
         qDebug().noquote() << "[SGE-WAYLAND] Superfície prestes a ser destruída. Restantes:" << m_activeSurfaces.size();
@@ -612,17 +645,28 @@ void SystaliaCompositor::onToplevelCreated(QWaylandXdgToplevel *toplevel, QWayla
         });
         connect(toplevel, &QObject::destroyed, this, [this, toplevel]() {
             m_activeToplevels.remove(toplevel);
+            m_minimizedToplevels.remove(toplevel);
             if (m_workspaceManager) {
                 m_workspaceManager->unregisterObject(toplevel);
             }
-            if (m_minimizedToplevels.remove(toplevel) > 0) {
-                ++m_minimizedToplevelsRevision;
-                emit minimizedToplevelsChanged();
-                emit activeToplevelStateChanged();
+            if (m_windowStackModel) {
+                m_windowStackModel->unregisterWindow(toplevel);
             }
+            recalculateClientCount();
             emit activeAppIdsChanged();
             emit activeToplevelStateChanged();
+            syncFocusForCurrentWorkspace();
         });
+        const QPointer<QWaylandXdgToplevel> safeToplevel = toplevel;
+        if (xdgSurface) {
+            if (QWaylandSurface *surface = xdgSurface->surface()) {
+                connect(surface, &QWaylandSurface::surfaceDestroyed, this, [this, safeToplevel]() {
+                    if (safeToplevel) {
+                        removeToplevel(safeToplevel.data());
+                    }
+                });
+            }
+        }
         emit activeAppIdsChanged();
         emit activeToplevelStateChanged();
 
