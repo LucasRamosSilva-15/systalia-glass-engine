@@ -225,10 +225,10 @@ O frame Figma tem 1662 × 975 px. O canvas mantém essa referência e usa escala
 
 ### 6.3 Fase 4 — Workspaces, tiling e multi-monitor
 
-- 4.1 workspaces virtuais com foco e isolamento de janelas.
-- 4.2 snapping e tiling com raios externos/internos coordenados.
-- 4.3 outputs múltiplos, escala fracionária e migração de superfícies.
-- 4.4 auditoria de IPC, desconexões e clientes malformados.
+- 4.1 workspaces virtuais com foco e isolamento de janelas (**Concluído** — `WorkspaceManagerService`, `WorkspaceViewport.qml`, `WorkspaceIndicator.qml`, `tst_workspace_manager`).
+- 4.2 snapping e tiling com raios externos/internos coordenados (**Concluído** — `LiquidTilingService`, `SnapPreviewOverlay.qml`, `TileSplitter.qml`, `tst_liquid_tiling`).
+- 4.3 outputs múltiplos, escala fracionária e migração de superfícies (**Concluído** — `OutputManagerService`, `QWaylandXdgOutputManagerV1`, `QWaylandViewporter`, `tst_output_manager`).
+- 4.4 auditoria de performance da Fase 4, occlusion/frustum culling de workspaces com preservação de VRAM, throttling V-Blank de resize no `TileSplitter`, proteção algébrica $G^2$ contra `NaN` (`l4 > 1e-12`) e migração automática em hot-unplug multi-monitor (**Concluído** — `tst_phase4_audit`, 28/28 alvos CTest).
 
 ### 6.4 Fase 5 — Sessão autônoma
 

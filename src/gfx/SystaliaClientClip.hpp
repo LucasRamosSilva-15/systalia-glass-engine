@@ -54,9 +54,8 @@ struct SystaliaClientClipGeometry {
         const QVector2D q(std::abs(slantedPosition.x()) - halfSize.x() + clampedRadius,
                           std::abs(slantedPosition.y()) - halfSize.y() + clampedRadius);
         const QVector2D positive(std::max(q.x(), 0.0f), std::max(q.y(), 0.0f));
-        const float fourthPowerDistance = std::pow(std::pow(positive.x(), 4.0f)
-                                                       + std::pow(positive.y(), 4.0f),
-                                                   0.25f)
+        const float l4 = std::pow(positive.x(), 4.0f) + std::pow(positive.y(), 4.0f);
+        const float fourthPowerDistance = (l4 > 1e-12f ? std::pow(l4, 0.25f) : 0.0f)
                                           - clampedRadius;
         const float distance = (q.x() > 0.0f && q.y() > 0.0f)
                                    ? fourthPowerDistance

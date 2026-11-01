@@ -146,12 +146,14 @@ ApplicationWindow {
         }
     }
 
-    function syncSnappedWindowsInActiveWorkspace(ratio, interactive) {
+    function syncSnappedWindowsInActiveWorkspace(ratio, interactive, forceDispatch) {
         const activeWs = WorkspaceManager.currentWorkspace
+        const dispatchConfigure = Boolean(forceDispatch)
+            || LiquidTiling.shouldDispatchInteractiveResize(Boolean(interactive))
         for (let i = 0; i < trackedClientContainers.length; ++i) {
             const win = trackedClientContainers[i]
             if (win && win.workspaceIndex === activeWs && win.snapState !== 0) {
-                win.updateSnappedGeometry(ratio, interactive)
+                win.updateSnappedGeometry(ratio, interactive, dispatchConfigure)
             }
         }
         if (activeWs === 0) {
@@ -567,6 +569,13 @@ ApplicationWindow {
             if (targetPage && windowItem.parent !== targetPage) {
                 windowItem.parent = targetPage
             }
+        }
+    }
+
+    Connections {
+        target: LiquidTiling
+        function onThrottledResizeFlushRequested(flushedRatio) {
+            rootWindow.syncSnappedWindowsInActiveWorkspace(flushedRatio, true, true)
         }
     }
 

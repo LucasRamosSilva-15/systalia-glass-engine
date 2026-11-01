@@ -231,7 +231,7 @@ Item {
         updateSnappedGeometry(tilingService.splitRatio, false)
     }
 
-    function updateSnappedGeometry(ratio, interactive) {
+    function updateSnappedGeometry(ratio, interactive, dispatchConfigure) {
         if (!tilingService || snapState === 0)
             return
         const targetGeo = tilingService.getSnapGeometry(snapState, availableSnapArea, ratio)
@@ -244,7 +244,8 @@ Item {
         const clientW = Math.max(1, Math.round(targetGeo.width - 2 * frameMargin))
         const clientH = Math.max(1, Math.round(targetGeo.height - titleBarHeight - 2 * frameMargin))
         requestedClientSize = Qt.size(clientW, clientH)
-        if (waylandServer && toplevel)
+        const shouldSend = (dispatchConfigure === undefined) ? true : Boolean(dispatchConfigure)
+        if (shouldSend && waylandServer && toplevel)
             waylandServer.requestToplevelResize(toplevel, requestedClientSize, Boolean(interactive))
     }
 
@@ -374,6 +375,7 @@ Item {
         screenResolution: Qt.vector2d(windowContainer.screenResolution.x, windowContainer.screenResolution.y)
         devicePixelRatio: windowContainer.currentScreenScale
         titleBarHeight: windowContainer.titleBarHeight
+        occluded: !windowContainer.visible
 
         radii: windowContainer.frameRadii
         Behavior on radii {
@@ -435,7 +437,7 @@ Item {
                 id: clientTextureCapture
                 objectName: "clientTextureCapture"
                 sourceItem: clientSurfaceItem
-                live: true
+                live: windowContainer.visible
                 hideSource: false
                 recursive: false
                 visible: false

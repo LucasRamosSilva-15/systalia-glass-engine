@@ -44,7 +44,11 @@ Item {
                 y: 0
                 width: viewport.width
                 height: viewport.height
-                visible: (index === viewport.currentWorkspace) || viewport.isTransitioning
+                readonly property real xViewport: workspaceContainer.x + x
+                readonly property bool withinViewportFrustum: viewport.width <= 0
+                                                              || Math.abs(xViewport) < viewport.width
+                visible: (index === viewport.currentWorkspace)
+                         || (viewport.isTransitioning && withinViewportFrustum)
                 enabled: (index === viewport.currentWorkspace) && !viewport.isTransitioning
             }
         }

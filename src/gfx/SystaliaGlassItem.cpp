@@ -21,7 +21,7 @@ void SystaliaGlassItem::setRadii(const QVector4D &radii) {
     if (m_radii != radii) {
         m_radii = radii;
         emit radiiChanged();
-        update();
+        requestSceneUpdate();
     }
 }
 
@@ -29,7 +29,7 @@ void SystaliaGlassItem::setSlant(float slant) {
     if (!qFuzzyCompare(m_slant, slant)) {
         m_slant = slant;
         emit slantChanged();
-        update();
+        requestSceneUpdate();
     }
 }
 
@@ -37,7 +37,7 @@ void SystaliaGlassItem::setIor(float ior) {
     if (!qFuzzyCompare(m_ior, ior)) {
         m_ior = ior;
         emit iorChanged();
-        update();
+        requestSceneUpdate();
     }
 }
 
@@ -45,7 +45,7 @@ void SystaliaGlassItem::setChromaticDispersion(float dispersion) {
     if (!qFuzzyCompare(m_chromaticDispersion, dispersion)) {
         m_chromaticDispersion = dispersion;
         emit chromaticDispersionChanged();
-        update();
+        requestSceneUpdate();
     }
 }
 
@@ -53,7 +53,7 @@ void SystaliaGlassItem::setCausticIntensity(float intensity) {
     if (!qFuzzyCompare(m_causticIntensity, intensity)) {
         m_causticIntensity = intensity;
         emit causticIntensityChanged();
-        update();
+        requestSceneUpdate();
     }
 }
 
@@ -61,7 +61,7 @@ void SystaliaGlassItem::setSurfaceOpacity(float opacity) {
     if (!qFuzzyCompare(m_surfaceOpacity, opacity)) {
         m_surfaceOpacity = opacity;
         emit surfaceOpacityChanged();
-        update();
+        requestSceneUpdate();
     }
 }
 
@@ -69,6 +69,49 @@ void SystaliaGlassItem::setTime(float t) {
     if (!qFuzzyCompare(m_time, t)) {
         m_time = t;
         emit timeChanged();
+        requestSceneUpdate();
+    }
+}
+
+void SystaliaGlassItem::setOccluded(bool occluded) {
+    if (m_occluded == occluded) {
+        return;
+    }
+    m_occluded = occluded;
+    emit occludedChanged();
+    if (!m_occluded) {
+        update();
+    }
+}
+
+bool SystaliaGlassItem::shouldSuppressSceneGraphUpdate() const noexcept {
+    if (m_occluded) {
+        return true;
+    }
+    if (window() && !isVisible()) {
+        return true;
+    }
+    return false;
+}
+
+bool SystaliaGlassItem::hasPreservedVramTextures() const noexcept {
+    return m_backdropSource != nullptr
+           || m_clientTextureSource != nullptr
+           || m_fallbackTexture != nullptr
+           || m_fallbackClientTexture != nullptr;
+}
+
+void SystaliaGlassItem::requestSceneUpdate() {
+    if (shouldSuppressSceneGraphUpdate()) {
+        ++m_suppressedUpdateCount;
+        return;
+    }
+    update();
+}
+
+void SystaliaGlassItem::itemChange(ItemChange change, const ItemChangeData &value) {
+    QQuickItem::itemChange(change, value);
+    if (change == ItemVisibleHasChanged && value.boolValue && !m_occluded) {
         update();
     }
 }
@@ -188,6 +231,11 @@ void SystaliaGlassItem::releaseResources() {
 }
 
 QSGNode *SystaliaGlassItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *) {
+    if (m_occluded) {
+        ++m_suppressedUpdateCount;
+        return oldNode;
+    }
+
     const qreal w = width();
     const qreal h = height();
 
@@ -195,6 +243,8 @@ QSGNode *SystaliaGlassItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeDat
         delete oldNode;
         return nullptr;
     }
+
+    ++m_paintNodeUpdateCount;
 
     auto *node = static_cast<QSGGeometryNode *>(oldNode);
     SystaliaGlassMaterial *material = nullptr;

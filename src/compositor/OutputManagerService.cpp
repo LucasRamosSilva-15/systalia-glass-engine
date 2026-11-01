@@ -1,6 +1,7 @@
 #include "OutputManagerService.hpp"
 
 #include <QGuiApplication>
+#include <QQuickItem>
 #include <QVariantMap>
 #include <QtMath>
 #include <QtWaylandCompositor/QWaylandOutputMode>
@@ -31,6 +32,14 @@ OutputManagerService::OutputManagerService(QObject *parent)
 }
 
 OutputManagerService::~OutputManagerService() {
+    if (m_compositor && m_xdgOutputManager) {
+        for (auto &entry : m_outputs) {
+            delete entry.xdgOutput.data();
+            delete entry.waylandOutput.data();
+        }
+    }
+    m_outputs.clear();
+    m_outputXdgMap.clear();
     if (s_instance == this) {
         s_instance = nullptr;
     }
@@ -152,12 +161,11 @@ void OutputManagerService::setReplicateTopBarOnAllScreens(bool replicate) {
 
 void OutputManagerService::clearScreens() {
     for (auto &entry : m_outputs) {
-        if (entry.xdgOutput) {
-            entry.xdgOutput->deleteLater();
-        }
         if (entry.waylandOutput) {
-            entry.waylandOutput->deleteLater();
+            m_outputXdgMap.remove(entry.waylandOutput);
         }
+        delete entry.xdgOutput.data();
+        delete entry.waylandOutput.data();
     }
     m_outputs.clear();
     m_activeCursorScreen = 0;
@@ -192,6 +200,101 @@ int OutputManagerService::addVirtualScreen(const QString &name, const QRect &geo
         emit primaryScaleChanged(info.scale);
     }
     return index;
+}
+
+bool OutputManagerService::removeScreen(int index) {
+    if (index < 0 || index >= m_outputs.size() || m_outputs.size() <= 1) {
+        return false;
+    }
+
+    ManagedOutputInfo removedEntry = m_outputs.takeAt(index);
+    const QRect primaryGeo = m_outputs.first().geometry;
+    const qreal primaryScaleVal = m_outputs.first().scale;
+    QWaylandOutput *primaryWlOut = m_outputs.first().waylandOutput;
+
+    for (auto it = m_windowScreenMap.begin(); it != m_windowScreenMap.end(); ++it) {
+        QObject *winObj = it.key();
+        const int prevIdx = it.value();
+
+        if (prevIdx == index) {
+            it.value() = 0;
+
+            if (QWaylandSurface *surf = m_windowSurfaceMap.value(winObj).data()) {
+                if (removedEntry.waylandOutput) {
+                    removedEntry.waylandOutput->surfaceLeave(surf);
+                }
+                if (primaryWlOut) {
+                    primaryWlOut->surfaceEnter(surf);
+                }
+            }
+
+            QRectF migratedRect;
+            if (auto *item = qobject_cast<QQuickItem *>(winObj)) {
+                const QRectF currentRect(item->x(), item->y(), item->width(), item->height());
+                migratedRect = clampWindowToPrimaryScreen(currentRect);
+                item->setX(migratedRect.x());
+                item->setY(migratedRect.y());
+                if (item->width() > 0.0 && migratedRect.width() > 0.0) {
+                    item->setWidth(migratedRect.width());
+                }
+                if (item->height() > 0.0 && migratedRect.height() > 0.0) {
+                    item->setHeight(migratedRect.height());
+                }
+            } else {
+                migratedRect = QRectF(primaryGeo);
+            }
+
+            emit windowMigratedOnHotUnplug(winObj, index, 0, migratedRect);
+            emit windowScreenTransitioned(winObj, 0, index, primaryScaleVal);
+        } else if (prevIdx > index) {
+            it.value() = prevIdx - 1;
+        }
+    }
+
+    if (removedEntry.waylandOutput) {
+        m_outputXdgMap.remove(removedEntry.waylandOutput);
+    }
+    delete removedEntry.xdgOutput.data();
+    delete removedEntry.waylandOutput.data();
+
+    if (m_activeCursorScreen >= m_outputs.size()) {
+        m_activeCursorScreen = 0;
+        emit activeCursorScreenChanged(m_activeCursorScreen);
+    } else if (m_activeCursorScreen == index) {
+        m_activeCursorScreen = 0;
+        emit activeCursorScreenChanged(m_activeCursorScreen);
+    } else if (m_activeCursorScreen > index) {
+        --m_activeCursorScreen;
+        emit activeCursorScreenChanged(m_activeCursorScreen);
+    }
+
+    emit screensChanged();
+    if (index == 0) {
+        emit primaryScaleChanged(primaryScale());
+    }
+    return true;
+}
+
+bool OutputManagerService::removeScreenByName(const QString &name) {
+    for (int i = 0; i < m_outputs.size(); ++i) {
+        if (m_outputs.at(i).name == name) {
+            return removeScreen(i);
+        }
+    }
+    return false;
+}
+
+QRectF OutputManagerService::clampWindowToPrimaryScreen(const QRectF &windowRect) const {
+    const QRect primary = m_outputs.isEmpty() ? QRect(0, 0, 1920, 1080) : m_outputs.first().geometry;
+    const qreal w = std::clamp(windowRect.width() > 0.0 ? windowRect.width() : 640.0,
+                               120.0, static_cast<qreal>(primary.width()));
+    const qreal h = std::clamp(windowRect.height() > 0.0 ? windowRect.height() : 420.0,
+                               90.0, static_cast<qreal>(primary.height()));
+    const qreal maxX = std::max<qreal>(primary.x(), primary.x() + primary.width() - w);
+    const qreal maxY = std::max<qreal>(primary.y(), primary.y() + primary.height() - h);
+    const qreal clampedX = std::clamp(windowRect.x(), static_cast<qreal>(primary.x()), maxX);
+    const qreal clampedY = std::clamp(windowRect.y(), static_cast<qreal>(primary.y()), maxY);
+    return QRectF(clampedX, clampedY, w, h);
 }
 
 void OutputManagerService::setScreenScale(int index, qreal scale) {
@@ -229,12 +332,11 @@ void OutputManagerService::syncWithHostScreens() {
     }
 
     for (auto &entry : m_outputs) {
-        if (entry.xdgOutput) {
-            entry.xdgOutput->deleteLater();
-        }
         if (entry.waylandOutput) {
-            entry.waylandOutput->deleteLater();
+            m_outputXdgMap.remove(entry.waylandOutput);
         }
+        delete entry.xdgOutput.data();
+        delete entry.waylandOutput.data();
     }
     m_outputs.clear();
 
@@ -402,6 +504,9 @@ int OutputManagerService::updateWindowOutputRouting(QObject *windowObj,
     }
 
     m_windowScreenMap.insert(windowObj, targetIndex);
+    if (surface) {
+        m_windowSurfaceMap.insert(windowObj, surface);
+    }
 
     if (previousIndex != targetIndex) {
         if (surface) {
@@ -548,5 +653,6 @@ void OutputManagerService::unregisterWindowObject(QObject *obj) {
         return;
     }
     m_windowScreenMap.remove(obj);
+    m_windowSurfaceMap.remove(obj);
 }
 

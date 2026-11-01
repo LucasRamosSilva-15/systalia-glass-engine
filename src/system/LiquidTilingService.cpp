@@ -11,6 +11,12 @@ LiquidTilingService *s_instance = nullptr;
 LiquidTilingService::LiquidTilingService(QObject *parent)
     : QObject(parent) {
     s_instance = this;
+    m_pendingFlushTimer.setSingleShot(true);
+    connect(&m_pendingFlushTimer, &QTimer::timeout, this, [this]() {
+        m_resizeThrottleTimer.restart();
+        ++m_dispatchedConfigureCount;
+        emit throttledResizeFlushRequested(m_splitRatio);
+    });
 }
 
 LiquidTilingService::~LiquidTilingService() {
@@ -35,7 +41,7 @@ void LiquidTilingService::setSplitRatio(qreal ratio) {
 }
 
 void LiquidTilingService::setSplitterGap(qreal gap) {
-    const qreal sanitized = std::max<qreal>(0.0, gap);
+    const qreal sanitized = std::isfinite(gap) ? std::max<qreal>(0.0, gap) : 0.0;
     if (qFuzzyCompare(1.0 + m_splitterGap, 1.0 + sanitized)) {
         return;
     }
@@ -43,6 +49,47 @@ void LiquidTilingService::setSplitterGap(qreal gap) {
     m_splitterGap = sanitized;
     emit splitterGapChanged(m_splitterGap);
     bumpTilingRevision();
+}
+
+void LiquidTilingService::setTargetRefreshRateHz(int refreshRateHz) {
+    const int clamped = std::clamp(refreshRateHz, 30, 360);
+    if (m_targetRefreshRateHz == clamped) {
+        return;
+    }
+    m_targetRefreshRateHz = clamped;
+    emit targetRefreshRateHzChanged(m_targetRefreshRateHz);
+}
+
+bool LiquidTilingService::shouldDispatchInteractiveResize(bool interactive) {
+    if (!interactive) {
+        m_pendingFlushTimer.stop();
+        m_resizeThrottleTimer.restart();
+        ++m_dispatchedConfigureCount;
+        return true;
+    }
+
+    const qint64 intervalNs = static_cast<qint64>(vblankIntervalMs() * 1000000.0);
+    if (!m_resizeThrottleTimer.isValid() || m_resizeThrottleTimer.nsecsElapsed() >= intervalNs) {
+        m_pendingFlushTimer.stop();
+        m_resizeThrottleTimer.restart();
+        ++m_dispatchedConfigureCount;
+        return true;
+    }
+
+    ++m_throttledConfigureCount;
+    if (!m_pendingFlushTimer.isActive()) {
+        const double elapsedMs = static_cast<double>(m_resizeThrottleTimer.nsecsElapsed()) / 1000000.0;
+        const int remainingMs = std::max(1, static_cast<int>(std::ceil(vblankIntervalMs() - elapsedMs)));
+        m_pendingFlushTimer.start(remainingMs);
+    }
+    return false;
+}
+
+void LiquidTilingService::resetConfigureAuditCounters() noexcept {
+    m_pendingFlushTimer.stop();
+    m_resizeThrottleTimer.invalidate();
+    m_dispatchedConfigureCount = 0;
+    m_throttledConfigureCount = 0;
 }
 
 int LiquidTilingService::calculateSnapTarget(const QPointF &cursorPos,
@@ -145,7 +192,10 @@ QRectF LiquidTilingService::getSnapGeometry(int snapTarget, const QRectF &availa
 }
 
 QVector4D LiquidTilingService::calculateFusedRadii(int snapTarget, qreal baseRadius) const {
-    const float r = static_cast<float>(std::max<qreal>(0.0, baseRadius));
+    const qreal sanitized = std::isfinite(baseRadius)
+                            ? std::clamp<qreal>(baseRadius, 0.0, 512.0)
+                            : 0.0;
+    const float r = static_cast<float>(sanitized);
     switch (static_cast<SnapZone>(snapTarget)) {
     case SnapLeft:
         return QVector4D(r, 0.0f, r, 0.0f);
@@ -165,6 +215,50 @@ QVector4D LiquidTilingService::calculateFusedRadii(int snapTarget, qreal baseRad
     default:
         return QVector4D(r, r, r, r);
     }
+}
+
+bool LiquidTilingService::isValidFusedRadii(const QVector4D &radii) const noexcept {
+    return std::isfinite(radii.x()) && std::isfinite(radii.y())
+           && std::isfinite(radii.z()) && std::isfinite(radii.w())
+           && radii.x() >= 0.0f && radii.y() >= 0.0f
+           && radii.z() >= 0.0f && radii.w() >= 0.0f;
+}
+
+float LiquidTilingService::evaluateSafeG2Distance(const QPointF &localPoint,
+                                                  const QSizeF &windowSize,
+                                                  const QVector4D &radii) const noexcept {
+    if (!windowSize.isValid() || windowSize.width() <= 0.0 || windowSize.height() <= 0.0) {
+        return 0.0f;
+    }
+
+    const float bx = static_cast<float>(windowSize.width() * 0.5);
+    const float by = static_cast<float>(windowSize.height() * 0.5);
+    const float px = static_cast<float>(localPoint.x()) - bx;
+    const float py = static_cast<float>(localPoint.y()) - by;
+
+    float rawRad = 0.0f;
+    if (px < 0.0f) {
+        rawRad = (py < 0.0f) ? radii.x() : radii.z();
+    } else {
+        rawRad = (py < 0.0f) ? radii.y() : radii.w();
+    }
+
+    if (!std::isfinite(rawRad) || rawRad < 0.0f) {
+        rawRad = 0.0f;
+    }
+
+    const float maxRad = std::max(0.0f, std::min(bx, by) - 0.5f);
+    const float rad = std::clamp(rawRad, 0.0f, maxRad);
+
+    const float qx = std::abs(px) - bx + rad;
+    const float qy = std::abs(py) - by + rad;
+    const float qpx = std::max(qx, 0.0f);
+    const float qpy = std::max(qy, 0.0f);
+
+    const float l4 = std::pow(qpx, 4.0f) + std::pow(qpy, 4.0f);
+    const float cornerDist = (l4 > 1e-12f) ? (std::pow(l4, 0.25f) - rad) : -rad;
+    const float dist = (qx > 0.0f && qy > 0.0f) ? cornerDist : (std::max(qx, qy) - rad);
+    return std::isfinite(dist) ? dist : 0.0f;
 }
 
 void LiquidTilingService::updateSnapPreview(const QPointF &cursorPos, const QRectF &screenRect,

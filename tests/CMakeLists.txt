@@ -237,6 +237,7 @@ sge_add_expanded_test(tst_resource_leak_audit unit/tst_ResourceLeakAudit.cpp uni
 sge_add_expanded_test(tst_workspace_manager unit/tst_WorkspaceManager.cpp unit)
 sge_add_expanded_test(tst_liquid_tiling unit/tst_LiquidTiling.cpp unit)
 sge_add_expanded_test(tst_output_manager unit/tst_OutputManager.cpp unit)
+sge_add_expanded_test(tst_phase4_audit unit/tst_Phase4Audit.cpp unit)
 
 # Integration tests exercise actual Wayland wire requests and model resets.
 sge_add_expanded_test(tst_protocol_roundtrip integration/tst_ProtocolRoundtrip.cpp integration)
@@ -273,6 +274,7 @@ add_custom_target(unit_tests DEPENDS
     tst_workspace_manager
     tst_liquid_tiling
     tst_output_manager
+    tst_phase4_audit
 )
 add_custom_target(integration_tests DEPENDS
     tst_wayland_socket
@@ -305,6 +307,7 @@ set_tests_properties(
     tst_workspace_manager
     tst_liquid_tiling
     tst_output_manager
+    tst_phase4_audit
     PROPERTIES LABELS "unit"
 )
 set_tests_properties(

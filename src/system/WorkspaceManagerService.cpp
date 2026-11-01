@@ -3,6 +3,7 @@
 #include <QSet>
 #include <QVariant>
 #include <algorithm>
+#include <cmath>
 
 namespace {
 WorkspaceManagerService *s_instance = nullptr;
@@ -48,6 +49,7 @@ void WorkspaceManagerService::setTransitioning(bool transitioning) {
         return;
     }
     m_isTransitioning = transitioning;
+    syncWindowCullingStates();
     emit isTransitioningChanged(m_isTransitioning);
 }
 
@@ -70,6 +72,7 @@ void WorkspaceManagerService::switchToWorkspace(int index) {
     m_currentWorkspace = index;
     setTransitioning(true);
     m_transitionTimer.start();
+    syncWindowCullingStates();
     emit currentWorkspaceChanged(m_currentWorkspace);
 }
 
@@ -129,6 +132,7 @@ void WorkspaceManagerService::setWindowWorkspace(QQuickItem *window, int workspa
     }
 
     if (!alreadyTracked || previousWorkspace != workspaceIndex) {
+        syncWindowCullingStates();
         emit windowWorkspaceChanged(window, workspaceIndex);
         bumpWorkspaceWindowsRevision();
     }
@@ -136,6 +140,86 @@ void WorkspaceManagerService::setWindowWorkspace(QQuickItem *window, int workspa
 
 bool WorkspaceManagerService::hasWindowsInWorkspace(int workspaceIndex) const {
     return windowCountInWorkspace(workspaceIndex) > 0;
+}
+
+bool WorkspaceManagerService::isWorkspaceWithinFrustum(int workspaceIndex, qreal viewportOffset,
+                                                       qreal screenWidth) const noexcept {
+    if (workspaceIndex < 0 || workspaceIndex >= m_totalWorkspaces) {
+        return false;
+    }
+    if (screenWidth <= 0.0) {
+        return workspaceIndex == m_currentWorkspace;
+    }
+    const qreal xViewport = static_cast<qreal>(workspaceIndex) * screenWidth + viewportOffset;
+    return std::abs(xViewport) < screenWidth;
+}
+
+bool WorkspaceManagerService::isWindowVisibleInViewport(QQuickItem *window, qreal viewportOffset,
+                                                        qreal screenWidth) const {
+    if (!window) {
+        return false;
+    }
+    const int ws = windowWorkspace(window);
+    if (!m_isTransitioning) {
+        return ws == m_currentWorkspace;
+    }
+    return isWorkspaceWithinFrustum(ws, viewportOffset, screenWidth);
+}
+
+int WorkspaceManagerService::applyViewportCulling(qreal viewportOffset, qreal screenWidth) {
+    int activeCount = 0;
+
+    auto setItemOccludedRecursive = [](QQuickItem *root, bool occluded) {
+        if (!root) {
+            return;
+        }
+        if (root->metaObject()->indexOfProperty("occluded") >= 0) {
+            root->setProperty("occluded", occluded);
+        }
+        const auto children = root->childItems();
+        for (QQuickItem *child : children) {
+            if (child && child->metaObject()->indexOfProperty("occluded") >= 0) {
+                child->setProperty("occluded", occluded);
+            }
+        }
+    };
+
+    for (auto it = m_windowWorkspaces.cbegin(); it != m_windowWorkspaces.cend(); ++it) {
+        QQuickItem *item = it.key();
+        if (!item) {
+            continue;
+        }
+        const int ws = it.value();
+        const bool visibleInFrustum = isWorkspaceWithinFrustum(ws, viewportOffset, screenWidth)
+                                      && (m_isTransitioning || ws == m_currentWorkspace);
+        item->setVisible(visibleInFrustum);
+        setItemOccludedRecursive(item, !visibleInFrustum);
+        if (visibleInFrustum) {
+            ++activeCount;
+        }
+    }
+
+    return activeCount;
+}
+
+int WorkspaceManagerService::activeVisibleWindowCount() const {
+    int activeCount = 0;
+    for (auto it = m_windowWorkspaces.cbegin(); it != m_windowWorkspaces.cend(); ++it) {
+        QQuickItem *item = it.key();
+        if (!item) {
+            continue;
+        }
+        if (it.value() == m_currentWorkspace && item->isVisible()) {
+            ++activeCount;
+        }
+    }
+    return activeCount;
+}
+
+void WorkspaceManagerService::syncWindowCullingStates() {
+    constexpr qreal kDefaultScreenWidth = 1920.0;
+    const qreal defaultOffset = -static_cast<qreal>(m_currentWorkspace) * kDefaultScreenWidth;
+    applyViewportCulling(defaultOffset, kDefaultScreenWidth);
 }
 
 int WorkspaceManagerService::windowCountInWorkspace(int workspaceIndex) const {

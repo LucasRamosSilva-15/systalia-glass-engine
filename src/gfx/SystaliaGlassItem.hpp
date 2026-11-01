@@ -25,6 +25,7 @@ class SystaliaGlassItem : public QQuickItem {
     Q_PROPERTY(qreal devicePixelRatio READ devicePixelRatio WRITE setDevicePixelRatio NOTIFY devicePixelRatioChanged)
     Q_PROPERTY(float titleBarHeight READ titleBarHeight WRITE setTitleBarHeight NOTIFY titleBarHeightChanged)
     Q_PROPERTY(bool circularCorners READ circularCorners WRITE setCircularCorners NOTIFY circularCornersChanged)
+    Q_PROPERTY(bool occluded READ isOccluded WRITE setOccluded NOTIFY occludedChanged)
 
 public:
     explicit SystaliaGlassItem(QQuickItem *parent = nullptr);
@@ -70,6 +71,14 @@ public:
     bool circularCorners() const { return m_circularCorners; }
     void setCircularCorners(bool enable);
 
+    bool isOccluded() const noexcept { return m_occluded; }
+    void setOccluded(bool occluded);
+    bool shouldSuppressSceneGraphUpdate() const noexcept;
+
+    quint64 paintNodeUpdateCount() const noexcept { return m_paintNodeUpdateCount; }
+    quint64 suppressedUpdateCount() const noexcept { return m_suppressedUpdateCount; }
+    bool hasPreservedVramTextures() const noexcept;
+
     QSGTexture *ensureFallbackTexture();
     QSGTexture *ensureFallbackClientTexture();
     void releaseResources() override;
@@ -88,11 +97,15 @@ signals:
     void devicePixelRatioChanged();
     void titleBarHeightChanged();
     void circularCornersChanged();
+    void occludedChanged();
 
 protected:
     QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *data) override;
+    void itemChange(ItemChange change, const ItemChangeData &value) override;
 
 private:
+    void requestSceneUpdate();
+
     QVector4D m_radii = QVector4D(24.0f, 24.0f, 24.0f, 24.0f);
     float m_slant = 0.0f;
     float m_ior = 1.15f;
@@ -101,6 +114,9 @@ private:
     float m_surfaceOpacity = 1.0f;
     float m_time = 0.0f;
     bool m_circularCorners = false;
+    bool m_occluded = false;
+    quint64 m_paintNodeUpdateCount = 0;
+    quint64 m_suppressedUpdateCount = 0;
 
     QPointer<QQuickItem> m_backdropSource;
     QPointer<QQuickItem> m_clientTextureSource;

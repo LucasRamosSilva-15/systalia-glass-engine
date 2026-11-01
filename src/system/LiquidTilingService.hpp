@@ -1,11 +1,14 @@
 #pragma once
 
+#include <QElapsedTimer>
 #include <QHash>
 #include <QObject>
 #include <QPointF>
 #include <QPointer>
 #include <QQuickItem>
 #include <QRectF>
+#include <QSizeF>
+#include <QTimer>
 #include <QVector4D>
 
 class LiquidTilingService final : public QObject {
@@ -17,6 +20,9 @@ class LiquidTilingService final : public QObject {
     Q_PROPERTY(QVector4D previewRadii READ previewRadii NOTIFY previewChanged FINAL)
     Q_PROPERTY(bool previewVisible READ previewVisible NOTIFY previewChanged FINAL)
     Q_PROPERTY(int tilingRevision READ tilingRevision NOTIFY tilingLayoutChanged FINAL)
+    Q_PROPERTY(int targetRefreshRateHz READ targetRefreshRateHz WRITE setTargetRefreshRateHz
+               NOTIFY targetRefreshRateHzChanged FINAL)
+    Q_PROPERTY(qreal vblankIntervalMs READ vblankIntervalMs NOTIFY targetRefreshRateHzChanged FINAL)
 
 public:
     enum SnapZone {
@@ -51,15 +57,28 @@ public:
     [[nodiscard]] QVector4D previewRadii() const noexcept { return m_previewRadii; }
     [[nodiscard]] bool previewVisible() const noexcept { return m_previewVisible; }
     [[nodiscard]] int tilingRevision() const noexcept { return m_tilingRevision; }
+    [[nodiscard]] int targetRefreshRateHz() const noexcept { return m_targetRefreshRateHz; }
+    [[nodiscard]] qreal vblankIntervalMs() const noexcept {
+        return 1000.0 / static_cast<qreal>(std::max(1, m_targetRefreshRateHz));
+    }
+    [[nodiscard]] int dispatchedConfigureCount() const noexcept { return m_dispatchedConfigureCount; }
+    [[nodiscard]] int throttledConfigureCount() const noexcept { return m_throttledConfigureCount; }
 
     Q_INVOKABLE void setSplitRatio(qreal ratio);
     Q_INVOKABLE void setSplitterGap(qreal gap);
+    Q_INVOKABLE void setTargetRefreshRateHz(int refreshRateHz);
+    Q_INVOKABLE bool shouldDispatchInteractiveResize(bool interactive = true);
+    Q_INVOKABLE void resetConfigureAuditCounters() noexcept;
 
     Q_INVOKABLE int calculateSnapTarget(const QPointF &cursorPos, const QRectF &screenRect) const;
     Q_INVOKABLE QRectF getSnapGeometry(int snapTarget, const QRectF &availableArea,
                                        qreal splitRatio = kDefaultSplitRatio) const;
     Q_INVOKABLE QVector4D calculateFusedRadii(int snapTarget,
                                               qreal baseRadius = kDefaultBaseRadius) const;
+    Q_INVOKABLE bool isValidFusedRadii(const QVector4D &radii) const noexcept;
+    Q_INVOKABLE float evaluateSafeG2Distance(const QPointF &localPoint,
+                                             const QSizeF &windowSize,
+                                             const QVector4D &radii) const noexcept;
 
     Q_INVOKABLE void updateSnapPreview(const QPointF &cursorPos, const QRectF &screenRect,
                                        const QRectF &availableArea,
@@ -79,6 +98,8 @@ public:
 signals:
     void splitRatioChanged(qreal splitRatio);
     void splitterGapChanged(qreal splitterGap);
+    void targetRefreshRateHzChanged(int targetRefreshRateHz);
+    void throttledResizeFlushRequested(qreal splitRatio);
     void previewChanged();
     void tilingLayoutChanged();
     void windowSnapChanged(QQuickItem *window, int snapTarget, int workspaceIndex);
@@ -94,6 +115,11 @@ private:
 
     qreal m_splitRatio = kDefaultSplitRatio;
     qreal m_splitterGap = kDefaultSplitterGap;
+    int m_targetRefreshRateHz = 60;
+    int m_dispatchedConfigureCount = 0;
+    int m_throttledConfigureCount = 0;
+    QElapsedTimer m_resizeThrottleTimer;
+    QTimer m_pendingFlushTimer;
     int m_previewSnapTarget = SnapNone;
     QRectF m_previewGeometry;
     QVector4D m_previewRadii{24.0f, 24.0f, 24.0f, 24.0f};

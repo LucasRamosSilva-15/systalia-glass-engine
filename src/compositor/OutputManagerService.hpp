@@ -48,7 +48,7 @@ public:
 
     void attachCompositor(QWaylandCompositor *compositor);
     [[nodiscard]] QWaylandXdgOutputManagerV1 *xdgOutputManager() const noexcept {
-        return m_xdgOutputManager;
+        return m_xdgOutputManager.data();
     }
 
     [[nodiscard]] int screenCount() const noexcept { return static_cast<int>(m_outputs.size()); }
@@ -68,6 +68,9 @@ public:
     Q_INVOKABLE void clearScreens();
     Q_INVOKABLE int addVirtualScreen(const QString &name, const QRect &geometry,
                                      qreal scale = 1.0, int refreshRateMilliHz = 60000);
+    Q_INVOKABLE bool removeScreen(int index);
+    Q_INVOKABLE bool removeScreenByName(const QString &name);
+    Q_INVOKABLE QRectF clampWindowToPrimaryScreen(const QRectF &windowRect) const;
     Q_INVOKABLE void setScreenScale(int index, qreal scale);
     Q_INVOKABLE void syncWithHostScreens();
 
@@ -95,6 +98,8 @@ signals:
     void replicateTopBarOnAllScreensChanged(bool replicate);
     void windowScreenTransitioned(QObject *windowObj, int newScreenIndex,
                                   int previousScreenIndex, qreal newScale);
+    void windowMigratedOnHotUnplug(QObject *windowObj, int removedScreenIndex,
+                                   int targetScreenIndex, const QRectF &migratedRect);
 
 private:
     void ensureXdgOutputFor(QWaylandOutput *output);
@@ -103,10 +108,11 @@ private:
     void unregisterWindowObject(QObject *obj);
 
     QPointer<QWaylandCompositor> m_compositor;
-    QWaylandXdgOutputManagerV1 *m_xdgOutputManager = nullptr;
+    QPointer<QWaylandXdgOutputManagerV1> m_xdgOutputManager;
     QList<ManagedOutputInfo> m_outputs;
     QHash<QWaylandOutput *, QPointer<QWaylandXdgOutputV1>> m_outputXdgMap;
     QHash<QObject *, int> m_windowScreenMap;
+    QHash<QObject *, QPointer<QWaylandSurface>> m_windowSurfaceMap;
     int m_activeCursorScreen = 0;
     bool m_replicateTopBarOnAllScreens = false;
 };

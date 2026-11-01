@@ -33,7 +33,8 @@ float sdRoundedBox4G2(vec2 p, vec2 b, vec4 r) {
     rad = clamp(rad, 0.0, max(0.0, min(b.x, b.y) - 0.5));
     vec2 q = abs(p) - b + vec2(rad);
     vec2 q_pos = max(q, 0.0);
-    float cornerDist = pow(pow(q_pos.x, 4.0) + pow(q_pos.y, 4.0), 0.25) - rad;
+    float l4 = pow(q_pos.x, 4.0) + pow(q_pos.y, 4.0);
+    float cornerDist = (l4 > 1e-12) ? (pow(l4, 0.25) - rad) : -rad;
     return (q.x > 0.0 && q.y > 0.0) ? cornerDist : (max(q.x, q.y) - rad);
 }
 

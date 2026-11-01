@@ -48,6 +48,13 @@ public:
     Q_INVOKABLE bool hasWindowsInWorkspace(int workspaceIndex) const;
     Q_INVOKABLE int windowCountInWorkspace(int workspaceIndex) const;
 
+    Q_INVOKABLE bool isWorkspaceWithinFrustum(int workspaceIndex, qreal viewportOffset,
+                                              qreal screenWidth) const noexcept;
+    Q_INVOKABLE bool isWindowVisibleInViewport(QQuickItem *window, qreal viewportOffset,
+                                               qreal screenWidth) const;
+    Q_INVOKABLE int applyViewportCulling(qreal viewportOffset, qreal screenWidth);
+    Q_INVOKABLE int activeVisibleWindowCount() const;
+
     int objectWorkspace(QObject *object) const;
     void setObjectWorkspace(QObject *object, int workspaceIndex);
     void unregisterObject(QObject *object);
@@ -64,6 +71,7 @@ signals:
 
 private:
     void bumpWorkspaceWindowsRevision();
+    void syncWindowCullingStates();
 
     int m_currentWorkspace = 0;
     int m_totalWorkspaces = kDefaultTotalWorkspaces;
