@@ -52,160 +52,169 @@ Item {
         border.width: 1
     }
 
-    Image {
-        x: 17
-        y: 9
-        width: 18
-        height: 23
-        source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-mark.png"
-        sourceSize: Qt.size(112, 112)
-        fillMode: Image.PreserveAspectFit
-        smooth: true
-        mipmap: true
-        TapHandler {
-            cursorShape: Qt.PointingHandCursor
-            onTapped: topBar.launcherRequested()
+    // Seção esquerda: logotipo, branding do desktop e telemetria
+    Row {
+        id: leftSection
+        anchors.left: parent.left
+        anchors.leftMargin: 17
+        anchors.verticalCenter: parent.verticalCenter
+        spacing: 18
+
+        Image {
+            anchors.verticalCenter: parent.verticalCenter
+            width: 18
+            height: 23
+            source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-mark.png"
+            sourceSize: Qt.size(112, 112)
+            fillMode: Image.PreserveAspectFit
+            smooth: true
+            mipmap: true
+            TapHandler {
+                cursorShape: Qt.PointingHandCursor
+                onTapped: topBar.launcherRequested()
+            }
+            HoverHandler { cursorShape: Qt.PointingHandCursor }
         }
-        HoverHandler { cursorShape: Qt.PointingHandCursor }
+
+        Text {
+            anchors.verticalCenter: parent.verticalCenter
+            text: "SYSTALIA"
+            color: "#c6e5f8"
+            font.family: SystaliaTheme.fontFamily
+            font.pixelSize: 19
+            font.weight: Font.Medium
+            antialiasing: true
+        }
+
+        Text {
+            anchors.verticalCenter: parent.verticalCenter
+            text: "SDE-KWIN | VALO"
+            color: "#9cbad3"
+            font.family: SystaliaTheme.fontFamily
+            font.pixelSize: 17
+            antialiasing: true
+        }
+
+        Text {
+            anchors.verticalCenter: parent.verticalCenter
+            text: topBar.telemetry
+                  ? "CPU %1%  |  RAM %2GB  |  FPS %3"
+                    .arg(Math.round(topBar.telemetry.cpuUsage))
+                    .arg(topBar.telemetry.ramUsageGb.toFixed(1))
+                    .arg(topBar.telemetry.fps)
+                  : "CPU --%  |  RAM --GB  |  FPS --"
+            color: "#9cbad3"
+            font.family: SystaliaTheme.fontFamily
+            font.pixelSize: 17
+            elide: Text.ElideRight
+            antialiasing: true
+        }
     }
 
-    Text {
-        x: 47
+    // Seção central: Relógio e indicador de espaços de trabalho virtuais
+    Row {
+        id: centerSection
+        anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
-        text: "SYSTALIA"
-        color: "#c6e5f8"
-        font.family: SystaliaTheme.fontFamily
-        font.pixelSize: 19
-        font.weight: Font.Medium
-        antialiasing: true
-    }
+        spacing: 20
 
-    Text {
-        x: 189
-        anchors.verticalCenter: parent.verticalCenter
-        text: "SDE-KWIN | VALO"
-        color: "#9cbad3"
-        font.family: SystaliaTheme.fontFamily
-        font.pixelSize: 17
-        antialiasing: true
-    }
+        Text {
+            anchors.verticalCenter: parent.verticalCenter
+            text: topBar.telemetry
+                  ? topBar.telemetry.systemTime
+                  : topBar.dateNow.toLocaleDateString(Qt.locale("en_US"), "ddd dd MMM").toUpperCase()
+                    + "  >  "
+                    + topBar.dateNow.toLocaleTimeString(Qt.locale("en_US"), "HH:mm:ss")
+            color: "#c2d7df"
+            font.family: SystaliaTheme.fontFamily
+            font.pixelSize: 17
+            antialiasing: true
+        }
 
-    Text {
-        x: 392
-        anchors.verticalCenter: parent.verticalCenter
-        width: 318
-        text: topBar.telemetry
-              ? "CPU %1%  |  RAM %2GB  |  FPS %3"
-                .arg(Math.round(topBar.telemetry.cpuUsage))
-                .arg(topBar.telemetry.ramUsageGb.toFixed(1))
-                .arg(topBar.telemetry.fps)
-              : "CPU --%  |  RAM --GB  |  FPS --"
-        color: "#9cbad3"
-        font.family: SystaliaTheme.fontFamily
-        font.pixelSize: 17
-        elide: Text.ElideRight
-        antialiasing: true
-    }
+        // Régua de 4 cápsulas translúcidas para os Espaços de Trabalho Virtuais (Etapa 4.1)
+        Rectangle {
+            id: workspaceIndicatorTrack
+            anchors.verticalCenter: parent.verticalCenter
+            width: workspacePillsRow.implicitWidth + 16
+            height: 26
+            radius: 13
+            color: "#220a243d"
+            border.color: "#3374d5ee"
+            border.width: 1
 
-    Text {
-        x: 724
-        anchors.verticalCenter: parent.verticalCenter
-        width: 220
-        text: topBar.telemetry
-              ? topBar.telemetry.systemTime
-              : topBar.dateNow.toLocaleDateString(Qt.locale("en_US"), "ddd dd MMM").toUpperCase()
-                + "  >  "
-                + topBar.dateNow.toLocaleTimeString(Qt.locale("en_US"), "HH:mm:ss")
-        color: "#c2d7df"
-        font.family: SystaliaTheme.fontFamily
-        font.pixelSize: 17
-        antialiasing: true
-    }
+            Row {
+                id: workspacePillsRow
+                anchors.centerIn: parent
+                spacing: 8
 
-    // Régua de 4 cápsulas translúcidas para os Espaços de Trabalho Virtuais (Etapa 4.1)
-    Rectangle {
-        id: workspaceIndicatorTrack
-        x: 960
-        anchors.verticalCenter: parent.verticalCenter
-        width: workspacePillsRow.implicitWidth + 16
-        height: 26
-        radius: 13
-        color: "#220a243d"
-        border.color: "#3374d5ee"
-        border.width: 1
+                Repeater {
+                    model: topBar.workspaceManager ? topBar.workspaceManager.totalWorkspaces : 4
 
-        Row {
-            id: workspacePillsRow
-            anchors.centerIn: parent
-            spacing: 8
-
-            Repeater {
-                model: topBar.workspaceManager ? topBar.workspaceManager.totalWorkspaces : 4
-
-                delegate: Rectangle {
-                    id: workspacePill
-                    required property int index
-                    readonly property bool isActive: topBar.workspaceManager
-                                                     ? (topBar.workspaceManager.currentWorkspace === index)
-                                                     : (index === 0)
-                    readonly property bool hasWindows: {
-                        if (!topBar.workspaceManager)
-                            return index === 0
-                        const rev = topBar.workspaceManager.workspaceWindowsRevision
-                        return rev >= 0 && topBar.workspaceManager.hasWindowsInWorkspace(index)
-                    }
-
-                    width: isActive ? 26 : 18
-                    height: 12
-                    radius: 6
-                    color: isActive ? "#00f0ff" : (pillHover.hovered ? "#4d74d5ee" : "#2674d5ee")
-                    border.color: isActive ? "#b3ffffff" : "#5574d5ee"
-                    border.width: 1
-                    scale: isActive ? 1.15 : (pillHover.hovered ? 1.05 : 1.0)
-                    antialiasing: true
-
-                    Behavior on width {
-                        NumberAnimation {
-                            duration: 180
-                            easing.type: Easing.OutCubic
+                    delegate: Rectangle {
+                        id: workspacePill
+                        required property int index
+                        readonly property bool isActive: topBar.workspaceManager
+                                                         ? (topBar.workspaceManager.currentWorkspace === index)
+                                                         : (index === 0)
+                        readonly property bool hasWindows: {
+                            if (!topBar.workspaceManager)
+                                return index === 0
+                            const rev = topBar.workspaceManager.workspaceWindowsRevision
+                            return rev >= 0 && topBar.workspaceManager.hasWindowsInWorkspace(index)
                         }
-                    }
 
-                    Behavior on scale {
-                        NumberAnimation {
-                            duration: 180
-                            easing.type: Easing.OutCubic
-                        }
-                    }
-
-                    Behavior on color {
-                        ColorAnimation {
-                            duration: 150
-                        }
-                    }
-
-                    // Ponto central indicador para espaços com janelas abertas
-                    Rectangle {
-                        width: 4
-                        height: 4
-                        radius: 2
-                        anchors.centerIn: parent
-                        visible: workspacePill.hasWindows
-                        color: workspacePill.isActive ? "#06182c" : "#00f0ff"
+                        width: isActive ? 26 : 18
+                        height: 12
+                        radius: 6
+                        color: isActive ? "#00f0ff" : (pillHover.hovered ? "#4d74d5ee" : "#2674d5ee")
+                        border.color: isActive ? "#b3ffffff" : "#5574d5ee"
+                        border.width: 1
+                        scale: isActive ? 1.15 : (pillHover.hovered ? 1.05 : 1.0)
                         antialiasing: true
-                    }
 
-                    HoverHandler {
-                        id: pillHover
-                        cursorShape: Qt.PointingHandCursor
-                    }
+                        Behavior on width {
+                            NumberAnimation {
+                                duration: 180
+                                easing.type: Easing.OutCubic
+                            }
+                        }
 
-                    TapHandler {
-                        cursorShape: Qt.PointingHandCursor
-                        onTapped: {
-                            if (topBar.workspaceManager)
-                                topBar.workspaceManager.switchToWorkspace(workspacePill.index)
-                            topBar.workspaceSelected(workspacePill.index)
+                        Behavior on scale {
+                            NumberAnimation {
+                                duration: 180
+                                easing.type: Easing.OutCubic
+                            }
+                        }
+
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: 150
+                            }
+                        }
+
+                        // Ponto central indicador para espaços com janelas abertas
+                        Rectangle {
+                            width: 4
+                            height: 4
+                            radius: 2
+                            anchors.centerIn: parent
+                            visible: workspacePill.hasWindows
+                            color: workspacePill.isActive ? "#06182c" : "#00f0ff"
+                            antialiasing: true
+                        }
+
+                        HoverHandler {
+                            id: pillHover
+                            cursorShape: Qt.PointingHandCursor
+                        }
+
+                        TapHandler {
+                            cursorShape: Qt.PointingHandCursor
+                            onTapped: {
+                                if (topBar.workspaceManager)
+                                    topBar.workspaceManager.switchToWorkspace(workspacePill.index)
+                                topBar.workspaceSelected(workspacePill.index)
+                            }
                         }
                     }
                 }

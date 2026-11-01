@@ -262,7 +262,7 @@ ApplicationWindow {
             x: clientWindowsLayer.parallaxOffset * 0.12
             y: 0
             source: Qt.resolvedUrl("assets/figma/valo-ocean-atmosphere.png")
-            fillMode: Image.PreserveAspectFit
+            fillMode: Image.PreserveAspectCrop
             asynchronous: true
             cache: true
             smooth: true
@@ -278,7 +278,7 @@ ApplicationWindow {
             y: 0
             mirror: true
             source: wallpaper.source
-            fillMode: Image.PreserveAspectFit
+            fillMode: Image.PreserveAspectCrop
             asynchronous: true
             cache: true
             smooth: true
@@ -404,27 +404,22 @@ ApplicationWindow {
         }
     }
 
-    Item {
-        id: topBarCanvas
-        width: 1662
-        height: 975
-        scale: rootWindow.designScale
-        x: (rootWindow.width - width * scale) / 2
-        y: (rootWindow.height - height * scale) / 2
-        transformOrigin: Item.TopLeft
+    Shell.SystaliaTopBar {
+        id: topBar
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.leftMargin: 8
+        anchors.rightMargin: 8
+        anchors.top: parent.top
+        anchors.topMargin: 4
+        height: 45
         z: 100
-
-        Shell.SystaliaTopBar {
-            id: topBar
-            x: 8
-            y: 4
-            telemetry: SystemTelemetry
-            workspaceManager: WorkspaceManager
-            backdropSource: backdropGrab
-            screenResolution: Qt.vector2d(rootWindow.width * rootWindow.devicePixelRatio,
-                                          rootWindow.height * rootWindow.devicePixelRatio)
-            animationTime: animTimer.tick
-        }
+        telemetry: SystemTelemetry
+        workspaceManager: WorkspaceManager
+        backdropSource: backdropGrab
+        screenResolution: Qt.vector2d(rootWindow.width * rootWindow.devicePixelRatio,
+                                      rootWindow.height * rootWindow.devicePixelRatio)
+        animationTime: animTimer.tick
     }
 
     // Réplica configurável da TopBar em monitores secundários via Instantiator
@@ -439,6 +434,8 @@ ApplicationWindow {
             visible: index > 0 && multiMonitorTopBarInstantiator.active
             x: modelData.x + 8
             y: modelData.y + 4
+            width: modelData.width - 16
+            height: 45
             z: 100
             telemetry: SystemTelemetry
             workspaceManager: WorkspaceManager
@@ -450,27 +447,24 @@ ApplicationWindow {
 
     Item {
         id: dockCanvas
-        width: 1662
-        height: 975
-        scale: rootWindow.designScale
         readonly property rect activeScreenRect: OutputManager.screenCount > 0
             ? OutputManager.screenGeometryAt(OutputManager.activeCursorScreen)
             : Qt.rect(0, 0, rootWindow.width, rootWindow.height)
-        x: activeScreenRect.x + (rootWindow.width - width * scale) / 2
-        y: (rootWindow.height - height * scale) / 2
+        x: activeScreenRect.x + (activeScreenRect.width - systemDock.width) / 2
+        y: activeScreenRect.y + activeScreenRect.height - systemDock.height - 33
+        width: systemDock.width
+        height: systemDock.height
         Behavior on x {
             NumberAnimation {
                 duration: 240
                 easing.type: Easing.OutCubic
             }
         }
-        transformOrigin: Item.TopLeft
         z: 95
 
         Shell.SystaliaDock {
             id: systemDock
-            x: 555
-            y: 817
+            anchors.fill: parent
             visible: !waylandServer.hasMaximizedToplevel
             backdropSource: backdropGrab
             screenResolution: Qt.vector2d(rootWindow.width * rootWindow.devicePixelRatio,
