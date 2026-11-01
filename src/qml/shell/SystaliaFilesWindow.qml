@@ -18,8 +18,12 @@ Item {
     property real surfaceOpacity: 0.85
     property real surfaceSlant: 0
     property real cornerRadius: 20
-    property vector4d cornerRadii: Qt.vector4d(cornerRadius, cornerRadius,
-                                                cornerRadius, cornerRadius)
+    property int snapState: 0
+    property rect restoreGeometry: Qt.rect(113, 193, 701, 534)
+    property vector4d cornerRadii: snapState !== 0
+                                   ? LiquidTiling.calculateFusedRadii(snapState, cornerRadius)
+                                   : Qt.vector4d(cornerRadius, cornerRadius,
+                                                 cornerRadius, cornerRadius)
     property bool materialActive: true
     property string selectedLocation: "Home"
     property string selectedFile: ""
@@ -50,6 +54,12 @@ Item {
         backdropSource: fileWindow.backdropSource
         screenResolution: fileWindow.screenResolution
         radii: fileWindow.cornerRadii
+        Behavior on radii {
+            PropertyAnimation {
+                duration: 220
+                easing.type: Easing.OutCubic
+            }
+        }
         slant: fileWindow.surfaceSlant
         ior: fileWindow.refractiveIndex
         chromaticDispersion: fileWindow.dispersion
@@ -180,14 +190,33 @@ Item {
     Item {
         x: 0
         y: 0
-        width: 570
+        width: Math.max(200, fileWindow.width - 130)
         height: 49
         DragHandler {
+            id: fileWindowDrag
             target: fileWindow
             enabled: fileWindow.controller ? !fileWindow.controller.filesWindowMaximized : true
             onActiveChanged: {
-                if (active && fileWindow.controller)
-                    fileWindow.controller.raiseFileWindow()
+                if (active) {
+                    if (fileWindow.controller) {
+                        fileWindow.controller.raiseFileWindow()
+                        if (fileWindow.snapState !== 0
+                                && typeof fileWindow.controller.unsnapShellWindow === "function") {
+                            fileWindow.controller.unsnapShellWindow(fileWindow)
+                        }
+                    }
+                } else if (fileWindow.controller
+                           && typeof fileWindow.controller.finishShellWindowDrag === "function") {
+                    fileWindow.controller.finishShellWindowDrag(
+                        fileWindow, fileWindowDrag.centroid.scenePosition)
+                }
+            }
+            onCentroidChanged: {
+                if (active && fileWindow.controller
+                        && typeof fileWindow.controller.updateShellWindowDrag === "function") {
+                    fileWindow.controller.updateShellWindowDrag(
+                        fileWindow, fileWindowDrag.centroid.scenePosition)
+                }
             }
         }
         TapHandler {

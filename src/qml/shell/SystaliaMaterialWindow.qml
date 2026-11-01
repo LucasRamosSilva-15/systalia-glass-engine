@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Shapes
 import Systalia.Engine
+import Systalia.System 1.0
 
 Item {
     id: materialWindow
@@ -16,8 +17,12 @@ Item {
     property real surfaceOpacity: 0.85
     property real surfaceSlant: 0
     property real cornerRadius: 20
-    property vector4d cornerRadii: Qt.vector4d(cornerRadius, cornerRadius,
-                                                cornerRadius, cornerRadius)
+    property int snapState: 0
+    property rect restoreGeometry: Qt.rect(864, 193, 700, 534)
+    property vector4d cornerRadii: snapState !== 0
+                                   ? LiquidTiling.calculateFusedRadii(snapState, cornerRadius)
+                                   : Qt.vector4d(cornerRadius, cornerRadius,
+                                                 cornerRadius, cornerRadius)
     property bool materialActive: true
     property string selectedSection: "Control Center"
 
@@ -47,6 +52,12 @@ Item {
         backdropSource: materialWindow.backdropSource
         screenResolution: materialWindow.screenResolution
         radii: materialWindow.cornerRadii
+        Behavior on radii {
+            PropertyAnimation {
+                duration: 220
+                easing.type: Easing.OutCubic
+            }
+        }
         slant: materialWindow.surfaceSlant
         ior: materialWindow.refractiveIndex
         chromaticDispersion: materialWindow.dispersion
@@ -176,14 +187,33 @@ Item {
     Item {
         x: 0
         y: 0
-        width: 566
+        width: Math.max(200, materialWindow.width - 134)
         height: 49
         DragHandler {
+            id: materialWindowDrag
             target: materialWindow
             enabled: materialWindow.controller ? !materialWindow.controller.materialWindowMaximized : true
             onActiveChanged: {
-                if (active && materialWindow.controller)
-                    materialWindow.controller.raiseMaterialWindow()
+                if (active) {
+                    if (materialWindow.controller) {
+                        materialWindow.controller.raiseMaterialWindow()
+                        if (materialWindow.snapState !== 0
+                                && typeof materialWindow.controller.unsnapShellWindow === "function") {
+                            materialWindow.controller.unsnapShellWindow(materialWindow)
+                        }
+                    }
+                } else if (materialWindow.controller
+                           && typeof materialWindow.controller.finishShellWindowDrag === "function") {
+                    materialWindow.controller.finishShellWindowDrag(
+                        materialWindow, materialWindowDrag.centroid.scenePosition)
+                }
+            }
+            onCentroidChanged: {
+                if (active && materialWindow.controller
+                        && typeof materialWindow.controller.updateShellWindowDrag === "function") {
+                    materialWindow.controller.updateShellWindowDrag(
+                        materialWindow, materialWindowDrag.centroid.scenePosition)
+                }
             }
         }
         TapHandler {

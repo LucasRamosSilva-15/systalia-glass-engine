@@ -9,6 +9,7 @@ Item {
     property var toplevel: null
     property var waylandServer: null
     property var workspace: null
+    property var tilingService: null
     property var backdropSource: null
     property point screenResolution: Qt.point(1280, 800)
     property real animTime: 0.0
@@ -21,6 +22,14 @@ Item {
     property int workspaceIndex: 0
     property bool inActiveWorkspace: true
     property bool workspaceTransitioning: false
+    property int snapState: 0
+    property real baseCornerRadius: 24.0
+    readonly property rect availableSnapArea: parent
+                                              ? Qt.rect(0, 0, parent.width, parent.height)
+                                              : Qt.rect(0, 0, 1662, 821)
+    readonly property rect screenSnapBounds: (workspace && workspace.width > 0 && workspace.height > 0)
+                                             ? Qt.rect(0, 0, workspace.width, workspace.height)
+                                             : Qt.rect(0, 0, 1662, 975)
 
     width: 680
     height: 480
@@ -74,9 +83,29 @@ Item {
         }
         return 500
     }
-    readonly property vector4d frameRadii: opticalMetadata
-                                          ? opticalMetadata.radii
-                                          : Qt.vector4d(20.0, 20.0, 20.0, 20.0)
+    function computeFusedRadiiForState(state, radius) {
+        if (tilingService && typeof tilingService.calculateFusedRadii === "function")
+            return tilingService.calculateFusedRadii(state, radius)
+        const r = Math.max(0.0, radius)
+        switch (state) {
+        case 1: return Qt.vector4d(r, 0.0, r, 0.0)
+        case 2: return Qt.vector4d(0.0, r, 0.0, r)
+        case 3: return Qt.vector4d(0.0, 0.0, 0.0, 0.0)
+        case 4: return Qt.vector4d(r, 0.0, 0.0, 0.0)
+        case 5: return Qt.vector4d(0.0, r, 0.0, 0.0)
+        case 6: return Qt.vector4d(0.0, 0.0, r, 0.0)
+        case 7: return Qt.vector4d(0.0, 0.0, 0.0, r)
+        default: return Qt.vector4d(r, r, r, r)
+        }
+    }
+
+    readonly property vector4d frameRadii: {
+        if (snapState !== 0)
+            return computeFusedRadiiForState(snapState, baseCornerRadius)
+        return opticalMetadata
+               ? opticalMetadata.radii
+               : Qt.vector4d(20.0, 20.0, 20.0, 20.0)
+    }
     readonly property bool resizeEnabled: toplevel !== null && waylandServer !== null
                                           && !maximizedBySge && !toplevel.fullscreen
     property bool resizing: false
@@ -170,10 +199,59 @@ Item {
             waylandServer.requestToplevelResize(toplevel, requestedClientSize, false)
     }
 
+    function snapToZone(targetSnap) {
+        if (!tilingService || targetSnap === 0)
+            return
+        if (snapState === 0 && !maximizedBySge) {
+            restorePosition = Qt.point(x, y)
+            restoreFrameSize = Qt.size(width, height)
+        }
+        snapState = targetSnap
+        if (typeof tilingService.registerWindowSnap === "function")
+            tilingService.registerWindowSnap(windowContainer, targetSnap, workspaceIndex)
+        updateSnappedGeometry(tilingService.splitRatio, false)
+    }
+
+    function updateSnappedGeometry(ratio, interactive) {
+        if (!tilingService || snapState === 0)
+            return
+        const targetGeo = tilingService.getSnapGeometry(snapState, availableSnapArea, ratio)
+        if (targetGeo.width <= 0 || targetGeo.height <= 0)
+            return
+        x = Math.round(targetGeo.x)
+        y = Math.round(targetGeo.y)
+        width = Math.round(targetGeo.width)
+        height = Math.round(targetGeo.height)
+        const clientW = Math.max(1, Math.round(targetGeo.width - 2 * frameMargin))
+        const clientH = Math.max(1, Math.round(targetGeo.height - titleBarHeight - 2 * frameMargin))
+        requestedClientSize = Qt.size(clientW, clientH)
+        if (waylandServer && toplevel)
+            waylandServer.requestToplevelResize(toplevel, requestedClientSize, Boolean(interactive))
+    }
+
+    function unsnapWindow() {
+        if (snapState === 0)
+            return
+        const restoredW = restoreFrameSize.width > 0 ? restoreFrameSize.width : 680
+        const restoredH = restoreFrameSize.height > 0 ? restoreFrameSize.height : 480
+        const clientW = Math.max(240, Math.round(restoredW - 2 * frameMargin))
+        const clientH = Math.max(160, Math.round(restoredH - titleBarHeight - 2 * frameMargin))
+        snapState = 0
+        if (tilingService && typeof tilingService.unregisterWindowSnap === "function")
+            tilingService.unregisterWindowSnap(windowContainer)
+        width = restoredW
+        height = restoredH
+        requestedClientSize = Qt.size(clientW, clientH)
+        if (waylandServer && toplevel)
+            waylandServer.requestToplevelResize(toplevel, requestedClientSize, false)
+    }
+
     function disposeContainer() {
         if (destructionScheduled)
             return
         destructionScheduled = true
+        if (tilingService && typeof tilingService.unregisterWindowSnap === "function")
+            tilingService.unregisterWindowSnap(windowContainer)
         finishResize()
         destroy()
     }
@@ -278,6 +356,12 @@ Item {
         titleBarHeight: windowContainer.titleBarHeight
 
         radii: windowContainer.frameRadii
+        Behavior on radii {
+            PropertyAnimation {
+                duration: 220
+                easing.type: Easing.OutCubic
+            }
+        }
         slant: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.slant : 0.0
         ior: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.ior : 1.25
         chromaticDispersion: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.dispersion : 0.040
@@ -373,11 +457,32 @@ Item {
             }
             onDragStarted: {
                 windowContainer.resizeAnchored = false
+                if (windowContainer.snapState !== 0)
+                    windowContainer.unsnapWindow()
                 if (windowContainer.workspace && typeof windowContainer.workspace.raiseClientWindow === "function")
                     windowContainer.workspace.raiseClientWindow(windowContainer)
                 if (windowContainer.toplevel && windowContainer.waylandServer)
                     windowContainer.waylandServer.activateToplevel(windowContainer.toplevel)
                 clientSurfaceItem.takeFocus()
+            }
+            onDragPositionChanged: scenePos => {
+                if (windowContainer.tilingService
+                        && typeof windowContainer.tilingService.updateSnapPreview === "function") {
+                    windowContainer.tilingService.updateSnapPreview(
+                        scenePos,
+                        windowContainer.screenSnapBounds,
+                        windowContainer.availableSnapArea,
+                        windowContainer.baseCornerRadius)
+                }
+            }
+            onDragFinished: scenePos => {
+                if (windowContainer.tilingService) {
+                    const snapTarget = windowContainer.tilingService.calculateSnapTarget(
+                        scenePos, windowContainer.screenSnapBounds)
+                    windowContainer.tilingService.clearSnapPreview()
+                    if (snapTarget !== 0)
+                        windowContainer.snapToZone(snapTarget)
+                }
             }
             onHeaderTapped: {
                 if (windowContainer.workspace && typeof windowContainer.workspace.raiseClientWindow === "function")
@@ -393,6 +498,12 @@ Item {
         anchors.fill: parent
         z: 3
         radii: windowContainer.frameRadii
+        Behavior on radii {
+            PropertyAnimation {
+                duration: 220
+                easing.type: Easing.OutCubic
+            }
+        }
         slant: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.slant : 0
         strokeColor: "#c9ffffff"
         strokeWidth: 1.5

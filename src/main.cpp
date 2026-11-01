@@ -13,6 +13,7 @@
 #include "NotificationServer.hpp"
 #include "SystemControlService.hpp"
 #include "WorkspaceManagerService.hpp"
+#include "LiquidTilingService.hpp"
 
 int main(int argc, char *argv[]) {
     // Configuração obrigatória do backend Vulkan QRhi antes de QGuiApplication
@@ -26,6 +27,7 @@ int main(int argc, char *argv[]) {
     NotificationServer notificationServer;
     SystemControlService systemControlService;
     WorkspaceManagerService workspaceManagerService;
+    LiquidTilingService liquidTilingService;
 
     // Registro dos tipos QML
     qmlRegisterType<SystaliaGlassItem>("Systalia.Engine", 1, 0, "SystaliaGlassItem");
@@ -51,6 +53,8 @@ int main(int argc, char *argv[]) {
                                  &systemControlService);
     qmlRegisterSingletonInstance("Systalia.System", 1, 0, "WorkspaceManager",
                                  &workspaceManagerService);
+    qmlRegisterSingletonInstance("Systalia.System", 1, 0, "LiquidTiling",
+                                 &liquidTilingService);
 
     QQmlApplicationEngine engine;
     engine.addImageProvider(QStringLiteral("desktopIcons"), new DesktopIconProvider());

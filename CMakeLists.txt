@@ -70,6 +70,8 @@ qt_add_library(sge_core STATIC
     src/system/SystemControlService.cpp
     src/system/WorkspaceManagerService.hpp
     src/system/WorkspaceManagerService.cpp
+    src/system/LiquidTilingService.hpp
+    src/system/LiquidTilingService.cpp
 )
 
 qt6_generate_wayland_protocol_server_sources(sge_core
@@ -154,6 +156,8 @@ qt_add_qml_module(sge_core
         src/qml/shell/SystaliaNotificationHost.qml
         src/qml/shell/SystaliaControlCenter.qml
         src/qml/shell/SystaliaTaskSwitcher.qml
+        src/qml/shell/SnapPreviewOverlay.qml
+        src/qml/shell/TileSplitter.qml
     RESOURCES
         ${sge_valo_assets}
     NO_PLUGIN

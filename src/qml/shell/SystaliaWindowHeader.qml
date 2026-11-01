@@ -31,6 +31,8 @@ Item {
     signal maximizeRequested()
     signal closeRequested()
     signal dragStarted()
+    signal dragPositionChanged(point scenePos)
+    signal dragFinished(point scenePos)
     signal headerTapped()
 
     readonly property real headerRadiusLeft: Math.max(0, radii.x)
@@ -185,9 +187,21 @@ Item {
     }
 
     DragHandler {
+        id: headerDragHandler
         target: header.dragTarget
         enabled: header.dragEnabled && header.dragTarget !== null
-        onActiveChanged: if (active) header.dragStarted()
+        onActiveChanged: {
+            if (active) {
+                header.dragStarted()
+            } else {
+                header.dragFinished(headerDragHandler.centroid.scenePosition)
+            }
+        }
+        onCentroidChanged: {
+            if (active) {
+                header.dragPositionChanged(headerDragHandler.centroid.scenePosition)
+            }
+        }
     }
 
     TapHandler {

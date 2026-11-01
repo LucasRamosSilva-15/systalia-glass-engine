@@ -103,6 +103,82 @@ ApplicationWindow {
         windowContainer.z = clientWindowsLayer.topZIndex
     }
 
+    readonly property rect workspaceAvailableArea: Qt.rect(0, 0, workspace.width, workspace.height)
+    readonly property rect shellCanvasAvailableArea: Qt.rect(18, 66, 1626, 720)
+
+    function updateShellWindowDrag(win, scenePos) {
+        if (!win)
+            return
+        const screenBounds = Qt.rect(0, 0, rootWindow.width, rootWindow.height)
+        LiquidTiling.updateSnapPreview(scenePos, screenBounds, workspaceAvailableArea, win.cornerRadius)
+    }
+
+    function finishShellWindowDrag(win, scenePos) {
+        if (!win)
+            return
+        const screenBounds = Qt.rect(0, 0, rootWindow.width, rootWindow.height)
+        const targetSnap = LiquidTiling.calculateSnapTarget(scenePos, screenBounds)
+        LiquidTiling.clearSnapPreview()
+        if (targetSnap === 0)
+            return
+        if (win.snapState === 0) {
+            win.restoreGeometry = Qt.rect(win.x, win.y, win.width, win.height)
+        }
+        win.snapState = targetSnap
+        LiquidTiling.registerWindowSnap(win, targetSnap, 0)
+        const targetGeo = LiquidTiling.getSnapGeometry(targetSnap, shellCanvasAvailableArea,
+                                                       LiquidTiling.splitRatio)
+        if (targetGeo.width > 0 && targetGeo.height > 0) {
+            win.x = Math.round(targetGeo.x)
+            win.y = Math.round(targetGeo.y)
+            win.width = Math.round(targetGeo.width)
+            win.height = Math.round(targetGeo.height)
+        }
+    }
+
+    function unsnapShellWindow(win) {
+        if (!win || win.snapState === 0)
+            return
+        win.snapState = 0
+        LiquidTiling.unregisterWindowSnap(win)
+        if (win.restoreGeometry.width > 0 && win.restoreGeometry.height > 0) {
+            win.width = win.restoreGeometry.width
+            win.height = win.restoreGeometry.height
+        }
+    }
+
+    function syncSnappedWindowsInActiveWorkspace(ratio, interactive) {
+        const activeWs = WorkspaceManager.currentWorkspace
+        for (let i = 0; i < trackedClientContainers.length; ++i) {
+            const win = trackedClientContainers[i]
+            if (win && win.workspaceIndex === activeWs && win.snapState !== 0) {
+                win.updateSnappedGeometry(ratio, interactive)
+            }
+        }
+        if (activeWs === 0) {
+            if (glassChassis.snapState !== 0) {
+                const filesGeo = LiquidTiling.getSnapGeometry(
+                    glassChassis.snapState, shellCanvasAvailableArea, ratio)
+                if (filesGeo.width > 0 && filesGeo.height > 0) {
+                    glassChassis.x = Math.round(filesGeo.x)
+                    glassChassis.y = Math.round(filesGeo.y)
+                    glassChassis.width = Math.round(filesGeo.width)
+                    glassChassis.height = Math.round(filesGeo.height)
+                }
+            }
+            if (materialWindow.snapState !== 0) {
+                const matGeo = LiquidTiling.getSnapGeometry(
+                    materialWindow.snapState, shellCanvasAvailableArea, ratio)
+                if (matGeo.width > 0 && matGeo.height > 0) {
+                    materialWindow.x = Math.round(matGeo.x)
+                    materialWindow.y = Math.round(matGeo.y)
+                    materialWindow.width = Math.round(matGeo.width)
+                    materialWindow.height = Math.round(matGeo.height)
+                }
+            }
+        }
+    }
+
     property var trackedClientContainers: []
 
     Component.onCompleted: {
@@ -132,6 +208,7 @@ ApplicationWindow {
                         toplevel: toplevelObject,
                         waylandServer: waylandServer,
                         workspace: rootWindow,
+                        tilingService: LiquidTiling,
                         backdropSource: backdropGrab,
                         workspaceIndex: wsIndex,
                         screenResolution: Qt.point(rootWindow.width * rootWindow.devicePixelRatio,
@@ -292,6 +369,38 @@ ApplicationWindow {
         totalWorkspaces: WorkspaceManager.totalWorkspaces
         isTransitioning: WorkspaceManager.isTransitioning
         parallaxFactor: 0.35
+    }
+
+    Item {
+        id: tilingOverlayLayer
+        anchors.fill: workspace
+        z: 45
+
+        Shell.SnapPreviewOverlay {
+            id: snapPreviewOverlay
+            active: LiquidTiling.previewVisible
+            targetGeometry: LiquidTiling.previewGeometry
+            targetRadii: LiquidTiling.previewRadii
+            backdropSource: backdropGrab
+            screenResolution: Qt.vector2d(rootWindow.width * rootWindow.devicePixelRatio,
+                                          rootWindow.height * rootWindow.devicePixelRatio)
+            animationTime: animTimer.tick
+        }
+
+        Shell.TileSplitter {
+            id: tileSplitter
+            tilingService: LiquidTiling
+            availableArea: rootWindow.workspaceAvailableArea
+            splitRatio: LiquidTiling.splitRatio
+            splitterGap: LiquidTiling.splitterGap
+            activeSplit: {
+                void(LiquidTiling.tilingRevision)
+                return LiquidTiling.hasActiveSplitInWorkspace(WorkspaceManager.currentWorkspace)
+            }
+            onRatioUpdated: (newRatio, interactive) => {
+                rootWindow.syncSnappedWindowsInActiveWorkspace(newRatio, interactive)
+            }
+        }
     }
 
     Item {
