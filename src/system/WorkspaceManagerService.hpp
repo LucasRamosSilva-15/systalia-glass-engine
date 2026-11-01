@@ -33,9 +33,9 @@ public:
     QQuickItem *activeWindow() const noexcept { return m_activeWindow.data(); }
     int workspaceWindowsRevision() const noexcept { return m_workspaceWindowsRevision; }
 
-    void setTotalWorkspaces(int count);
-    void setTransitioning(bool transitioning);
-    void setActiveWindow(QQuickItem *window);
+    Q_INVOKABLE void setTotalWorkspaces(int count);
+    Q_INVOKABLE void setTransitioning(bool transitioning);
+    Q_INVOKABLE void setActiveWindow(QQuickItem *window);
 
     Q_INVOKABLE void switchToWorkspace(int index);
     Q_INVOKABLE void nextWorkspace();

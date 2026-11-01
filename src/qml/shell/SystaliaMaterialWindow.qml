@@ -596,7 +596,7 @@ Item {
             from: 1.0
             to: 1.5
             valueText: Math.round(52 + (value - 1.0) * 26) + "%"
-            onChanged: materialWindow.refractiveIndex = value
+            onChanged: val => materialWindow.refractiveIndex = val
         }
         SettingSlider {
             x: 22
@@ -607,7 +607,7 @@ Item {
             from: 0.2
             to: 1.0
             valueText: Math.round(value * 100).toString()
-            onChanged: materialWindow.surfaceOpacity = value
+            onChanged: val => materialWindow.surfaceOpacity = val
         }
         SettingSlider {
             x: 22
@@ -628,7 +628,7 @@ Item {
             from: 0
             to: 0.08
             valueText: value > 0.01 ? "On" : "Off"
-            onChanged: materialWindow.dispersion = value
+            onChanged: val => materialWindow.dispersion = val
         }
         SettingSlider {
             x: 22
@@ -639,7 +639,7 @@ Item {
             from: 0
             to: 1.5
             valueText: Math.round(value * 12).toString()
-            onChanged: materialWindow.caustics = value
+            onChanged: val => materialWindow.caustics = val
         }
         SettingSlider {
             x: 22
