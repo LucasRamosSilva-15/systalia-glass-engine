@@ -447,13 +447,29 @@ ApplicationWindow {
 
     Item {
         id: dockCanvas
+        readonly property bool isMultiScreenSpan: OutputManager.screenCount > 1
+                                                  && rootWindow.width >= OutputManager.virtualCanvasBounds.width
         readonly property rect activeScreenRect: OutputManager.screenCount > 0
             ? OutputManager.screenGeometryAt(OutputManager.activeCursorScreen)
             : Qt.rect(0, 0, rootWindow.width, rootWindow.height)
-        x: activeScreenRect.x + (activeScreenRect.width - systemDock.width) / 2
-        y: activeScreenRect.y + activeScreenRect.height - systemDock.height - 33
-        width: systemDock.width
-        height: systemDock.height
+
+        width: 555
+        height: 125
+
+        readonly property real dockScale: Math.min(1.0, Math.min((rootWindow.width - 32) / width,
+                                                                 (rootWindow.height - 120) / 380))
+        readonly property real bottomMargin: Math.max(12, Math.min(33, rootWindow.height * 0.035))
+
+        scale: dockScale
+        transformOrigin: Item.Bottom
+
+        x: isMultiScreenSpan
+            ? (activeScreenRect.x + (activeScreenRect.width - width * scale) / 2)
+            : ((rootWindow.width - width * scale) / 2)
+        y: isMultiScreenSpan
+            ? (activeScreenRect.y + activeScreenRect.height - height * scale - bottomMargin)
+            : (rootWindow.height - height * scale - bottomMargin)
+
         Behavior on x {
             NumberAnimation {
                 duration: 240

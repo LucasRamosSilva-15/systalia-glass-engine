@@ -21,6 +21,14 @@ Item {
     height: 45
     z: 100
 
+    // Regras responsivas para evitar sobreposição em larguras compactas
+    readonly property bool showDesktopBranding: width >= 1220
+    readonly property bool showFullTelemetry: width >= 1040
+    readonly property bool showCompactTelemetry: width >= 820 && width < 1040
+    readonly property bool showClockDate: width >= 920
+    readonly property bool showWorkspaceIndicators: width >= 720
+    readonly property bool isCompactBar: width < 860
+
     // Sombra luminosa externa ciano conforme style.css: box-shadow: 0px 4px 18px rgba(9, 186, 237, 0.2)
     Rectangle {
         anchors.fill: parent
@@ -52,13 +60,16 @@ Item {
         border.width: 1
     }
 
-    // Seção esquerda: logotipo, branding do desktop e telemetria
+    // Seção esquerda: logotipo, branding do desktop e telemetria responsiva
     Row {
         id: leftSection
         anchors.left: parent.left
-        anchors.leftMargin: 17
+        anchors.leftMargin: topBar.isCompactBar ? 12 : 17
         anchors.verticalCenter: parent.verticalCenter
-        spacing: 18
+        anchors.right: centerSection.left
+        anchors.rightMargin: 12
+        spacing: topBar.isCompactBar ? 10 : 18
+        clip: true
 
         Image {
             anchors.verticalCenter: parent.verticalCenter
@@ -81,13 +92,14 @@ Item {
             text: "SYSTALIA"
             color: "#c6e5f8"
             font.family: SystaliaTheme.fontFamily
-            font.pixelSize: 19
+            font.pixelSize: topBar.isCompactBar ? 16 : 19
             font.weight: Font.Medium
             antialiasing: true
         }
 
         Text {
             anchors.verticalCenter: parent.verticalCenter
+            visible: topBar.showDesktopBranding
             text: "SDE-KWIN | VALO"
             color: "#9cbad3"
             font.family: SystaliaTheme.fontFamily
@@ -97,15 +109,24 @@ Item {
 
         Text {
             anchors.verticalCenter: parent.verticalCenter
-            text: topBar.telemetry
-                  ? "CPU %1%  |  RAM %2GB  |  FPS %3"
+            visible: topBar.showFullTelemetry || topBar.showCompactTelemetry
+            text: {
+                if (!topBar.telemetry)
+                    return "CPU --%"
+                if (topBar.showFullTelemetry) {
+                    return "CPU %1%  |  RAM %2GB  |  FPS %3"
+                        .arg(Math.round(topBar.telemetry.cpuUsage))
+                        .arg(topBar.telemetry.ramUsageGb.toFixed(1))
+                        .arg(topBar.telemetry.fps)
+                }
+                return "%1% CPU | %2G | %3"
                     .arg(Math.round(topBar.telemetry.cpuUsage))
                     .arg(topBar.telemetry.ramUsageGb.toFixed(1))
                     .arg(topBar.telemetry.fps)
-                  : "CPU --%  |  RAM --GB  |  FPS --"
+            }
             color: "#9cbad3"
             font.family: SystaliaTheme.fontFamily
-            font.pixelSize: 17
+            font.pixelSize: topBar.isCompactBar ? 14 : 17
             elide: Text.ElideRight
             antialiasing: true
         }
@@ -116,24 +137,30 @@ Item {
         id: centerSection
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
-        spacing: 20
+        spacing: topBar.isCompactBar ? 12 : 20
 
         Text {
             anchors.verticalCenter: parent.verticalCenter
-            text: topBar.telemetry
-                  ? topBar.telemetry.systemTime
-                  : topBar.dateNow.toLocaleDateString(Qt.locale("en_US"), "ddd dd MMM").toUpperCase()
-                    + "  >  "
-                    + topBar.dateNow.toLocaleTimeString(Qt.locale("en_US"), "HH:mm:ss")
+            text: {
+                if (topBar.showClockDate) {
+                    return topBar.telemetry
+                        ? topBar.telemetry.systemTime
+                        : topBar.dateNow.toLocaleDateString(Qt.locale("en_US"), "ddd dd MMM").toUpperCase()
+                          + "  >  "
+                          + topBar.dateNow.toLocaleTimeString(Qt.locale("en_US"), "HH:mm:ss")
+                }
+                return topBar.dateNow.toLocaleTimeString(Qt.locale("en_US"), "HH:mm:ss")
+            }
             color: "#c2d7df"
             font.family: SystaliaTheme.fontFamily
-            font.pixelSize: 17
+            font.pixelSize: topBar.isCompactBar ? 15 : 17
             antialiasing: true
         }
 
         // Régua de 4 cápsulas translúcidas para os Espaços de Trabalho Virtuais (Etapa 4.1)
         Rectangle {
             id: workspaceIndicatorTrack
+            visible: topBar.showWorkspaceIndicators
             anchors.verticalCenter: parent.verticalCenter
             width: workspacePillsRow.implicitWidth + 16
             height: 26
@@ -223,25 +250,27 @@ Item {
     }
 
     Row {
+        id: rightSection
         anchors.right: parent.right
-        anchors.rightMargin: 18
+        anchors.rightMargin: topBar.isCompactBar ? 10 : 18
         anchors.verticalCenter: parent.verticalCenter
         height: 30
-        spacing: 4
+        spacing: topBar.isCompactBar ? 2 : 4
 
         Repeater {
             model: [
-                { glyph: "▣", name: "Estado do sistema" },
-                { glyph: ">_", name: "Terminal" },
-                { glyph: "▦", name: "Aplicativos" },
-                { glyph: "☼", name: "Brilho" },
-                { glyph: "▣", name: "Rede e som" },
-                { glyph: "⏻", name: "Energia" }
+                { glyph: "▣", name: "Estado do sistema", minWidth: 0 },
+                { glyph: ">_", name: "Terminal", minWidth: 0 },
+                { glyph: "▦", name: "Aplicativos", minWidth: 0 },
+                { glyph: "☼", name: "Brilho", minWidth: 740 },
+                { glyph: "▣", name: "Rede e som", minWidth: 620 },
+                { glyph: "⏻", name: "Energia", minWidth: 0 }
             ]
 
             delegate: StatusButton {
                 required property var modelData
-                width: 44
+                visible: topBar.width >= modelData.minWidth
+                width: topBar.isCompactBar ? 34 : 44
                 height: 30
                 glyph: modelData.glyph
                 accessibleName: modelData.name
