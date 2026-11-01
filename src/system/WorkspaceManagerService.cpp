@@ -69,6 +69,7 @@ void WorkspaceManagerService::switchToWorkspace(int index) {
         return;
     }
 
+    m_previousWorkspace = m_currentWorkspace;
     m_currentWorkspace = index;
     setTransitioning(true);
     m_transitionTimer.start();
@@ -218,8 +219,25 @@ int WorkspaceManagerService::activeVisibleWindowCount() const {
 
 void WorkspaceManagerService::syncWindowCullingStates() {
     constexpr qreal kDefaultScreenWidth = 1920.0;
-    const qreal defaultOffset = -static_cast<qreal>(m_currentWorkspace) * kDefaultScreenWidth;
-    applyViewportCulling(defaultOffset, kDefaultScreenWidth);
+    if (m_isTransitioning) {
+        const int minWs = std::min(m_previousWorkspace, m_currentWorkspace);
+        const int maxWs = std::max(m_previousWorkspace, m_currentWorkspace);
+        for (auto it = m_windowWorkspaces.cbegin(); it != m_windowWorkspaces.cend(); ++it) {
+            QQuickItem *item = it.key();
+            if (!item) {
+                continue;
+            }
+            const int ws = it.value();
+            const bool visible = (ws >= minWs && ws <= maxWs);
+            item->setVisible(visible);
+            if (item->metaObject()->indexOfProperty("occluded") >= 0) {
+                item->setProperty("occluded", !visible);
+            }
+        }
+    } else {
+        const qreal defaultOffset = -static_cast<qreal>(m_currentWorkspace) * kDefaultScreenWidth;
+        applyViewportCulling(defaultOffset, kDefaultScreenWidth);
+    }
 }
 
 int WorkspaceManagerService::windowCountInWorkspace(int workspaceIndex) const {

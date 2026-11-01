@@ -36,7 +36,10 @@ Item {
 
     width: 680
     height: 480
-    visible: !minimized && clientMapped && (inActiveWorkspace || workspaceTransitioning)
+    readonly property bool withinFrustum: parent && parent.withinViewportFrustum !== undefined
+                                          ? parent.withinViewportFrustum
+                                          : true
+    visible: !minimized && clientMapped && (inActiveWorkspace || (workspaceTransitioning && withinFrustum))
     enabled: !minimized && clientMapped && inActiveWorkspace && !workspaceTransitioning
 
     property int minWindowWidth: 320

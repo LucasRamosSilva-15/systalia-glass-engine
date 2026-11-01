@@ -185,6 +185,12 @@ ApplicationWindow {
     Component.onCompleted: {
         SystemTelemetry.attachWindow(rootWindow)
         waylandServer.attachTaskSwitcherWindow(rootWindow)
+        const page0 = clientWindowsLayer.workspacePageAt(0)
+        if (page0 && windowCanvas.parent !== page0) {
+            windowCanvas.parent = page0
+        }
+        WorkspaceManager.setWindowWorkspace(glassChassis, 0)
+        WorkspaceManager.setWindowWorkspace(materialWindow, 0)
     }
 
     SystaliaCompositor {
@@ -317,13 +323,23 @@ ApplicationWindow {
         onTriggered: tick += 0.02
     }
 
+    WorkspaceViewport {
+        id: clientWindowsLayer
+        anchors.fill: workspace
+        z: 20
+        property int topZIndex: 0
+        currentWorkspace: WorkspaceManager.currentWorkspace
+        totalWorkspaces: WorkspaceManager.totalWorkspaces
+        isTransitioning: WorkspaceManager.isTransitioning
+        parallaxFactor: 0.35
+    }
+
     Item {
         id: windowCanvas
-        anchors.fill: workspace
-        x: clientWindowsLayer.viewportOffset
+        parent: clientWindowsLayer.workspacePageAt(0)
+        anchors.fill: parent
         z: 10
-        visible: (WorkspaceManager.currentWorkspace === 0) || WorkspaceManager.isTransitioning
-        enabled: (WorkspaceManager.currentWorkspace === 0) && !WorkspaceManager.isTransitioning
+        enabled: parent ? parent.enabled : true
 
         Shell.SystaliaFilesWindow {
             id: glassChassis
@@ -356,17 +372,6 @@ ApplicationWindow {
             animationTime: animTimer.tick
             controller: rootWindow
         }
-    }
-
-    WorkspaceViewport {
-        id: clientWindowsLayer
-        anchors.fill: workspace
-        z: 20
-        property int topZIndex: 0
-        currentWorkspace: WorkspaceManager.currentWorkspace
-        totalWorkspaces: WorkspaceManager.totalWorkspaces
-        isTransitioning: WorkspaceManager.isTransitioning
-        parallaxFactor: 0.35
     }
 
     Item {

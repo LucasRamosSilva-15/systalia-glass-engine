@@ -74,6 +74,7 @@ private:
     void syncWindowCullingStates();
 
     int m_currentWorkspace = 0;
+    int m_previousWorkspace = 0;
     int m_totalWorkspaces = kDefaultTotalWorkspaces;
     bool m_isTransitioning = false;
     int m_workspaceWindowsRevision = 0;
