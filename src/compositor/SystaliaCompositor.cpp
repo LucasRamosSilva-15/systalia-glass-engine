@@ -1,4 +1,5 @@
 #include "SystaliaCompositor.hpp"
+#include "InputDeviceManager.hpp"
 #include <QDebug>
 #include <QFile>
 #include <QKeyEvent>
@@ -88,6 +89,10 @@ SystaliaCompositor::SystaliaCompositor(QObject *parent)
     m_outputManager = OutputManagerService::instance();
     if (m_outputManager) {
         m_outputManager->attachCompositor(this);
+    }
+
+    if (auto *inputMgr = InputDeviceManager::instance()) {
+        inputMgr->attachCompositor(this);
     }
 }
 

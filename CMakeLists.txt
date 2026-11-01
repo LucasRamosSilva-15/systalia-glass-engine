@@ -21,6 +21,11 @@ find_package(Qt6 6.7 REQUIRED COMPONENTS
 
 find_package(Vulkan REQUIRED)
 find_package(WaylandScanner REQUIRED)
+find_package(PkgConfig QUIET)
+if(PkgConfig_FOUND)
+    pkg_check_modules(LIBUDEV QUIET IMPORTED_TARGET libudev)
+    pkg_check_modules(LIBINPUT QUIET IMPORTED_TARGET libinput)
+endif()
 
 if(Qt6_VERSION VERSION_GREATER_EQUAL 6.8)
     qt_policy(SET QTP0004 NEW)
@@ -74,6 +79,8 @@ qt_add_library(sge_core STATIC
     src/system/WorkspaceManagerService.cpp
     src/system/LiquidTilingService.hpp
     src/system/LiquidTilingService.cpp
+    src/system/InputDeviceManager.hpp
+    src/system/InputDeviceManager.cpp
 )
 
 qt6_generate_wayland_protocol_server_sources(sge_core
@@ -97,6 +104,15 @@ target_link_libraries(sge_core PUBLIC
     Vulkan::Vulkan
     sge_shaders
 )
+
+if(TARGET PkgConfig::LIBUDEV)
+    target_compile_definitions(sge_core PUBLIC SGE_HAVE_LIBUDEV=1)
+    target_link_libraries(sge_core PUBLIC PkgConfig::LIBUDEV)
+endif()
+if(TARGET PkgConfig::LIBINPUT)
+    target_compile_definitions(sge_core PUBLIC SGE_HAVE_LIBINPUT=1)
+    target_link_libraries(sge_core PUBLIC PkgConfig::LIBINPUT)
+endif()
 
 set_source_files_properties(src/qml/theme/SystaliaTheme.qml PROPERTIES
     QT_QML_SINGLETON_TYPE TRUE

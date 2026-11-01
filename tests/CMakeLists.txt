@@ -238,6 +238,13 @@ sge_add_expanded_test(tst_workspace_manager unit/tst_WorkspaceManager.cpp unit)
 sge_add_expanded_test(tst_liquid_tiling unit/tst_LiquidTiling.cpp unit)
 sge_add_expanded_test(tst_output_manager unit/tst_OutputManager.cpp unit)
 sge_add_expanded_test(tst_phase4_audit unit/tst_Phase4Audit.cpp unit)
+sge_add_expanded_test(tst_input_hardware_backend unit/tst_InputHardwareBackend.cpp unit)
+if(TARGET PkgConfig::LIBINPUT)
+    target_link_libraries(tst_input_hardware_backend PRIVATE PkgConfig::LIBINPUT)
+endif()
+if(TARGET PkgConfig::LIBUDEV)
+    target_link_libraries(tst_input_hardware_backend PRIVATE PkgConfig::LIBUDEV)
+endif()
 
 # Integration tests exercise actual Wayland wire requests and model resets.
 sge_add_expanded_test(tst_protocol_roundtrip integration/tst_ProtocolRoundtrip.cpp integration)
@@ -275,6 +282,7 @@ add_custom_target(unit_tests DEPENDS
     tst_liquid_tiling
     tst_output_manager
     tst_phase4_audit
+    tst_input_hardware_backend
 )
 add_custom_target(integration_tests DEPENDS
     tst_wayland_socket
@@ -308,6 +316,7 @@ set_tests_properties(
     tst_liquid_tiling
     tst_output_manager
     tst_phase4_audit
+    tst_input_hardware_backend
     PROPERTIES LABELS "unit"
 )
 set_tests_properties(

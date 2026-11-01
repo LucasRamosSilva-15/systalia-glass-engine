@@ -1,0 +1,22 @@
+{
+    "device": "/dev/dri/card0",
+    "hwcursor": true,
+    "pbuffers": true,
+    "separateScreens": false,
+    "outputs": [
+        {
+            "name": "DP-1",
+            "mode": "preferred",
+            "primary": true
+        },
+        {
+            "name": "HDMI-A-1",
+            "mode": "preferred"
+        },
+        {
+            "name": "eDP-1",
+            "mode": "preferred"
+        }
+    ]
+}
+

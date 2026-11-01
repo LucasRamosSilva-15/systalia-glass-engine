@@ -232,7 +232,7 @@ O frame Figma tem 1662 × 975 px. O canvas mantém essa referência e usa escala
 
 ### 6.4 Fase 5 — Sessão autônoma
 
-- 5.1 backend DRM/KMS, libinput/libudev e integração de dispositivos.
+- 5.1 backend DRM/KMS (`eglfs_kms` + `config/eglfs_kms.json` + Atomic Mode Setting), deteção dinâmica de sessão em `src/main.cpp` (Nested vs. Bare-Metal TTY vs. Headless) e `InputDeviceManager` (`libinput`/`libudev` com despacho direto para `QWaylandSeat` e gestos de 3 dedos entre workspaces) (**Concluído** — `tst_input_hardware_backend`, 29/29 alvos CTest).
 - 5.2 logind/SDDM, scripts de sessão e limpeza de VT.
 - 5.3 bridge XWayland sob demanda.
 
