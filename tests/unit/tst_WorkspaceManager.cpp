@@ -23,6 +23,7 @@ private slots:
     void destroyedWindowsAreCleanedUpAutomatically();
     void compositorInterceptsWorkspaceKeyboardShortcuts();
     void workspaceViewportTranslatesWithParallax();
+    void userClosedOrMinimizedWindowsPreservedDuringCullingAndNewClientRegistration();
 };
 
 void TestWorkspaceManager::initialStateIsDefault() {
@@ -228,6 +229,45 @@ void TestWorkspaceManager::workspaceViewportTranslatesWithParallax() {
     QTRY_COMPARE_WITH_TIMEOUT(viewport->property("viewportOffset").toReal(), -3200.0, 1000);
     const qreal parallax = viewport->property("parallaxOffset").toReal();
     QVERIFY(std::abs(parallax - (-3200.0 * 0.35)) < 1.0);
+}
+
+void TestWorkspaceManager::userClosedOrMinimizedWindowsPreservedDuringCullingAndNewClientRegistration() {
+    WorkspaceManagerService manager;
+    QQuickItem root;
+
+    auto filesWin = std::make_unique<QQuickItem>(&root);
+    filesWin->setProperty("windowOpen", true);
+    filesWin->setVisible(true);
+
+    auto controlCenterWin = std::make_unique<QQuickItem>(&root);
+    controlCenterWin->setProperty("windowOpen", true);
+    controlCenterWin->setVisible(true);
+
+    manager.setWindowWorkspace(filesWin.get(), 0);
+    manager.setWindowWorkspace(controlCenterWin.get(), 0);
+
+    // User closes Files and Control Center
+    filesWin->setProperty("windowOpen", false);
+    filesWin->setVisible(false);
+    controlCenterWin->setProperty("windowOpen", false);
+    controlCenterWin->setVisible(false);
+
+    // Now a new client (terminal) is launched in workspace 0
+    auto terminal = std::make_unique<QQuickItem>(&root);
+    terminal->setProperty("clientMapped", true);
+    terminal->setVisible(true);
+    manager.setWindowWorkspace(terminal.get(), 0);
+
+    // Verify Files and Control Center were NOT resurrected by registration/culling!
+    QCOMPARE(filesWin->isVisible(), false);
+    QCOMPARE(controlCenterWin->isVisible(), false);
+    QCOMPARE(terminal->isVisible(), true);
+
+    // If an explicit culling pass runs in active workspace:
+    manager.applyViewportCulling(0.0, 1920.0);
+    QCOMPARE(filesWin->isVisible(), false);
+    QCOMPARE(controlCenterWin->isVisible(), false);
+    QCOMPARE(terminal->isVisible(), true);
 }
 
 QTEST_MAIN(TestWorkspaceManager)

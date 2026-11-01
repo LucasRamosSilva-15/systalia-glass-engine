@@ -185,6 +185,25 @@ int WorkspaceManagerService::applyViewportCulling(qreal viewportOffset, qreal sc
         }
     };
 
+    auto isExplicitlyHiddenByUser = [](QQuickItem *item) -> bool {
+        if (!item) {
+            return true;
+        }
+        const QVariant minProp = item->property("minimized");
+        if (minProp.isValid() && minProp.toBool()) {
+            return true;
+        }
+        const QVariant openProp = item->property("windowOpen");
+        if (openProp.isValid() && !openProp.toBool()) {
+            return true;
+        }
+        const QVariant mappedProp = item->property("clientMapped");
+        if (mappedProp.isValid() && !mappedProp.toBool()) {
+            return true;
+        }
+        return false;
+    };
+
     for (auto it = m_windowWorkspaces.cbegin(); it != m_windowWorkspaces.cend(); ++it) {
         QQuickItem *item = it.key();
         if (!item) {
@@ -193,10 +212,27 @@ int WorkspaceManagerService::applyViewportCulling(qreal viewportOffset, qreal sc
         const int ws = it.value();
         const bool visibleInFrustum = isWorkspaceWithinFrustum(ws, viewportOffset, screenWidth)
                                       && (m_isTransitioning || ws == m_currentWorkspace);
-        item->setVisible(visibleInFrustum);
-        setItemOccludedRecursive(item, !visibleInFrustum);
-        if (visibleInFrustum) {
-            ++activeCount;
+
+        if (!visibleInFrustum) {
+            if (item->isVisible()) {
+                m_culledWindows.insert(item);
+                item->setVisible(false);
+            }
+            setItemOccludedRecursive(item, true);
+        } else {
+            const bool userHidden = isExplicitlyHiddenByUser(item);
+            if (userHidden) {
+                m_culledWindows.remove(item);
+                item->setVisible(false);
+                setItemOccludedRecursive(item, true);
+            } else if (item->isVisible() || m_culledWindows.contains(item)) {
+                item->setVisible(true);
+                m_culledWindows.remove(item);
+                setItemOccludedRecursive(item, false);
+                ++activeCount;
+            } else {
+                setItemOccludedRecursive(item, true);
+            }
         }
     }
 
@@ -228,10 +264,35 @@ void WorkspaceManagerService::syncWindowCullingStates() {
                 continue;
             }
             const int ws = it.value();
-            const bool visible = (ws >= minWs && ws <= maxWs);
-            item->setVisible(visible);
-            if (item->metaObject()->indexOfProperty("occluded") >= 0) {
-                item->setProperty("occluded", !visible);
+            const bool inTransitionRange = (ws >= minWs && ws <= maxWs);
+            if (!inTransitionRange) {
+                if (item->isVisible()) {
+                    m_culledWindows.insert(item);
+                    item->setVisible(false);
+                }
+                if (item->metaObject()->indexOfProperty("occluded") >= 0) {
+                    item->setProperty("occluded", true);
+                }
+            } else {
+                const QVariant minProp = item->property("minimized");
+                const bool isMin = minProp.isValid() && minProp.toBool();
+                const QVariant openProp = item->property("windowOpen");
+                const bool isOpen = !openProp.isValid() || openProp.toBool();
+                const QVariant mappedProp = item->property("clientMapped");
+                const bool isMapped = !mappedProp.isValid() || mappedProp.toBool();
+
+                if (isOpen && !isMin && isMapped && (item->isVisible() || m_culledWindows.contains(item))) {
+                    item->setVisible(true);
+                    m_culledWindows.remove(item);
+                    if (item->metaObject()->indexOfProperty("occluded") >= 0) {
+                        item->setProperty("occluded", false);
+                    }
+                } else {
+                    item->setVisible(false);
+                    if (item->metaObject()->indexOfProperty("occluded") >= 0) {
+                        item->setProperty("occluded", true);
+                    }
+                }
             }
         }
     } else {
@@ -317,6 +378,13 @@ void WorkspaceManagerService::unregisterObject(QObject *object) {
         if (static_cast<QObject *>(it.key()) == object) {
             it = m_windowWorkspaces.erase(it);
             changed = true;
+        } else {
+            ++it;
+        }
+    }
+    for (auto it = m_culledWindows.begin(); it != m_culledWindows.end(); ) {
+        if (static_cast<QObject *>(*it) == object) {
+            it = m_culledWindows.erase(it);
         } else {
             ++it;
         }

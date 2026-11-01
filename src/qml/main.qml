@@ -19,22 +19,32 @@ ApplicationWindow {
     property rect filesWindowRestoreGeometry: Qt.rect(80, 80, 701, 534)
     property bool materialWindowMaximized: false
     property rect materialWindowRestoreGeometry: Qt.rect(810, 80, 700, 534)
+    property int topZIndex: 20
+
+    function bringWindowToFront(win) {
+        if (!win)
+            return
+        topZIndex += 1
+        win.z = topZIndex
+        WorkspaceManager.setActiveWindow(win)
+    }
 
     function raiseFileWindow() {
         WorkspaceManager.switchToWorkspace(0)
+        glassChassis.windowOpen = true
         glassChassis.visible = true
-        windowCanvas.z = 30
-        glassChassis.z = 20
-        clientWindowsLayer.z = 20
+        bringWindowToFront(glassChassis)
     }
 
     function minimizeFileWindow() {
+        glassChassis.windowOpen = false
         glassChassis.visible = false
     }
 
     function closeFileWindow() {
         if (filesWindowMaximized)
             toggleFileWindowMaximized()
+        glassChassis.windowOpen = false
         glassChassis.visible = false
     }
 
@@ -60,15 +70,15 @@ ApplicationWindow {
 
     function raiseMaterialWindow() {
         WorkspaceManager.switchToWorkspace(0)
+        materialWindow.windowOpen = true
         materialWindow.visible = true
-        windowCanvas.z = 30
-        materialWindow.z = 21
-        clientWindowsLayer.z = 20
+        bringWindowToFront(materialWindow)
     }
 
     function closeMaterialWindow() {
         if (materialWindowMaximized)
             toggleMaterialWindowMaximized()
+        materialWindow.windowOpen = false
         materialWindow.visible = false
     }
 
@@ -95,11 +105,10 @@ ApplicationWindow {
     function raiseClientWindow(windowContainer) {
         if (!windowContainer)
             return
-        WorkspaceManager.setActiveWindow(windowContainer)
-        windowCanvas.z = 10
-        clientWindowsLayer.z = 40
-        clientWindowsLayer.topZIndex += 1
-        windowContainer.z = clientWindowsLayer.topZIndex
+        bringWindowToFront(windowContainer)
+        if (windowContainer.waylandServer && windowContainer.toplevel) {
+            windowContainer.waylandServer.activateToplevel(windowContainer.toplevel)
+        }
     }
 
     readonly property rect workspaceAvailableArea: Qt.rect(0, 0, workspace.width, workspace.height)
@@ -186,8 +195,11 @@ ApplicationWindow {
         SystemTelemetry.attachWindow(rootWindow)
         waylandServer.attachTaskSwitcherWindow(rootWindow)
         const page0 = clientWindowsLayer.workspacePageAt(0)
-        if (page0 && windowCanvas.parent !== page0) {
-            windowCanvas.parent = page0
+        if (page0) {
+            if (glassChassis.parent !== page0)
+                glassChassis.parent = page0
+            if (materialWindow.parent !== page0)
+                materialWindow.parent = page0
         }
         WorkspaceManager.setWindowWorkspace(glassChassis, 0)
         WorkspaceManager.setWindowWorkspace(materialWindow, 0)
@@ -334,44 +346,38 @@ ApplicationWindow {
         parallaxFactor: 0.35
     }
 
-    Item {
-        id: windowCanvas
+    Shell.SystaliaFilesWindow {
+        id: glassChassis
         parent: clientWindowsLayer.workspacePageAt(0)
-        anchors.fill: parent
+        x: 80
+        y: 80
         z: 10
-        enabled: parent ? parent.enabled : true
+        backdropSource: backdropGrab
+        screenResolution: Qt.vector2d(rootWindow.width * rootWindow.devicePixelRatio,
+                                      rootWindow.height * rootWindow.devicePixelRatio)
+        animationTime: animTimer.tick
+        controller: rootWindow
+        waylandServer: waylandServer
+        refractiveIndex: materialWindow.refractiveIndex
+        dispersion: materialWindow.dispersion
+        caustics: materialWindow.caustics
+        surfaceOpacity: materialWindow.surfaceOpacity
+        surfaceSlant: materialWindow.surfaceSlant
+        cornerRadius: materialWindow.cornerRadius
+        materialActive: materialWindow.materialActive
+    }
 
-        Shell.SystaliaFilesWindow {
-            id: glassChassis
-            x: 80
-            y: 80
-            z: 10
-            backdropSource: backdropGrab
-            screenResolution: Qt.vector2d(rootWindow.width * rootWindow.devicePixelRatio,
-                                          rootWindow.height * rootWindow.devicePixelRatio)
-            animationTime: animTimer.tick
-            controller: rootWindow
-            waylandServer: waylandServer
-            refractiveIndex: materialWindow.refractiveIndex
-            dispersion: materialWindow.dispersion
-            caustics: materialWindow.caustics
-            surfaceOpacity: materialWindow.surfaceOpacity
-            surfaceSlant: materialWindow.surfaceSlant
-            cornerRadius: materialWindow.cornerRadius
-            materialActive: materialWindow.materialActive
-        }
-
-        Shell.SystaliaMaterialWindow {
-            id: materialWindow
-            x: 810
-            y: 80
-            z: 10
-            backdropSource: backdropGrab
-            screenResolution: Qt.vector2d(rootWindow.width * rootWindow.devicePixelRatio,
-                                          rootWindow.height * rootWindow.devicePixelRatio)
-            animationTime: animTimer.tick
-            controller: rootWindow
-        }
+    Shell.SystaliaMaterialWindow {
+        id: materialWindow
+        parent: clientWindowsLayer.workspacePageAt(0)
+        x: 810
+        y: 80
+        z: 11
+        backdropSource: backdropGrab
+        screenResolution: Qt.vector2d(rootWindow.width * rootWindow.devicePixelRatio,
+                                      rootWindow.height * rootWindow.devicePixelRatio)
+        animationTime: animTimer.tick
+        controller: rootWindow
     }
 
     Item {

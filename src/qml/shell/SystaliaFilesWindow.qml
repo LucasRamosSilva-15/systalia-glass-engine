@@ -25,6 +25,7 @@ Item {
                                    : Qt.vector4d(cornerRadius, cornerRadius,
                                                  cornerRadius, cornerRadius)
     property bool materialActive: true
+    property bool windowOpen: true
     property string selectedLocation: "Home"
     property string selectedFile: ""
 

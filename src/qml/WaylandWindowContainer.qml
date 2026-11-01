@@ -43,6 +43,19 @@ Item {
     visible: !minimized && clientMapped && (inActiveWorkspace || (workspaceTransitioning && withinFrustum))
     enabled: !minimized && clientMapped && inActiveWorkspace && !workspaceTransitioning
 
+    TapHandler {
+        target: null
+        gesturePolicy: TapHandler.WithinBounds
+        onPressedChanged: {
+            if (pressed) {
+                if (windowContainer.workspace && typeof windowContainer.workspace.raiseClientWindow === "function")
+                    windowContainer.workspace.raiseClientWindow(windowContainer)
+                if (windowContainer.waylandServer && windowContainer.toplevel)
+                    windowContainer.waylandServer.activateToplevel(windowContainer.toplevel)
+            }
+        }
+    }
+
     property int minWindowWidth: 320
     property int minWindowHeight: 220
     readonly property int borderMargin: 8
