@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import Systalia.Engine
+import Systalia.System 1.0
 
 Item {
     id: topBar
@@ -265,8 +266,7 @@ Item {
                 { glyph: ">_", name: "Terminal", minWidth: 0, action: "terminal" },
                 { glyph: "▦", name: "Aplicativos", minWidth: 0, action: "launcher" },
                 { glyph: "☼", name: "Brilho do ecrã", minWidth: 740, action: "control" },
-                { glyph: SystemControl.isMuted ? "🔇" : (SystemControl.volume === 0 ? "🔈" : (SystemControl.volume > 50 ? "🔊" : "🔉")),
-                  name: "Rede e som", minWidth: 620, action: "control" },
+                { glyph: "🔊", name: "Rede e som", minWidth: 620, action: "volume" },
                 { glyph: "⏻", name: "Energia e sessão", minWidth: 0, action: "power" }
             ]
 
@@ -275,7 +275,18 @@ Item {
                 visible: topBar.width >= modelData.minWidth
                 width: topBar.isCompactBar ? 34 : 44
                 height: 30
-                glyph: modelData.glyph
+                glyph: {
+                    if (modelData.action === "volume") {
+                        if (typeof SystemControl !== "undefined" && SystemControl) {
+                            if (SystemControl.isMuted) return "🔇"
+                            if (SystemControl.volume === 0) return "🔈"
+                            if (SystemControl.volume > 50) return "🔊"
+                            return "🔉"
+                        }
+                        return "🔊"
+                    }
+                    return modelData.glyph
+                }
                 accessibleName: modelData.name
                 onClicked: {
                     if (modelData.action === "terminal") {
