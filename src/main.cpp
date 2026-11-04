@@ -16,6 +16,7 @@
 #include "LiquidTilingService.hpp"
 #include "OutputManagerService.hpp"
 #include "InputDeviceManager.hpp"
+#include "LogindSessionService.hpp"
 
 int main(int argc, char *argv[]) {
     // Deteção dinâmica de sessão (Bare-Metal DRM/KMS via TTY vs. Aninhada Wayland/X11 vs. Headless)
@@ -34,8 +35,12 @@ int main(int argc, char *argv[]) {
     WorkspaceManagerService workspaceManagerService;
     LiquidTilingService liquidTilingService;
     OutputManagerService outputManagerService;
+    LogindSessionService logindSessionService;
     InputDeviceManager inputDeviceManager;
     if (platformCfg.mode == InputDeviceManager::SessionBareMetalKms) {
+        if (logindSessionService.initializeSession(false)) {
+            logindSessionService.acquirePrimaryDrmDevice(inputDeviceManager.activeDrmDevice());
+        }
         inputDeviceManager.initializeHardwareContext();
     }
 
@@ -67,6 +72,8 @@ int main(int argc, char *argv[]) {
                                  &liquidTilingService);
     qmlRegisterSingletonInstance("Systalia.System", 1, 0, "OutputManager",
                                  &outputManagerService);
+    qmlRegisterSingletonInstance("Systalia.System", 1, 0, "LogindSession",
+                                 &logindSessionService);
     qmlRegisterSingletonInstance("Systalia.System", 1, 0, "InputDeviceManager",
                                  &inputDeviceManager);
 

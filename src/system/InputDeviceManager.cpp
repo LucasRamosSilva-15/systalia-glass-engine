@@ -1,5 +1,6 @@
 #include "InputDeviceManager.hpp"
 
+#include "LogindSessionService.hpp"
 #include "OutputManagerService.hpp"
 #include "WorkspaceManagerService.hpp"
 
@@ -302,15 +303,27 @@ int InputDeviceManager::openRestrictedCallback(const char *path, int flags, void
     if (!path) {
         return -EINVAL;
     }
+    if (auto *logind = LogindSessionService::instance(); logind && logind->hasSessionControl()) {
+        const int logindFd = logind->takeDeviceByPath(QString::fromLocal8Bit(path));
+        if (logindFd >= 0) {
+            return logindFd;
+        }
+    }
     const int fd = ::open(path, flags | O_CLOEXEC);
     return (fd < 0) ? -errno : fd;
 }
 
 void InputDeviceManager::closeRestrictedCallback(int fd, void *userData) {
     Q_UNUSED(userData);
-    if (fd >= 0) {
-        ::close(fd);
+    if (fd < 0) {
+        return;
     }
+    if (auto *logind = LogindSessionService::instance(); logind && logind->hasSessionControl()) {
+        if (logind->releaseDeviceByFd(fd)) {
+            return;
+        }
+    }
+    ::close(fd);
 }
 
 const libinput_interface &InputDeviceManager::restrictedInterface() noexcept {

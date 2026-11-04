@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Systalia (VALO Glass)
+Comment=Systalia Glass Engine — Compositor Wayland de Alta Fidelidade Óptica
+Exec=/usr/bin/systalia-session
+Type=Application
+DesktopNames=Systalia;VALO
+Keywords=wayland;compositor;glass;valo;
+

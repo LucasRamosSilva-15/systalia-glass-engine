@@ -1,0 +1,12 @@
+#!/bin/sh
+export XDG_CURRENT_DESKTOP="Systalia:VALO"
+export XDG_SESSION_TYPE="wayland"
+export XDG_SESSION_DESKTOP="systalia"
+export QT_QPA_PLATFORM="wayland;eglfs"
+export GDK_BACKEND="wayland,x11"
+export MOZ_ENABLE_WAYLAND=1
+export ELECTRON_OZONE_PLATFORM_HINT="auto"
+
+# Lançar compositor nativo
+exec /usr/bin/systalia_glass_engine
+

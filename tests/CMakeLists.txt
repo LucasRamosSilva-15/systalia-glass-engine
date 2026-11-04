@@ -245,6 +245,11 @@ endif()
 if(TARGET PkgConfig::LIBUDEV)
     target_link_libraries(tst_input_hardware_backend PRIVATE PkgConfig::LIBUDEV)
 endif()
+sge_add_expanded_test(tst_logind_integration unit/tst_LogindIntegration.cpp unit)
+target_compile_definitions(tst_logind_integration PRIVATE
+    SGE_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+)
+target_link_libraries(tst_logind_integration PRIVATE Qt6::DBus)
 
 # Integration tests exercise actual Wayland wire requests and model resets.
 sge_add_expanded_test(tst_protocol_roundtrip integration/tst_ProtocolRoundtrip.cpp integration)
@@ -283,6 +288,7 @@ add_custom_target(unit_tests DEPENDS
     tst_output_manager
     tst_phase4_audit
     tst_input_hardware_backend
+    tst_logind_integration
 )
 add_custom_target(integration_tests DEPENDS
     tst_wayland_socket
@@ -317,6 +323,7 @@ set_tests_properties(
     tst_output_manager
     tst_phase4_audit
     tst_input_hardware_backend
+    tst_logind_integration
     PROPERTIES LABELS "unit"
 )
 set_tests_properties(

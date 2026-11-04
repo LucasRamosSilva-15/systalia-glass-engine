@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.22)
 project(systalia_glass_engine LANGUAGES C CXX)
 
+include(GNUInstallDirs)
+
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -81,6 +83,8 @@ qt_add_library(sge_core STATIC
     src/system/LiquidTilingService.cpp
     src/system/InputDeviceManager.hpp
     src/system/InputDeviceManager.cpp
+    src/system/LogindSessionService.hpp
+    src/system/LogindSessionService.cpp
 )
 
 qt6_generate_wayland_protocol_server_sources(sge_core
@@ -190,6 +194,7 @@ target_link_libraries(systalia_glass_engine PRIVATE
     sge_core
     Qt6::QuickControls2
     Qt6::WaylandCompositor
+    Qt6::DBus
 )
 
 # Shared Qt loads QML plugins at runtime; static builds still need import scanning.
@@ -197,6 +202,22 @@ get_target_property(qt_core_type Qt6::Core TYPE)
 if(qt_core_type STREQUAL "SHARED_LIBRARY")
     set_property(TARGET systalia_glass_engine PROPERTY QT_QML_MODULE_NO_IMPORT_SCAN TRUE)
 endif()
+
+# Regras de instalação para sessão autónoma Wayland / SDDM
+install(TARGETS systalia_glass_engine
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+install(PROGRAMS data/systalia-session
+    DESTINATION ${CMAKE_INSTALL_BINDIR}
+    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+                GROUP_READ GROUP_EXECUTE
+                WORLD_READ WORLD_EXECUTE
+)
+
+install(FILES data/systalia.desktop
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/wayland-sessions
+)
 
 enable_testing()
 add_subdirectory(tests)
