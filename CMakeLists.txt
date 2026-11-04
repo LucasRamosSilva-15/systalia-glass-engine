@@ -27,6 +27,8 @@ find_package(PkgConfig QUIET)
 if(PkgConfig_FOUND)
     pkg_check_modules(LIBUDEV QUIET IMPORTED_TARGET libudev)
     pkg_check_modules(LIBINPUT QUIET IMPORTED_TARGET libinput)
+    pkg_check_modules(XCB QUIET IMPORTED_TARGET xcb xcb-composite xcb-xfixes)
+    pkg_check_modules(WAYLAND_SERVER QUIET IMPORTED_TARGET wayland-server)
 endif()
 
 if(Qt6_VERSION VERSION_GREATER_EQUAL 6.8)
@@ -67,6 +69,8 @@ qt_add_library(sge_core STATIC
     src/compositor/WindowStackModel.cpp
     src/compositor/OutputManagerService.hpp
     src/compositor/OutputManagerService.cpp
+    src/compositor/XWaylandManager.hpp
+    src/compositor/XWaylandManager.cpp
     src/system/SystemTelemetryService.hpp
     src/system/SystemTelemetryService.cpp
     src/system/ProcessLauncherService.hpp
@@ -116,6 +120,13 @@ endif()
 if(TARGET PkgConfig::LIBINPUT)
     target_compile_definitions(sge_core PUBLIC SGE_HAVE_LIBINPUT=1)
     target_link_libraries(sge_core PUBLIC PkgConfig::LIBINPUT)
+endif()
+if(TARGET PkgConfig::XCB)
+    target_compile_definitions(sge_core PUBLIC SGE_HAVE_XCB=1)
+    target_link_libraries(sge_core PUBLIC PkgConfig::XCB)
+endif()
+if(TARGET PkgConfig::WAYLAND_SERVER)
+    target_link_libraries(sge_core PUBLIC PkgConfig::WAYLAND_SERVER)
 endif()
 
 set_source_files_properties(src/qml/theme/SystaliaTheme.qml PROPERTIES

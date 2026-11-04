@@ -1,4 +1,5 @@
 #include "WindowStackModel.hpp"
+#include "XWaylandManager.hpp"
 
 #include <QWaylandSurface>
 #include <QtWaylandCompositor/QWaylandXdgSurface>
@@ -99,6 +100,11 @@ bool WindowStackModel::registerWindow(QObject *window) {
         connect(toplevel, &QWaylandXdgToplevel::titleChanged,
                 this, [this, window] { notifyWindowPropertiesChanged(window); });
         connect(toplevel, &QWaylandXdgToplevel::appIdChanged,
+                this, [this, window] { notifyWindowPropertiesChanged(window); });
+    } else if (auto *xwWindow = qobject_cast<XWaylandSurfaceWrapper *>(window)) {
+        connect(xwWindow, &XWaylandSurfaceWrapper::titleChanged,
+                this, [this, window] { notifyWindowPropertiesChanged(window); });
+        connect(xwWindow, &XWaylandSurfaceWrapper::appIdChanged,
                 this, [this, window] { notifyWindowPropertiesChanged(window); });
     }
 

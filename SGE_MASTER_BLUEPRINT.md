@@ -234,7 +234,7 @@ O frame Figma tem 1662 × 975 px. O canvas mantém essa referência e usa escala
 
 - 5.1 backend DRM/KMS (`eglfs_kms` + `config/eglfs_kms.json` + Atomic Mode Setting), deteção dinâmica de sessão em `src/main.cpp` (Nested vs. Bare-Metal TTY vs. Headless) e `InputDeviceManager` (`libinput`/`libudev` com despacho direto para `QWaylandSeat` e gestos de 3 dedos entre workspaces) (**Concluído** — `tst_input_hardware_backend`, 29/29 alvos CTest).
 - 5.2 logind/SDDM, scripts de sessão e limpeza de VT (**Concluído** — `LogindSessionService` D-Bus `org.freedesktop.login1.Session` com `TakeControl`, `TakeDevice`, `PauseDevice`/`ResumeDevice`, `data/systalia-session`, `data/systalia.desktop`, `tst_logind_integration`, 30/30 alvos CTest).
-- 5.3 bridge XWayland sob demanda.
+- 5.3 bridge XWayland sob demanda (**Concluído** — `XWaylandManager` com pares de sockets `-listenfd`, `-wm`, `-displayfd` e propagação global de `DISPLAY=:<num>`, rootless XCB Window Manager com átomos `WM_NAME`/`_NET_WM_NAME`/`WM_CLASS`/`_NET_WM_STATE`/`WL_SURFACE_ID`, ponte bidirecional de Clipboard Wayland ↔ X11 (`CLIPBOARD`/`PRIMARY` em `UTF8_STRING`), `XWaylandSurfaceWrapper` integrado ao `WaylandWindowContainer.qml` com moldura SSD *VALO Glass* $G^2$, e `tst_xwayland_integration`, 31/31 alvos CTest).
 
 ### 6.5 Fase 6 — Ecossistema e release
 

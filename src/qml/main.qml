@@ -261,7 +261,10 @@ ApplicationWindow {
             }
         }
 
-        Component.onCompleted: create()
+        Component.onCompleted: {
+            create()
+            startXWayland(1)
+        }
     }
 
     WaylandOutput {

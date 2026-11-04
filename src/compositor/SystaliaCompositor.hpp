@@ -10,6 +10,7 @@
 #include "WindowStackModel.hpp"
 #include "WorkspaceManagerService.hpp"
 #include "OutputManagerService.hpp"
+#include "XWaylandManager.hpp"
 #include <QMetaObject>
 #include <QPointer>
 #include <QQuickWindow>
@@ -39,6 +40,7 @@ class SystaliaCompositor : public QWaylandCompositor {
     Q_PROPERTY(bool hasMaximizedToplevel READ hasMaximizedToplevel NOTIFY activeToplevelStateChanged)
     Q_PROPERTY(QWaylandXdgShell *xdgShell READ xdgShell CONSTANT)
     Q_PROPERTY(QWaylandXdgDecorationManagerV1 *decorationManager READ decorationManager CONSTANT)
+    Q_PROPERTY(XWaylandManager *xwaylandManager READ xwaylandManager CONSTANT)
 
 public:
     explicit SystaliaCompositor(QObject *parent = nullptr);
@@ -48,6 +50,7 @@ public:
     WindowStackModel *windowStackModel() const { return m_windowStackModel; }
     WorkspaceManagerService *workspaceManager() const { return m_workspaceManager; }
     OutputManagerService *outputManager() const { return m_outputManager; }
+    XWaylandManager *xwaylandManager() const { return m_xwaylandManager; }
     int clientCount() const { return m_clientCount; }
     bool taskSwitcherVisible() const { return m_windowStackModel->taskSwitcherVisible(); }
     int taskSwitcherIndex() const { return m_windowStackModel->taskSwitcherIndex(); }
@@ -59,6 +62,8 @@ public:
     QWaylandXdgDecorationManagerV1 *decorationManager() const { return m_decorationManager; }
 
     Q_INVOKABLE void create() override;
+    Q_INVOKABLE bool startXWayland(int preferredDisplay = -1);
+    Q_INVOKABLE void stopXWayland();
     Q_INVOKABLE bool closeToplevel(QObject *toplevelObject);
     Q_INVOKABLE bool minimizeToplevel(QObject *toplevelObject);
     Q_INVOKABLE bool isToplevelMinimized(QObject *toplevelObject) const;
@@ -69,6 +74,8 @@ public:
                                               const QSize &size);
     Q_INVOKABLE void requestToplevelResize(QWaylandXdgToplevel *toplevel,
                                            const QSize &newSize, bool isResizing);
+    Q_INVOKABLE void requestWindowResize(QObject *windowObject,
+                                         const QSize &newSize, bool isResizing);
     Q_INVOKABLE int toplevelWorkspace(QObject *toplevelObject) const;
     Q_INVOKABLE void setToplevelWorkspace(QObject *toplevelObject, int workspaceIndex);
 
@@ -92,12 +99,16 @@ private slots:
     void onSurfaceAboutToBeDestroyed(QWaylandSurface *surface);
     void onToplevelCreated(QWaylandXdgToplevel *toplevel, QWaylandXdgSurface *xdgSurface);
     void onPopupCreated(QWaylandXdgPopup *popup, QWaylandXdgSurface *xdgSurface);
+    void onXWaylandWindowCreated(XWaylandSurfaceWrapper *window);
+    void onXWaylandWindowDestroyed(XWaylandSurfaceWrapper *window);
 
 private:
     void removeToplevel(QWaylandXdgToplevel *toplevel);
+    void removeXWaylandWindow(XWaylandSurfaceWrapper *window);
     void recalculateClientCount();
     void syncFocusForCurrentWorkspace();
     QWaylandXdgToplevel *toplevelForSurface(QWaylandSurface *surface) const;
+    QObject *windowObjectForSurface(QWaylandSurface *surface) const;
     bool handleWorkspaceKeyEvent(QKeyEvent *event);
     bool handleTaskSwitcherKeyEvent(QKeyEvent *event);
     bool eventFilter(QObject *watched, QEvent *event) override;
@@ -106,10 +117,13 @@ private:
     WindowStackModel *m_windowStackModel = nullptr;
     WorkspaceManagerService *m_workspaceManager = nullptr;
     OutputManagerService *m_outputManager = nullptr;
+    XWaylandManager *m_xwaylandManager = nullptr;
     int m_clientCount = 0;
     QSet<QWaylandSurface *> m_activeSurfaces;
     QSet<QWaylandXdgToplevel *> m_activeToplevels;
     QSet<QWaylandXdgToplevel *> m_minimizedToplevels;
+    QSet<XWaylandSurfaceWrapper *> m_activeXWaylandWindows;
+    QSet<XWaylandSurfaceWrapper *> m_minimizedXWaylandWindows;
     int m_minimizedToplevelsRevision = 0;
     QWaylandXdgShell *m_xdgShell = nullptr;
     QWaylandXdgDecorationManagerV1 *m_decorationManager = nullptr;

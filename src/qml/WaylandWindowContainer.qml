@@ -61,7 +61,14 @@ Item {
     readonly property int borderMargin: 8
     readonly property int frameMargin: 8
     readonly property int titleBarHeight: 36
-    readonly property var xdgSurface: toplevel ? toplevel.xdgSurface : null
+    readonly property bool isXWaylandWindow: toplevel !== null && toplevel !== undefined
+                                             && toplevel.isXWayland === true
+    readonly property var xdgSurface: (toplevel && !isXWaylandWindow && toplevel.xdgSurface !== undefined)
+                                      ? toplevel.xdgSurface : null
+    readonly property var clientSurface: (xdgSurface && xdgSurface.surface)
+                                         ? xdgSurface.surface
+                                         : ((toplevel && toplevel.surface !== undefined)
+                                            ? toplevel.surface : null)
     readonly property bool minimized: {
         if (!waylandServer || !toplevel)
             return false
@@ -70,36 +77,38 @@ Item {
             return false
         return waylandServer.isToplevelMinimized(toplevel)
     }
-    readonly property bool clientMapped: xdgSurface && xdgSurface.surface
-                                        ? xdgSurface.surface.hasContent : false
+    readonly property bool clientMapped: clientSurface ? clientSurface.hasContent : false
     readonly property var opticalMetadata: {
-        if (!waylandServer || !xdgSurface)
+        if (!waylandServer || !clientSurface)
             return null
         const extension = waylandServer.surfaceExtension
         // Track creation/removal as well as notifications on the metadata object.
         extension.surfaceCount
-        return extension.resourceForSurface(xdgSurface.surface)
+        return extension.resourceForSurface(clientSurface)
     }
-    readonly property rect clientGeometry: xdgSurface ? xdgSurface.windowGeometry : Qt.rect(0, 0, 0, 0)
+    readonly property rect clientGeometry: xdgSurface
+                                           ? xdgSurface.windowGeometry
+                                           : ((toplevel && toplevel.windowGeometry !== undefined)
+                                              ? toplevel.windowGeometry : Qt.rect(0, 0, 0, 0))
     readonly property int effectiveClientWidth: {
         if (clientGeometry.width > 0)
             return clientGeometry.width
-        if (xdgSurface && xdgSurface.surface) {
-            if (xdgSurface.surface.destinationSize.width > 0)
-                return xdgSurface.surface.destinationSize.width
-            if (xdgSurface.surface.bufferSize.width > 0)
-                return xdgSurface.surface.bufferSize.width
+        if (clientSurface) {
+            if (clientSurface.destinationSize.width > 0)
+                return clientSurface.destinationSize.width
+            if (clientSurface.bufferSize.width > 0)
+                return clientSurface.bufferSize.width
         }
         return 800
     }
     readonly property int effectiveClientHeight: {
         if (clientGeometry.height > 0)
             return clientGeometry.height
-        if (xdgSurface && xdgSurface.surface) {
-            if (xdgSurface.surface.destinationSize.height > 0)
-                return xdgSurface.surface.destinationSize.height
-            if (xdgSurface.surface.bufferSize.height > 0)
-                return xdgSurface.surface.bufferSize.height
+        if (clientSurface) {
+            if (clientSurface.destinationSize.height > 0)
+                return clientSurface.destinationSize.height
+            if (clientSurface.bufferSize.height > 0)
+                return clientSurface.bufferSize.height
         }
         return 500
     }
@@ -173,10 +182,20 @@ Item {
         }
     }
 
+    function dispatchClientResize(targetSize, interactive) {
+        if (!waylandServer || !toplevel)
+            return
+        if (isXWaylandWindow && typeof waylandServer.requestWindowResize === "function") {
+            waylandServer.requestWindowResize(toplevel, targetSize, Boolean(interactive))
+        } else {
+            waylandServer.requestToplevelResize(toplevel, targetSize, Boolean(interactive))
+        }
+    }
+
     function syncOutputRouting() {
         if (!outputManager || typeof outputManager.updateWindowOutputRouting !== "function")
             return
-        const surfaceObj = (xdgSurface && xdgSurface.surface) ? xdgSurface.surface : null
+        const surfaceObj = clientSurface
         const winRect = Qt.rect(x, y, width, height)
         const nextScreen = outputManager.updateWindowOutputRouting(windowContainer, surfaceObj, winRect)
         if (nextScreen >= 0) {
@@ -201,7 +220,7 @@ Item {
                                       Math.round(height - titleBarHeight - 2 * frameMargin))
         resizing = true
         forceActiveFocus()
-        waylandServer.requestToplevelResize(toplevel, requestedClientSize, true)
+        dispatchClientResize(requestedClientSize, true)
     }
 
     function updateResize(position) {
@@ -225,15 +244,14 @@ Item {
         if (w === requestedClientSize.width && h === requestedClientSize.height)
             return
         requestedClientSize = Qt.size(w, h)
-        waylandServer.requestToplevelResize(toplevel, requestedClientSize, true)
+        dispatchClientResize(requestedClientSize, true)
     }
 
     function finishResize() {
         if (!resizing)
             return
         resizing = false
-        if (toplevel && waylandServer)
-            waylandServer.requestToplevelResize(toplevel, requestedClientSize, false)
+        dispatchClientResize(requestedClientSize, false)
     }
 
     function snapToZone(targetSnap) {
@@ -263,8 +281,8 @@ Item {
         const clientH = Math.max(1, Math.round(targetGeo.height - titleBarHeight - 2 * frameMargin))
         requestedClientSize = Qt.size(clientW, clientH)
         const shouldSend = (dispatchConfigure === undefined) ? true : Boolean(dispatchConfigure)
-        if (shouldSend && waylandServer && toplevel)
-            waylandServer.requestToplevelResize(toplevel, requestedClientSize, Boolean(interactive))
+        if (shouldSend)
+            dispatchClientResize(requestedClientSize, Boolean(interactive))
     }
 
     function unsnapWindow() {
@@ -280,8 +298,7 @@ Item {
         width = restoredW
         height = restoredH
         requestedClientSize = Qt.size(clientW, clientH)
-        if (waylandServer && toplevel)
-            waylandServer.requestToplevelResize(toplevel, requestedClientSize, false)
+        dispatchClientResize(requestedClientSize, false)
     }
 
     function disposeContainer() {
@@ -469,8 +486,7 @@ Item {
                 width: windowContainer.effectiveClientWidth
                 height: windowContainer.effectiveClientHeight
                 shellSurface: windowContainer.xdgSurface
-                surface: windowContainer.xdgSurface
-                         ? windowContainer.xdgSurface.surface : null
+                surface: windowContainer.clientSurface
                 focus: true
                 focusOnClick: true
                 inputEventsEnabled: !windowContainer.resizing

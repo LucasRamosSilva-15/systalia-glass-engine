@@ -250,6 +250,13 @@ target_compile_definitions(tst_logind_integration PRIVATE
     SGE_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
 )
 target_link_libraries(tst_logind_integration PRIVATE Qt6::DBus)
+sge_add_expanded_test(tst_xwayland_integration unit/tst_XWaylandIntegration.cpp unit)
+if(TARGET PkgConfig::XCB)
+    target_link_libraries(tst_xwayland_integration PRIVATE PkgConfig::XCB)
+endif()
+if(TARGET PkgConfig::WAYLAND_SERVER)
+    target_link_libraries(tst_xwayland_integration PRIVATE PkgConfig::WAYLAND_SERVER)
+endif()
 
 # Integration tests exercise actual Wayland wire requests and model resets.
 sge_add_expanded_test(tst_protocol_roundtrip integration/tst_ProtocolRoundtrip.cpp integration)
@@ -289,6 +296,7 @@ add_custom_target(unit_tests DEPENDS
     tst_phase4_audit
     tst_input_hardware_backend
     tst_logind_integration
+    tst_xwayland_integration
 )
 add_custom_target(integration_tests DEPENDS
     tst_wayland_socket
