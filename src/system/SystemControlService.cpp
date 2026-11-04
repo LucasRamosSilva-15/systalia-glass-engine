@@ -1,5 +1,6 @@
 #include "SystemControlService.hpp"
 
+#include <QCoreApplication>
 #include <QProcess>
 #include <QRegularExpression>
 #include <QStandardPaths>
@@ -13,7 +14,9 @@ SystemControlService::SystemControlService(QObject *parent)
       m_pactlPath(QStandardPaths::findExecutable(QStringLiteral("pactl"))),
       m_brightnessctlPath(QStandardPaths::findExecutable(QStringLiteral("brightnessctl"))),
       m_nmcliPath(QStandardPaths::findExecutable(QStringLiteral("nmcli"))),
-      m_bluetoothctlPath(QStandardPaths::findExecutable(QStringLiteral("bluetoothctl"))) {
+      m_bluetoothctlPath(QStandardPaths::findExecutable(QStringLiteral("bluetoothctl"))),
+      m_systemctlPath(QStandardPaths::findExecutable(QStringLiteral("systemctl"))),
+      m_loginctlPath(QStandardPaths::findExecutable(QStringLiteral("loginctl"))) {
     m_refreshTimer.setInterval(2500);
     m_refreshTimer.setTimerType(Qt::CoarseTimer);
     connect(&m_refreshTimer, &QTimer::timeout, this, &SystemControlService::refresh);
@@ -70,16 +73,32 @@ void SystemControlService::toggleWifi() {
 }
 
 void SystemControlService::toggleBluetooth() {
-    if (!m_bluetoothctlPath.isEmpty()) {
-        const bool enabled = !m_bluetoothEnabled;
-        runCommand(m_bluetoothctlPath, {QStringLiteral("power"),
-                                        enabled ? QStringLiteral("on") : QStringLiteral("off")},
-                   [this, enabled](int exitCode, const QByteArray &, const QByteArray &) {
+    if (!m_bluetoothAvailable && !m_systemctlPath.isEmpty()) {
+        runCommand(m_systemctlPath, {QStringLiteral("start"), QStringLiteral("bluetooth")},
+                   [this](int exitCode, const QByteArray &, const QByteArray &) {
             if (exitCode == 0) {
-                setBluetoothValue(enabled);
+                setBluetoothAvailableValue(true);
+                setBluetoothValue(true);
             }
         });
+        return;
     }
+    const bool enabled = !m_bluetoothEnabled;
+    runCommand(QStringLiteral("/usr/bin/rfkill"),
+               {enabled ? QStringLiteral("unblock") : QStringLiteral("block"), QStringLiteral("bluetooth")},
+               [this, enabled](int exitCode, const QByteArray &, const QByteArray &) {
+        if (exitCode == 0) {
+            setBluetoothValue(enabled);
+        } else if (!m_bluetoothctlPath.isEmpty()) {
+            runCommand(m_bluetoothctlPath, {QStringLiteral("power"),
+                                            enabled ? QStringLiteral("on") : QStringLiteral("off")},
+                       [this, enabled](int btExit, const QByteArray &, const QByteArray &) {
+                if (btExit == 0) {
+                    setBluetoothValue(enabled);
+                }
+            });
+        }
+    });
 }
 
 void SystemControlService::setDoNotDisturb(bool enabled) {
@@ -88,6 +107,49 @@ void SystemControlService::setDoNotDisturb(bool enabled) {
     }
     m_doNotDisturb = enabled;
     emit doNotDisturbChanged();
+}
+
+void SystemControlService::powerOff() {
+    if (!m_loginctlPath.isEmpty()) {
+        runCommand(m_loginctlPath, {QStringLiteral("poweroff")}, [](int, const QByteArray &, const QByteArray &) {});
+    } else if (!m_systemctlPath.isEmpty()) {
+        runCommand(m_systemctlPath, {QStringLiteral("poweroff")}, [](int, const QByteArray &, const QByteArray &) {});
+    } else {
+        runCommand(QStringLiteral("poweroff"), {}, [](int, const QByteArray &, const QByteArray &) {});
+    }
+}
+
+void SystemControlService::reboot() {
+    if (!m_loginctlPath.isEmpty()) {
+        runCommand(m_loginctlPath, {QStringLiteral("reboot")}, [](int, const QByteArray &, const QByteArray &) {});
+    } else if (!m_systemctlPath.isEmpty()) {
+        runCommand(m_systemctlPath, {QStringLiteral("reboot")}, [](int, const QByteArray &, const QByteArray &) {});
+    } else {
+        runCommand(QStringLiteral("reboot"), {}, [](int, const QByteArray &, const QByteArray &) {});
+    }
+}
+
+void SystemControlService::suspend() {
+    if (!m_loginctlPath.isEmpty()) {
+        runCommand(m_loginctlPath, {QStringLiteral("suspend")}, [](int, const QByteArray &, const QByteArray &) {});
+    } else if (!m_systemctlPath.isEmpty()) {
+        runCommand(m_systemctlPath, {QStringLiteral("suspend")}, [](int, const QByteArray &, const QByteArray &) {});
+    }
+}
+
+void SystemControlService::lockScreen() {
+    if (!m_loginctlPath.isEmpty()) {
+        runCommand(m_loginctlPath, {QStringLiteral("lock-session")}, [](int, const QByteArray &, const QByteArray &) {});
+    }
+}
+
+void SystemControlService::logout() {
+    const QString sessionId = QString::fromLocal8Bit(qgetenv("XDG_SESSION_ID"));
+    if (!m_loginctlPath.isEmpty() && !sessionId.isEmpty()) {
+        runCommand(m_loginctlPath, {QStringLiteral("terminate-session"), sessionId}, [](int, const QByteArray &, const QByteArray &) {});
+    } else {
+        QCoreApplication::quit();
+    }
 }
 
 void SystemControlService::runCommand(const QString &program, const QStringList &arguments,
@@ -225,29 +287,65 @@ void SystemControlService::probeWifi() {
             setWifiValue(QString::fromLocal8Bit(output).trimmed()
                              .compare(QStringLiteral("enabled"), Qt::CaseInsensitive) == 0);
         }
-        m_wifiProbeRunning = false;
+        runCommand(m_nmcliPath, {QStringLiteral("-t"), QStringLiteral("-f"), QStringLiteral("NAME,STATE"),
+                                 QStringLiteral("connection"), QStringLiteral("show"), QStringLiteral("--active")},
+                   [this](int connExit, const QByteArray &connOut, const QByteArray &) {
+            if (connExit == 0) {
+                const QString text = QString::fromLocal8Bit(connOut);
+                const QStringList lines = text.split(QLatin1Char('\n'), Qt::SkipEmptyParts);
+                QString activeName;
+                for (const QString &line : lines) {
+                    if (line.contains(QStringLiteral("activated"), Qt::CaseInsensitive)) {
+                        const QStringList parts = line.split(QLatin1Char(':'));
+                        if (!parts.isEmpty() && parts.first() != QStringLiteral("lo")) {
+                            activeName = parts.first();
+                            break;
+                        }
+                    }
+                }
+                setActiveNetworkNameValue(!activeName.isEmpty() ? activeName : QStringLiteral("Conectado"));
+            } else {
+                setActiveNetworkNameValue(m_wifiEnabled ? QStringLiteral("Wi-Fi ativo") : QStringLiteral("Desconectado"));
+            }
+            m_wifiProbeRunning = false;
+        });
     });
 }
 
 void SystemControlService::probeBluetooth() {
-    if (m_bluetoothctlPath.isEmpty() || m_bluetoothProbeRunning) {
+    if (m_bluetoothProbeRunning) {
         return;
     }
     m_bluetoothProbeRunning = true;
-    runCommand(m_bluetoothctlPath, {QStringLiteral("show")},
-               [this](int exitCode, const QByteArray &output, const QByteArray &) {
-        if (exitCode == 0) {
-            const QString text = QString::fromLocal8Bit(output);
-            static const QRegularExpression poweredPattern(QStringLiteral("Powered:\\s*(yes|no)"),
-                                                           QRegularExpression::CaseInsensitiveOption);
-            const QRegularExpressionMatch match = poweredPattern.match(text);
-            if (match.hasMatch()) {
-                setBluetoothValue(match.captured(1).compare(QStringLiteral("yes"),
-                                                             Qt::CaseInsensitive) == 0);
+
+    if (!m_systemctlPath.isEmpty()) {
+        runCommand(m_systemctlPath, {QStringLiteral("is-active"), QStringLiteral("bluetooth")},
+                   [this](int exitCode, const QByteArray &output, const QByteArray &) {
+            const QString status = QString::fromLocal8Bit(output).trimmed();
+            if (exitCode != 0 || status != QStringLiteral("active")) {
+                setBluetoothAvailableValue(false);
+                setBluetoothValue(false);
+                m_bluetoothProbeRunning = false;
+                return;
             }
-        }
-        m_bluetoothProbeRunning = false;
-    });
+            setBluetoothAvailableValue(true);
+            runCommand(QStringLiteral("/usr/bin/rfkill"), {QStringLiteral("list"), QStringLiteral("bluetooth")},
+                       [this](int rfExit, const QByteArray &rfOut, const QByteArray &) {
+                if (rfExit == 0 && !rfOut.isEmpty()) {
+                    const QString text = QString::fromLocal8Bit(rfOut);
+                    const bool blocked = text.contains(QStringLiteral("Soft blocked: yes")) ||
+                                         text.contains(QStringLiteral("Hard blocked: yes"));
+                    setBluetoothValue(!blocked);
+                } else {
+                    setBluetoothValue(true);
+                }
+                m_bluetoothProbeRunning = false;
+            });
+        });
+        return;
+    }
+
+    m_bluetoothProbeRunning = false;
 }
 
 void SystemControlService::applyVolume() {
@@ -333,6 +431,22 @@ void SystemControlService::setBluetoothValue(bool value) {
     }
     m_bluetoothEnabled = value;
     emit bluetoothEnabledChanged();
+}
+
+void SystemControlService::setBluetoothAvailableValue(bool available) {
+    if (m_bluetoothAvailable == available) {
+        return;
+    }
+    m_bluetoothAvailable = available;
+    emit bluetoothAvailableChanged();
+}
+
+void SystemControlService::setActiveNetworkNameValue(const QString &name) {
+    if (m_activeNetworkName == name) {
+        return;
+    }
+    m_activeNetworkName = name;
+    emit activeNetworkNameChanged();
 }
 
 int SystemControlService::percentFromOutput(const QByteArray &output) {

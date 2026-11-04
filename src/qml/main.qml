@@ -450,6 +450,13 @@ ApplicationWindow {
             backdropSource: backdropGrab
             screenResolution: OutputManager.physicalResolutionAt(index)
             animationTime: animTimer.tick
+            onLauncherRequested: flowMenu.toggle()
+            onControlCenterRequested: controlCenter.toggle()
+            onTerminalRequested: {
+                if (!ProcessLauncher.launch("alacritty"))
+                    ProcessLauncher.launch("foot")
+            }
+            onPowerRequested: controlCenter.open()
         }
     }
 
@@ -542,6 +549,24 @@ ApplicationWindow {
         target: topBar
         function onLauncherRequested() { flowMenu.toggle() }
         function onControlCenterRequested() { controlCenter.toggle() }
+        function onTerminalRequested() {
+            if (!ProcessLauncher.launch("alacritty"))
+                ProcessLauncher.launch("foot")
+        }
+        function onPowerRequested() {
+            controlCenter.open()
+        }
+    }
+
+    // Camada de brilho em software para ecrãs e monitores externos sem controlo sysfs por hardware
+    Rectangle {
+        id: softwareBrightnessDimmer
+        anchors.fill: parent
+        z: 95
+        color: "#000000"
+        opacity: Math.max(0.0, Math.min(0.85, (100 - SystemControl.brightness) * 0.0085))
+        visible: opacity > 0.01
+        enabled: false
     }
 
     Connections {

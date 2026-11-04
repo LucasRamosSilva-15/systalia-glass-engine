@@ -15,6 +15,8 @@ Item {
 
     signal launcherRequested()
     signal controlCenterRequested()
+    signal terminalRequested()
+    signal powerRequested()
     signal workspaceSelected(int index)
 
     width: 1646
@@ -259,12 +261,13 @@ Item {
 
         Repeater {
             model: [
-                { glyph: "▣", name: "Estado do sistema", minWidth: 0 },
-                { glyph: ">_", name: "Terminal", minWidth: 0 },
-                { glyph: "▦", name: "Aplicativos", minWidth: 0 },
-                { glyph: "☼", name: "Brilho", minWidth: 740 },
-                { glyph: "▣", name: "Rede e som", minWidth: 620 },
-                { glyph: "⏻", name: "Energia", minWidth: 0 }
+                { glyph: "▰", name: "Estado do sistema", minWidth: 0, action: "control" },
+                { glyph: ">_", name: "Terminal", minWidth: 0, action: "terminal" },
+                { glyph: "▦", name: "Aplicativos", minWidth: 0, action: "launcher" },
+                { glyph: "☼", name: "Brilho do ecrã", minWidth: 740, action: "control" },
+                { glyph: SystemControl.isMuted ? "🔇" : (SystemControl.volume === 0 ? "🔈" : (SystemControl.volume > 50 ? "🔊" : "🔉")),
+                  name: "Rede e som", minWidth: 620, action: "control" },
+                { glyph: "⏻", name: "Energia e sessão", minWidth: 0, action: "power" }
             ]
 
             delegate: StatusButton {
@@ -274,7 +277,17 @@ Item {
                 height: 30
                 glyph: modelData.glyph
                 accessibleName: modelData.name
-                onClicked: topBar.controlCenterRequested()
+                onClicked: {
+                    if (modelData.action === "terminal") {
+                        topBar.terminalRequested()
+                    } else if (modelData.action === "launcher") {
+                        topBar.launcherRequested()
+                    } else if (modelData.action === "power") {
+                        topBar.powerRequested()
+                    } else {
+                        topBar.controlCenterRequested()
+                    }
+                }
             }
         }
     }

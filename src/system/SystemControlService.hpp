@@ -14,7 +14,9 @@ class SystemControlService final : public QObject {
     Q_PROPERTY(int brightness READ brightness NOTIFY brightnessChanged)
     Q_PROPERTY(bool wifiEnabled READ wifiEnabled NOTIFY wifiEnabledChanged)
     Q_PROPERTY(bool bluetoothEnabled READ bluetoothEnabled NOTIFY bluetoothEnabledChanged)
+    Q_PROPERTY(bool bluetoothAvailable READ bluetoothAvailable NOTIFY bluetoothAvailableChanged)
     Q_PROPERTY(bool doNotDisturb READ doNotDisturb WRITE setDoNotDisturb NOTIFY doNotDisturbChanged)
+    Q_PROPERTY(QString activeNetworkName READ activeNetworkName NOTIFY activeNetworkNameChanged)
 
 public:
     explicit SystemControlService(QObject *parent = nullptr);
@@ -24,7 +26,9 @@ public:
     int brightness() const { return m_brightness; }
     bool wifiEnabled() const { return m_wifiEnabled; }
     bool bluetoothEnabled() const { return m_bluetoothEnabled; }
+    bool bluetoothAvailable() const { return m_bluetoothAvailable; }
     bool doNotDisturb() const { return m_doNotDisturb; }
+    QString activeNetworkName() const { return m_activeNetworkName; }
 
     Q_INVOKABLE void refresh();
     Q_INVOKABLE void setVolume(int value);
@@ -33,6 +37,11 @@ public:
     Q_INVOKABLE void toggleWifi();
     Q_INVOKABLE void toggleBluetooth();
     Q_INVOKABLE void setDoNotDisturb(bool enabled);
+    Q_INVOKABLE void powerOff();
+    Q_INVOKABLE void reboot();
+    Q_INVOKABLE void suspend();
+    Q_INVOKABLE void lockScreen();
+    Q_INVOKABLE void logout();
 
 signals:
     void volumeChanged();
@@ -40,7 +49,9 @@ signals:
     void brightnessChanged();
     void wifiEnabledChanged();
     void bluetoothEnabledChanged();
+    void bluetoothAvailableChanged();
     void doNotDisturbChanged();
+    void activeNetworkNameChanged();
 
 private:
     using CommandFinished = std::function<void(int, const QByteArray &, const QByteArray &)>;
@@ -60,6 +71,8 @@ private:
     void setBrightnessValue(int value);
     void setWifiValue(bool value);
     void setBluetoothValue(bool value);
+    void setBluetoothAvailableValue(bool available);
+    void setActiveNetworkNameValue(const QString &name);
     static int percentFromOutput(const QByteArray &output);
 
     QString m_wpctlPath;
@@ -67,12 +80,16 @@ private:
     QString m_brightnessctlPath;
     QString m_nmcliPath;
     QString m_bluetoothctlPath;
+    QString m_systemctlPath;
+    QString m_loginctlPath;
     int m_volume = 50;
     bool m_isMuted = false;
     int m_brightness = 70;
     bool m_wifiEnabled = false;
     bool m_bluetoothEnabled = false;
+    bool m_bluetoothAvailable = false;
     bool m_doNotDisturb = false;
+    QString m_activeNetworkName = QStringLiteral("Desconectado");
     int m_requestedVolume = 50;
     int m_requestedBrightness = 70;
     bool m_audioProbeRunning = false;

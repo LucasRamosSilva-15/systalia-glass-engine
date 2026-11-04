@@ -12,7 +12,8 @@ Item {
     property var backdropSource: null
     property var screenResolution: Qt.vector2d(width, height)
     property real animationTime: 0.0
-    property vector4d cornerRadii: Qt.vector4d(20, 20, 20, 20)
+    property vector4d cornerRadii: Qt.vector4d(22, 22, 22, 22)
+    property string activePowerConfirmAction: ""
 
     anchors.fill: parent
     z: 115
@@ -21,16 +22,23 @@ Item {
 
     function toggle() {
         opened = !opened
+        if (!opened) activePowerConfirmAction = ""
+    }
+
+    function open() {
+        opened = true
     }
 
     function close() {
         opened = false
+        activePowerConfirmAction = ""
     }
 
     Behavior on opacity {
-        NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+        NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
     }
 
+    // Fundo escuro com clique para fechar
     Rectangle {
         anchors.fill: parent
         visible: controlCenter.opened
@@ -43,16 +51,36 @@ Item {
 
     Item {
         id: panel
-        width: 360
-        height: 520
+        width: 376
+        height: 570
         x: controlCenter.width - width - 18
-        y: controlCenter.opened ? 48 : -height - 12
-        clip: true
+        y: controlCenter.opened ? 52 : -height - 16
+        clip: false
 
         Behavior on y {
-            NumberAnimation { duration: 210; easing.type: Easing.OutCubic }
+            NumberAnimation { duration: 240; easing.type: Easing.OutCubic }
         }
 
+        // Sombra perimetral luminosa VALO
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: -4
+            radius: controlCenter.cornerRadii.x + 4
+            color: "#3d09baed"
+            z: -2
+        }
+
+        // Sombra de oclusão profunda
+        Rectangle {
+            anchors.fill: parent
+            anchors.topMargin: 8
+            anchors.margins: 4
+            radius: controlCenter.cornerRadii.x
+            color: "#66000c18"
+            z: -1
+        }
+
+        // Vidro óptico com cáusticas e dispersão cromática
         SystaliaGlassItem {
             anchors.fill: parent
             backdropSource: controlCenter.backdropSource
@@ -62,14 +90,15 @@ Item {
             ior: 1.25
             chromaticDispersion: 0.040
             causticIntensity: 0.85
-            surfaceOpacity: 0.85
+            surfaceOpacity: 0.88
             time: controlCenter.animationTime
         }
 
+        // Moldura G2 contínua
         SystaliaG2Frame {
             anchors.fill: parent
             radii: controlCenter.cornerRadii
-            fillColor: "#e6071628"
+            fillColor: "#ea061426"
             strokeColor: "#c9ffffff"
             strokeWidth: 1.25
         }
@@ -80,54 +109,81 @@ Item {
             y: 2.5
             width: parent.width - 8
             height: parent.height - 8
-            radius: 18
+            radius: 20
             gradient: Gradient {
                 orientation: Gradient.Vertical
-                GradientStop { position: 0.0; color: "#40c8ffff" }
-                GradientStop { position: 0.34; color: "#1f61f0ff" }
-                GradientStop { position: 0.72; color: "#0b155279" }
+                GradientStop { position: 0.0; color: "#45c8ffff" }
+                GradientStop { position: 0.30; color: "#1a61f0ff" }
+                GradientStop { position: 0.70; color: "#0a155279" }
                 GradientStop { position: 1.0; color: "#001b1834" }
             }
-            border.color: "#24c8ffff"
+            border.color: "#28c8ffff"
             border.width: 0.8
             antialiasing: true
         }
 
         ColumnLayout {
             anchors.fill: parent
-            anchors.margins: 20
-            spacing: 14
+            anchors.margins: 18
+            spacing: 12
 
+            // Cabeçalho: Título + Botão de Fechar
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 10
+
+                Item {
+                    width: 22
+                    height: 22
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: 6
+                        color: "#2414c4e7"
+                        border.color: "#6617f5df"
+                        border.width: 1
+                        Text {
+                            anchors.centerIn: parent
+                            text: "◈"
+                            color: "#17f5df"
+                            font.pixelSize: 13
+                        }
+                    }
+                }
+
                 ColumnLayout {
                     Layout.fillWidth: true
-                    spacing: 2
+                    spacing: 1
                     Text {
                         text: "ABYSS CONTROL"
                         color: "#f1fbff"
-                        font.pixelSize: 15
+                        font.family: SystaliaTheme.fontFamily
+                        font.pixelSize: 14
                         font.bold: true
-                        font.letterSpacing: 1.1
+                        font.letterSpacing: 1.2
                     }
                     Text {
-                        text: "Ajustes rápidos do sistema"
+                        text: "Ajustes rápidos do sistema & energia"
                         color: "#8bb2c4"
+                        font.family: SystaliaTheme.fontFamily
                         font.pixelSize: 9
                     }
                 }
+
+                // Botão fechar
                 Item {
                     width: 26
                     height: 26
                     Rectangle {
+                        id: closeBtnBg
                         anchors.centerIn: parent
-                        width: 22
-                        height: 22
-                        radius: 11
-                        color: closeMouse.containsMouse ? "#66ff3b60" : "#30ff3b60"
-                        border.color: closeMouse.containsMouse ? "#ffb1cb" : "#70ff3b60"
+                        width: 24
+                        height: 24
+                        radius: 12
+                        color: closeMouse.containsMouse ? "#55ff4b72" : "#24ff3b60"
+                        border.color: closeMouse.containsMouse ? "#ffc2d4" : "#66ff4b72"
                         border.width: 1
+                        antialiasing: true
+
                         Text {
                             anchors.centerIn: parent
                             text: "✕"
@@ -146,65 +202,110 @@ Item {
                 }
             }
 
+            // Separador sutil
+            Rectangle { Layout.fillWidth: true; height: 1; color: "#2b4c7388" }
+
+            // 1. Toggles Rápidos (Wi-Fi, Bluetooth, Não incomodar) com ícones vetoriais perfeitos
             RowLayout {
                 Layout.fillWidth: true
-                spacing: 9
+                spacing: 8
+
+                // Wi-Fi
                 QuickToggle {
                     Layout.fillWidth: true
                     label: "Wi-Fi"
-                    glyph: "⌁"
+                    sublabel: SystemControl.wifiEnabled ? "Ligado" : "Desligado"
                     active: SystemControl.wifiEnabled
+                    iconType: "wifi"
                     onClicked: SystemControl.toggleWifi()
                 }
+
+                // Bluetooth
                 QuickToggle {
                     Layout.fillWidth: true
                     label: "Bluetooth"
-                    glyph: "ᛒ"
+                    sublabel: !SystemControl.bluetoothAvailable ? "Indisponível"
+                              : (SystemControl.bluetoothEnabled ? "Ligado" : "Desligado")
                     active: SystemControl.bluetoothEnabled
+                    iconType: "bluetooth"
                     onClicked: SystemControl.toggleBluetooth()
                 }
+
+                // Não incomodar
                 QuickToggle {
                     Layout.fillWidth: true
-                    label: "Não incomodar"
-                    glyph: "◐"
+                    label: "Silencioso"
+                    sublabel: SystemControl.doNotDisturb ? "Ativo" : "Inativo"
                     active: SystemControl.doNotDisturb
+                    iconType: "moon"
                     onClicked: SystemControl.setDoNotDisturb(!SystemControl.doNotDisturb)
                 }
             }
 
-            Rectangle { Layout.fillWidth: true; height: 1; color: "#335e8496" }
-
+            // 2. Controle de Volume
             ColumnLayout {
                 Layout.fillWidth: true
-                spacing: 6
+                spacing: 4
+
                 RowLayout {
                     Layout.fillWidth: true
+                    spacing: 6
+
+                    Item {
+                        width: 16
+                        height: 16
+                        SpeakerVectorIcon {
+                            anchors.centerIn: parent
+                            muted: SystemControl.isMuted
+                            iconColor: SystemControl.isMuted ? "#fb7185" : "#17f5df"
+                        }
+                    }
+
                     Text {
                         Layout.fillWidth: true
                         text: "VOLUME"
                         color: "#90b9cb"
+                        font.family: SystaliaTheme.fontFamily
                         font.pixelSize: 9
                         font.bold: true
                         font.letterSpacing: 0.8
                     }
+
                     Text {
                         text: SystemControl.isMuted ? "MUDO" : SystemControl.volume + "%"
                         color: SystemControl.isMuted ? "#fb7185" : "#dffaff"
+                        font.family: SystaliaTheme.fontFamily
                         font.pixelSize: 10
                         font.bold: true
                     }
-                    ToolButton {
-                        text: SystemControl.isMuted ? "×" : "◖"
-                        Accessible.name: SystemControl.isMuted ? "Ativar som" : "Silenciar"
-                        onClicked: SystemControl.toggleMute()
-                        contentItem: Text {
-                            text: parent.text
-                            color: "#c8f4ff"
-                            font.pixelSize: 16
-                            horizontalAlignment: Text.AlignHCenter
+
+                    // Botão alternar mudo
+                    Rectangle {
+                        width: 22
+                        height: 18
+                        radius: 4
+                        color: muteMouse.containsMouse ? "#3317f5df" : "#15ffffff"
+                        border.color: SystemControl.isMuted ? "#ff4b72" : "#3374d5ee"
+                        border.width: 1
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: SystemControl.isMuted ? "×" : "◖"
+                            color: SystemControl.isMuted ? "#fb7185" : "#17f5df"
+                            font.pixelSize: 11
+                            font.bold: true
+                        }
+
+                        MouseArea {
+                            id: muteMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: SystemControl.toggleMute()
                         }
                     }
                 }
+
                 Slider {
                     id: volumeSlider
                     Layout.fillWidth: true
@@ -224,14 +325,6 @@ Item {
                         antialiasing: true
 
                         Rectangle {
-                            anchors.fill: parent
-                            radius: 8
-                            color: "transparent"
-                            border.color: "#50000000"
-                            border.width: 1
-                        }
-
-                        Rectangle {
                             x: 0
                             y: 0
                             width: Math.max(0, volumeSlider.visualPosition * parent.width)
@@ -239,8 +332,8 @@ Item {
                             radius: 8
                             gradient: Gradient {
                                 orientation: Gradient.Vertical
-                                GradientStop { position: 0.0; color: "#14c4e7" }
-                                GradientStop { position: 1.0; color: "#17f5df" }
+                                GradientStop { position: 0.0; color: SystemControl.isMuted ? "#64748b" : "#14c4e7" }
+                                GradientStop { position: 1.0; color: SystemControl.isMuted ? "#475569" : "#17f5df" }
                             }
                             antialiasing: true
                         }
@@ -261,65 +354,61 @@ Item {
                             color: "#8c000000"
                         }
 
-                        Shape {
-                            anchors.centerIn: parent
-                            width: 20
-                            height: 20
-                            layer.enabled: true
-                            layer.samples: 4
-                            ShapePath {
-                                strokeWidth: 0
-                                fillGradient: RadialGradient {
-                                    centerX: 10; centerY: 10
-                                    focalX: 10; focalY: 10
-                                    centerRadius: 10; focalRadius: 0
-                                    GradientStop { position: 0.0; color: "#ffffff" }
-                                    GradientStop { position: 0.30; color: "#dbfbff" }
-                                    GradientStop { position: 0.68; color: "#8ce6f4" }
-                                    GradientStop { position: 1.0; color: "#4387ba" }
-                                }
-                                startX: 0; startY: 10
-                                PathArc { x: 20; y: 10; radiusX: 10; radiusY: 10 }
-                                PathArc { x: 0; y: 10; radiusX: 10; radiusY: 10 }
-                            }
-                        }
-
                         Rectangle {
-                            anchors.fill: parent
-                            radius: 10
-                            color: "transparent"
-                            border.color: "#cce8ffff"
-                            border.width: 1
+                            anchors.centerIn: parent
+                            width: 18
+                            height: 18
+                            radius: 9
+                            color: SystemControl.isMuted ? "#94a3b8" : "#ffffff"
+                            border.color: "#17f5df"
+                            border.width: 1.5
                             antialiasing: true
                         }
                     }
                 }
             }
 
+            // 3. Controle de Brilho do Ecrã
             ColumnLayout {
                 Layout.fillWidth: true
-                spacing: 6
+                spacing: 4
+
                 RowLayout {
                     Layout.fillWidth: true
+                    spacing: 6
+
+                    Item {
+                        width: 16
+                        height: 16
+                        SunVectorIcon {
+                            anchors.centerIn: parent
+                            iconColor: "#facc15"
+                        }
+                    }
+
                     Text {
                         Layout.fillWidth: true
                         text: "BRILHO DO ECRÃ"
                         color: "#90b9cb"
+                        font.family: SystaliaTheme.fontFamily
                         font.pixelSize: 9
                         font.bold: true
                         font.letterSpacing: 0.8
                     }
+
                     Text {
                         text: SystemControl.brightness + "%"
                         color: "#dffaff"
+                        font.family: SystaliaTheme.fontFamily
                         font.pixelSize: 10
                         font.bold: true
                     }
                 }
+
                 Slider {
                     id: brightnessSlider
                     Layout.fillWidth: true
-                    from: 0
+                    from: 5
                     to: 100
                     value: SystemControl.brightness
                     onMoved: SystemControl.setBrightness(Math.round(value))
@@ -335,14 +424,6 @@ Item {
                         antialiasing: true
 
                         Rectangle {
-                            anchors.fill: parent
-                            radius: 8
-                            color: "transparent"
-                            border.color: "#50000000"
-                            border.width: 1
-                        }
-
-                        Rectangle {
                             x: 0
                             y: 0
                             width: Math.max(0, brightnessSlider.visualPosition * parent.width)
@@ -350,8 +431,8 @@ Item {
                             radius: 8
                             gradient: Gradient {
                                 orientation: Gradient.Vertical
-                                GradientStop { position: 0.0; color: "#14c4e7" }
-                                GradientStop { position: 1.0; color: "#17f5df" }
+                                GradientStop { position: 0.0; color: "#fbbf24" }
+                                GradientStop { position: 1.0; color: "#14c4e7" }
                             }
                             antialiasing: true
                         }
@@ -372,103 +453,283 @@ Item {
                             color: "#8c000000"
                         }
 
-                        Shape {
-                            anchors.centerIn: parent
-                            width: 20
-                            height: 20
-                            layer.enabled: true
-                            layer.samples: 4
-                            ShapePath {
-                                strokeWidth: 0
-                                fillGradient: RadialGradient {
-                                    centerX: 10; centerY: 10
-                                    focalX: 10; focalY: 10
-                                    centerRadius: 10; focalRadius: 0
-                                    GradientStop { position: 0.0; color: "#ffffff" }
-                                    GradientStop { position: 0.30; color: "#dbfbff" }
-                                    GradientStop { position: 0.68; color: "#8ce6f4" }
-                                    GradientStop { position: 1.0; color: "#4387ba" }
-                                }
-                                startX: 0; startY: 10
-                                PathArc { x: 20; y: 10; radiusX: 10; radiusY: 10 }
-                                PathArc { x: 0; y: 10; radiusX: 10; radiusY: 10 }
-                            }
-                        }
-
                         Rectangle {
-                            anchors.fill: parent
-                            radius: 10
-                            color: "transparent"
-                            border.color: "#cce8ffff"
-                            border.width: 1
+                            anchors.centerIn: parent
+                            width: 18
+                            height: 18
+                            radius: 9
+                            color: "#ffffff"
+                            border.color: "#fbbf24"
+                            border.width: 1.5
                             antialiasing: true
                         }
                     }
                 }
             }
 
-            Rectangle { Layout.fillWidth: true; height: 1; color: "#335e8496" }
+            // Separador sutil
+            Rectangle { Layout.fillWidth: true; height: 1; color: "#2b4c7388" }
 
-            Text {
+            // 4. Estado da Rede e Conectividade
+            ColumnLayout {
                 Layout.fillWidth: true
-                text: "ESTADO DO SISTEMA"
-                color: "#90b9cb"
-                font.pixelSize: 9
-                font.bold: true
-                font.letterSpacing: 0.8
+                spacing: 5
+
+                Text {
+                    text: "CONEXÃO ATIVA"
+                    color: "#90b9cb"
+                    font.family: SystaliaTheme.fontFamily
+                    font.pixelSize: 9
+                    font.bold: true
+                    font.letterSpacing: 0.8
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    height: 32
+                    radius: 8
+                    color: "#180d2235"
+                    border.color: "#284d6c82"
+                    border.width: 1
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 10
+                        anchors.rightMargin: 10
+                        spacing: 8
+
+                        Rectangle {
+                            width: 8
+                            height: 8
+                            radius: 4
+                            color: "#17f5df"
+
+                            Rectangle {
+                                anchors.centerIn: parent
+                                width: 14
+                                height: 14
+                                radius: 7
+                                color: "#3317f5df"
+                            }
+                        }
+
+                        Text {
+                            Layout.fillWidth: true
+                            text: SystemControl.activeNetworkName
+                            color: "#ebf9ff"
+                            font.family: SystaliaTheme.fontFamily
+                            font.pixelSize: 10
+                            font.bold: true
+                            elide: Text.ElideRight
+                        }
+
+                        Text {
+                            text: "Conectado"
+                            color: "#17f5df"
+                            font.family: SystaliaTheme.fontFamily
+                            font.pixelSize: 9
+                        }
+                    }
+                }
             }
-            RowLayout {
+
+            // 5. Ações Rápidas de Energia & Sessão (Logind / Systemd)
+            ColumnLayout {
                 Layout.fillWidth: true
-                spacing: 8
-                StatusPill {
-                    Layout.fillWidth: true
-                    label: SystemControl.wifiEnabled ? "Wi-Fi ligado" : "Wi-Fi desligado"
-                    active: SystemControl.wifiEnabled
+                spacing: 6
+
+                Text {
+                    text: controlCenter.activePowerConfirmAction.length > 0
+                          ? "CONFIRMAR AÇÃO" : "ENERGIA & SESSÃO"
+                    color: controlCenter.activePowerConfirmAction.length > 0 ? "#f43f5e" : "#90b9cb"
+                    font.family: SystaliaTheme.fontFamily
+                    font.pixelSize: 9
+                    font.bold: true
+                    font.letterSpacing: 0.8
                 }
-                StatusPill {
+
+                // Modo normal: 4 botões (Bloquear, Suspender, Reiniciar, Desligar)
+                RowLayout {
                     Layout.fillWidth: true
-                    label: SystemControl.bluetoothEnabled ? "Bluetooth ligado" : "Bluetooth desligado"
-                    active: SystemControl.bluetoothEnabled
+                    spacing: 6
+                    visible: controlCenter.activePowerConfirmAction.length === 0
+
+                    PowerActionButton {
+                        Layout.fillWidth: true
+                        glyph: "🔒"
+                        label: "Bloquear"
+                        onClicked: {
+                            SystemControl.lockScreen()
+                            controlCenter.close()
+                        }
+                    }
+
+                    PowerActionButton {
+                        Layout.fillWidth: true
+                        glyph: "💤"
+                        label: "Suspender"
+                        onClicked: {
+                            SystemControl.suspend()
+                            controlCenter.close()
+                        }
+                    }
+
+                    PowerActionButton {
+                        Layout.fillWidth: true
+                        glyph: "↺"
+                        label: "Reiniciar"
+                        onClicked: {
+                            controlCenter.activePowerConfirmAction = "reboot"
+                        }
+                    }
+
+                    PowerActionButton {
+                        Layout.fillWidth: true
+                        glyph: "⏻"
+                        label: "Desligar"
+                        accentColor: "#f43f5e"
+                        onClicked: {
+                            controlCenter.activePowerConfirmAction = "poweroff"
+                        }
+                    }
+                }
+
+                // Modo confirmação de energia para evitar desligamento acidental
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 8
+                    visible: controlCenter.activePowerConfirmAction.length > 0
+
+                    Button {
+                        Layout.fillWidth: true
+                        implicitHeight: 34
+                        background: Rectangle {
+                            radius: 8
+                            color: "#25000000"
+                            border.color: "#4a7e9fc0"
+                            border.width: 1
+                        }
+                        contentItem: Text {
+                            text: "Cancelar"
+                            color: "#dffaff"
+                            font.pixelSize: 10
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                        onClicked: controlCenter.activePowerConfirmAction = ""
+                    }
+
+                    Button {
+                        Layout.fillWidth: true
+                        implicitHeight: 34
+                        background: Rectangle {
+                            radius: 8
+                            gradient: Gradient {
+                                orientation: Gradient.Vertical
+                                GradientStop { position: 0.0; color: "#f43f5e" }
+                                GradientStop { position: 1.0; color: "#be123c" }
+                            }
+                            border.color: "#fda4af"
+                            border.width: 1
+                        }
+                        contentItem: Text {
+                            text: controlCenter.activePowerConfirmAction === "reboot"
+                                  ? "Confirmar Reinício" : "Confirmar Desligar"
+                            color: "#ffffff"
+                            font.pixelSize: 10
+                            font.bold: true
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                        onClicked: {
+                            if (controlCenter.activePowerConfirmAction === "reboot") {
+                                SystemControl.reboot()
+                            } else {
+                                SystemControl.powerOff()
+                            }
+                            controlCenter.close()
+                        }
+                    }
                 }
             }
+
             Item { Layout.fillHeight: true }
+
             Text {
                 Layout.fillWidth: true
                 text: "VALO OCEANIC GLASS  •  SYSTALIA SDE"
                 color: "#658ea4"
+                font.family: SystaliaTheme.fontFamily
                 font.pixelSize: 8
                 horizontalAlignment: Text.AlignHCenter
             }
         }
     }
 
+    // Componente de botão de toggle rápido
     component QuickToggle: Button {
         id: toggleButton
         property string label: ""
-        property string glyph: "•"
+        property string sublabel: ""
+        property string iconType: "wifi"
         property bool active: false
-        implicitHeight: 74
-        display: AbstractButton.TextUnderIcon
-        spacing: 4
-        contentItem: Column {
+        implicitHeight: 76
+        hoverEnabled: true
+
+        contentItem: ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 8
             spacing: 3
-            Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: toggleButton.glyph
-                color: toggleButton.active ? "#ffffff" : "#a8c2d1"
-                font.pixelSize: 19
-                font.bold: true
+
+            Item {
+                Layout.alignment: Qt.AlignHCenter
+                width: 24
+                height: 24
+
+                // Ícone Wi-Fi
+                WifiVectorIcon {
+                    anchors.centerIn: parent
+                    visible: toggleButton.iconType === "wifi"
+                    iconColor: toggleButton.active ? "#17f5df" : (toggleButton.hovered ? "#cbe6f7" : "#89aabf")
+                }
+
+                // Ícone Bluetooth autêntico (desenhado com precisão geométrica)
+                BluetoothVectorIcon {
+                    anchors.centerIn: parent
+                    visible: toggleButton.iconType === "bluetooth"
+                    iconColor: toggleButton.active ? "#38bdf8" : (toggleButton.hovered ? "#cbe6f7" : "#89aabf")
+                }
+
+                // Ícone Lua / Silencioso
+                MoonVectorIcon {
+                    anchors.centerIn: parent
+                    visible: toggleButton.iconType === "moon"
+                    iconColor: toggleButton.active ? "#a78bfa" : (toggleButton.hovered ? "#cbe6f7" : "#89aabf")
+                }
             }
+
             Text {
-                width: toggleButton.width - 8
-                anchors.horizontalCenter: parent.horizontalCenter
+                Layout.fillWidth: true
                 text: toggleButton.label
-                color: toggleButton.active ? "#ecfaff" : "#91a9b8"
+                color: toggleButton.active ? "#ffffff" : "#b0c9d9"
+                font.family: SystaliaTheme.fontFamily
+                font.pixelSize: 10
+                font.bold: true
+                horizontalAlignment: Text.AlignHCenter
+                elide: Text.ElideRight
+            }
+
+            Text {
+                Layout.fillWidth: true
+                text: toggleButton.sublabel
+                color: toggleButton.active ? "#17f5df" : "#6f8ea1"
+                font.family: SystaliaTheme.fontFamily
                 font.pixelSize: 8
                 horizontalAlignment: Text.AlignHCenter
                 elide: Text.ElideRight
             }
         }
+
         background: Item {
             anchors.fill: parent
 
@@ -476,103 +737,263 @@ Item {
             Rectangle {
                 anchors.fill: parent
                 anchors.topMargin: 2
-                radius: 13
+                radius: 12
                 visible: toggleButton.active
                 color: "#5900101d"
             }
 
-            // Corpo ativo com gradiente diagonal 135deg
-            Shape {
+            // Fundo ativo
+            Rectangle {
                 anchors.fill: parent
+                radius: 12
                 visible: toggleButton.active
-                layer.enabled: true
-                layer.samples: 4
-                ShapePath {
-                    strokeWidth: 0
-                    fillGradient: LinearGradient {
-                        x1: 0; y1: 0
-                        x2: toggleButton.width; y2: toggleButton.height
-                        GradientStop { position: 0.1389; color: "#3d9fefff" }
-                        GradientStop { position: 0.2778; color: "#6e5bbce5" }
-                        GradientStop { position: 0.5208; color: "#b819587d" }
-                        GradientStop { position: 0.8333; color: "#e010334e" }
-                    }
-                    startX: 13; startY: 0
-                    PathLine { x: toggleButton.width - 13; y: 0 }
-                    PathArc { x: toggleButton.width; y: 13; radiusX: 13; radiusY: 13 }
-                    PathLine { x: toggleButton.width; y: toggleButton.height - 13 }
-                    PathArc { x: toggleButton.width - 13; y: toggleButton.height; radiusX: 13; radiusY: 13 }
-                    PathLine { x: 13; y: toggleButton.height }
-                    PathArc { x: 0; y: toggleButton.height - 13; radiusX: 13; radiusY: 13 }
-                    PathLine { x: 0; y: 13 }
-                    PathArc { x: 13; y: 0; radiusX: 13; radiusY: 13 }
+                gradient: Gradient {
+                    orientation: Gradient.Vertical
+                    GradientStop { position: 0.0; color: "#2d14c4e7" }
+                    GradientStop { position: 1.0; color: "#180d2235" }
                 }
+                border.color: "#8017f5df"
+                border.width: 1.2
             }
 
-            // Inset highlight superior (ativo)
-            Rectangle {
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.top: parent.top
-                anchors.topMargin: 1
-                width: parent.width - 14
-                height: 1
-                color: "#52ffffff"
-                visible: toggleButton.active
-            }
-
-            // Inativo
+            // Fundo inativo
             Rectangle {
                 anchors.fill: parent
-                radius: 13
+                radius: 12
                 visible: !toggleButton.active
-                color: toggleButton.hovered ? "#2419354d" : "#180d2235"
+                color: toggleButton.hovered ? "#2419354d" : "#140c1e2f"
                 border.color: toggleButton.hovered ? "#4a7e9fc0" : "#244d6c82"
                 border.width: 1
-            }
-
-            // Borda ativa
-            Rectangle {
-                anchors.fill: parent
-                radius: 13
-                visible: toggleButton.active
-                color: "transparent"
-                border.color: "#c7f9ffff"
-                border.width: 1.1
             }
         }
     }
 
-    component StatusPill: Rectangle {
+    // Componente de botão de ação de energia
+    component PowerActionButton: Button {
+        id: powerBtn
+        property string glyph: ""
         property string label: ""
-        property bool active: false
-        implicitHeight: 30
-        radius: 14
-        color: active ? "#250b4460" : "#1a091c2c"
-        border.color: active ? "#5edbf5" : "#2c526274"
-        border.width: 1
-        Row {
-            anchors.centerIn: parent
-            spacing: 6
-            Rectangle {
-                anchors.verticalCenter: parent.verticalCenter
-                width: 7
-                height: 7
-                radius: 3.5
-                color: active ? "#17f5df" : "#506e80"
-                Rectangle {
-                    anchors.centerIn: parent
-                    width: 13
-                    height: 13
-                    radius: 6.5
-                    color: "#3017f5df"
-                    visible: active
-                }
-            }
+        property color accentColor: "#38bdf8"
+        implicitHeight: 46
+        hoverEnabled: true
+
+        contentItem: ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 4
+            spacing: 1
+
             Text {
-                text: parent.parent.label
-                color: active ? "#ebf9ff" : "#9db3c1"
-                font.pixelSize: 9
-                font.bold: active
+                Layout.alignment: Qt.AlignHCenter
+                text: powerBtn.glyph
+                color: powerBtn.hovered ? powerBtn.accentColor : "#cadfee"
+                font.pixelSize: 13
+            }
+
+            Text {
+                Layout.fillWidth: true
+                text: powerBtn.label
+                color: powerBtn.hovered ? "#ffffff" : "#89aabf"
+                font.family: SystaliaTheme.fontFamily
+                font.pixelSize: 8
+                horizontalAlignment: Text.AlignHCenter
+                elide: Text.ElideRight
+            }
+        }
+
+        background: Rectangle {
+            radius: 8
+            color: powerBtn.hovered ? "#251a374f" : "#150b1c2b"
+            border.color: powerBtn.hovered ? powerBtn.accentColor : "#244d6c82"
+            border.width: 1
+            antialiasing: true
+        }
+    }
+
+    // Ícone Vetorial de Wi-Fi
+    component WifiVectorIcon: Canvas {
+        id: wifiCanvas
+        width: 20
+        height: 18
+        property color iconColor: "#17f5df"
+        onIconColorChanged: requestPaint()
+
+        onPaint: {
+            var ctx = getContext("2d")
+            ctx.clearRect(0, 0, width, height)
+            ctx.strokeStyle = iconColor
+            ctx.lineWidth = 1.8
+            ctx.lineCap = "round"
+
+            // Arco exterior
+            ctx.beginPath()
+            ctx.arc(10, 15, 11, -Math.PI * 0.75, -Math.PI * 0.25, false)
+            ctx.stroke()
+
+            // Arco médio
+            ctx.beginPath()
+            ctx.arc(10, 15, 7.5, -Math.PI * 0.75, -Math.PI * 0.25, false)
+            ctx.stroke()
+
+            // Arco inferior
+            ctx.beginPath()
+            ctx.arc(10, 15, 4, -Math.PI * 0.75, -Math.PI * 0.25, false)
+            ctx.stroke()
+
+            // Ponto central
+            ctx.fillStyle = iconColor
+            ctx.beginPath()
+            ctx.arc(10, 15, 1.2, 0, 2 * Math.PI)
+            ctx.fill()
+        }
+    }
+
+    // Ícone Vetorial Autêntico de Bluetooth
+    component BluetoothVectorIcon: Canvas {
+        id: btCanvas
+        width: 16
+        height: 20
+        property color iconColor: "#38bdf8"
+        onIconColorChanged: requestPaint()
+
+        onPaint: {
+            var ctx = getContext("2d")
+            ctx.clearRect(0, 0, width, height)
+            ctx.strokeStyle = iconColor
+            ctx.lineWidth = 1.8
+            ctx.lineCap = "round"
+            ctx.lineJoin = "round"
+
+            var cx = 8
+            var topY = 2
+            var botY = 18
+            var midY = 10
+            var w = 5
+
+            // Espinha vertical
+            ctx.beginPath()
+            ctx.moveTo(cx, topY)
+            ctx.lineTo(cx, botY)
+            ctx.stroke()
+
+            // Runa contínua
+            ctx.beginPath()
+            ctx.moveTo(cx - w, topY + 4)
+            ctx.lineTo(cx + w, midY + 4)
+            ctx.lineTo(cx, botY)
+            ctx.lineTo(cx, topY)
+            ctx.lineTo(cx + w, midY - 4)
+            ctx.lineTo(cx - w, botY - 4)
+            ctx.stroke()
+        }
+    }
+
+    // Ícone Vetorial de Lua / Silencioso
+    component MoonVectorIcon: Canvas {
+        id: moonCanvas
+        width: 18
+        height: 18
+        property color iconColor: "#a78bfa"
+        onIconColorChanged: requestPaint()
+
+        onPaint: {
+            var ctx = getContext("2d")
+            ctx.clearRect(0, 0, width, height)
+            ctx.fillStyle = iconColor
+
+            ctx.beginPath()
+            ctx.arc(9, 9, 7.5, -Math.PI * 0.4, Math.PI * 0.8, false)
+            ctx.bezierCurveTo(4, 13, 4, 5, 13.5, 3.5)
+            ctx.closePath()
+            ctx.fill()
+        }
+    }
+
+    // Ícone Vetorial de Alto-Falante (Volume)
+    component SpeakerVectorIcon: Canvas {
+        id: spkCanvas
+        width: 16
+        height: 16
+        property bool muted: false
+        property color iconColor: "#17f5df"
+        onMutedChanged: requestPaint()
+        onIconColorChanged: requestPaint()
+
+        onPaint: {
+            var ctx = getContext("2d")
+            ctx.clearRect(0, 0, width, height)
+            ctx.fillStyle = iconColor
+            ctx.strokeStyle = iconColor
+            ctx.lineWidth = 1.5
+            ctx.lineCap = "round"
+
+            // Cone do alto-falante
+            ctx.beginPath()
+            ctx.moveTo(2, 6)
+            ctx.lineTo(5, 6)
+            ctx.lineTo(9, 2.5)
+            ctx.lineTo(9, 13.5)
+            ctx.lineTo(5, 10)
+            ctx.lineTo(2, 10)
+            ctx.closePath()
+            ctx.fill()
+
+            if (muted) {
+                // Barra de mudo
+                ctx.strokeStyle = "#fb7185"
+                ctx.beginPath()
+                ctx.moveTo(11, 5)
+                ctx.lineTo(15, 11)
+                ctx.moveTo(15, 5)
+                ctx.lineTo(11, 11)
+                ctx.stroke()
+            } else {
+                // Ondas sonoras
+                ctx.beginPath()
+                ctx.arc(9, 8, 4, -Math.PI * 0.3, Math.PI * 0.3, false)
+                ctx.stroke()
+                ctx.beginPath()
+                ctx.arc(9, 8, 7, -Math.PI * 0.3, Math.PI * 0.3, false)
+                ctx.stroke()
+            }
+        }
+    }
+
+    // Ícone Vetorial de Sol (Brilho)
+    component SunVectorIcon: Canvas {
+        id: sunCanvas
+        width: 16
+        height: 16
+        property color iconColor: "#facc15"
+        onIconColorChanged: requestPaint()
+
+        onPaint: {
+            var ctx = getContext("2d")
+            ctx.clearRect(0, 0, width, height)
+            ctx.strokeStyle = iconColor
+            ctx.fillStyle = iconColor
+            ctx.lineWidth = 1.3
+            ctx.lineCap = "round"
+
+            var cx = 8
+            var cy = 8
+            var r = 3
+
+            // Círculo central
+            ctx.beginPath()
+            ctx.arc(cx, cy, r, 0, 2 * Math.PI)
+            ctx.fill()
+
+            // 8 Raios
+            var rayDistInner = 4.5
+            var rayDistOuter = 7
+            for (var i = 0; i < 8; ++i) {
+                var angle = i * Math.PI / 4
+                var cosA = Math.cos(angle)
+                var sinA = Math.sin(angle)
+                ctx.beginPath()
+                ctx.moveTo(cx + cosA * rayDistInner, cy + sinA * rayDistInner)
+                ctx.lineTo(cx + cosA * rayDistOuter, cy + sinA * rayDistOuter)
+                ctx.stroke()
             }
         }
     }
