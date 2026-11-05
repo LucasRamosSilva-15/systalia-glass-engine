@@ -166,6 +166,10 @@ Item {
     }
 
     onClientGeometryChanged: syncClientGeometry()
+    onWorkspaceIndexChanged: {
+        if (tilingService && snapState !== 0)
+            tilingService.registerWindowSnap(windowContainer, snapState, workspaceIndex)
+    }
 
     onClientMappedChanged: {
         if (clientMapped) {
@@ -201,9 +205,6 @@ Item {
         if (nextScreen >= 0) {
             currentScreenIndex = nextScreen
             currentScreenScale = outputManager.screenScaleAt(nextScreen)
-            const phys = outputManager.physicalResolutionAt(nextScreen)
-            if (phys.x > 0 && phys.y > 0)
-                screenResolution = Qt.point(phys.x, phys.y)
         }
     }
 
@@ -395,16 +396,6 @@ Item {
             disposeContainer()
     }
 
-    Timer {
-        id: closeFallbackTimer
-        interval: 220
-        repeat: false
-        onTriggered: {
-            if (!windowContainer.destructionScheduled)
-                windowContainer.disposeContainer()
-        }
-    }
-
     Connections {
         target: windowContainer.toplevel
         ignoreUnknownSignals: true
@@ -420,6 +411,57 @@ Item {
         function onWindowRemoved(toplevelObj) {
             if (toplevelObj === windowContainer.toplevel) {
                 windowContainer.disposeContainer()
+            }
+        }
+    }
+
+    Component {
+        id: popupComponent
+        ShellSurfaceItem {
+            id: popupItem
+            required property var popup
+            shellSurface: popup.xdgSurface
+            x: windowContainer.frameMargin - windowContainer.clientGeometry.x
+               + popup.configuredGeometry.x
+            y: windowContainer.titleBarHeight + windowContainer.frameMargin
+               - windowContainer.clientGeometry.y + popup.configuredGeometry.y
+            z: 10
+            focusOnClick: true
+            onSurfaceDestroyed: destroy()
+            Connections {
+                target: popupItem.popup
+                function onDestroyed() { popupItem.destroy() }
+            }
+            Component.onCompleted: {
+                popup.sendConfigure(Qt.rect(popup.unconstrainedPosition.x,
+                                            popup.unconstrainedPosition.y,
+                                            popup.positionerSize.width, popup.positionerSize.height))
+            }
+        }
+    }
+
+    Connections {
+        target: windowContainer.waylandServer
+        function onPopupCreated(popup) {
+            if (popup.parentXdgSurface === windowContainer.xdgSurface)
+                popupComponent.createObject(windowContainer, { popup: popup })
+        }
+    }
+
+    Connections {
+        target: windowContainer.outputManager
+        function onWindowScreenTransitioned(windowObj, screenIndex, previousIndex, scale) {
+            if (windowObj === windowContainer) {
+                windowContainer.currentScreenIndex = screenIndex
+                windowContainer.currentScreenScale = scale
+            }
+        }
+        function onWindowMigratedOnHotUnplug(windowObj, removedIndex, targetIndex, geometry) {
+            if (windowObj === windowContainer) {
+                windowContainer.dispatchClientResize(Qt.size(
+                    Math.max(240, geometry.width - 2 * windowContainer.frameMargin),
+                    Math.max(160, geometry.height - windowContainer.titleBarHeight
+                                   - 2 * windowContainer.frameMargin)), false)
             }
         }
     }
@@ -485,6 +527,7 @@ Item {
                 y: -windowContainer.clientGeometry.y
                 width: windowContainer.effectiveClientWidth
                 height: windowContainer.effectiveClientHeight
+                autoCreatePopupItems: false
                 shellSurface: windowContainer.xdgSurface
                 surface: windowContainer.clientSurface
                 focus: true
@@ -512,7 +555,7 @@ Item {
                 objectName: "clientTextureCapture"
                 sourceItem: clientSurfaceItem
                 live: windowContainer.visible
-                hideSource: false
+                hideSource: true
                 recursive: false
                 visible: false
                 format: ShaderEffectSource.RGBA8
@@ -550,7 +593,6 @@ Item {
             onCloseRequested: {
                 if (windowContainer.toplevel && windowContainer.waylandServer)
                     windowContainer.waylandServer.closeToplevel(windowContainer.toplevel)
-                closeFallbackTimer.restart()
             }
             onDragStarted: {
                 windowContainer.resizeAnchored = false

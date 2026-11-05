@@ -22,20 +22,22 @@ bool SystaliaGlassMaterialShader::updateUniformData(RenderState &state,
         return false;
     }
 
-    SystaliaSurfaceProps props = mat->props();
-    props.matrix = state.combinedMatrix();
+    SystaliaRenderUniforms uniforms;
+    uniforms.surface = mat->props();
+    uniforms.surface.matrix = state.combinedMatrix();
+    uniforms.sceneOpacity = state.opacity();
 
     // Otimização QRhi: só transferir para o UBO se os bytes tiverem sofrido alteração real
-    if (buf->size() >= static_cast<qsizetype>(sizeof(SystaliaSurfaceProps))
-        && std::memcmp(buf->constData(), &props, sizeof(SystaliaSurfaceProps)) == 0) {
+    if (buf->size() >= static_cast<qsizetype>(sizeof(SystaliaRenderUniforms))
+        && std::memcmp(buf->constData(), &uniforms, sizeof(SystaliaRenderUniforms)) == 0) {
         return false;
     }
 
-    if (buf->size() < static_cast<qsizetype>(sizeof(SystaliaSurfaceProps))) {
-        buf->resize(sizeof(SystaliaSurfaceProps));
+    if (buf->size() < static_cast<qsizetype>(sizeof(SystaliaRenderUniforms))) {
+        buf->resize(sizeof(SystaliaRenderUniforms));
     }
 
-    std::memcpy(buf->data(), &props, sizeof(SystaliaSurfaceProps));
+    std::memcpy(buf->data(), &uniforms, sizeof(SystaliaRenderUniforms));
 
     static const bool s_perfDebug = qEnvironmentVariableIntValue("SGE_DEBUG_PERF") == 1;
     if (s_perfDebug) {
@@ -53,7 +55,6 @@ void SystaliaGlassMaterialShader::updateSampledImage(RenderState &state,
                                                     QSGTexture **texture,
                                                     QSGMaterial *newMaterial,
                                                     QSGMaterial *oldMaterial) {
-    Q_UNUSED(state);
     Q_UNUSED(oldMaterial);
 
     auto *mat = static_cast<SystaliaGlassMaterial *>(newMaterial);
@@ -67,6 +68,9 @@ void SystaliaGlassMaterialShader::updateSampledImage(RenderState &state,
         targetTexture = mat->clientTexture();
     }
 
+    if (targetTexture) {
+        targetTexture->commitTextureOperations(state.rhi(), state.resourceUpdateBatch());
+    }
     if (targetTexture && *texture != targetTexture) {
         *texture = targetTexture;
         static const bool s_perfDebug = qEnvironmentVariableIntValue("SGE_DEBUG_PERF") == 1;
@@ -74,24 +78,6 @@ void SystaliaGlassMaterialShader::updateSampledImage(RenderState &state,
             qDebug().noquote() << "[SGE-PERF-RHI] Vinculada nova textura RHI no binding:" << binding;
         }
     }
-}
-
-bool SystaliaGlassMaterialShader::updateGraphicsPipelineState(RenderState &state,
-                                                             GraphicsPipelineState *ps,
-                                                             QSGMaterial *newMaterial,
-                                                             QSGMaterial *oldMaterial) {
-    Q_UNUSED(state);
-    Q_UNUSED(newMaterial);
-    Q_UNUSED(oldMaterial);
-
-    ps->blendEnable = true;
-    ps->srcColor = GraphicsPipelineState::SrcAlpha;
-    ps->dstColor = GraphicsPipelineState::OneMinusSrcAlpha;
-    ps->colorWrite = GraphicsPipelineState::R | GraphicsPipelineState::G | GraphicsPipelineState::B | GraphicsPipelineState::A;
-    ps->cullMode = GraphicsPipelineState::CullNone;
-    ps->polygonMode = GraphicsPipelineState::Fill;
-
-    return true;
 }
 
 SystaliaGlassMaterial::SystaliaGlassMaterial() {
@@ -115,5 +101,5 @@ int SystaliaGlassMaterial::compare(const QSGMaterial *other) const {
         return less(m_texture, otherMaterial->m_texture) ? -1 : 1;
     if (m_clientTexture != otherMaterial->m_clientTexture)
         return less(m_clientTexture, otherMaterial->m_clientTexture) ? -1 : 1;
-    return 0;
+    return std::memcmp(&m_props, &otherMaterial->m_props, sizeof(m_props));
 }

@@ -156,6 +156,8 @@ QVariant AppRegistryService::data(const QModelIndex &index, int role) const {
         return entry.desktopId;
     case DesktopFileRole:
         return entry.desktopFile;
+    case TerminalRole:
+        return entry.terminal;
     default:
         return {};
     }
@@ -169,7 +171,8 @@ QHash<int, QByteArray> AppRegistryService::roleNames() const {
         {CategoriesRole, QByteArrayLiteral("categories")},
         {IconRole, QByteArrayLiteral("icon")},
         {DesktopIdRole, QByteArrayLiteral("desktopId")},
-        {DesktopFileRole, QByteArrayLiteral("desktopFile")}
+        {DesktopFileRole, QByteArrayLiteral("desktopFile")},
+        {TerminalRole, QByteArrayLiteral("terminal")}
     };
 }
 
@@ -251,6 +254,7 @@ AppRegistryService::parseDesktopFile(const QString &desktopFile) {
     }
 
     ApplicationEntry entry;
+    entry.terminal = settings.value(group + QStringLiteral("Terminal"), false).toBool();
     entry.name = localizedValue(settings, QStringLiteral("Name"));
     entry.exec = settings.value(group + QStringLiteral("Exec")).toString().trimmed();
     entry.icon = localizedValue(settings, QStringLiteral("Icon"));

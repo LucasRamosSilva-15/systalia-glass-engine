@@ -105,6 +105,7 @@ public:
     [[nodiscard]] bool isGpuSubmissionSuspended() const noexcept { return m_gpuSubmissionSuspended; }
     [[nodiscard]] int activeDeviceCount() const noexcept { return static_cast<int>(m_devices.size()); }
     [[nodiscard]] int deviceFileDescriptor(quint32 major, quint32 minor) const noexcept;
+    [[nodiscard]] bool hasPausedDevices() const noexcept;
     [[nodiscard]] bool isDevicePaused(quint32 major, quint32 minor) const noexcept;
     [[nodiscard]] int primaryDrmFileDescriptor() const noexcept { return m_primaryDrmFd; }
     [[nodiscard]] int pauseCompleteAckCount() const noexcept { return m_pauseCompleteAckCount; }
@@ -124,6 +125,7 @@ signals:
     void sessionActiveChanged(bool active);
     void gpuSubmissionSuspendedChanged(bool suspended);
     void devicesChanged();
+    void devicePauseRequested(quint32 major, quint32 minor);
     void devicePaused(quint32 major, quint32 minor, const QString &type);
     void deviceResumed(quint32 major, quint32 minor, int fd);
     void swapchainRestoreRequested(quint32 major, quint32 minor, int fd);

@@ -97,5 +97,20 @@ int main(int argc, char *argv[]) {
         engine.load(QUrl::fromLocalFile(QStringLiteral("src/qml/main.qml")));
     }
 
+    if (auto *window = engine.rootObjects().isEmpty() ? nullptr
+                     : qobject_cast<QQuickWindow *>(engine.rootObjects().first())) {
+        QObject::connect(&logindSessionService, &LogindSessionService::gpuSubmissionSuspendedChanged,
+                         window, [window, wasVisible = false](bool suspended) mutable {
+            if (suspended) {
+                wasVisible = window->isVisible();
+                window->hide();
+                window->releaseResources();
+            } else if (wasVisible) {
+                window->show();
+                window->update();
+            }
+        });
+    }
+
     return app.exec();
 }

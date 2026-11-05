@@ -74,3 +74,12 @@ static_assert(offsetof(SystaliaSurfaceProps, hasClientTexture) == 120,
               "Offset de hasClientTexture deve ser 120");
 static_assert(offsetof(SystaliaSurfaceProps, titleBarHeight) == 124,
               "Offset de titleBarHeight deve ser 124");
+
+// The optical ABI stays 128 bytes; renderer state occupies its own std140 slot.
+struct alignas(16) SystaliaRenderUniforms {
+    SystaliaSurfaceProps surface;
+    float sceneOpacity = 1.0f;
+    float padding[3] = {};
+};
+static_assert(offsetof(SystaliaRenderUniforms, sceneOpacity) == 128);
+static_assert(sizeof(SystaliaRenderUniforms) == 144);

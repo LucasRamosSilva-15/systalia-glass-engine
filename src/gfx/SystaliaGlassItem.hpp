@@ -105,6 +105,7 @@ protected:
 
 private:
     void requestSceneUpdate();
+    void invalidateSceneGraph();
 
     QVector4D m_radii = QVector4D(24.0f, 24.0f, 24.0f, 24.0f);
     float m_slant = 0.0f;
@@ -126,6 +127,8 @@ private:
 
     QPointer<QSGTextureProvider> m_connectedProvider;
     QPointer<QSGTextureProvider> m_connectedClientProvider;
+    QMetaObject::Connection m_sceneInvalidationConnection;
+    QPointer<QQuickWindow> m_resourceWindow;
     QSGTexture *m_fallbackTexture = nullptr;
     QSGTexture *m_fallbackClientTexture = nullptr;
 };

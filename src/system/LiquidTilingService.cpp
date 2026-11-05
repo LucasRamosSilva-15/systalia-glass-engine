@@ -320,6 +320,7 @@ void LiquidTilingService::registerWindowSnap(QQuickItem *window, int snapTarget,
     if (!alreadyTracked) {
         connect(window, &QObject::destroyed, this,
                 &LiquidTilingService::unregisterDestroyedWindow, Qt::UniqueConnection);
+        connect(window, &QQuickItem::visibleChanged, this, &LiquidTilingService::bumpTilingRevision);
     }
 
     m_snappedWindows.insert(window, WindowSnapEntry{snapTarget, sanitizedWs});
@@ -362,7 +363,10 @@ bool LiquidTilingService::hasActiveSplitInWorkspace(int workspaceIndex) const {
     bool hasRight = false;
 
     for (auto it = m_snappedWindows.cbegin(); it != m_snappedWindows.cend(); ++it) {
-        if (it->workspaceIndex != workspaceIndex) {
+        auto *window = qobject_cast<QQuickItem *>(it.key());
+        if (it->workspaceIndex != workspaceIndex || !window || !window->isVisible()
+            || (window->property("windowOpen").isValid() && !window->property("windowOpen").toBool())
+            || window->property("minimized").toBool()) {
             continue;
         }
         if (isLeftZone(it->snapTarget)) {

@@ -16,6 +16,7 @@ public:
 
     QStringList runningApplications() const;
     Q_INVOKABLE bool launch(const QString &command, const QStringList &arguments = {});
+    Q_INVOKABLE bool launchInTerminal(const QString &command, const QStringList &arguments = {});
     Q_INVOKABLE bool isAppRunning(const QString &appId) const;
 
     static QProcessEnvironment waylandProcessEnvironment();

@@ -18,11 +18,6 @@ public:
                             QSGTexture **texture,
                             QSGMaterial *newMaterial,
                             QSGMaterial *oldMaterial) override;
-
-    bool updateGraphicsPipelineState(RenderState &state,
-                                     GraphicsPipelineState *ps,
-                                     QSGMaterial *newMaterial,
-                                     QSGMaterial *oldMaterial) override;
 };
 
 class SystaliaGlassMaterial : public QSGMaterial {

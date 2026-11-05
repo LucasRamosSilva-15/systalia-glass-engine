@@ -1045,12 +1045,7 @@ void XWaylandManager::pollXcbEvents() {
                         mne->window, QString(), QString(), QRect(0, 0, 800, 500));
                 }
                 queryX11WindowProperties(mne->window, wrapper);
-                if (!wrapper->surface() && !m_unassignedXWaylandSurfaces.isEmpty()) {
-                    QWaylandSurface *candidate = m_unassignedXWaylandSurfaces.takeFirst();
-                    if (candidate) {
-                        associateSurfaceWithWindow(mne->window, candidate);
-                    }
-                }
+
             }
             break;
         }
@@ -1216,7 +1211,7 @@ void XWaylandManager::notifySurfaceCreated(QWaylandSurface *surface) {
     // Verifica se a superfície pertence ao cliente XWayland (ou aguarda associação por WL_SURFACE_ID)
     const bool isFromXWaylandClient = m_waylandClient
         && (surface->waylandClient() == m_waylandClient);
-    if (!isFromXWaylandClient && m_windowsByXid.isEmpty()) {
+    if (!isFromXWaylandClient) {
         return;
     }
 
@@ -1235,14 +1230,6 @@ void XWaylandManager::notifySurfaceCreated(QWaylandSurface *surface) {
                 associateSurfaceWithWindow(wrapper->x11WindowId(), surface);
                 return;
             }
-        }
-    }
-
-    // Se houver uma janela X11 mapeada sem superfície atribuída, associa
-    for (XWaylandSurfaceWrapper *wrapper : std::as_const(m_windowsByXid)) {
-        if (wrapper && !wrapper->surface() && wrapper->pendingWlSurfaceId() == 0) {
-            associateSurfaceWithWindow(wrapper->x11WindowId(), surface);
-            return;
         }
     }
 
@@ -1283,9 +1270,11 @@ XWaylandSurfaceWrapper *XWaylandManager::registerOrUpdateX11Window(quint32 x11Wi
 }
 
 bool XWaylandManager::associateSurfaceWithWindow(quint32 x11WindowId, QWaylandSurface *surface) {
-    if (!surface || x11WindowId == 0) {
+    if (!surface || x11WindowId == 0
+        || (m_waylandClient && surface->waylandClient() != m_waylandClient)) {
         return false;
     }
+    m_unassignedXWaylandSurfaces.removeAll(surface);
 
     XWaylandSurfaceWrapper *wrapper = m_windowsByXid.value(x11WindowId, nullptr);
     if (!wrapper) {

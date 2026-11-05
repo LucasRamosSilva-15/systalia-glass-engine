@@ -10,6 +10,10 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QKeyEvent>
+#include <QMouseEvent>
+#include <QGuiApplication>
+#include <QQuickWindow>
+#include <QtWaylandCompositor/QWaylandOutput>
 #include <QtWaylandCompositor/QWaylandKeyboard>
 #include <QtWaylandCompositor/QWaylandPointer>
 #include <QtWaylandCompositor/QWaylandView>
@@ -56,6 +60,21 @@ InputDeviceManager::InputDeviceManager(QObject *parent)
         m_platformModeName = QStringLiteral("headless-offscreen");
     } else {
         m_platformModeName = QStringLiteral("nested");
+    }
+
+    if (auto *logind = LogindSessionService::instance()) {
+        connect(logind, &LogindSessionService::devicePauseRequested, this,
+                [this](quint32, quint32) { setHardwareSuspended(true); });
+        connect(logind, &LogindSessionService::deviceResumed, this,
+                [this, logind](quint32, quint32, int) {
+            if (!logind->isGpuSubmissionSuspended() && !logind->hasPausedDevices())
+                setHardwareSuspended(false);
+        });
+        connect(logind, &LogindSessionService::gpuSubmissionSuspendedChanged, this,
+                [this, logind](bool suspended) {
+            if (suspended || !logind->hasPausedDevices())
+                setHardwareSuspended(suspended);
+        });
     }
 
     if (auto *outMgr = OutputManagerService::instance()) {
@@ -299,31 +318,87 @@ void InputDeviceManager::resetTelemetryCounters() noexcept {
 }
 
 int InputDeviceManager::openRestrictedCallback(const char *path, int flags, void *userData) {
-    Q_UNUSED(userData);
-    if (!path) {
+    if (!path)
         return -EINVAL;
-    }
+    auto *manager = static_cast<InputDeviceManager *>(userData);
     if (auto *logind = LogindSessionService::instance(); logind && logind->hasSessionControl()) {
-        const int logindFd = logind->takeDeviceByPath(QString::fromLocal8Bit(path));
-        if (logindFd >= 0) {
-            return logindFd;
-        }
+        if (!manager)
+            return -EINVAL;
+        bool inactive = false;
+        const int leaseFd = logind->takeDeviceByPath(QString::fromLocal8Bit(path), &inactive);
+        if (leaseFd < 0 || inactive)
+            return -EACCES;
+        const int fd = ::fcntl(leaseFd, F_DUPFD_CLOEXEC, 0);
+        if (fd < 0)
+            return -errno;
+        quint32 major = 0, minor = 0;
+        if (manager && LogindSessionService::statDeviceMajorMinor(QString::fromLocal8Bit(path), &major, &minor))
+            manager->m_leasedDevices.insert(fd, qMakePair(major, minor));
+        return fd;
     }
     const int fd = ::open(path, flags | O_CLOEXEC);
-    return (fd < 0) ? -errno : fd;
+    return fd < 0 ? -errno : fd;
 }
 
 void InputDeviceManager::closeRestrictedCallback(int fd, void *userData) {
-    Q_UNUSED(userData);
-    if (fd < 0) {
+    if (fd < 0)
         return;
-    }
-    if (auto *logind = LogindSessionService::instance(); logind && logind->hasSessionControl()) {
-        if (logind->releaseDeviceByFd(fd)) {
-            return;
+    auto *manager = static_cast<InputDeviceManager *>(userData);
+    ::close(fd);
+    if (manager && manager->m_leasedDevices.contains(fd)) {
+        const auto device = manager->m_leasedDevices.take(fd);
+        if (!manager->m_hardwareSuspended && !manager->m_leasedDevices.values().contains(device)) {
+            if (auto *logind = LogindSessionService::instance())
+                logind->releaseDevice(device.first, device.second);
         }
     }
-    ::close(fd);
+}
+
+void InputDeviceManager::setHardwareSuspended(bool suspended) {
+    if (m_hardwareSuspended == suspended)
+        return;
+    m_hardwareSuspended = suspended;
+#ifdef SGE_HAVE_LIBINPUT
+    if (m_libinput) {
+        if (suspended) {
+            if (m_libinputNotifier)
+                m_libinputNotifier->setEnabled(false);
+            libinput_suspend(m_libinput);
+            m_pressedButtons = Qt::NoButton;
+        } else if (libinput_resume(m_libinput) == 0) {
+            if (m_libinputNotifier)
+                m_libinputNotifier->setEnabled(true);
+        } else {
+            m_hardwareSuspended = true;
+            qWarning() << "[SGE-INPUT] Não foi possível retomar libinput.";
+        }
+    }
+#endif
+}
+
+bool InputDeviceManager::dispatchPointerToScene(QEvent::Type type, Qt::MouseButton button) {
+    if (!m_compositor)
+        return false;
+    QQuickWindow *target = nullptr;
+    for (QWaylandOutput *output : m_compositor->outputs()) {
+        auto *window = qobject_cast<QQuickWindow *>(output->window());
+        if (!window || !window->isVisible())
+            continue;
+        if (!target)
+            target = window;
+        if (window->geometry().contains(m_pointerPosition.toPoint())) {
+            target = window;
+            break;
+        }
+    }
+    if (!target)
+        return false;
+    const QPointF local = m_pointerPosition - QPointF(target->position());
+    QMouseEvent event(type, local, m_pointerPosition, button, m_pressedButtons,
+                      QGuiApplication::keyboardModifiers());
+    // Qt Quick performs stacking-aware hit testing and maps to client coordinates.
+    QCoreApplication::sendEvent(target, &event);
+    return true;
 }
 
 const libinput_interface &InputDeviceManager::restrictedInterface() noexcept {
@@ -603,13 +678,7 @@ QPointF InputDeviceManager::processLibinputPointerMotion(qreal dx, qreal dy) {
         outMgr->updateCursorPosition(newPos);
     }
 
-    if (QWaylandSeat *seat = targetSeat()) {
-        if (QWaylandPointer *pointer = seat->pointer()) {
-            if (QWaylandView *focusView = seat-> mouseFocus()) {
-                pointer->sendMouseMoveEvent(focusView, newPos, newPos);
-            }
-        }
-    }
+    dispatchPointerToScene(QEvent::MouseMove);
 
     ++m_dispatchedPointerEvents;
     emit pointerPositionChanged(newPos);
@@ -634,6 +703,8 @@ QPointF InputDeviceManager::processLibinputPointerMotionAbsolute(qreal normalize
         outMgr->updateCursorPosition(m_pointerPosition);
     }
 
+    dispatchPointerToScene(QEvent::MouseMove);
+
     ++m_dispatchedPointerEvents;
     emit pointerPositionChanged(m_pointerPosition);
     emit inputTelemetryChanged();
@@ -653,15 +724,7 @@ bool InputDeviceManager::processLibinputPointerButton(quint32 linuxButtonCode, b
         m_pressedButtons &= ~button;
     }
 
-    if (QWaylandSeat *seat = targetSeat()) {
-        if (QWaylandPointer *pointer = seat->pointer()) {
-            if (pressed) {
-                pointer->sendMousePressEvent(button);
-            } else {
-                pointer->sendMouseReleaseEvent(button);
-            }
-        }
-    }
+    dispatchPointerToScene(pressed ? QEvent::MouseButtonPress : QEvent::MouseButtonRelease, button);
 
     ++m_dispatchedPointerEvents;
     emit inputTelemetryChanged();

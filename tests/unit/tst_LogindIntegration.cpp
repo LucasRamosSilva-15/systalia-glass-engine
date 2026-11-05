@@ -6,6 +6,7 @@
 #include <QSignalSpy>
 #include <QTest>
 #include <unistd.h>
+#include <fcntl.h>
 
 #include "InputDeviceManager.hpp"
 #include "LogindSessionService.hpp"
@@ -23,6 +24,7 @@ private slots:
     void pauseDeviceTransitionsToSuspendedAndSendsPauseDeviceComplete();
     void resumeDeviceRestoresFileDescriptorAndSwapchain();
     void activePropertyChangeUpdatesSessionState();
+    void inputConsumerReopensResumedLease();
     void sddmDesktopEntryAndSessionScriptValidation();
 };
 
@@ -127,11 +129,12 @@ void TestLogindIntegration::rootlessSessionInitializationAndDeviceAcquisition() 
 
     // Verifica delegação da libinput (open_restricted / close_restricted) ao LogindSessionService
     const libinput_interface &iface = InputDeviceManager::restrictedInterface();
-    const int evdevFd = iface.open_restricted("/dev/input/event0", 0, nullptr);
+    InputDeviceManager input;
+    const int evdevFd = iface.open_restricted("/dev/input/event0", 0, &input);
     QVERIFY(evdevFd >= 0);
     QCOMPARE(service.activeDeviceCount(), 2);
 
-    iface.close_restricted(evdevFd, nullptr);
+    iface.close_restricted(evdevFd, &input);
     QCOMPARE(service.activeDeviceCount(), 1);
 
     QVERIFY(service.releaseControl());
@@ -243,6 +246,48 @@ void TestLogindIntegration::resumeDeviceRestoresFileDescriptorAndSwapchain() {
     ::close(initialPipe[1]);
     ::close(resumedPipe[0]);
     ::close(resumedPipe[1]);
+}
+
+void TestLogindIntegration::inputConsumerReopensResumedLease() {
+    int initialPipe[2], resumedPipe[2];
+    QVERIFY(::pipe(initialPipe) == 0);
+    QVERIFY(::pipe(resumedPipe) == 0);
+    LogindSessionService service;
+    int takeCalls = 0;
+    service.setCustomCallHandler([&](const QDBusMessage &request) {
+        auto reply = request.createReply();
+        if (request.member() == "TakeDevice") {
+            ++takeCalls;
+            reply << QVariant::fromValue(QDBusUnixFileDescriptor(initialPipe[0])) << false;
+        }
+        return reply;
+    });
+    QVERIFY(service.initializeSession(false));
+    InputDeviceManager input;
+    const auto &callbacks = InputDeviceManager::restrictedInterface();
+    const int originalConsumer = callbacks.open_restricted("/dev/input/event0", O_RDONLY, &input);
+    QVERIFY(originalConsumer >= 0);
+    QVERIFY(originalConsumer != service.deviceFileDescriptor(13, 64));
+    connect(&service, &LogindSessionService::devicePauseRequested, this, [&](quint32, quint32) {
+        callbacks.close_restricted(originalConsumer, &input);
+    });
+    service.onPauseDevice(13, 64, "pause");
+    QCOMPARE(::fcntl(originalConsumer, F_GETFD), -1);
+    QCOMPARE(service.activeDeviceCount(), 1);
+    QVERIFY(::fcntl(service.deviceFileDescriptor(13, 64), F_GETFD) >= 0);
+    service.onResumeDevice(13, 64, QDBusUnixFileDescriptor(resumedPipe[0]));
+    const int resumedConsumer = callbacks.open_restricted("/dev/input/event0", O_RDONLY, &input);
+    QVERIFY(resumedConsumer >= 0);
+    QCOMPARE(takeCalls, 1); // The existing lease is reused, not requested twice from logind.
+    const char sent = 'R';
+    QCOMPARE(::write(resumedPipe[1], &sent, 1), ssize_t(1));
+    char received = 0;
+    QCOMPARE(::read(resumedConsumer, &received, 1), ssize_t(1));
+    QCOMPARE(received, sent);
+    callbacks.close_restricted(resumedConsumer, &input);
+    QCOMPARE(service.activeDeviceCount(), 0);
+    ::close(initialPipe[0]); ::close(initialPipe[1]);
+    ::close(resumedPipe[0]); ::close(resumedPipe[1]);
 }
 
 void TestLogindIntegration::activePropertyChangeUpdatesSessionState() {

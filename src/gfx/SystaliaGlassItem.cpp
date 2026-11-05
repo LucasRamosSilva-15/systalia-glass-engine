@@ -7,10 +7,31 @@
 #include <QColor>
 #include <QSGTextureProvider>
 #include <algorithm>
+#include <QRunnable>
+#include <utility>
+
+namespace {
+class TextureCleanupJob final : public QRunnable {
+public:
+    TextureCleanupJob(QSGTexture *backdrop, QSGTexture *client)
+        : m_backdrop(backdrop), m_client(client) {}
+    void run() override { delete m_backdrop; delete m_client; }
+private:
+    QSGTexture *m_backdrop;
+    QSGTexture *m_client;
+};
+}
 
 SystaliaGlassItem::SystaliaGlassItem(QQuickItem *parent)
     : QQuickItem(parent) {
     setFlag(ItemHasContents, true);
+    connect(this, &QQuickItem::windowChanged, this, [this](QQuickWindow *win) {
+        disconnect(m_sceneInvalidationConnection);
+        if (win) {
+            m_sceneInvalidationConnection = connect(win, &QQuickWindow::sceneGraphInvalidated,
+                this, &SystaliaGlassItem::invalidateSceneGraph, Qt::DirectConnection);
+        }
+    });
 }
 
 SystaliaGlassItem::~SystaliaGlassItem() {
@@ -193,6 +214,7 @@ void SystaliaGlassItem::setCircularCorners(bool enable) {
 
 QSGTexture *SystaliaGlassItem::ensureFallbackTexture() {
     if (!m_fallbackTexture && window()) {
+        m_resourceWindow = window();
         QImage fallbackImg(4, 4, QImage::Format_RGBA8888);
         fallbackImg.fill(QColor(12, 28, 48, 255));
         m_fallbackTexture = window()->createTextureFromImage(fallbackImg, QQuickWindow::TextureIsOpaque);
@@ -202,6 +224,7 @@ QSGTexture *SystaliaGlassItem::ensureFallbackTexture() {
 
 QSGTexture *SystaliaGlassItem::ensureFallbackClientTexture() {
     if (!m_fallbackClientTexture && window()) {
+        m_resourceWindow = window();
         QImage fallbackImg(4, 4, QImage::Format_RGBA8888);
         fallbackImg.fill(Qt::transparent);
         m_fallbackClientTexture = window()->createTextureFromImage(fallbackImg);
@@ -220,14 +243,23 @@ void SystaliaGlassItem::releaseResources() {
                    this, &QQuickItem::update);
         m_connectedClientProvider = nullptr;
     }
-    if (m_fallbackTexture) {
-        delete m_fallbackTexture;
-        m_fallbackTexture = nullptr;
+    auto *backdrop = std::exchange(m_fallbackTexture, nullptr);
+    auto *client = std::exchange(m_fallbackClientTexture, nullptr);
+    if (backdrop || client) {
+        if (m_resourceWindow) {
+            m_resourceWindow->scheduleRenderJob(new TextureCleanupJob(backdrop, client),
+                                               QQuickWindow::AfterRenderingStage);
+        }
+        // sceneGraphInvalidated clears resources before the owning window goes away.
     }
-    if (m_fallbackClientTexture) {
-        delete m_fallbackClientTexture;
-        m_fallbackClientTexture = nullptr;
-    }
+}
+
+void SystaliaGlassItem::invalidateSceneGraph() {
+    // This slot runs on the render thread with the GUI thread blocked by Qt.
+    delete std::exchange(m_fallbackTexture, nullptr);
+    delete std::exchange(m_fallbackClientTexture, nullptr);
+    m_connectedProvider = nullptr;
+    m_connectedClientProvider = nullptr;
 }
 
 QSGNode *SystaliaGlassItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *) {

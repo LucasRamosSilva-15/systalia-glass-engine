@@ -19,6 +19,7 @@ layout(std140, binding = 0) uniform buf {
     float u_Time;
     float u_HasClientTexture;
     float u_TitleBarHeight;
+    vec4 u_SceneState;
 };
 
 void main() {

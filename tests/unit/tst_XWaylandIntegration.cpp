@@ -26,6 +26,7 @@ private slots:
     void testProcessLifecycleStartStopAndDescriptorCleanup();
     void testLegacyWindowMetadataAndCompositorMapping();
     void testBidirectionalClipboardBridge();
+    void testNativeSurfaceIsNotAssignedToPendingX11Window();
 };
 
 void TestXWaylandIntegration::testCommandLineArgumentsFormatting() {
@@ -221,6 +222,16 @@ void TestXWaylandIntegration::testLegacyWindowMetadataAndCompositorMapping() {
     // Remoção limpa
     xwl->unregisterX11Window(0x200001u);
     QCOMPARE(xwl->managedWindowCount(), 0);
+}
+
+void TestXWaylandIntegration::testNativeSurfaceIsNotAssignedToPendingX11Window() {
+    SystaliaCompositor compositor;
+    auto *manager = compositor.xwaylandManager();
+    auto *window = manager->registerOrUpdateX11Window(0x200002, "pending", "legacy", QRect(0, 0, 320, 240));
+    QWaylandSurface nativeSurface;
+    manager->notifySurfaceCreated(&nativeSurface);
+    QVERIFY(!window->surface());
+    QCOMPARE(compositor.windowCount(), 0);
 }
 
 void TestXWaylandIntegration::testBidirectionalClipboardBridge() {

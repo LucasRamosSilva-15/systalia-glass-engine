@@ -18,6 +18,7 @@ layout(std140, binding = 0) uniform buf {
     float u_Time;
     float u_HasClientTexture;
     float u_TitleBarHeight;
+    vec4 u_SceneState;
 };
 
 layout(binding = 1) uniform sampler2D u_BackdropTexture;
@@ -159,10 +160,13 @@ void main() {
             vec2 clientUV = clamp(clientPosition / clientSize, vec2(0.0), vec2(1.0));
             vec4 clientPixel = texture(u_ClientTexture, clientUV);
             clientCoverage = clientMask * clientPixel.a;
-            finalColor = mix(finalColor, clientPixel.rgb, clientCoverage);
+            // ShaderEffectSource uses premultiplied alpha.
+            vec3 clientColor = clientPixel.a > 0.0001 ? clientPixel.rgb / clientPixel.a : vec3(0.0);
+            finalColor = mix(finalColor, clientColor, clientCoverage);
         }
     }
 
     float finalAlpha = max(alphaMask * u_Opacity, clientCoverage);
-    fragColor = vec4(clamp(finalColor, vec3(0.0), vec3(1.0)), finalAlpha);
+    finalAlpha *= u_SceneState.x;
+    fragColor = vec4(clamp(finalColor, vec3(0.0), vec3(1.0)) * finalAlpha, finalAlpha);
 }

@@ -14,6 +14,7 @@ Item {
     property real animationTime: 0.0
     property vector4d cornerRadii: Qt.vector4d(22, 22, 22, 22)
     property string activePowerConfirmAction: ""
+    property string operationError: ""
 
     anchors.fill: parent
     z: 115
@@ -569,8 +570,8 @@ Item {
                         glyph: "💤"
                         label: "Suspender"
                         onClicked: {
+                            controlCenter.operationError = ""
                             SystemControl.suspend()
-                            controlCenter.close()
                         }
                     }
 
@@ -647,12 +648,19 @@ Item {
                             } else {
                                 SystemControl.powerOff()
                             }
-                            controlCenter.close()
                         }
                     }
                 }
             }
 
+            Text {
+                Layout.fillWidth: true
+                visible: controlCenter.operationError.length > 0
+                text: controlCenter.operationError
+                color: "#fda4af"
+                wrapMode: Text.Wrap
+                font.pixelSize: 11
+            }
             Item { Layout.fillHeight: true }
 
             Text {
@@ -662,6 +670,19 @@ Item {
                 font.family: SystaliaTheme.fontFamily
                 font.pixelSize: 8
                 horizontalAlignment: Text.AlignHCenter
+            }
+        }
+    }
+
+    Connections {
+        target: SystemControl
+        function onPowerActionFinished(action, success, message) {
+            if (success) {
+                controlCenter.close()
+            } else {
+                controlCenter.operationError = message
+                controlCenter.activePowerConfirmAction = ""
+                controlCenter.opened = true
             }
         }
     }

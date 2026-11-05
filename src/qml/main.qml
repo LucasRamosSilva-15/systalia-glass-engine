@@ -30,7 +30,7 @@ ApplicationWindow {
     }
 
     function raiseFileWindow() {
-        WorkspaceManager.switchToWorkspace(0)
+        WorkspaceManager.switchToWorkspace(WorkspaceManager.windowWorkspace(glassChassis))
         glassChassis.windowOpen = true
         glassChassis.visible = true
         bringWindowToFront(glassChassis)
@@ -42,6 +42,7 @@ ApplicationWindow {
     }
 
     function closeFileWindow() {
+        unsnapShellWindow(glassChassis)
         if (filesWindowMaximized)
             toggleFileWindowMaximized()
         glassChassis.windowOpen = false
@@ -69,13 +70,19 @@ ApplicationWindow {
     }
 
     function raiseMaterialWindow() {
-        WorkspaceManager.switchToWorkspace(0)
+        WorkspaceManager.switchToWorkspace(WorkspaceManager.windowWorkspace(materialWindow))
         materialWindow.windowOpen = true
         materialWindow.visible = true
         bringWindowToFront(materialWindow)
     }
 
+    function minimizeMaterialWindow() {
+        materialWindow.windowOpen = false
+        materialWindow.visible = false
+    }
+
     function closeMaterialWindow() {
+        unsnapShellWindow(materialWindow)
         if (materialWindowMaximized)
             toggleMaterialWindowMaximized()
         materialWindow.windowOpen = false
@@ -133,7 +140,7 @@ ApplicationWindow {
             win.restoreGeometry = Qt.rect(win.x, win.y, win.width, win.height)
         }
         win.snapState = targetSnap
-        LiquidTiling.registerWindowSnap(win, targetSnap, 0)
+        LiquidTiling.registerWindowSnap(win, targetSnap, WorkspaceManager.windowWorkspace(win))
         const targetGeo = LiquidTiling.getSnapGeometry(targetSnap, shellCanvasAvailableArea,
                                                        LiquidTiling.splitRatio)
         if (targetGeo.width > 0 && targetGeo.height > 0) {
@@ -165,26 +172,15 @@ ApplicationWindow {
                 win.updateSnappedGeometry(ratio, interactive, dispatchConfigure)
             }
         }
-        if (activeWs === 0) {
-            if (glassChassis.snapState !== 0) {
-                const filesGeo = LiquidTiling.getSnapGeometry(
-                    glassChassis.snapState, shellCanvasAvailableArea, ratio)
-                if (filesGeo.width > 0 && filesGeo.height > 0) {
-                    glassChassis.x = Math.round(filesGeo.x)
-                    glassChassis.y = Math.round(filesGeo.y)
-                    glassChassis.width = Math.round(filesGeo.width)
-                    glassChassis.height = Math.round(filesGeo.height)
-                }
-            }
-            if (materialWindow.snapState !== 0) {
-                const matGeo = LiquidTiling.getSnapGeometry(
-                    materialWindow.snapState, shellCanvasAvailableArea, ratio)
-                if (matGeo.width > 0 && matGeo.height > 0) {
-                    materialWindow.x = Math.round(matGeo.x)
-                    materialWindow.y = Math.round(matGeo.y)
-                    materialWindow.width = Math.round(matGeo.width)
-                    materialWindow.height = Math.round(matGeo.height)
-                }
+        for (const win of [glassChassis, materialWindow]) {
+            if (WorkspaceManager.windowWorkspace(win) !== activeWs || win.snapState === 0)
+                continue
+            const geo = LiquidTiling.getSnapGeometry(win.snapState, shellCanvasAvailableArea, ratio)
+            if (geo.width > 0 && geo.height > 0) {
+                win.x = Math.round(geo.x)
+                win.y = Math.round(geo.y)
+                win.width = Math.round(geo.width)
+                win.height = Math.round(geo.height)
             }
         }
     }
@@ -231,9 +227,10 @@ ApplicationWindow {
                         outputManager: OutputManager,
                         backdropSource: backdropGrab,
                         workspaceIndex: wsIndex,
-                        screenResolution: Qt.point(rootWindow.width * rootWindow.devicePixelRatio,
-                                                   rootWindow.height * rootWindow.devicePixelRatio),
-                        animTime: animTimer.tick,
+                        screenResolution: Qt.binding(() => Qt.point(
+                            rootWindow.width * rootWindow.devicePixelRatio,
+                            rootWindow.height * rootWindow.devicePixelRatio)),
+                        animTime: Qt.binding(() => animTimer.tick),
                         x: Math.round(160 + offset),
                         y: Math.round(80 + offset)
                     })
@@ -565,9 +562,10 @@ ApplicationWindow {
     Rectangle {
         id: softwareBrightnessDimmer
         anchors.fill: parent
-        z: 95
+        z: 1000
         color: "#000000"
-        opacity: Math.max(0.0, Math.min(0.85, (100 - SystemControl.brightness) * 0.0085))
+        opacity: SystemControl.softwareBrightness
+                 ? Math.max(0.0, Math.min(0.85, (100 - SystemControl.brightness) * 0.0085)) : 0
         visible: opacity > 0.01
         enabled: false
     }
@@ -588,7 +586,7 @@ ApplicationWindow {
             for (let index = 0; index < rootWindow.trackedClientContainers.length; ++index) {
                 const windowContainer = rootWindow.trackedClientContainers[index]
                 if (windowContainer && windowContainer.toplevel === toplevelObject) {
-                    windowContainer.workspaceIndex = workspaceIndex
+                    WorkspaceManager.setWindowWorkspace(windowContainer, workspaceIndex)
                     const targetPage = clientWindowsLayer.workspacePageAt(workspaceIndex)
                     if (targetPage && windowContainer.parent !== targetPage) {
                         windowContainer.parent = targetPage
@@ -604,6 +602,8 @@ ApplicationWindow {
         function onWindowWorkspaceChanged(windowItem, workspaceIndex) {
             if (!windowItem)
                 return
+            if (windowItem.snapState !== undefined && windowItem.snapState !== 0)
+                LiquidTiling.registerWindowSnap(windowItem, windowItem.snapState, workspaceIndex)
             const targetPage = clientWindowsLayer.workspacePageAt(workspaceIndex)
             if (targetPage && windowItem.parent !== targetPage) {
                 windowItem.parent = targetPage

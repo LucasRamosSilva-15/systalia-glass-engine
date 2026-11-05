@@ -2,6 +2,8 @@
 
 #include <QByteArray>
 #include <QList>
+#include <QHash>
+#include <QEvent>
 #include <QObject>
 #include <QPointF>
 #include <QPointer>
@@ -179,7 +181,12 @@ private:
     static int openRestrictedCallback(const char *path, int flags, void *userData);
     static void closeRestrictedCallback(int fd, void *userData);
     void pollHardwareEvents();
+    void setHardwareSuspended(bool suspended);
+    bool dispatchPointerToScene(QEvent::Type type, Qt::MouseButton button = Qt::NoButton);
 
+
+    bool m_hardwareSuspended = false;
+    QHash<int, QPair<quint32, quint32>> m_leasedDevices;
     QPointer<QWaylandCompositor> m_compositor;
     PlatformSessionMode m_sessionMode = SessionNested;
     QString m_platformModeName = QStringLiteral("nested");

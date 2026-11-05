@@ -320,6 +320,12 @@ int LogindSessionService::takeDevice(quint32 major, quint32 minor, bool *inactiv
         *inactiveOut = false;
     }
 
+    const auto existing = m_devices.constFind(deviceKey(major, minor));
+    if (existing != m_devices.cend() && existing->fd >= 0) {
+        if (inactiveOut)
+            *inactiveOut = existing->paused;
+        return existing->fd;
+    }
     const QDBusMessage reply = dispatchDbusCall(buildTakeDeviceMessage(m_sessionPath, major, minor));
     if (reply.type() == QDBusMessage::ErrorMessage || reply.arguments().isEmpty()) {
         qWarning().noquote() << "[SGE-LOGIND] TakeDevice(" << major << "," << minor << ") falhou:"
@@ -450,6 +456,14 @@ int LogindSessionService::deviceFileDescriptor(quint32 major, quint32 minor) con
     return it->fd;
 }
 
+bool LogindSessionService::hasPausedDevices() const noexcept {
+    for (const auto &device : m_devices) {
+        if (device.paused)
+            return true;
+    }
+    return false;
+}
+
 bool LogindSessionService::isDevicePaused(quint32 major, quint32 minor) const noexcept {
     const auto it = m_devices.constFind(deviceKey(major, minor));
     if (it == m_devices.cend()) {
@@ -459,6 +473,9 @@ bool LogindSessionService::isDevicePaused(quint32 major, quint32 minor) const no
 }
 
 void LogindSessionService::onPauseDevice(uint major, uint minor, const QString &type) {
+    // Consumers close their duplicate descriptors synchronously before the acknowledgement.
+    if (type != QLatin1String("gone"))
+        emit devicePauseRequested(major, minor);
     const quint64 key = deviceKey(major, minor);
     if (type == QLatin1String("gone")) {
         auto it = m_devices.find(key);
@@ -507,6 +524,8 @@ void LogindSessionService::onResumeDevice(uint major,
         resumedFd = duplicateFdCloexec(fd.fileDescriptor());
     }
 
+    if (resumedFd < 0)
+        return;
     const quint64 key = deviceKey(major, minor);
     auto it = m_devices.find(key);
     if (it != m_devices.end()) {
@@ -539,13 +558,13 @@ void LogindSessionService::onResumeDevice(uint major,
         }
     }
 
+    emit deviceResumed(major, minor, effectiveFd);
     if (!anyDrmPaused) {
         setGpuSubmissionSuspended(false);
         setSessionState(Active);
     }
 
     emit devicesChanged();
-    emit deviceResumed(major, minor, effectiveFd);
     if (major == kDrmMajorNumber || !anyDrmPaused) {
         emit swapchainRestoreRequested(major, minor, effectiveFd);
     }

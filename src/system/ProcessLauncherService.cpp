@@ -6,6 +6,7 @@
 #include <QIODevice>
 #include <QProcess>
 #include <QSet>
+#include <QStandardPaths>
 #include <cerrno>
 
 #if defined(Q_OS_UNIX)
@@ -59,6 +60,30 @@ bool ProcessLauncherService::launch(const QString &command, const QStringList &a
     emit processStarted(appId, processId);
     m_pollTimer.start();
     return true;
+}
+
+bool ProcessLauncherService::launchInTerminal(const QString &command, const QStringList &arguments) {
+    if (command.trimmed().isEmpty())
+        return false;
+    // Each command and argument stays a separate argv entry; no shell interpolation.
+    const QStringList candidates{QStringLiteral("xdg-terminal-exec"), QStringLiteral("foot"),
+        QStringLiteral("alacritty"), QStringLiteral("konsole"), QStringLiteral("gnome-terminal"),
+        QStringLiteral("xterm")};
+    for (const QString &candidate : candidates) {
+        const QString executable = QStandardPaths::findExecutable(candidate);
+        if (executable.isEmpty())
+            continue;
+        QStringList terminalArguments;
+        if (candidate == QStringLiteral("gnome-terminal"))
+            terminalArguments.append(QStringLiteral("--"));
+        else if (candidate != QStringLiteral("xdg-terminal-exec") && candidate != QStringLiteral("foot"))
+            terminalArguments.append(QStringLiteral("-e"));
+        terminalArguments.append(command);
+        terminalArguments.append(arguments);
+        if (launch(executable, terminalArguments))
+            return true;
+    }
+    return false;
 }
 
 bool ProcessLauncherService::isAppRunning(const QString &appId) const {

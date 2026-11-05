@@ -349,3 +349,11 @@ set_tests_properties(
     tst_app_model_filtering
     PROPERTIES LABELS "integration"
 )
+
+sge_add_expanded_test(tst_shell_state_regression integration/tst_ShellStateRegression.cpp integration)
+set_tests_properties(tst_shell_state_regression PROPERTIES
+    ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_QUICK_BACKEND=software"
+)
+add_dependencies(integration_tests tst_shell_state_regression)
+
+add_dependencies(tst_shell_state_regression tst_xdg_resize)

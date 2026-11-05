@@ -1,4 +1,5 @@
 #include <QGuiApplication>
+#include <QCloseEvent>
 #include <QPainter>
 #include <QPointer>
 #include <QProcess>
@@ -16,10 +17,19 @@
 
 #include "SystaliaCompositor.hpp"
 #include "SystaliaGlassItem.hpp"
+#include "InputDeviceManager.hpp"
+#include <QtWaylandCompositor/QWaylandPointer>
+#include <QtWaylandCompositor/QWaylandQuickShellSurfaceItem>
 
 // An independent SHM Wayland client: Qt receives configure, acknowledges it,
 // updates xdg window geometry and commits the newly sized buffer.
 class ResizeClient final : public QRasterWindow {
+    void closeEvent(QCloseEvent *event) override {
+        if (QCoreApplication::arguments().contains("--ignore-close"))
+            event->ignore();
+        else
+            QRasterWindow::closeEvent(event);
+    }
     void paintEvent(QPaintEvent *) override {
         QPainter painter(this);
         painter.fillRect(QRect(QPoint(0, 0), size()), QColor("#125578"));
@@ -34,6 +44,9 @@ private slots:
     void cleanup();
     void nullAndInvokable();
     void closeRequestUsesCompositorSlot();
+    void cancelledCloseKeepsClientUsable();
+    void nativePointerMapsIntoMovedClient();
+    void popupIsPresentedOutsideTheCapturedClient();
     void minimizeButtonHidesAndActivationRestoresToplevel();
     void maximizeRequestUsesCompositorSlot();
     void activationSetsSeatKeyboardFocus();
@@ -55,7 +68,7 @@ private:
     QProcess m_client;
     QTimer m_frames;
     QPointer<QWaylandXdgToplevel> m_toplevel;
-    void startClient(bool bounded = false, bool unmapAfterMap = false);
+    void startClient(bool bounded = false, bool unmapAfterMap = false, bool ignoreClose = false, bool withPopup = false);
     std::unique_ptr<QQuickItem> createContainer(QQmlEngine &engine, QQuickWindow &window,
                                                 QObject *toplevelObject = nullptr);
 };
@@ -88,7 +101,7 @@ void TestXdgResize::init() {
             this, [this](QWaylandXdgToplevel *toplevel) { m_toplevel = toplevel; });
 }
 
-void TestXdgResize::startClient(bool bounded, bool unmapAfterMap) {
+void TestXdgResize::startClient(bool bounded, bool unmapAfterMap, bool ignoreClose, bool withPopup) {
     auto environment = QProcessEnvironment::systemEnvironment();
     environment.insert("QT_QPA_PLATFORM", "wayland");
     environment.insert("WAYLAND_DISPLAY", "wayland-resize-test");
@@ -96,6 +109,8 @@ void TestXdgResize::startClient(bool bounded, bool unmapAfterMap) {
     m_client.setProcessEnvironment(environment);
     m_client.setProcessChannelMode(QProcess::MergedChannels);
     QStringList arguments{"--resize-client"};
+    if (withPopup) arguments.append("--popup-client");
+    if (ignoreClose) arguments.append("--ignore-close");
     if (bounded) arguments.append("--bounded-client");
     if (unmapAfterMap) arguments.append("--unmap-after-map");
     m_client.start(QCoreApplication::applicationFilePath(), arguments);
@@ -151,6 +166,85 @@ void TestXdgResize::closeRequestUsesCompositorSlot() {
         QPointF(closeButton->width() / 2.0, closeButton->height() / 2.0)).toPoint();
     QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, closePosition);
     QTRY_VERIFY_WITH_TIMEOUT(m_client.state() == QProcess::NotRunning, 3000);
+}
+
+void TestXdgResize::cancelledCloseKeepsClientUsable() {
+    startClient(false, false, true);
+    QQmlEngine engine;
+    QQuickWindow window;
+    window.resize(1400, 1000);
+    auto ownedItem = createContainer(engine, window, m_toplevel);
+    QVERIFY(ownedItem);
+    // QML is allowed to destroy a dynamic container, so track it without owning a dangling pointer.
+    QPointer<QQuickItem> item = ownedItem.release();
+    window.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    auto *closeButton = item->findChild<QQuickItem *>("closeToplevelButton");
+    QVERIFY(closeButton);
+    QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier,
+                     closeButton->mapToScene(QPointF(14, 14)).toPoint());
+    QTest::qWait(400);
+    QVERIFY(item);
+    QVERIFY(item->isVisible());
+    QVERIFY(m_toplevel && m_toplevel->xdgSurface()->surface()->hasContent());
+    QCOMPARE(m_client.state(), QProcess::Running);
+    delete item.data();
+}
+
+void TestXdgResize::nativePointerMapsIntoMovedClient() {
+    startClient();
+    QQmlEngine engine;
+    QQuickWindow window;
+    window.resize(1400, 1000);
+    m_output = std::make_unique<QWaylandOutput>(m_compositor.get(), &window);
+    auto item = createContainer(engine, window, m_toplevel);
+    QVERIFY(item);
+    item->setPosition(QPointF(300, 150));
+    window.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    auto *client = item->findChild<QQuickItem *>("clientSurfaceItem");
+    QVERIFY(client);
+    const QPointF local(80, 60);
+    const QPointF global = client->mapToScene(local) + QPointF(window.position());
+    InputDeviceManager input;
+    input.attachCompositor(m_compositor.get());
+    input.setKmsDisplayBounds(QRect(0, 0, 2000, 1500));
+    input.setPointerPosition(global - QPointF(10, 10));
+    input.processLibinputPointerMotion(10, 10);
+    auto *pointer = m_compositor->defaultSeat()->pointer();
+    QTRY_VERIFY(pointer->mouseFocus());
+    QTRY_COMPARE(pointer->currentLocalPosition(), local);
+    m_output.reset();
+}
+
+void TestXdgResize::popupIsPresentedOutsideTheCapturedClient() {
+    QQmlEngine engine;
+    QQuickWindow window;
+    window.resize(1400, 1000);
+    m_output = std::make_unique<QWaylandOutput>(m_compositor.get(), &window);
+    startClient(false, false, false, true);
+    auto item = createContainer(engine, window, m_toplevel);
+    QVERIFY(item);
+    window.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    QWaylandQuickShellSurfaceItem *popupItem = nullptr;
+    const auto findPopup = [&] {
+        for (auto *child : item->childItems()) {
+            if (auto *shellItem = qobject_cast<QWaylandQuickShellSurfaceItem *>(child))
+                popupItem = shellItem;
+        }
+        return popupItem != nullptr;
+    };
+    auto *client = item->findChild<QQuickItem *>("clientSurfaceItem");
+    QVERIFY(client);
+    QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier,
+                     client->mapToScene(QPointF(80, 60)).toPoint());
+    QTRY_VERIFY2_WITH_TIMEOUT(findPopup(), m_client.readAll().constData(), 5000);
+    QVERIFY(popupItem->isVisible());
+    QVERIFY(!popupItem->clip());
+    QVERIFY(popupItem->parentItem() == item.get());
+    QTRY_VERIFY(popupItem->surface() && popupItem->surface()->hasContent());
+    m_output.reset();
 }
 
 void TestXdgResize::minimizeButtonHidesAndActivationRestoresToplevel() {
@@ -283,7 +377,7 @@ void TestXdgResize::clientBufferIsBoundAndPainted() {
     QVERIFY(clientTextureCapture);
     QCOMPARE(clientTextureCapture->property("sourceItem").value<QQuickItem *>(), surfaceItem);
     QVERIFY(clientTextureCapture->property("live").toBool());
-    QVERIFY(!clientTextureCapture->property("hideSource").toBool());
+    QVERIFY(clientTextureCapture->property("hideSource").toBool());
 
     auto *viewport = item->findChild<QQuickItem *>("clientViewport");
     QVERIFY(viewport);
@@ -538,6 +632,17 @@ int main(int argc, char **argv) {
         }
         window.resize(640, 400);
         window.show();
+        std::unique_ptr<ResizeClient> popup;
+        if (app.arguments().contains("--popup-client")) {
+            QTimer::singleShot(800, &window, [&] {
+                popup = std::make_unique<ResizeClient>();
+                popup->setTransientParent(&window);
+                popup->setFlags(Qt::Popup | Qt::FramelessWindowHint);
+                popup->resize(160, 120);
+                popup->setPosition(window.position() + QPoint(window.width() - 20, window.height() - 20));
+                popup->show();
+            });
+        }
         if (app.arguments().contains("--unmap-after-map")) {
             QTimer::singleShot(1200, &window, &QWindow::hide);
         }

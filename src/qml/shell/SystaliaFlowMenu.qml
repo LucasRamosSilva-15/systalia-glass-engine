@@ -261,6 +261,7 @@ Item {
                 delegate: Item {
                     id: applicationDelegate
                     required property string name
+                    required property bool terminal
                     required property string command
                     required property var arguments
                     required property string icon
@@ -375,9 +376,13 @@ Item {
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
                             onClicked: {
-                                ProcessLauncher.launch(applicationDelegate.command,
-                                                       applicationDelegate.arguments)
-                                flowMenu.close()
+                                const launched = applicationDelegate.terminal
+                                    ? ProcessLauncher.launchInTerminal(applicationDelegate.command,
+                                                                       applicationDelegate.arguments)
+                                    : ProcessLauncher.launch(applicationDelegate.command,
+                                                             applicationDelegate.arguments)
+                                if (launched)
+                                    flowMenu.close()
                             }
                         }
                     }

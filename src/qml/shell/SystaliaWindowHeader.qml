@@ -90,9 +90,9 @@ Item {
 
     Text {
         x: 18
-        y: 13
-        width: 34
-        height: 38
+        anchors.verticalCenter: parent.verticalCenter
+        width: 28
+        height: Math.min(28, header.height)
         text: header.iconGlyph
         color: header.iconColor
         font.family: SystaliaTheme.fontFamily
@@ -109,14 +109,15 @@ Item {
         anchors.leftMargin: 50
         anchors.right: actions.left
         anchors.rightMargin: 12
-        anchors.top: parent.top
-        anchors.topMargin: 13
-        height: 34
+        anchors.verticalCenter: parent.verticalCenter
+        height: Math.min(34, header.height)
+        clip: true
 
         Text {
             id: titleLabel
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
+            width: Math.max(0, parent.width - (badge.visible ? badge.width + 14 : 0))
             text: header.title
             color: header.titleColor
             font.family: SystaliaTheme.fontFamily
@@ -129,12 +130,12 @@ Item {
 
         Rectangle {
             id: badge
-            visible: header.badgeText.length > 0
+            visible: header.badgeText.length > 0 && titleContent.width >= 300
             anchors.left: titleLabel.right
             anchors.leftMargin: 14
             anchors.verticalCenter: parent.verticalCenter
             height: 25
-            width: header.badgeWidth > 0 ? header.badgeWidth : badgeLabel.implicitWidth + 18
+            width: Math.min(header.badgePreferredWidth, titleContent.width * 0.45)
             radius: 6
             color: "#b80a2c46"
             antialiasing: true

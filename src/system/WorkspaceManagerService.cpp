@@ -341,6 +341,14 @@ void WorkspaceManagerService::setObjectWorkspace(QObject *object, int workspaceI
     }
 
     m_objectWorkspaces.insert(object, workspaceIndex);
+    // Synchronize the visual registration before publishing the object change.
+    const auto windows = m_windowWorkspaces.keys();
+    for (QQuickItem *window : windows) {
+        if (window->property("toplevel").value<QObject *>() == object
+            && windowWorkspace(window) != workspaceIndex) {
+            setWindowWorkspace(window, workspaceIndex);
+        }
+    }
     if (!alreadyTracked || previousWorkspace != workspaceIndex) {
         emit objectWorkspaceChanged(object, workspaceIndex);
         bumpWorkspaceWindowsRevision();

@@ -109,33 +109,19 @@ void SystemControlService::setDoNotDisturb(bool enabled) {
     emit doNotDisturbChanged();
 }
 
-void SystemControlService::powerOff() {
-    if (!m_loginctlPath.isEmpty()) {
-        runCommand(m_loginctlPath, {QStringLiteral("poweroff")}, [](int, const QByteArray &, const QByteArray &) {});
-    } else if (!m_systemctlPath.isEmpty()) {
-        runCommand(m_systemctlPath, {QStringLiteral("poweroff")}, [](int, const QByteArray &, const QByteArray &) {});
-    } else {
-        runCommand(QStringLiteral("poweroff"), {}, [](int, const QByteArray &, const QByteArray &) {});
-    }
+void SystemControlService::runPowerAction(const QString &action) {
+    runCommand(m_systemctlPath, {action},
+               [this, action](int exitCode, const QByteArray &, const QByteArray &error) {
+        const QString message = exitCode == 0 ? QString() :
+            (error.trimmed().isEmpty() ? tr("Não foi possível executar a ação de energia.")
+                                     : QString::fromLocal8Bit(error).trimmed());
+        emit powerActionFinished(action, exitCode == 0, message);
+    });
 }
 
-void SystemControlService::reboot() {
-    if (!m_loginctlPath.isEmpty()) {
-        runCommand(m_loginctlPath, {QStringLiteral("reboot")}, [](int, const QByteArray &, const QByteArray &) {});
-    } else if (!m_systemctlPath.isEmpty()) {
-        runCommand(m_systemctlPath, {QStringLiteral("reboot")}, [](int, const QByteArray &, const QByteArray &) {});
-    } else {
-        runCommand(QStringLiteral("reboot"), {}, [](int, const QByteArray &, const QByteArray &) {});
-    }
-}
-
-void SystemControlService::suspend() {
-    if (!m_loginctlPath.isEmpty()) {
-        runCommand(m_loginctlPath, {QStringLiteral("suspend")}, [](int, const QByteArray &, const QByteArray &) {});
-    } else if (!m_systemctlPath.isEmpty()) {
-        runCommand(m_systemctlPath, {QStringLiteral("suspend")}, [](int, const QByteArray &, const QByteArray &) {});
-    }
-}
+void SystemControlService::powerOff() { runPowerAction(QStringLiteral("poweroff")); }
+void SystemControlService::reboot() { runPowerAction(QStringLiteral("reboot")); }
+void SystemControlService::suspend() { runPowerAction(QStringLiteral("suspend")); }
 
 void SystemControlService::lockScreen() {
     if (!m_loginctlPath.isEmpty()) {
@@ -162,6 +148,9 @@ void SystemControlService::runCommand(const QString &program, const QStringList 
     auto *process = new QProcess(this);
     process->setProgram(program);
     process->setArguments(arguments);
+    auto environment = QProcessEnvironment::systemEnvironment();
+    environment.insert(QStringLiteral("LC_ALL"), QStringLiteral("C"));
+    process->setProcessEnvironment(environment);
     const auto completed = std::make_shared<bool>(false);
     const auto completion = std::make_shared<CommandFinished>(std::move(callback));
 
@@ -233,8 +222,7 @@ void SystemControlService::probePactlVolume() {
         runCommand(m_pactlPath, {QStringLiteral("get-sink-mute"), QStringLiteral("@DEFAULT_SINK@")} ,
                    [this](int muteExitCode, const QByteArray &muteOutput, const QByteArray &) {
             if (muteExitCode == 0) {
-                setMutedValue(QString::fromLocal8Bit(muteOutput).trimmed()
-                                  .compare(QStringLiteral("yes"), Qt::CaseInsensitive) == 0);
+                setMutedValue(parsePactlMuted(muteOutput));
             }
             m_audioProbeRunning = false;
         });
@@ -252,6 +240,9 @@ void SystemControlService::probeBrightness() {
             const int percent = percentFromOutput(output);
             if (exitCode == 0 && percent >= 0) {
                 setBrightnessValue(percent);
+                setSoftwareBrightness(false);
+            } else {
+                setSoftwareBrightness(true);
             }
             m_brightnessProbeRunning = false;
         });
@@ -270,6 +261,9 @@ void SystemControlService::probeBrightness() {
         const int value = QString::fromLocal8Bit(output).trimmed().toInt(&valid);
         if (exitCode == 0 && valid) {
             setBrightnessValue(value);
+            setSoftwareBrightness(false);
+        } else {
+            setSoftwareBrightness(true);
         }
         m_brightnessProbeRunning = false;
     });
@@ -372,7 +366,21 @@ void SystemControlService::applyMute() {
     }
 }
 
+void SystemControlService::setSoftwareBrightness(bool enabled) {
+    if (m_softwareBrightness == enabled)
+        return;
+    m_softwareBrightness = enabled;
+    emit softwareBrightnessChanged();
+}
+
+bool SystemControlService::parsePactlMuted(const QByteArray &output) {
+    const QByteArray value = output.trimmed().toLower();
+    return value == "yes" || value.endsWith(": yes");
+}
+
 void SystemControlService::applyBrightness() {
+    if (m_softwareBrightness)
+        return;
     if (!m_brightnessctlPath.isEmpty()) {
         runCommand(m_brightnessctlPath, {QStringLiteral("set"),
                                          QStringLiteral("%1%").arg(m_requestedBrightness)},

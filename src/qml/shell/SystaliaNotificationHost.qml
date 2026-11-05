@@ -19,8 +19,8 @@ Item {
     width: 370
     height: Math.max(0, parent.height - 64)
     z: 220
-    visible: Notifications.notificationCount > 0 || opacity > 0.01
-    opacity: Notifications.notificationCount > 0 ? 1.0 : 0.0
+    visible: !SystemControl.doNotDisturb && (Notifications.notificationCount > 0 || opacity > 0.01)
+    opacity: !SystemControl.doNotDisturb && Notifications.notificationCount > 0 ? 1.0 : 0.0
 
     Behavior on opacity {
         NumberAnimation { duration: 180; easing.type: Easing.OutCubic }

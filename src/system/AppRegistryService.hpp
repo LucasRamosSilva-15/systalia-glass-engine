@@ -19,7 +19,8 @@ public:
         CategoriesRole,
         IconRole,
         DesktopIdRole,
-        DesktopFileRole
+        DesktopFileRole,
+        TerminalRole
     };
     Q_ENUM(Role)
 
@@ -32,6 +33,7 @@ public:
         QString icon;
         QString desktopId;
         QString desktopFile;
+        bool terminal = false;
     };
 
     explicit AppRegistryService(QObject *parent = nullptr);

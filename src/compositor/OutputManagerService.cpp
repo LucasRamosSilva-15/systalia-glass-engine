@@ -248,6 +248,7 @@ bool OutputManagerService::removeScreen(int index) {
             emit windowScreenTransitioned(winObj, 0, index, primaryScaleVal);
         } else if (prevIdx > index) {
             it.value() = prevIdx - 1;
+            emit windowScreenTransitioned(winObj, it.value(), prevIdx, screenScaleAt(it.value()));
         }
     }
 
@@ -325,51 +326,59 @@ void OutputManagerService::setScreenScale(int index, qreal scale) {
 void OutputManagerService::syncWithHostScreens() {
     const QList<QScreen *> hostScreens = QGuiApplication::screens();
     if (hostScreens.isEmpty()) {
-        if (m_outputs.isEmpty()) {
+        // Keep one fallback output while Qt is between screenRemoved/screenAdded.
+        if (m_outputs.isEmpty())
             addVirtualScreen(QStringLiteral("SGE-Virtual-0"), QRect(0, 0, 1920, 1080), 1.0);
-        }
         return;
     }
 
-    for (auto &entry : m_outputs) {
-        if (entry.waylandOutput) {
-            m_outputXdgMap.remove(entry.waylandOutput);
-        }
-        delete entry.xdgOutput.data();
-        delete entry.waylandOutput.data();
-    }
-    m_outputs.clear();
-
-    for (int i = 0; i < hostScreens.size(); ++i) {
-        QScreen *scr = hostScreens.at(i);
-        if (!scr) {
+    for (QScreen *screen : hostScreens) {
+        if (!screen)
             continue;
+        int index = -1;
+        for (int i = 0; i < m_outputs.size(); ++i) {
+            if (m_outputs.at(i).hostScreen == screen) {
+                index = i;
+                break;
+            }
         }
-        const QRect geo = scr->geometry().isValid()
-                          ? scr->geometry()
-                          : QRect(i * 1920, 0, 1920, 1080);
-        const qreal dpr = std::clamp(scr->devicePixelRatio(), kMinScaleFactor, kMaxScaleFactor);
-        const int refresh = std::max(1000, static_cast<int>(std::lround(scr->refreshRate() * 1000.0)));
-
-        ManagedOutputInfo info;
-        info.name = scr->name().isEmpty()
-                    ? QStringLiteral("SGE-Screen-%1").arg(i)
-                    : scr->name();
-        info.geometry = geo;
-        info.scale = dpr;
-        info.refreshRateMilliHz = refresh;
-        info.hostScreen = scr;
-
-        if (m_compositor && m_compositor->isCreated()) {
-            createWaylandOutputForEntry(info);
+        const QRect geometry = screen->geometry().isValid() ? screen->geometry()
+                                                           : QRect(0, 0, 1920, 1080);
+        const qreal scale = std::clamp(screen->devicePixelRatio(), kMinScaleFactor, kMaxScaleFactor);
+        const int refresh = std::max(1000, qRound(screen->refreshRate() * 1000.0));
+        if (index < 0) {
+            index = addVirtualScreen(screen->name(), geometry, scale, refresh);
+            m_outputs[index].hostScreen = screen;
+            connect(screen, &QScreen::geometryChanged, this, &OutputManagerService::syncWithHostScreens);
+            connect(screen, &QScreen::logicalDotsPerInchChanged, this, &OutputManagerService::syncWithHostScreens);
+            connect(screen, &QScreen::refreshRateChanged, this, &OutputManagerService::syncWithHostScreens);
+        } else {
+            auto &entry = m_outputs[index];
+            entry.geometry = geometry;
+            entry.scale = scale;
+            entry.refreshRateMilliHz = refresh;
+            if (entry.waylandOutput) {
+                auto *output = entry.waylandOutput.data();
+                output->setPosition(geometry.topLeft());
+                const auto physical = computePhysicalResolution(geometry.size(), scale);
+                const QWaylandOutputMode mode(QSize(qRound(physical.x()), qRound(physical.y())), refresh);
+                if (!output->modes().contains(mode))
+                    output->addMode(mode, true);
+                output->setCurrentMode(mode);
+                output->setScaleFactor(std::max(1, qCeil(scale)));
+            }
+            if (entry.xdgOutput) {
+                entry.xdgOutput->setLogicalPosition(geometry.topLeft());
+                entry.xdgOutput->setLogicalSize(geometry.size());
+            }
         }
-        m_outputs.append(info);
     }
 
-    if (m_activeCursorScreen >= m_outputs.size()) {
-        m_activeCursorScreen = 0;
+    // Add replacements first so removeScreen can migrate even the previous last output.
+    for (int i = m_outputs.size() - 1; i >= 0; --i) {
+        if (!hostScreens.contains(m_outputs.at(i).hostScreen.data()))
+            removeScreen(i);
     }
-
     emit screensChanged();
     emit primaryScaleChanged(primaryScale());
 }

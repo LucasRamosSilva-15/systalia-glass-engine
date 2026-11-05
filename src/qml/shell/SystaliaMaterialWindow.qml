@@ -172,7 +172,13 @@ Item {
         glassSurface: false
         actionsRightMargin: 21.5
 
-        onMinimizeRequested: materialWindow.visible = false
+        onMinimizeRequested: {
+            materialWindow.windowOpen = false
+            if (materialWindow.controller)
+                materialWindow.controller.minimizeMaterialWindow()
+            else
+                materialWindow.visible = false
+        }
         onMaximizeRequested: {
             if (materialWindow.controller)
                 materialWindow.controller.toggleMaterialWindowMaximized()
