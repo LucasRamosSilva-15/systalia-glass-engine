@@ -57,6 +57,12 @@ Item {
         anchors.centerIn: parent
         clip: true
 
+        // Impede que cliques no interior do menu vazem para o fundo escuro
+        MouseArea {
+            anchors.fill: parent
+            onClicked: {}
+        }
+
         SystaliaGlassItem {
             anchors.fill: parent
             backdropSource: flowMenu.backdropSource

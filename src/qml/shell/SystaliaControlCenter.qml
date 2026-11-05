@@ -58,6 +58,12 @@ Item {
         y: controlCenter.opened ? 52 : -height - 16
         clip: false
 
+        // Impede que cliques dentro do painel vazem para o MouseArea do fundo escuro
+        MouseArea {
+            anchors.fill: parent
+            onClicked: {}
+        }
+
         Behavior on y {
             NumberAnimation { duration: 240; easing.type: Easing.OutCubic }
         }
