@@ -316,6 +316,7 @@ Item {
                 Slider {
                     id: volumeSlider
                     Layout.fillWidth: true
+                    implicitHeight: 24
                     from: 0
                     to: 100
                     value: SystemControl.volume
@@ -415,6 +416,7 @@ Item {
                 Slider {
                     id: brightnessSlider
                     Layout.fillWidth: true
+                    implicitHeight: 24
                     from: 5
                     to: 100
                     value: SystemControl.brightness
