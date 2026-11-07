@@ -5,6 +5,7 @@ import Systalia.System 1.0
 
 Item {
     id: topBar
+    objectName: "topBar"
 
     property var telemetry: null
     property var workspaceManager: null
@@ -32,23 +33,16 @@ Item {
     readonly property bool showClockDate: width >= 920
     readonly property bool showWorkspaceIndicators: width >= 720
     readonly property bool isCompactBar: width < 860
+    readonly property int actionButtonCount: rightSection.children.length - 1
+    readonly property bool isWorkspaceTrackVisible: workspaceIndicatorTrack.visible
 
-    // Sombra de oclusão profunda inferior
+    // Sombra de oclusão inferior suave
     Rectangle {
         anchors.fill: parent
-        anchors.topMargin: 4
-        anchors.bottomMargin: -6
+        anchors.topMargin: 3
+        anchors.bottomMargin: -4
         radius: topBar.cornerRadii.x
-        color: ValoTheme.withAlpha(ValoTheme.primitiveBlack, 0.40)
-        z: -2
-    }
-
-    // Sombra luminosa externa ciano conforme conceito VALO
-    Rectangle {
-        anchors.fill: parent
-        anchors.margins: -2
-        radius: topBar.cornerRadii.x + 2
-        color: ValoTheme.withAlpha(ValoTheme.accentPrimary, 0.20)
+        color: ValoTheme.withAlpha(ValoTheme.primitiveBlack, 0.35)
         z: -1
     }
 
@@ -66,36 +60,35 @@ Item {
         time: topBar.animationTime
     }
 
-    // Chassi vítreo translúcido com gradiente vertical suave VALO
+    // Chassi vítreo translúcido com gradiente vertical suave e UMA ÚNICA borda especular
     Rectangle {
         anchors.fill: parent
         radius: topBar.cornerRadii.x
         gradient: Gradient {
             orientation: Gradient.Vertical
             GradientStop { position: 0.0; color: ValoTheme.withAlpha(ValoTheme.ocean700, 0.55) }
-            GradientStop { position: 0.3; color: ValoTheme.withAlpha(ValoTheme.backgroundTopbar, 0.88) }
-            GradientStop { position: 1.0; color: ValoTheme.withAlpha(ValoTheme.primitiveOcean900, 0.92) }
+            GradientStop { position: 0.25; color: ValoTheme.withAlpha(ValoTheme.backgroundTopbar, 0.88) }
+            GradientStop { position: 1.0; color: ValoTheme.withAlpha(ValoTheme.primitiveOcean900, 0.94) }
         }
-        border.color: ValoTheme.withAlpha(ValoTheme.borderHighlight, 0.32)
+        border.color: ValoTheme.withAlpha(ValoTheme.borderHighlight, 0.28)
         border.width: ValoTheme.strokeFine
         antialiasing: true
 
-        // Filete de brilho especular perimetral superior (Upper cyan gloss)
+        // Highlight especular superior suave (um único reflexo horizontal contínuo)
         Rectangle {
             anchors.top: parent.top
             anchors.left: parent.left
             anchors.right: parent.right
-            anchors.topMargin: 1
-            anchors.leftMargin: 14
-            anchors.rightMargin: 14
+            anchors.leftMargin: topBar.cornerRadii.x
+            anchors.rightMargin: topBar.cornerRadii.x
             height: 1
-            radius: 0.5
+            color: "transparent"
             gradient: Gradient {
                 orientation: Gradient.Horizontal
                 GradientStop { position: 0.0; color: "transparent" }
-                GradientStop { position: 0.2; color: ValoTheme.withAlpha(ValoTheme.textBright, 0.35) }
-                GradientStop { position: 0.5; color: ValoTheme.withAlpha(ValoTheme.accentBright, 0.55) }
-                GradientStop { position: 0.8; color: ValoTheme.withAlpha(ValoTheme.textBright, 0.35) }
+                GradientStop { position: 0.25; color: ValoTheme.withAlpha(ValoTheme.textBright, 0.20) }
+                GradientStop { position: 0.50; color: ValoTheme.withAlpha(ValoTheme.accentBright, 0.40) }
+                GradientStop { position: 0.75; color: ValoTheme.withAlpha(ValoTheme.textBright, 0.20) }
                 GradientStop { position: 1.0; color: "transparent" }
             }
         }
@@ -204,6 +197,7 @@ Item {
         // Régua de cápsulas translúcidas para os Espaços de Trabalho Virtuais
         Rectangle {
             id: workspaceIndicatorTrack
+            objectName: "workspaceIndicatorTrack"
             visible: topBar.showWorkspaceIndicators
             anchors.verticalCenter: parent.verticalCenter
             width: workspacePillsRow.implicitWidth + 14
@@ -211,21 +205,11 @@ Item {
             radius: 13
             gradient: Gradient {
                 orientation: Gradient.Vertical
-                GradientStop { position: 0.0; color: ValoTheme.withAlpha(ValoTheme.primitiveOcean700, 0.50) }
-                GradientStop { position: 1.0; color: ValoTheme.withAlpha(ValoTheme.primitiveOcean900, 0.65) }
+                GradientStop { position: 0.0; color: ValoTheme.withAlpha(ValoTheme.primitiveOcean700, 0.45) }
+                GradientStop { position: 1.0; color: ValoTheme.withAlpha(ValoTheme.primitiveOcean900, 0.60) }
             }
-            border.color: ValoTheme.withAlpha(ValoTheme.borderHighlight, 0.32)
+            border.color: ValoTheme.withAlpha(ValoTheme.borderHighlight, 0.25)
             border.width: ValoTheme.strokeFine
-
-            // Sombra interna e bisel sutil
-            Rectangle {
-                anchors.fill: parent
-                anchors.margins: 1
-                radius: 12
-                color: "transparent"
-                border.color: ValoTheme.withAlpha(ValoTheme.primitiveWhite, 0.12)
-                border.width: 0.7
-            }
 
             Gradient {
                 id: activeWorkspaceGrad
@@ -280,20 +264,9 @@ Item {
                                 : (pillHover.hovered ? hoverWorkspaceGrad : inactiveWorkspaceGrad)
                             border.color: workspaceDelegate.isActive
                                 ? ValoTheme.withAlpha(ValoTheme.primitiveWhite, 0.85)
-                                : ValoTheme.withAlpha(ValoTheme.borderHighlight, pillHover.hovered ? 0.45 : 0.22)
+                                : ValoTheme.withAlpha(ValoTheme.borderHighlight, pillHover.hovered ? 0.40 : 0.20)
                             border.width: workspaceDelegate.isActive ? 1.0 : ValoTheme.strokeFine
                             antialiasing: true
-
-                            // Brilho difuso exterior para o workspace ativo
-                            Rectangle {
-                                anchors.fill: parent
-                                anchors.margins: -2
-                                radius: 9
-                                z: -1
-                                visible: workspaceDelegate.isActive
-                                color: ValoTheme.withAlpha(ValoTheme.accentPrimary, 0.40)
-                                antialiasing: true
-                            }
 
                             // Ponto central indicador para espaços com janelas abertas
                             Rectangle {
@@ -335,6 +308,7 @@ Item {
 
     Row {
         id: rightSection
+        objectName: "rightSection"
         anchors.right: parent.right
         anchors.rightMargin: topBar.isCompactBar ? 10 : 18
         anchors.verticalCenter: parent.verticalCenter
@@ -353,6 +327,7 @@ Item {
 
             delegate: StatusButton {
                 required property var modelData
+                objectName: "statusButton"
                 visible: topBar.width >= modelData.minWidth
                 width: topBar.isCompactBar ? 32 : 38
                 height: 30
@@ -380,13 +355,14 @@ Item {
         onTriggered: topBar.dateNow = new Date()
     }
 
-    // Componente de ícones vetoriais puros para a barra de status
+    // Componente de ícones vetoriais de precisão para a barra de status
     component StatusVectorIcon: Item {
         id: vectorIcon
+        objectName: "vectorIcon"
         property string iconType: "control"
         property color iconColor: ValoTheme.iconDefault
-        width: 18
-        height: 18
+        width: 20
+        height: 20
 
         Canvas {
             id: iconCanvas
@@ -397,7 +373,7 @@ Item {
                 ctx.reset()
                 ctx.strokeStyle = vectorIcon.iconColor
                 ctx.fillStyle = vectorIcon.iconColor
-                ctx.lineWidth = 1.4
+                ctx.lineWidth = 1.5
                 ctx.lineCap = "round"
                 ctx.lineJoin = "round"
 
@@ -405,70 +381,72 @@ Item {
                 var h = height
 
                 if (vectorIcon.iconType === "control") {
-                    ctx.strokeRect(3, 3, w - 6, h - 6)
-                    ctx.fillRect(6.5, 6.5, w - 13, h - 13)
+                    ctx.strokeRect(3.5, 3.5, 13, 13)
+                    ctx.fillRect(7.5, 7.5, 5, 5)
                 } else if (vectorIcon.iconType === "terminal") {
                     ctx.beginPath()
-                    ctx.moveTo(3, 5)
-                    ctx.lineTo(8, 9)
-                    ctx.lineTo(3, 13)
+                    ctx.moveTo(4, 5)
+                    ctx.lineTo(9, 10)
+                    ctx.lineTo(4, 15)
                     ctx.stroke()
                     ctx.beginPath()
-                    ctx.moveTo(10, 13)
-                    ctx.lineTo(15, 13)
+                    ctx.moveTo(11, 15)
+                    ctx.lineTo(16, 15)
                     ctx.stroke()
                 } else if (vectorIcon.iconType === "launcher") {
-                    var s = 4.5
-                    ctx.fillRect(3, 3, s, s)
-                    ctx.fillRect(10.5, 3, s, s)
-                    ctx.fillRect(3, 10.5, s, s)
-                    ctx.fillRect(10.5, 10.5, s, s)
+                    var s = 5.0
+                    ctx.fillRect(4, 4, s, s)
+                    ctx.fillRect(11, 4, s, s)
+                    ctx.fillRect(4, 11, s, s)
+                    ctx.fillRect(11, 11, s, s)
                 } else if (vectorIcon.iconType === "brightness") {
                     ctx.beginPath()
-                    ctx.arc(w / 2, h / 2, 3.2, 0, 2 * Math.PI)
+                    ctx.arc(10, 10, 3.5, 0, 2 * Math.PI)
                     ctx.stroke()
+                    // 4 raios cardinais
                     ctx.beginPath()
-                    ctx.moveTo(w / 2, 1.5); ctx.lineTo(w / 2, 3.5)
-                    ctx.moveTo(w / 2, h - 1.5); ctx.lineTo(w / 2, h - 3.5)
-                    ctx.moveTo(1.5, h / 2); ctx.lineTo(3.5, h / 2)
-                    ctx.moveTo(w - 1.5, h / 2); ctx.lineTo(w - 3.5, h / 2)
-                    ctx.moveTo(3.5, 3.5); ctx.lineTo(4.8, 4.8)
-                    ctx.moveTo(w - 3.5, 3.5); ctx.lineTo(w - 4.8, 4.8)
-                    ctx.moveTo(3.5, h - 3.5); ctx.lineTo(4.8, h - 4.8)
-                    ctx.moveTo(w - 3.5, h - 3.5); ctx.lineTo(w - 4.8, h - 4.8)
+                    ctx.moveTo(10, 2); ctx.lineTo(10, 4.5)
+                    ctx.moveTo(10, 18); ctx.lineTo(10, 15.5)
+                    ctx.moveTo(2, 10); ctx.lineTo(4.5, 10)
+                    ctx.moveTo(18, 10); ctx.lineTo(15.5, 10)
+                    // 4 raios diagonais
+                    ctx.moveTo(4.5, 4.5); ctx.lineTo(6.2, 6.2)
+                    ctx.moveTo(15.5, 4.5); ctx.lineTo(13.8, 6.2)
+                    ctx.moveTo(4.5, 15.5); ctx.lineTo(6.2, 13.8)
+                    ctx.moveTo(15.5, 15.5); ctx.lineTo(13.8, 13.8)
                     ctx.stroke()
                 } else if (vectorIcon.iconType === "volume") {
                     ctx.beginPath()
-                    ctx.moveTo(3, 6)
-                    ctx.lineTo(6, 6)
-                    ctx.lineTo(10, 3)
-                    ctx.lineTo(10, 15)
-                    ctx.lineTo(6, 12)
-                    ctx.lineTo(3, 12)
+                    ctx.moveTo(3, 7)
+                    ctx.lineTo(7, 7)
+                    ctx.lineTo(11, 4)
+                    ctx.lineTo(11, 16)
+                    ctx.lineTo(7, 13)
+                    ctx.lineTo(3, 13)
                     ctx.closePath()
                     ctx.fill()
                     if (typeof SystemControl !== "undefined" && SystemControl && SystemControl.isMuted) {
                         ctx.beginPath()
-                        ctx.moveTo(12, 6); ctx.lineTo(16, 12)
-                        ctx.moveTo(16, 6); ctx.lineTo(12, 12)
+                        ctx.moveTo(13, 7); ctx.lineTo(17, 13)
+                        ctx.moveTo(17, 7); ctx.lineTo(13, 13)
                         ctx.stroke()
                     } else {
                         ctx.beginPath()
-                        ctx.arc(9, 9, 4.5, -Math.PI / 4, Math.PI / 4)
+                        ctx.arc(10, 10, 4.5, -Math.PI / 3, Math.PI / 3)
                         ctx.stroke()
                         if (typeof SystemControl === "undefined" || !SystemControl || SystemControl.volume > 50) {
                             ctx.beginPath()
-                            ctx.arc(9, 9, 7.5, -Math.PI / 4, Math.PI / 4)
+                            ctx.arc(10, 10, 7.5, -Math.PI / 3, Math.PI / 3)
                             ctx.stroke()
                         }
                     }
                 } else if (vectorIcon.iconType === "power") {
                     ctx.beginPath()
-                    ctx.arc(w / 2, h / 2 + 1, 6, -Math.PI * 0.7, -Math.PI * 0.3, true)
+                    ctx.arc(10, 11, 6, -Math.PI * 0.72, -Math.PI * 0.28, true)
                     ctx.stroke()
                     ctx.beginPath()
-                    ctx.moveTo(w / 2, 2.5)
-                    ctx.lineTo(w / 2, 8.5)
+                    ctx.moveTo(10, 3)
+                    ctx.lineTo(10, 9.5)
                     ctx.stroke()
                 }
             }
@@ -489,20 +467,26 @@ Item {
 
     component StatusButton: ToolButton {
         id: statusButton
+        objectName: "statusButton"
         property string iconType: "control"
         property string accessibleName: "Controle do sistema"
         Accessible.name: accessibleName
         hoverEnabled: true
+        padding: 0
+        leftPadding: 0
+        rightPadding: 0
+        topPadding: 0
+        bottomPadding: 0
 
         contentItem: Item {
-            anchors.centerIn: parent
-            width: 18
-            height: 18
+            implicitWidth: 20
+            implicitHeight: 20
 
             StatusVectorIcon {
                 anchors.centerIn: parent
                 iconType: statusButton.iconType
-                iconColor: statusButton.hovered ? ValoTheme.textBright : ValoTheme.accentBright
+                iconColor: statusButton.pressed ? ValoTheme.accentPrimary
+                         : (statusButton.hovered ? ValoTheme.textBright : ValoTheme.accentBright)
             }
         }
 
@@ -510,7 +494,7 @@ Item {
             radius: 8
             gradient: statusButton.hovered ? hoverStatusGrad : null
             color: statusButton.hovered ? "transparent" : (statusButton.pressed ? ValoTheme.withAlpha(ValoTheme.primitiveOcean700, 0.30) : "transparent")
-            border.color: statusButton.hovered ? ValoTheme.withAlpha(ValoTheme.borderHighlight, 0.45) : "transparent"
+            border.color: statusButton.hovered ? ValoTheme.withAlpha(ValoTheme.borderHighlight, 0.40) : "transparent"
             border.width: ValoTheme.strokeFine
             antialiasing: true
 
@@ -519,15 +503,6 @@ Item {
                 orientation: Gradient.Vertical
                 GradientStop { position: 0.0; color: ValoTheme.withAlpha(ValoTheme.primitiveOcean600, 0.40) }
                 GradientStop { position: 1.0; color: ValoTheme.withAlpha(ValoTheme.primitiveOcean800, 0.55) }
-            }
-
-            Rectangle {
-                anchors.top: parent.top
-                anchors.horizontalCenter: parent.horizontalCenter
-                width: parent.width - 4
-                height: 1
-                visible: statusButton.hovered
-                color: ValoTheme.withAlpha(ValoTheme.primitiveWhite, 0.35)
             }
         }
     }

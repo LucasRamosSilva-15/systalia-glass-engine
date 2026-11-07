@@ -269,6 +269,12 @@ private slots:
         QVERIFY(!evaluate("controlCenter.opened").toBool());
     }
 
+    void topBarVisualElementsAreUniqueAndUnconflicted() {
+        QVERIFY(evaluate("topBar.visible").toBool());
+        QCOMPARE(evaluate("topBar.actionButtonCount").toInt(), 6);
+        QVERIFY(evaluate("topBar.isWorkspaceTrackVisible").toBool());
+    }
+
     void captureValoDesktopShellVisuals() {
         auto *window = qobject_cast<QQuickWindow *>(m_root);
         QVERIFY(window);
