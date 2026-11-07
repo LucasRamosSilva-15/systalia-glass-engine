@@ -6,7 +6,6 @@
 #include <QImage>
 #include <QDir>
 #include <QElapsedTimer>
-#include <QPainter>
 #include <QThread>
 #include <iostream>
 #include <iomanip>
@@ -60,114 +59,15 @@ struct BenchStats {
     }
 };
 
-// Renderizador analítico de alta precisão dos 8 passes diagnósticos da cápsula VALO Dock V2
-static void renderDiagnosticPassAnalytical(QImage &image, const QString &passCode, const QImage &blurredBackdrop) {
-    const int dockW = 555;
-    const int dockH = 125;
-    const float radius = 47.0f;
-    const int startX = (1280 - dockW) / 2; // 362
-    const int startY = 720 - 40 - dockH;   // 555
-
-    const QVector2D size(dockW, dockH);
-    const QVector4D radii(radius, radius, radius, radius);
-    const QVector2D halfSize = size * 0.5f;
-
-    for (int y = 0; y < dockH; ++y) {
-        const int imgY = startY + y;
-        if (imgY < 0 || imgY >= image.height()) continue;
-
-        for (int x = 0; x < dockW; ++x) {
-            const int imgX = startX + x;
-            if (imgX < 0 || imgX >= image.width()) continue;
-
-            const QVector2D p(static_cast<float>(x) - halfSize.x(), static_cast<float>(y) - halfSize.y());
-            const float dist = ValoGeometryEngineV2::evaluateSignedDistanceL2(p, size, radii);
-            const float aa = 1.0f;
-            const float coverage = 1.0f - std::clamp((dist + 0.5f * aa) / aa, 0.0f, 1.0f);
-
-            if (coverage <= 0.001f) continue;
-
-            const QVector2D normal = ValoGeometryEngineV2::evaluateNormal(p, size, radii, GeometryMode::CircularL2);
-
-            // Menisco óptico perimétrico (~24px)
-            const float meniscusDist = std::clamp(-dist / 24.0f, 0.0f, 1.0f);
-            const float meniscus = (dist < 0.0f) ? std::sin(meniscusDist * 3.14159265f) : 0.0f;
-
-            // Refração com IOR 1.25 e dispersão Cauchy
-            const QVector2D refractionVector = normal * (0.25f * 0.08f) * meniscus;
-
-            // Contorno especular 1.25px
-            const float strokeWidth = 1.25f;
-            const float strokeDist = std::abs(dist + 0.5f * strokeWidth) - 0.5f * strokeWidth;
-            const float strokeCoverage = 1.0f - std::clamp((strokeDist + 0.5f * aa) / aa, 0.0f, 1.0f);
-
-            const float normY = static_cast<float>(y) / dockH;
-            const QColor specularZenith(184, 230, 255);
-            const QColor specularNadir(46, 107, 158);
-            const int strokeR = static_cast<int>(specularZenith.red() * (1.0f - normY) + specularNadir.red() * normY);
-            const int strokeG = static_cast<int>(specularZenith.green() * (1.0f - normY) + specularNadir.green() * normY);
-            const int strokeB = static_cast<int>(specularZenith.blue() * (1.0f - normY) + specularNadir.blue() * normY);
-
-            // Preenchimento volumétrico oceânico (#0A2741 -> #194C70)
-            const float sheen = std::exp(-normY * 5.0f) * 0.22f;
-            int volR = static_cast<int>((10 + (25 - 10) * normY + sheen * 255.0f));
-            int volG = static_cast<int>((39 + (76 - 39) * normY + sheen * 255.0f));
-            int volB = static_cast<int>((65 + (112 - 65) * normY + sheen * 255.0f));
-            volR = std::clamp(volR, 0, 255);
-            volG = std::clamp(volG, 0, 255);
-            volB = std::clamp(volB, 0, 255);
-
-            QColor passColor;
-
-            if (passCode == "A") {
-                // Passe A: Geometria SDF e Normais Analíticas (com anéis isocontorno)
-                const float stripe = 0.5f + 0.5f * std::sin(dist * 0.35f);
-                int r = static_cast<int>((normal.x() * 0.5f + 0.5f) * 255.0f * stripe);
-                int g = static_cast<int>((normal.y() * 0.5f + 0.5f) * 255.0f * stripe);
-                int b = static_cast<int>(128 * stripe);
-                passColor = QColor(r, g, b, static_cast<int>(coverage * 255));
-            } else if (passCode == "B") {
-                // Passe B: Máscara Analítica da Cápsula (Coverage L2 puro com antialiasing)
-                int val = static_cast<int>(coverage * 255.0f);
-                passColor = QColor(val, val, val, 255);
-            } else if (passCode == "C") {
-                // Passe C: Preenchimento Volumétrico Oceânico Isolado
-                passColor = QColor(volR, volG, volB, static_cast<int>(coverage * 255));
-            } else if (passCode == "D") {
-                // Passe D: Refração e Menisco Óptico (vetores de refração x 400 + curvatura menisco)
-                int r = std::clamp(static_cast<int>(std::abs(refractionVector.x()) * 5000.0f), 0, 255);
-                int g = std::clamp(static_cast<int>(std::abs(refractionVector.y()) * 5000.0f), 0, 255);
-                int b = std::clamp(static_cast<int>(meniscus * 255.0f), 0, 255);
-                passColor = QColor(r, g, b, static_cast<int>(coverage * 255));
-            } else if (passCode == "E") {
-                // Passe E: Blur Dual-Kawase GPU Filtrado Isolado
-                QRgb blurPixel = blurredBackdrop.pixel(imgX, imgY);
-                passColor = QColor(qRed(blurPixel), qGreen(blurPixel), qBlue(blurPixel), static_cast<int>(coverage * 255));
-            } else if (passCode == "F") {
-                // Passe F: Contorno Especular Isolado de 1.25px
-                passColor = QColor(strokeR, strokeG, strokeB, static_cast<int>(strokeCoverage * 255));
-            }
-
-            if (passColor.isValid()) {
-                // Composição alpha pré-multiplicada sobre a imagem de destino
-                QColor dst = image.pixelColor(imgX, imgY);
-                const float alpha = passColor.alphaF();
-                int outR = static_cast<int>(passColor.red() * alpha + dst.red() * (1.0f - alpha));
-                int outG = static_cast<int>(passColor.green() * alpha + dst.green() * (1.0f - alpha));
-                int outB = static_cast<int>(passColor.blue() * alpha + dst.blue() * (1.0f - alpha));
-                image.setPixelColor(imgX, imgY, QColor(outR, outG, outB));
-            }
-        }
-    }
-}
-
 int main(int argc, char **argv) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
     QGuiApplication app(argc, argv);
     qml_register_types_Systalia_Engine();
 
     const QString artifactDir = QStringLiteral("/home/lucasramos/.gemini/antigravity/brain/db6eb3e4-2bf0-441e-9ef2-a1601d0a1c5f");
+    const QString repoArtifactDir = QStringLiteral("/home/lucasramos/Documentos/systalia-glass-engine/artifacts");
     QDir().mkpath(artifactDir);
+    QDir().mkpath(repoArtifactDir);
 
     QQuickWindow window;
     window.resize(1280, 720);
@@ -200,22 +100,24 @@ int main(int argc, char **argv) {
     sceneItem->setHeight(720);
 
     window.show();
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 15; ++i) {
         QCoreApplication::processEvents();
         QThread::msleep(20);
     }
 
     auto renderAndCapture = [&](const QString &filename) -> QImage {
-        for (int i = 0; i < 5; ++i) {
+        for (int i = 0; i < 6; ++i) {
             window.update();
             QCoreApplication::processEvents();
             QThread::msleep(20);
         }
         QImage img = window.grabWindow();
         if (!img.isNull()) {
-            const QString path = artifactDir + "/" + filename;
-            img.save(path);
-            std::cout << "[ARTEFATO GERADO] " << path.toStdString() << " (" << img.width() << "x" << img.height() << ")" << std::endl;
+            const QString path1 = artifactDir + "/" + filename;
+            const QString path2 = repoArtifactDir + "/" + filename;
+            img.save(path1);
+            img.save(path2);
+            std::cout << "[ARTEFATO GERADO] " << path1.toStdString() << " (" << img.width() << "x" << img.height() << ")" << std::endl;
         } else {
             std::cerr << "[FALHA GRAB] " << filename.toStdString() << std::endl;
         }
@@ -228,7 +130,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    std::cout << "=== 1. GERANDO ARTEFATOS DOS 7 ESTADOS CANÔNICOS ===" << std::endl;
+    std::cout << "=== 1. GERANDO ARTEFATOS DOS 7 ESTADOS CANÔNICOS (GPU REAL) ===" << std::endl;
     sceneItem->setProperty("backgroundMode", 0); // Fundo Oceânico padrão
     dock->setProperty("debugPass", "H"); // Composição completa
 
@@ -252,7 +154,7 @@ int main(int argc, char **argv) {
     dock->setProperty("testState", 5);
     renderAndCapture("dock_v2_state_5_background.png");
 
-    // Estado 6: Focused (Lançador 2 com anel de foco por teclado)
+    // Estado 6: Focused (Lançador 2 com anel de foco por teclado #37DDFA)
     dock->setProperty("testState", 6);
     renderAndCapture("dock_v2_state_6_focused.png");
 
@@ -260,68 +162,43 @@ int main(int argc, char **argv) {
     dock->setProperty("testState", 7);
     renderAndCapture("dock_v2_state_7_reduced_motion.png");
 
-    std::cout << "=== 2. GERANDO ARTEFATOS DOS 8 PASSES DIAGNÓSTICOS ===" << std::endl;
+    std::cout << "=== 2. GERANDO ARTEFATOS DOS 8 PASSES DIAGNÓSTICOS (GPU REAL) ===" << std::endl;
     dock->setProperty("testState", 1);
     sceneItem->setProperty("backgroundMode", 0);
 
-    // Captura o backdrop oceânico base para amostragem óptica
-    QImage baseOceanic = window.grabWindow();
-    QImage blurredOceanic = ValoBlurPipelineV2::filterOffline(baseOceanic, BlurProfile::Quality);
-
-    // Passe A: Geometria SDF
+    // Passe A: Geometria SDF e Normais Analíticas (valo_diag_sdf.frag)
     dock->setProperty("debugPass", "A");
-    QImage passA = window.grabWindow();
-    renderDiagnosticPassAnalytical(passA, "A", blurredOceanic);
-    passA.save(artifactDir + "/dock_v2_pass_A_sdf.png");
-    std::cout << "[ARTEFATO GERADO] " << (artifactDir + "/dock_v2_pass_A_sdf.png").toStdString() << std::endl;
+    renderAndCapture("dock_v2_pass_A_sdf.png");
 
-    // Passe B: Máscara Analítica (L2 Capsule Coverage)
+    // Passe B: Máscara Analítica (L2 Capsule Coverage) (valo_diag_mask.frag)
     dock->setProperty("debugPass", "B");
-    QImage passB(1280, 720, QImage::Format_RGB32);
-    passB.fill(Qt::black);
-    renderDiagnosticPassAnalytical(passB, "B", blurredOceanic);
-    passB.save(artifactDir + "/dock_v2_pass_B_mask.png");
-    std::cout << "[ARTEFATO GERADO] " << (artifactDir + "/dock_v2_pass_B_mask.png").toStdString() << std::endl;
+    renderAndCapture("dock_v2_pass_B_mask.png");
 
-    // Passe C: Preenchimento Volumétrico
+    // Passe C: Preenchimento Volumétrico Oceânico (valo_diag_volume.frag)
     dock->setProperty("debugPass", "C");
-    QImage passC = baseOceanic;
-    renderDiagnosticPassAnalytical(passC, "C", blurredOceanic);
-    passC.save(artifactDir + "/dock_v2_pass_C_volume.png");
-    std::cout << "[ARTEFATO GERADO] " << (artifactDir + "/dock_v2_pass_C_volume.png").toStdString() << std::endl;
+    renderAndCapture("dock_v2_pass_C_volume.png");
 
-    // Passe D: Refração e Menisco Óptico
+    // Passe D: Refração e Menisco Óptico (valo_diag_refraction.frag)
     dock->setProperty("debugPass", "D");
-    QImage passD(1280, 720, QImage::Format_RGB32);
-    passD.fill(QColor(4, 16, 32));
-    renderDiagnosticPassAnalytical(passD, "D", blurredOceanic);
-    passD.save(artifactDir + "/dock_v2_pass_D_refraction.png");
-    std::cout << "[ARTEFATO GERADO] " << (artifactDir + "/dock_v2_pass_D_refraction.png").toStdString() << std::endl;
+    renderAndCapture("dock_v2_pass_D_refraction.png");
 
-    // Passe E: Blur Dual-Kawase GPU (8 Passes Quality)
+    // Passe E: Blur Dual-Kawase GPU (8 Passes Quality) (valo_diag_blur.frag)
     dock->setProperty("debugPass", "E");
-    QImage passE = baseOceanic;
-    renderDiagnosticPassAnalytical(passE, "E", blurredOceanic);
-    passE.save(artifactDir + "/dock_v2_pass_E_blur_gpu.png");
-    std::cout << "[ARTEFATO GERADO] " << (artifactDir + "/dock_v2_pass_E_blur_gpu.png").toStdString() << std::endl;
+    renderAndCapture("dock_v2_pass_E_blur_gpu.png");
 
-    // Passe F: Contorno Especular Isolado de 1.25px
+    // Passe F: Contorno Especular Isolado de 1.25px (valo_diag_specular.frag)
     dock->setProperty("debugPass", "F");
-    QImage passF(1280, 720, QImage::Format_RGB32);
-    passF.fill(QColor(2, 8, 16));
-    renderDiagnosticPassAnalytical(passF, "F", blurredOceanic);
-    passF.save(artifactDir + "/dock_v2_pass_F_specular.png");
-    std::cout << "[ARTEFATO GERADO] " << (artifactDir + "/dock_v2_pass_F_specular.png").toStdString() << std::endl;
+    renderAndCapture("dock_v2_pass_F_specular.png");
 
-    // Passe G: Sombra Externa Geométrica Isolada
+    // Passe G: Sombra Externa Analítica Contínua (valo_shadow_v2.frag)
     dock->setProperty("debugPass", "G");
     renderAndCapture("dock_v2_pass_G_shadow.png");
 
-    // Passe H: Composição Final Completa
+    // Passe H: Composição Final Completa (valo_optical_v2.frag)
     dock->setProperty("debugPass", "H");
     renderAndCapture("dock_v2_pass_H_composite.png");
 
-    std::cout << "=== 3. GERANDO ARTEFATOS MULTI-BACKDROP ===" << std::endl;
+    std::cout << "=== 3. GERANDO ARTEFATOS MULTI-BACKDROP (GPU REAL) ===" << std::endl;
     dock->setProperty("debugPass", "H");
 
     const struct { int mode; const char *filename; } bgs[] = {
@@ -339,9 +216,9 @@ int main(int argc, char **argv) {
 
     std::cout << "=== 4. BENCHMARK DE RENDERIZAÇÃO DA DOCK V2 ===" << std::endl;
     const struct { int profile; const char *name; } profiles[] = {
-        {0, "Performance (2 Passes)"},
-        {1, "Balanced (4 Passes)"},
-        {2, "Quality (8 Passes)"}
+        {0, "Performance (0 passes / Direct)"},
+        {1, "Balanced (4 passes)"},
+        {2, "Quality (8 passes)"}
     };
 
     for (const auto &prof : profiles) {
@@ -379,6 +256,6 @@ int main(int argc, char **argv) {
                   << std::endl;
     }
 
-    std::cout << "Geração de artefatos da Etapa 04 finalizada com sucesso." << std::endl;
+    std::cout << "Geração de artefatos da Etapa 04.1 finalizada com sucesso." << std::endl;
     return 0;
 }

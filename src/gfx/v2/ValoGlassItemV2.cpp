@@ -164,6 +164,9 @@ void ValoGlassItemV2::setCausticIntensity(float intensity) {
 void ValoGlassItemV2::setBlurProfile(int profile) {
   if (m_blurProfile != profile) {
     m_blurProfile = profile;
+    if (m_backdropProvider) {
+      m_backdropProvider->setBlurProfile(static_cast<BlurProfile>(profile));
+    }
     resetActivity();
     emit blurProfileChanged();
     update();
@@ -177,6 +180,7 @@ void ValoGlassItemV2::setBackdropProvider(ValoBackdropProviderV2 *provider) {
     }
     m_backdropProvider = provider;
     if (m_backdropProvider) {
+      m_backdropProvider->setBlurProfile(static_cast<BlurProfile>(m_blurProfile));
       connect(m_backdropProvider, &ValoBackdropProviderV2::textureChanged,
               this, &QQuickItem::update);
     }
@@ -240,10 +244,10 @@ QSGNode *ValoGlassItemV2::updatePaintNode(QSGNode *oldNode,
       node->geometry(), QRectF(0.0, 0.0, w, h), QRectF(0.0, 0.0, 1.0, 1.0));
   node->markDirty(QSGNode::DirtyGeometry);
 
-  // Vincula a textura do backdrop provider se conectado, caso contrário usa fallback sintético
+  // Vincula a textura do backdrop provider com desfoque GPU real se conectado
   QSGTexture *backdropTex = nullptr;
   if (m_backdropProvider) {
-    backdropTex = m_backdropProvider->texture(window());
+    backdropTex = m_backdropProvider->blurredTexture(window());
   }
 
   if (!backdropTex) {
@@ -304,12 +308,10 @@ QSGNode *ValoGlassItemV2::updatePaintNode(QSGNode *oldNode,
                 static_cast<float>(m_volumetricTint.blueF()),
                 static_cast<float>(m_volumetricTint.alphaF()));
 
-  // Codificação do modo de diagnóstico em shadowOffsetY (negativo para debug)
-  if (m_debugMode > 0) {
-    props.shadowOffsetY = -static_cast<float>(m_debugMode);
-  } else {
-    props.shadowOffsetY = 12.0f;
-  }
+  // Configuração desacoplada do modo de diagnóstico (mantém propriedades físicas intactas)
+  material->setDiagnosticMode(m_debugMode);
+  props.shadowOffsetY = 12.0f;
+  props.shadowIntensity = 0.35f;
 
   material->setProps(props);
   node->markDirty(QSGNode::DirtyMaterial);

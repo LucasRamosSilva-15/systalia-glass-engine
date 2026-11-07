@@ -3,11 +3,40 @@
 
 namespace Systalia::Gfx::V2 {
 
-ValoGlassMaterialShaderV2::ValoGlassMaterialShaderV2() {
+ValoGlassMaterialShaderV2::ValoGlassMaterialShaderV2(int diagnosticMode) {
   setShaderFileName(VertexStage,
                     QStringLiteral(":/shaders/v2/valo_optical_v2.vert.qsb"));
-  setShaderFileName(FragmentStage,
-                    QStringLiteral(":/shaders/v2/valo_optical_v2.frag.qsb"));
+
+  switch (diagnosticMode) {
+  case 1:
+    setShaderFileName(FragmentStage,
+                      QStringLiteral(":/shaders/v2/valo_diag_sdf.frag.qsb"));
+    break;
+  case 2:
+    setShaderFileName(FragmentStage,
+                      QStringLiteral(":/shaders/v2/valo_diag_mask.frag.qsb"));
+    break;
+  case 3:
+    setShaderFileName(FragmentStage,
+                      QStringLiteral(":/shaders/v2/valo_diag_volume.frag.qsb"));
+    break;
+  case 4:
+    setShaderFileName(FragmentStage,
+                      QStringLiteral(":/shaders/v2/valo_diag_refraction.frag.qsb"));
+    break;
+  case 5:
+    setShaderFileName(FragmentStage,
+                      QStringLiteral(":/shaders/v2/valo_diag_blur.frag.qsb"));
+    break;
+  case 6:
+    setShaderFileName(FragmentStage,
+                      QStringLiteral(":/shaders/v2/valo_diag_specular.frag.qsb"));
+    break;
+  default:
+    setShaderFileName(FragmentStage,
+                      QStringLiteral(":/shaders/v2/valo_optical_v2.frag.qsb"));
+    break;
+  }
 }
 
 bool ValoGlassMaterialShaderV2::updateUniformData(RenderState &state,
@@ -64,12 +93,18 @@ void ValoGlassMaterialShaderV2::updateSampledImage(RenderState &state,
     targetTexture = mat->backdropTexture();
   } else if (binding == 2) {
     targetTexture = mat->clientTexture();
+    if (!targetTexture) {
+      targetTexture = mat->backdropTexture(); // Fallback seguro caso clientTexture não esteja vinculada
+    }
+  }
+
+  // Fallback para evitar dereferência de ponteiro nulo/sentinela no Scene Graph
+  if (!targetTexture && *texture && reinterpret_cast<uintptr_t>(*texture) != 0xfefefefefefefefeULL) {
+    targetTexture = *texture;
   }
 
   if (targetTexture) {
     targetTexture->commitTextureOperations(state.rhi(), state.resourceUpdateBatch());
-  }
-  if (targetTexture && *texture != targetTexture) {
     *texture = targetTexture;
   }
 }
@@ -81,19 +116,24 @@ ValoGlassMaterialV2::ValoGlassMaterialV2() {
 }
 
 QSGMaterialType *ValoGlassMaterialV2::type() const {
-  static QSGMaterialType s_type;
-  return &s_type;
+  static QSGMaterialType s_types[8];
+  const int idx = std::clamp(m_diagnosticMode, 0, 7);
+  return &s_types[idx];
 }
 
 QSGMaterialShader *
 ValoGlassMaterialV2::createShader(QSGRendererInterface::RenderMode) const {
-  return new ValoGlassMaterialShaderV2();
+  return new ValoGlassMaterialShaderV2(m_diagnosticMode);
 }
 
 int ValoGlassMaterialV2::compare(const QSGMaterial *other) const {
   const auto *o = static_cast<const ValoGlassMaterialV2 *>(other);
   if (!o)
     return 1;
+
+  if (m_diagnosticMode != o->m_diagnosticMode) {
+    return (m_diagnosticMode < o->m_diagnosticMode) ? -1 : 1;
+  }
 
   if (m_backdropTexture != o->m_backdropTexture) {
     return (m_backdropTexture < o->m_backdropTexture) ? -1 : 1;

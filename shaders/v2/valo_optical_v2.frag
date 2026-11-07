@@ -170,7 +170,8 @@ void main() {
         float c1 = sin(p.x * 0.06 + u_Time * 1.25) * cos(p.y * 0.06 + u_Time * 0.95);
         float c2 = sin(p.x * 0.11 - u_Time * 0.80 + p.y * 0.04) * cos(p.y * 0.09 + u_Time * 1.10);
         float causticWave = pow(max(0.0, c1 + c2), 2.5);
-        float interiorMask = smoothstep(-2.0, -18.0, dist);
+        // Correção Etapa 04.1: ordem canônica das bordas no smoothstep (edge0 < edge1)
+        float interiorMask = 1.0 - smoothstep(-18.0, -2.0, dist);
         causticLight = vec3(0.00, 0.88, 0.98) * (causticWave * u_CausticIntensity * 0.22 * interiorMask);
     }
 
@@ -206,37 +207,10 @@ void main() {
     }
 
     // 11. Composição de cor com contorno e alpha pré-multiplicado
-    vec3 compositeRgb = mix(glassBody, strokeColor, strokeAlpha);
+    vec3 compositeRgb = clamp(mix(glassBody, strokeColor, strokeAlpha), 0.0, 1.0);
     float fillAlpha = max(u_SurfaceOpacity, 0.15);
     float compositeAlpha = clamp(fillAlpha + strokeAlpha * (1.0 - fillAlpha), 0.0, 1.0) * coverage;
 
-    // 12. Suporte aos 8 Modos de Diagnóstico
-    int diagMode = (u_ShadowOffsetY < -0.5) ? int(-u_ShadowOffsetY + 0.5) : 0;
-
-    if (diagMode == 1 || diagMode == 3) {
-        // Modo A (1 / 3): Campo Geométrico SDF e Normais Analíticas
-        fragColor = vec4((normal * 0.5 + 0.5) * coverage, 0.0, coverage);
-    } else if (diagMode == 2) {
-        // Modo B (2): Máscara Analítica (Coverage L2 / G2)
-        fragColor = vec4(vec3(coverage), coverage);
-    } else if (diagMode == 8) {
-        // Modo C (8): Preenchimento Volumétrico Oceânico Isolado
-        fragColor = vec4(baseVolumetric * coverage * max(u_SurfaceOpacity, 0.4), coverage);
-    } else if (diagMode == 4) {
-        // Modo D (4): Vetores de Refração e Menisco Óptico
-        fragColor = vec4(abs(refractionVector) * 250.0, meniscus * coverage, coverage);
-    } else if (diagMode == 5) {
-        // Modo E (5): Blur Dual-Kawase GPU Filtrado Isolado
-        vec4 blurredSample = texture(u_BackdropTexture, screenUV);
-        fragColor = vec4(blurredSample.rgb * coverage, coverage);
-    } else if (diagMode == 6) {
-        // Modo F (6): Contorno Especular Isolado de 1.25px
-        fragColor = vec4(strokeColor * strokeAlpha, strokeAlpha);
-    } else if (diagMode == 7) {
-        // Modo 7: Reflexos Prismáticos e Cáusticas Isoladas
-        fragColor = vec4((spectralReflection + causticLight) * coverage, coverage);
-    } else {
-        // Modo H (0): Composição Final Completa com Alpha Pré-Multiplicado
-        fragColor = vec4(compositeRgb * compositeAlpha, compositeAlpha);
-    }
+    // 12. Saída Oficial de Produção com Alpha Pré-Multiplicado Rigoroso
+    fragColor = vec4(compositeRgb * compositeAlpha, compositeAlpha);
 }

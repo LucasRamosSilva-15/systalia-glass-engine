@@ -63,6 +63,14 @@ qt6_add_shaders(sge_shaders "sge_shaders_v2_resource"
         shaders/v2/valo_kawase_down.frag
         shaders/v2/valo_kawase_up.vert
         shaders/v2/valo_kawase_up.frag
+        shaders/v2/valo_diag_sdf.frag
+        shaders/v2/valo_diag_mask.frag
+        shaders/v2/valo_diag_volume.frag
+        shaders/v2/valo_diag_refraction.frag
+        shaders/v2/valo_diag_blur.frag
+        shaders/v2/valo_diag_specular.frag
+        shaders/v2/valo_shadow_v2.vert
+        shaders/v2/valo_shadow_v2.frag
 )
 target_link_libraries(sge_shaders PUBLIC
     Qt6::Core
@@ -123,6 +131,8 @@ qt_add_library(sge_core STATIC
     src/gfx/v2/ValoBlurPipelineV2.cpp
     src/gfx/v2/ValoGpuBlurPipelineV2.hpp
     src/gfx/v2/ValoGpuBlurPipelineV2.cpp
+    src/gfx/v2/ValoShadowItemV2.hpp
+    src/gfx/v2/ValoShadowItemV2.cpp
 )
 
 qt6_generate_wayland_protocol_server_sources(sge_core

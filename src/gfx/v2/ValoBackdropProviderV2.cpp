@@ -166,20 +166,33 @@ QSGTexture *ValoBackdropProviderV2::blurredTexture(QQuickWindow *window) {
                 QRhiTexture *rhiSrc = srcTex->rhiTexture();
                 if (rhiSrc) {
                     QRhiCommandBuffer *cb = nullptr;
-                    if (rhi->beginOffscreenFrame(&cb) == QRhi::FrameOpSuccess) {
+                    bool executed = false;
+                    if (rhi->isRecordingFrame()) {
+                        cb = static_cast<QRhiCommandBuffer *>(
+                            window->rendererInterface()->getResource(window, QSGRendererInterface::CommandListResource));
+                        if (cb) {
+                            m_gpuBlurPipeline->execute(cb, rhiSrc, m_blurProfile);
+                            executed = true;
+                        }
+                    } else if (rhi->beginOffscreenFrame(&cb) == QRhi::FrameOpSuccess) {
                         m_gpuBlurPipeline->execute(cb, rhiSrc, m_blurProfile);
                         rhi->endOffscreenFrame();
                         rhi->finish();
+                        executed = true;
+                    }
 
+                    if (executed) {
                         QRhiTexture *outRhi = m_gpuBlurPipeline->blurredTexture();
                         if (outRhi) {
-                            delete std::exchange(m_qsgBlurredTexture, nullptr);
-                            m_qsgBlurredTexture = window->createTextureFromRhiTexture(
-                                outRhi, QQuickWindow::TextureHasAlphaChannel);
-                            if (m_qsgBlurredTexture) {
-                                m_qsgBlurredTexture->setFiltering(QSGTexture::Linear);
-                                m_qsgBlurredTexture->setHorizontalWrapMode(QSGTexture::ClampToEdge);
-                                m_qsgBlurredTexture->setVerticalWrapMode(QSGTexture::ClampToEdge);
+                            if (!m_qsgBlurredTexture || m_qsgBlurredTexture->rhiTexture() != outRhi) {
+                                delete std::exchange(m_qsgBlurredTexture, nullptr);
+                                m_qsgBlurredTexture = window->createTextureFromRhiTexture(
+                                    outRhi, QQuickWindow::TextureHasAlphaChannel);
+                                if (m_qsgBlurredTexture) {
+                                    m_qsgBlurredTexture->setFiltering(QSGTexture::Linear);
+                                    m_qsgBlurredTexture->setHorizontalWrapMode(QSGTexture::ClampToEdge);
+                                    m_qsgBlurredTexture->setVerticalWrapMode(QSGTexture::ClampToEdge);
+                                }
                             }
                         }
                     }

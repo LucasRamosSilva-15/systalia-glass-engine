@@ -41,14 +41,13 @@ Item {
     // "G" (7) = Sombra externa geométrica isolada
     property string debugPass: "H"
     property int debugMode: {
-        if (debugPass === "A") return 3; // Normais/SDF
-        if (debugPass === "B") return 2; // Cobertura/Máscara
-        if (debugPass === "C") return 8; // Tonalização volumétrica
-        if (debugPass === "D") return 4; // Vetores de Refração
-        if (debugPass === "E") return 5; // Blur GPU amostrado
-        if (debugPass === "F") return 6; // Contorno especular isolado
-        if (debugPass === "G") return 9; // Sombra externa
-        return 0; // H = Composição final
+        if (debugPass === "A") return 1; // Normais/SDF (valo_diag_sdf)
+        if (debugPass === "B") return 2; // Cobertura/Máscara (valo_diag_mask)
+        if (debugPass === "C") return 3; // Tonalização volumétrica (valo_diag_volume)
+        if (debugPass === "D") return 4; // Vetores de Refração (valo_diag_refraction)
+        if (debugPass === "E") return 5; // Blur GPU amostrado (valo_diag_blur)
+        if (debugPass === "F") return 6; // Contorno especular isolado (valo_diag_specular)
+        return 0; // H = Composição final (valo_optical_v2)
     }
 
     // Estado Forçado para Testes e Diagnóstico Automatizado (0 = Normal, 1..7 = Estados canônicos)
@@ -84,36 +83,17 @@ Item {
         prefersReducedMotion: root.prefersReducedMotion || (root.testState === 7)
     }
 
-    // 1. Camada de Sombra Externa (Offset Y=12px, Blur=20px, rgba(0, 13, 33, 0.35))
-    // Desenhada em passe dedicado sob o chassi de vidro, derivada da geometria L2 nominal
-    Rectangle {
+    // 1. Sombra Externa Analítica VALO L2 (Offset Y=12px, Blur sigma=20px, rgba(0, 13, 33, 0.35))
+    // Renderizada via shader analítico contínuo F(d_shadow, sigma) derivado da geometria SDF L2 nominal
+    ValoShadowItemV2 {
         id: externalShadow
-        anchors.horizontalCenter: parent.horizontalCenter
-        y: 12
-        width: root.nominalWidth
-        height: root.nominalHeight
-        radius: root.pillRadius
-        color: "transparent"
+        anchors.fill: parent
+        cornerRadii: Qt.vector4d(root.pillRadius, root.pillRadius, root.pillRadius, root.pillRadius)
+        shadowOffsetY: 12.0
+        shadowIntensity: 0.35
+        isolatedPass: (root.debugPass === "G")
         visible: root.debugPass === "H" || root.debugPass === "G"
         z: 0
-
-        // Gradiente de decaimento periférico suave e difuso
-        Rectangle {
-            anchors.fill: parent
-            anchors.margins: -10
-            radius: root.pillRadius + 10
-            color: Qt.rgba(0.0, 0.05, 0.13, 0.32)
-            opacity: (root.debugPass === "G") ? 1.0 : 0.85
-            z: -1
-        }
-        Rectangle {
-            anchors.fill: parent
-            anchors.margins: -4
-            radius: root.pillRadius + 4
-            color: Qt.rgba(0.0, 0.04, 0.10, 0.40)
-            opacity: (root.debugPass === "G") ? 1.0 : 0.95
-            z: -1
-        }
     }
 
     // 2. Chassi Óptico Unificado VALO Glass V2 (Material analítico SDF, refração, dispersão e contorno)
@@ -178,6 +158,7 @@ Item {
                 forcePressed: (root.testState === 3 && index === 2) // Terminal com press no estado 3
                 forceActive:  (root.testState === 4 && index === 0) || (root.testState === 7 && index === 0) // Files ativo
                 forceBackgroundRunning: (root.testState === 5 && (index === 1 || index === 3)) // Áudio e IDE em segundo plano
+                isFocused: (root.testState === 6 && index === 2) || activeFocus
                 showKeyboardFocus: (root.testState === 6 && index === 2) || activeFocus
 
                 onActivated: {

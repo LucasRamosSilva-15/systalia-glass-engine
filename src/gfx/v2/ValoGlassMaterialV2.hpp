@@ -16,7 +16,7 @@ namespace Systalia::Gfx::V2 {
  */
 class ValoGlassMaterialShaderV2 : public QSGMaterialShader {
 public:
-  ValoGlassMaterialShaderV2();
+  explicit ValoGlassMaterialShaderV2(int diagnosticMode = 0);
 
   bool updateUniformData(RenderState &state, QSGMaterial *newMaterial,
                          QSGMaterial *oldMaterial) override;
@@ -44,6 +44,9 @@ public:
   createShader(QSGRendererInterface::RenderMode renderMode) const override;
   int compare(const QSGMaterial *other) const override;
 
+  int diagnosticMode() const noexcept { return m_diagnosticMode; }
+  void setDiagnosticMode(int mode) noexcept { m_diagnosticMode = mode; }
+
   void setProps(const SystaliaSurfacePropsV2 &props) noexcept {
     m_props = props;
   }
@@ -60,6 +63,7 @@ private:
   SystaliaSurfacePropsV2 m_props;
   QSGTexture *m_backdropTexture = nullptr;
   QSGTexture *m_clientTexture = nullptr;
+  int m_diagnosticMode = 0;
 };
 
 } // namespace Systalia::Gfx::V2

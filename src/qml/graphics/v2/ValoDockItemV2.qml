@@ -67,7 +67,7 @@ Item {
             }
         }
 
-        // Anel de foco acessível por teclado (visível estritamente quando navegado por teclado)
+        // Anel de foco acessível por teclado (visível sob navegação por teclado ou estado Focused)
         Rectangle {
             anchors.centerIn: parent
             width: root.iconSize + 8
@@ -76,8 +76,8 @@ Item {
             color: "transparent"
             border.color: Qt.rgba(0.22, 0.87, 0.98, 0.85) // Ciano elétrico #37DDFA
             border.width: 1.5
-            visible: root.activeFocus && root.showKeyboardFocus
-            opacity: (root.activeFocus && root.showKeyboardFocus) ? 1.0 : 0.0
+            visible: root.activeFocus || root.showKeyboardFocus
+            opacity: (root.activeFocus || root.showKeyboardFocus) ? 1.0 : 0.0
 
             Behavior on opacity {
                 enabled: !root.prefersReducedMotion

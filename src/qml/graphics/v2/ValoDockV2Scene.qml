@@ -33,10 +33,14 @@ Item {
                 GradientStop { position: 1.0; color: "#052445" }
             }
 
-            // Elementos luminosos sutis para testar dispersão cromática
+            // Elementos luminosos circulares suaves de ambiência oceânica
             Rectangle {
-                x: 350; y: 400; width: 580; height: 180; radius: 90
-                color: Qt.rgba(0.09, 0.45, 0.65, 0.18)
+                x: 180; y: 200; width: 340; height: 340; radius: 170
+                color: Qt.rgba(0.06, 0.35, 0.55, 0.12)
+            }
+            Rectangle {
+                x: 760; y: 280; width: 380; height: 380; radius: 190
+                color: Qt.rgba(0.08, 0.42, 0.62, 0.10)
             }
         }
 
@@ -125,6 +129,16 @@ Item {
         }
     }
 
+    // Provedor de textura do backdrop via ShaderEffectSource (isTextureProvider() = true)
+    ShaderEffectSource {
+        id: backdropEffectSource
+        anchors.fill: parent
+        sourceItem: backdropContainer
+        live: true
+        hideSource: false
+        recursive: false
+    }
+
     // 2. Instância da Dock VALO V2 (Centralizada na parte inferior da tela)
     ValoDockV2 {
         id: dockInstance
@@ -132,8 +146,8 @@ Item {
         anchors.bottom: parent.bottom
         anchors.bottomMargin: 40
 
-        // Vincula o contêiner de backdrop para refração e blur em GPU
-        backdropSource: backdropContainer
+        // Vincula o ShaderEffectSource para refração e blur em GPU real
+        backdropSource: backdropEffectSource
     }
 
     // 3. Painel Superior de Controle Interativo e Diagnóstico (HUD)
