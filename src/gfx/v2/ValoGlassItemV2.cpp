@@ -232,11 +232,15 @@ QSGNode *ValoGlassItemV2::updatePaintNode(QSGNode *oldNode,
     node->setGeometry(geometry);
     node->setFlag(QSGNode::OwnsGeometry, true);
 
-    material = new ValoGlassMaterialV2();
+    material = new ValoGlassMaterialV2(m_debugMode);
     node->setMaterial(material);
     node->setFlag(QSGNode::OwnsMaterial, true);
   } else {
     material = static_cast<ValoGlassMaterialV2 *>(node->material());
+    if (!material || material->diagnosticMode() != m_debugMode) {
+      material = new ValoGlassMaterialV2(m_debugMode);
+      node->setMaterial(material);
+    }
   }
 
   // Geometria cobrindo a área retangular do item

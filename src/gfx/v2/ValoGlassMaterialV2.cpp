@@ -109,7 +109,8 @@ void ValoGlassMaterialShaderV2::updateSampledImage(RenderState &state,
   }
 }
 
-ValoGlassMaterialV2::ValoGlassMaterialV2() {
+ValoGlassMaterialV2::ValoGlassMaterialV2(int diagnosticMode)
+    : m_diagnosticMode(diagnosticMode) {
   // Composição alpha pré-multiplicada para transparência óptica e antialiasing
   setFlag(Blending, true);
   setFlag(RequiresFullMatrix, true);

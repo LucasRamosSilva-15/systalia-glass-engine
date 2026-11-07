@@ -3,6 +3,8 @@
 #include <QQmlComponent>
 #include <QQuickWindow>
 #include <QQuickItem>
+#include <QSGRendererInterface>
+#include <rhi/qrhi.h>
 #include <QImage>
 #include <QDir>
 #include <QElapsedTimer>
@@ -13,6 +15,7 @@
 #include <numeric>
 #include <algorithm>
 #include <cmath>
+#include <string>
 
 #include "ValoGeometryEngineV2.hpp"
 #include "ValoBlurPipelineV2.hpp"
@@ -60,14 +63,43 @@ struct BenchStats {
 };
 
 int main(int argc, char **argv) {
-    qputenv("QT_QPA_PLATFORM", "offscreen");
+    std::string backend = "opengl";
+    std::string platform = "wayland";
+    std::string artifactDir = "/home/lucasramos/Documentos/systalia-glass-engine/artifacts/graphics-v2-stage-04-2";
+    std::string brainDir = "/home/lucasramos/.gemini/antigravity/brain/db6eb3e4-2bf0-441e-9ef2-a1601d0a1c5f";
+    std::string targetPass = "all";
+    int filterProfile = -1;
+
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        if (arg == "--backend" && i + 1 < argc) {
+            backend = argv[++i];
+        } else if (arg == "--platform" && i + 1 < argc) {
+            platform = argv[++i];
+        } else if (arg == "--artifact-dir" && i + 1 < argc) {
+            artifactDir = argv[++i];
+        } else if (arg == "--brain-dir" && i + 1 < argc) {
+            brainDir = argv[++i];
+        } else if (arg == "--profile" && i + 1 < argc) {
+            filterProfile = std::stoi(argv[++i]);
+        } else if (arg == "--pass" && i + 1 < argc) {
+            targetPass = argv[++i];
+        }
+    }
+
+    // Configuração estrita de ambiente para forçar QRhi real sem fallback de software
+    qputenv("QT_QPA_PLATFORM", QByteArray::fromStdString(platform));
+    qputenv("QT_QUICK_BACKEND", "rhi");
+    qputenv("QSG_RHI_BACKEND", QByteArray::fromStdString(backend));
+    qputenv("QSG_INFO", "1");
+
     QGuiApplication app(argc, argv);
     qml_register_types_Systalia_Engine();
 
-    const QString artifactDir = QStringLiteral("/home/lucasramos/.gemini/antigravity/brain/db6eb3e4-2bf0-441e-9ef2-a1601d0a1c5f");
-    const QString repoArtifactDir = QStringLiteral("/home/lucasramos/Documentos/systalia-glass-engine/artifacts");
-    QDir().mkpath(artifactDir);
-    QDir().mkpath(repoArtifactDir);
+    const QString qArtifactDir = QString::fromStdString(artifactDir);
+    const QString qBrainDir = QString::fromStdString(brainDir);
+    QDir().mkpath(qArtifactDir);
+    QDir().mkpath(qBrainDir);
 
     QQuickWindow window;
     window.resize(1280, 720);
@@ -101,20 +133,46 @@ int main(int argc, char **argv) {
 
     window.show();
     for (int i = 0; i < 15; ++i) {
+        window.update();
         QCoreApplication::processEvents();
-        QThread::msleep(20);
+        QThread::msleep(15);
     }
 
+    // Validação estrita de inicialização do RHI em hardware real
+    QSGRendererInterface *rif = window.rendererInterface();
+    if (!rif) {
+        std::cerr << "[ERRO CRÍTICO] QSGRendererInterface não disponível!" << std::endl;
+        return 1;
+    }
+
+    const auto api = rif->graphicsApi();
+    if (api == QSGRendererInterface::Software) {
+        std::cerr << "[ERRO CRÍTICO] Software Fallback detectado! Abortando execução de artefatos GPU." << std::endl;
+        return 1;
+    }
+
+    QRhi *rhi = window.rhi();
+    if (!rhi) {
+        std::cerr << "[ERRO CRÍTICO] QRhi não instanciado na janela gráfica!" << std::endl;
+        return 1;
+    }
+
+    std::cout << "================================================================================" << std::endl;
+    std::cout << "   VALO GRAPHICS 2.0 — GERADOR DE ARTEFATOS HOMOLOGADOS DA DOCK V2" << std::endl;
+    std::cout << "   Backend: " << backend << " | Platform: " << platform << " | API: " << api << std::endl;
+    std::cout << "   Device:  " << rhi->backendName() << " (" << rhi->driverInfo().deviceName.toStdString() << ")" << std::endl;
+    std::cout << "================================================================================" << std::endl;
+
     auto renderAndCapture = [&](const QString &filename) -> QImage {
-        for (int i = 0; i < 6; ++i) {
+        for (int i = 0; i < 8; ++i) {
             window.update();
             QCoreApplication::processEvents();
-            QThread::msleep(20);
+            QThread::msleep(15);
         }
         QImage img = window.grabWindow();
         if (!img.isNull()) {
-            const QString path1 = artifactDir + "/" + filename;
-            const QString path2 = repoArtifactDir + "/" + filename;
+            const QString path1 = qArtifactDir + "/" + filename;
+            const QString path2 = qBrainDir + "/" + filename;
             img.save(path1);
             img.save(path2);
             std::cout << "[ARTEFATO GERADO] " << path1.toStdString() << " (" << img.width() << "x" << img.height() << ")" << std::endl;
@@ -130,7 +188,11 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    std::cout << "=== 1. GERANDO ARTEFATOS DOS 7 ESTADOS CANÔNICOS (GPU REAL) ===" << std::endl;
+    if (filterProfile >= 0) {
+        dock->setProperty("blurProfile", filterProfile);
+    }
+
+    std::cout << "\n=== 1. GERANDO ARTEFATOS DOS 7 ESTADOS CANÔNICOS (GPU REAL) ===" << std::endl;
     sceneItem->setProperty("backgroundMode", 0); // Fundo Oceânico padrão
     dock->setProperty("debugPass", "H"); // Composição completa
 
@@ -162,43 +224,30 @@ int main(int argc, char **argv) {
     dock->setProperty("testState", 7);
     renderAndCapture("dock_v2_state_7_reduced_motion.png");
 
-    std::cout << "=== 2. GERANDO ARTEFATOS DOS 8 PASSES DIAGNÓSTICOS (GPU REAL) ===" << std::endl;
+    std::cout << "\n=== 2. GERANDO ARTEFATOS DOS 8 PASSES DIAGNÓSTICOS (GPU REAL) ===" << std::endl;
     dock->setProperty("testState", 1);
     sceneItem->setProperty("backgroundMode", 0);
 
-    // Passe A: Geometria SDF e Normais Analíticas (valo_diag_sdf.frag)
-    dock->setProperty("debugPass", "A");
-    renderAndCapture("dock_v2_pass_A_sdf.png");
+    const struct { const char *pass; const char *filename; } passes[] = {
+        {"A", "dock_v2_pass_A_sdf.png"},
+        {"B", "dock_v2_pass_B_mask.png"},
+        {"C", "dock_v2_pass_C_volume.png"},
+        {"D", "dock_v2_pass_D_refraction.png"},
+        {"E", "dock_v2_pass_E_blur_gpu.png"},
+        {"F", "dock_v2_pass_F_specular.png"},
+        {"G", "dock_v2_pass_G_shadow.png"},
+        {"H", "dock_v2_pass_H_composite.png"}
+    };
 
-    // Passe B: Máscara Analítica (L2 Capsule Coverage) (valo_diag_mask.frag)
-    dock->setProperty("debugPass", "B");
-    renderAndCapture("dock_v2_pass_B_mask.png");
+    for (const auto &p : passes) {
+        if (targetPass != "all" && targetPass != p.pass) {
+            continue;
+        }
+        dock->setProperty("debugPass", p.pass);
+        renderAndCapture(p.filename);
+    }
 
-    // Passe C: Preenchimento Volumétrico Oceânico (valo_diag_volume.frag)
-    dock->setProperty("debugPass", "C");
-    renderAndCapture("dock_v2_pass_C_volume.png");
-
-    // Passe D: Refração e Menisco Óptico (valo_diag_refraction.frag)
-    dock->setProperty("debugPass", "D");
-    renderAndCapture("dock_v2_pass_D_refraction.png");
-
-    // Passe E: Blur Dual-Kawase GPU (8 Passes Quality) (valo_diag_blur.frag)
-    dock->setProperty("debugPass", "E");
-    renderAndCapture("dock_v2_pass_E_blur_gpu.png");
-
-    // Passe F: Contorno Especular Isolado de 1.25px (valo_diag_specular.frag)
-    dock->setProperty("debugPass", "F");
-    renderAndCapture("dock_v2_pass_F_specular.png");
-
-    // Passe G: Sombra Externa Analítica Contínua (valo_shadow_v2.frag)
-    dock->setProperty("debugPass", "G");
-    renderAndCapture("dock_v2_pass_G_shadow.png");
-
-    // Passe H: Composição Final Completa (valo_optical_v2.frag)
-    dock->setProperty("debugPass", "H");
-    renderAndCapture("dock_v2_pass_H_composite.png");
-
-    std::cout << "=== 3. GERANDO ARTEFATOS MULTI-BACKDROP (GPU REAL) ===" << std::endl;
+    std::cout << "\n=== 3. GERANDO ARTEFATOS MULTI-BACKDROP (GPU REAL) ===" << std::endl;
     dock->setProperty("debugPass", "H");
 
     const struct { int mode; const char *filename; } bgs[] = {
@@ -214,11 +263,11 @@ int main(int argc, char **argv) {
         renderAndCapture(bg.filename);
     }
 
-    std::cout << "=== 4. BENCHMARK DE RENDERIZAÇÃO DA DOCK V2 ===" << std::endl;
+    std::cout << "\n=== 4. BENCHMARK DE RENDERIZAÇÃO DA DOCK V2 ===" << std::endl;
     const struct { int profile; const char *name; } profiles[] = {
         {0, "Performance (0 passes / Direct)"},
-        {1, "Balanced (4 passes)"},
-        {2, "Quality (8 passes)"}
+        {1, "Balanced (4 passes GPU)"},
+        {2, "Quality (8 passes GPU)"}
     };
 
     for (const auto &prof : profiles) {
@@ -229,6 +278,7 @@ int main(int argc, char **argv) {
         for (int w = 0; w < 10; ++w) {
             window.update();
             QCoreApplication::processEvents();
+            QThread::msleep(5);
         }
 
         std::vector<double> frameTimes;
@@ -256,6 +306,6 @@ int main(int argc, char **argv) {
                   << std::endl;
     }
 
-    std::cout << "Geração de artefatos da Etapa 04.1 finalizada com sucesso." << std::endl;
+    std::cout << "\nGeração de artefatos da Etapa 04.2 finalizada com sucesso." << std::endl;
     return 0;
 }

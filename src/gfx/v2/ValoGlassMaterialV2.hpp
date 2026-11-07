@@ -36,7 +36,7 @@ public:
  */
 class ValoGlassMaterialV2 : public QSGMaterial {
 public:
-  ValoGlassMaterialV2();
+  explicit ValoGlassMaterialV2(int diagnosticMode = 0);
   ~ValoGlassMaterialV2() override = default;
 
   QSGMaterialType *type() const override;

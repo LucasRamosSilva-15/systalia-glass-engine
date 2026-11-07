@@ -27,6 +27,9 @@ private slots:
 };
 
 void TestValoGlassRenderingV2::initTestCase() {
+    qputenv("QT_QPA_PLATFORM", "offscreen");
+    qputenv("QT_QUICK_BACKEND", "rhi");
+    qputenv("QSG_RHI_BACKEND", "opengl");
     QDir().mkpath(m_artifactDir);
 }
 
@@ -56,23 +59,20 @@ void TestValoGlassRenderingV2::renderCircularL2AndVerifySilhouette() {
     QVERIFY(!frame.isNull());
     QCOMPARE(frame.size(), QSize(300, 200));
 
-    // Se o backend gráfico ativo produziu pixels renderizados:
-    if (frame.pixelColor(150, 100).alpha() > 0) {
-        // 1. Canto externo (x=5, y=5) deve ser transparente
-        const QColor cornerPixel = frame.pixelColor(5, 5);
-        QCOMPARE(cornerPixel.alpha(), 0);
+    // Asserção estrita: centro deve estar visivelmente renderizado
+    const QColor centerPixel = frame.pixelColor(150, 100);
+    QVERIFY2(centerPixel.alpha() > 50, "O centro do item de vidro deve ter preenchimento volumétrico visível!");
 
-        // 2. Interior no centro (x=150, y=100) deve ter preenchimento volumétrico
-        const QColor centerPixel = frame.pixelColor(150, 100);
-        QVERIFY(centerPixel.alpha() > 50);
+    // 1. Canto externo (x=5, y=5) deve ser transparente
+    const QColor cornerPixel = frame.pixelColor(5, 5);
+    QCOMPARE(cornerPixel.alpha(), 0);
 
-        // 3. Contorno especular na borda: o highlight especular intensifica a opacidade em relação ao interior
-        const int aInside = frame.pixelColor(295, 100).alpha();
-        const int aBorder = frame.pixelColor(299, 100).alpha();
-        QVERIFY(aBorder > aInside);
+    // 3. Contorno especular na borda: o highlight especular intensifica a opacidade em relação ao interior
+    const int aInside = frame.pixelColor(295, 100).alpha();
+    const int aBorder = frame.pixelColor(299, 100).alpha();
+    QVERIFY(aBorder > aInside);
 
-        frame.save(m_artifactDir + QStringLiteral("/valo_v2_circular_l2.png"));
-    }
+    frame.save(m_artifactDir + QStringLiteral("/valo_v2_circular_l2.png"));
 }
 
 void TestValoGlassRenderingV2::renderSquircleG2AndVerifySilhouette() {
@@ -99,17 +99,15 @@ void TestValoGlassRenderingV2::renderSquircleG2AndVerifySilhouette() {
     const QImage frame = window.grabWindow();
     QVERIFY(!frame.isNull());
 
-    if (frame.pixelColor(150, 100).alpha() > 0) {
-        // Canto externo distante
-        const QColor cornerPixel = frame.pixelColor(4, 4);
-        QCOMPARE(cornerPixel.alpha(), 0);
+    // Asserção estrita
+    const QColor centerPixel = frame.pixelColor(150, 100);
+    QVERIFY2(centerPixel.alpha() > 50, "O centro do item Squircle G2 deve ter opacidade > 50!");
 
-        // Centro
-        const QColor centerPixel = frame.pixelColor(150, 100);
-        QVERIFY(centerPixel.alpha() > 50);
+    // Canto externo distante
+    const QColor cornerPixel = frame.pixelColor(4, 4);
+    QCOMPARE(cornerPixel.alpha(), 0);
 
-        frame.save(m_artifactDir + QStringLiteral("/valo_v2_squircle_g2.png"));
-    }
+    frame.save(m_artifactDir + QStringLiteral("/valo_v2_squircle_g2.png"));
 }
 
 void TestValoGlassRenderingV2::premultipliedAlphaIntegrityAcrossAllPixels() {
@@ -136,28 +134,28 @@ void TestValoGlassRenderingV2::premultipliedAlphaIntegrityAcrossAllPixels() {
     const QImage frame = window.grabWindow();
     QVERIFY(!frame.isNull());
 
-    // Se o framebuffer renderizou:
-    if (frame.pixelColor(100, 75).alpha() > 0) {
-        const QImage preFrame = frame.convertToFormat(QImage::Format_ARGB32_Premultiplied);
+    const QColor centerPixel = frame.pixelColor(100, 75);
+    QVERIFY2(centerPixel.alpha() > 0, "Item de vidro deve estar desenhado no framebuffer!");
 
-        int violationCount = 0;
-        for (int y = 0; y < preFrame.height(); ++y) {
-            const QRgb *scanLine = reinterpret_cast<const QRgb *>(preFrame.constScanLine(y));
-            for (int x = 0; x < preFrame.width(); ++x) {
-                const QRgb p = scanLine[x];
-                const int a = qAlpha(p);
-                const int r = qRed(p);
-                const int g = qGreen(p);
-                const int b = qBlue(p);
+    const QImage preFrame = frame.convertToFormat(QImage::Format_ARGB32_Premultiplied);
 
-                // No contrato de alpha pré-multiplicado, r <= a, g <= a, b <= a
-                if (r > a + 1 || g > a + 1 || b > a + 1) {
-                    ++violationCount;
-                }
+    int violationCount = 0;
+    for (int y = 0; y < preFrame.height(); ++y) {
+        const QRgb *scanLine = reinterpret_cast<const QRgb *>(preFrame.constScanLine(y));
+        for (int x = 0; x < preFrame.width(); ++x) {
+            const QRgb p = scanLine[x];
+            const int a = qAlpha(p);
+            const int r = qRed(p);
+            const int g = qGreen(p);
+            const int b = qBlue(p);
+
+            // No contrato de alpha pré-multiplicado, r <= a, g <= a, b <= a
+            if (r > a + 1 || g > a + 1 || b > a + 1) {
+                ++violationCount;
             }
         }
-        QCOMPARE(violationCount, 0);
     }
+    QCOMPARE(violationCount, 0);
 }
 
 void TestValoGlassRenderingV2::diagnosticModesProduceValidPasses() {
@@ -187,16 +185,14 @@ void TestValoGlassRenderingV2::diagnosticModesProduceValidPasses() {
         const QImage shot = window.grabWindow();
         QVERIFY(!shot.isNull());
 
-        if (shot.pixelColor(80, 50).alpha() > 0 || shot.pixelColor(80, 2).alpha() > 0) {
-            if (mode == 4) {
-                // Modo 4 (contorno especular): inspecionar na borda superior (y=2, x=80)
-                const QColor borderPixel = shot.pixelColor(80, 2);
-                QVERIFY(borderPixel.alpha() > 0);
-            } else {
-                // Modos 1, 2, 3: inspecionar no centro (y=50, x=80)
-                const QColor centerPixel = shot.pixelColor(80, 50);
-                QVERIFY(centerPixel.alpha() > 0);
-            }
+        if (mode == 4) {
+            // Modo 4 (contorno especular): inspecionar na borda superior (y=2, x=80)
+            const QColor borderPixel = shot.pixelColor(80, 2);
+            QVERIFY2(borderPixel.alpha() > 0, "Modo 4 especular deve produzir borda visível!");
+        } else {
+            // Modos 1, 2, 3: inspecionar no centro (y=50, x=80)
+            const QColor centerPixel = shot.pixelColor(80, 50);
+            QVERIFY2(centerPixel.alpha() > 0, "Modos 1-3 devem produzir pixels com alpha > 0!");
         }
     }
 }

@@ -7,6 +7,23 @@
 
 namespace Systalia::Gfx::V2 {
 
+namespace {
+class ValoRhiTextureWrapper : public QSGTexture {
+public:
+    explicit ValoRhiTextureWrapper(QRhiTexture *tex) : m_tex(tex) {}
+    ~ValoRhiTextureWrapper() override = default;
+
+    QRhiTexture *rhiTexture() const override { return m_tex; }
+    QSize textureSize() const override { return m_tex ? m_tex->pixelSize() : QSize(); }
+    bool hasAlphaChannel() const override { return true; }
+    bool hasMipmaps() const override { return false; }
+    qint64 comparisonKey() const override { return reinterpret_cast<qint64>(m_tex); }
+
+private:
+    QRhiTexture *m_tex = nullptr;
+};
+} // namespace
+
 ValoBackdropProviderV2::ValoBackdropProviderV2(QObject *parent)
     : QObject(parent)
 {
@@ -56,11 +73,37 @@ void ValoBackdropProviderV2::onSourceTextureChanged() {
     emit textureChanged();
 }
 
+void ValoBackdropProviderV2::attachToWindow(QQuickWindow *window) {
+    if (!window || m_resourceWindow == window) {
+        return;
+    }
+    if (m_resourceWindow) {
+        disconnect(m_resourceWindow, &QQuickWindow::beforeRendering,
+                   this, &ValoBackdropProviderV2::onBeforeRendering);
+        disconnect(m_resourceWindow, &QQuickWindow::sceneGraphInvalidated,
+                   this, &ValoBackdropProviderV2::releaseResources);
+        disconnect(m_resourceWindow, &QObject::destroyed, this, nullptr);
+    }
+    m_resourceWindow = window;
+    if (m_resourceWindow) {
+        connect(m_resourceWindow, &QQuickWindow::beforeRendering,
+                this, &ValoBackdropProviderV2::onBeforeRendering,
+                Qt::DirectConnection);
+        connect(m_resourceWindow, &QQuickWindow::sceneGraphInvalidated,
+                this, &ValoBackdropProviderV2::releaseResources,
+                Qt::DirectConnection);
+        connect(m_resourceWindow, &QObject::destroyed,
+                this, [this]() {
+                    m_resourceWindow = nullptr;
+                });
+    }
+}
+
 QSGTexture *ValoBackdropProviderV2::texture(QQuickWindow *window) {
     if (!window) {
         return nullptr;
     }
-    m_resourceWindow = window;
+    attachToWindow(window);
 
     // 1. Amostragem de item upstream (ex: Wallpaper / ShaderEffectSource)
     if (m_source && m_source->isTextureProvider()) {
@@ -139,68 +182,84 @@ void ValoBackdropProviderV2::setBlurProfile(BlurProfile profile) {
         setDirty(true);
         emit blurProfileChanged();
         emit textureChanged();
+        if (m_resourceWindow) {
+            m_resourceWindow->update();
+        }
     }
+}
+
+void ValoBackdropProviderV2::onBeforeRendering() {
+    if (!m_resourceWindow) return;
+    if (m_blurProfile == BlurProfile::Performance) {
+        return;
+    }
+
+    QRhi *rhi = m_resourceWindow->rhi();
+    if (!rhi) return;
+
+    if (m_qsgBlurredTexture && !m_isDirty) {
+        return;
+    }
+
+    QSGTexture *srcTex = texture(m_resourceWindow);
+    if (!srcTex) return;
+
+    const QSize srcSize = srcTex->textureSize();
+    if (!srcSize.isValid() || srcSize.isEmpty()) return;
+
+    QRhiTexture *rhiSrc = srcTex->rhiTexture();
+    if (!rhiSrc) return;
+
+    if (!m_gpuBlurPipeline) {
+        m_gpuBlurPipeline = std::make_unique<ValoGpuBlurPipelineV2>();
+    }
+
+    if (!m_gpuBlurPipeline->prepare(rhi, srcSize, m_blurProfile)) {
+        return;
+    }
+
+    QRhiCommandBuffer *cb = nullptr;
+    QRhiSwapChain *swapchain = m_resourceWindow->swapChain();
+    if (swapchain) {
+        cb = swapchain->currentFrameCommandBuffer();
+    }
+    if (!cb) {
+        cb = static_cast<QRhiCommandBuffer *>(
+            m_resourceWindow->rendererInterface()->getResource(m_resourceWindow, QSGRendererInterface::RhiRedirectCommandBuffer));
+    }
+    if (!cb) return;
+
+    // Executa os passes Dual-Kawase multipass com total segurança no estágio beforeRendering
+    // (após beginFrame(), mas antes do beginPass() da cena principal do Scene Graph)
+    m_gpuBlurPipeline->execute(cb, rhiSrc, m_blurProfile);
+
+    QRhiTexture *outRhi = m_gpuBlurPipeline->blurredTexture();
+    if (outRhi) {
+        if (!m_qsgBlurredTexture || m_qsgBlurredTexture->rhiTexture() != outRhi) {
+            delete std::exchange(m_qsgBlurredTexture, nullptr);
+            auto *wrapper = new ValoRhiTextureWrapper(outRhi);
+            wrapper->setFiltering(QSGTexture::Linear);
+            wrapper->setHorizontalWrapMode(QSGTexture::ClampToEdge);
+            wrapper->setVerticalWrapMode(QSGTexture::ClampToEdge);
+            m_qsgBlurredTexture = wrapper;
+            m_resourceWindow->update();
+            m_resourceWindow->update();
+        }
+    }
+    m_isDirty = false;
 }
 
 QSGTexture *ValoBackdropProviderV2::blurredTexture(QQuickWindow *window) {
     if (!window) return nullptr;
+    attachToWindow(window);
 
     QSGTexture *srcTex = texture(window);
     if (!srcTex || m_blurProfile == BlurProfile::Performance) {
         return srcTex;
     }
 
-    QRhi *rhi = window->rhi();
-    if (!rhi) {
-        return srcTex;
-    }
-
-    if (!m_gpuBlurPipeline) {
-        m_gpuBlurPipeline = std::make_unique<ValoGpuBlurPipelineV2>();
-    }
-
-    if (!m_qsgBlurredTexture || m_isDirty) {
-        const QSize srcSize = srcTex->textureSize();
-        if (srcSize.isValid() && !srcSize.isEmpty()) {
-            if (m_gpuBlurPipeline->prepare(rhi, srcSize, m_blurProfile)) {
-                QRhiTexture *rhiSrc = srcTex->rhiTexture();
-                if (rhiSrc) {
-                    QRhiCommandBuffer *cb = nullptr;
-                    bool executed = false;
-                    if (rhi->isRecordingFrame()) {
-                        cb = static_cast<QRhiCommandBuffer *>(
-                            window->rendererInterface()->getResource(window, QSGRendererInterface::CommandListResource));
-                        if (cb) {
-                            m_gpuBlurPipeline->execute(cb, rhiSrc, m_blurProfile);
-                            executed = true;
-                        }
-                    } else if (rhi->beginOffscreenFrame(&cb) == QRhi::FrameOpSuccess) {
-                        m_gpuBlurPipeline->execute(cb, rhiSrc, m_blurProfile);
-                        rhi->endOffscreenFrame();
-                        rhi->finish();
-                        executed = true;
-                    }
-
-                    if (executed) {
-                        QRhiTexture *outRhi = m_gpuBlurPipeline->blurredTexture();
-                        if (outRhi) {
-                            if (!m_qsgBlurredTexture || m_qsgBlurredTexture->rhiTexture() != outRhi) {
-                                delete std::exchange(m_qsgBlurredTexture, nullptr);
-                                m_qsgBlurredTexture = window->createTextureFromRhiTexture(
-                                    outRhi, QQuickWindow::TextureHasAlphaChannel);
-                                if (m_qsgBlurredTexture) {
-                                    m_qsgBlurredTexture->setFiltering(QSGTexture::Linear);
-                                    m_qsgBlurredTexture->setHorizontalWrapMode(QSGTexture::ClampToEdge);
-                                    m_qsgBlurredTexture->setVerticalWrapMode(QSGTexture::ClampToEdge);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
+    // Durante syncSceneGraph (updatePaintNode), apenas retorna a textura processada
+    // NENHUM comando GPU é emitido nesta fase para preservar o pipeline Vulkan/OpenGL.
     return m_qsgBlurredTexture ? m_qsgBlurredTexture : srcTex;
 }
 
@@ -209,6 +268,14 @@ void ValoBackdropProviderV2::releaseResources() {
         disconnect(m_connectedProvider, &QSGTextureProvider::textureChanged,
                    this, &ValoBackdropProviderV2::onSourceTextureChanged);
         m_connectedProvider = nullptr;
+    }
+    if (m_resourceWindow) {
+        disconnect(m_resourceWindow, &QQuickWindow::beforeRendering,
+                   this, &ValoBackdropProviderV2::onBeforeRendering);
+        disconnect(m_resourceWindow, &QQuickWindow::sceneGraphInvalidated,
+                   this, &ValoBackdropProviderV2::releaseResources);
+        disconnect(m_resourceWindow, &QObject::destroyed, this, nullptr);
+        m_resourceWindow = nullptr;
     }
     delete std::exchange(m_qsgBlurredTexture, nullptr);
     delete std::exchange(m_fallbackTexture, nullptr);

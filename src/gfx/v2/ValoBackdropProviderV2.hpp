@@ -70,6 +70,7 @@ public:
     static QImage createSyntheticBackdrop(const QSize &size);
 
     void releaseResources();
+    void attachToWindow(QQuickWindow *window);
 
 signals:
     void sourceChanged();
@@ -79,6 +80,7 @@ signals:
 
 private slots:
     void onSourceTextureChanged();
+    void onBeforeRendering();
 
 private:
     QPointer<QQuickItem> m_source;

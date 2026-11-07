@@ -42,6 +42,7 @@ private slots:
     void testVisualFocusedStateMeasurablyDistinctFromIdle();
     void testSingleCapsuleNoDuplicateAbove();
     void testPremultipliedAlphaContractAcrossDiagnosticPasses();
+    void testDockFramebufferPixelIntegrity();
 
 private:
     std::unique_ptr<QQmlEngine> m_engine;
@@ -508,6 +509,58 @@ void tst_ValoDockV2::testPremultipliedAlphaContractAcrossDiagnosticPasses() {
         }
         QCOMPARE(violationCount, 0);
     }
+}
+
+void tst_ValoDockV2::testDockFramebufferPixelIntegrity() {
+    QQuickWindow window;
+    window.resize(1280, 720);
+    window.setColor(Qt::black);
+
+    QQmlComponent component(m_engine.get());
+    component.setData(R"(
+        import QtQuick
+        import Systalia.Engine
+        ValoDockV2Scene {
+            anchors.fill: parent
+            showHud: false
+            backgroundMode: 0
+        }
+    )", QUrl());
+
+    auto *scene = qobject_cast<QQuickItem*>(component.create());
+    QVERIFY(scene != nullptr);
+    scene->setParentItem(window.contentItem());
+
+    window.show();
+    (void)QTest::qWaitForWindowExposed(&window, 1000);
+    for (int i = 0; i < 8; ++i) {
+        window.update();
+        QCoreApplication::processEvents();
+        QTest::qWait(20);
+    }
+
+    const QImage frame = window.grabWindow();
+    QVERIFY(!frame.isNull());
+
+    // 1. O centro da dock (x=640, y=665) deve diferir do wallpaper de fundo puro (x=10, y=10)
+    const QColor bgCorner = frame.pixelColor(10, 10);
+    const QColor dockCenter = frame.pixelColor(640, 665);
+    const int colorDelta = std::abs(dockCenter.red() - bgCorner.red()) +
+                           std::abs(dockCenter.green() - bgCorner.green()) +
+                           std::abs(dockCenter.blue() - bgCorner.blue());
+    QVERIFY2(colorDelta > 15, "A cápsula de vidro óptico da Dock deve estar visivelmente renderizada no centro!");
+
+    // 2. A região dos 5 lançadores deve conter pixels renderizados com cores distintas (ícones / indicadores)
+    int activeIconPixels = 0;
+    for (int x = 380; x <= 900; ++x) {
+        for (int y = 620; y <= 680; ++y) {
+            const QColor p = frame.pixelColor(x, y);
+            if (p.green() > 100 || p.blue() > 100 || p.red() > 100) {
+                activeIconPixels++;
+            }
+        }
+    }
+    QVERIFY2(activeIconPixels > 500, "Os 5 lançadores da Dock devem estar visivelmente renderizados no framebuffer!");
 }
 
 QTEST_MAIN(tst_ValoDockV2)
