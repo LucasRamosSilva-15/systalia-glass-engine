@@ -18,6 +18,8 @@
 #include "InputDeviceManager.hpp"
 #include "LogindSessionService.hpp"
 
+void qml_register_types_Systalia_Engine();
+
 int main(int argc, char *argv[]) {
     // Deteção dinâmica de sessão (Bare-Metal DRM/KMS via TTY vs. Aninhada Wayland/X11 vs. Headless)
     // Configura QT_QPA_PLATFORM=eglfs, QT_QPA_EGLFS_INTEGRATION=eglfs_kms e QSG_RHI_BACKEND=vulkan
@@ -45,6 +47,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Registro dos tipos QML
+    qml_register_types_Systalia_Engine();
     qmlRegisterType<SystaliaGlassItem>("Systalia.Engine", 1, 0, "SystaliaGlassItem");
     qmlRegisterType<SystaliaCompositor>("Systalia.Compositor", 1, 0, "SystaliaCompositor");
     qmlRegisterSingletonType<SystemTelemetryService>(

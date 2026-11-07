@@ -215,7 +215,7 @@ function(sge_add_expanded_test target source layer)
         Qt6::Quick
         Qt6::WaylandCompositor
         Qt6::Test
-        sge_core
+        -Wl,--whole-archive sge_core -Wl,--no-whole-archive
     )
     add_test(NAME ${target} COMMAND ${target})
     set_tests_properties(${target} PROPERTIES
@@ -273,6 +273,10 @@ sge_add_expanded_test(tst_valo_dock_v2 unit/tst_ValoDockV2.cpp unit)
 set_tests_properties(tst_valo_dock_v2 PROPERTIES
     ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
 )
+sge_add_expanded_test(tst_valo_shell_v2 unit/tst_ValoShellV2.cpp unit)
+set_tests_properties(tst_valo_shell_v2 PROPERTIES
+    ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
 
 # Integration tests exercise actual Wayland wire requests and model resets.
 sge_add_expanded_test(tst_protocol_roundtrip integration/tst_ProtocolRoundtrip.cpp integration)
@@ -325,6 +329,7 @@ add_custom_target(unit_tests DEPENDS
     tst_valo_refraction_optics_v2
     tst_valo_gpu_blur_pipeline_v2
     tst_valo_dock_v2
+    tst_valo_shell_v2
 )
 add_custom_target(integration_tests DEPENDS
     tst_wayland_socket
@@ -373,6 +378,7 @@ set_tests_properties(
     tst_valo_refraction_optics_v2
     tst_valo_gpu_blur_pipeline_v2
     tst_valo_dock_v2
+    tst_valo_shell_v2
     PROPERTIES LABELS "unit"
 )
 set_tests_properties(

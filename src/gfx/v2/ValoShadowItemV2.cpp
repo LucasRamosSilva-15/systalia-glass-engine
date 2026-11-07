@@ -76,6 +76,14 @@ void ValoShadowItemV2::setCornerRadii(const QVector4D &radii) {
     }
 }
 
+void ValoShadowItemV2::setGeometryMode(int mode) {
+    if (m_geometryMode != mode) {
+        m_geometryMode = mode;
+        emit geometryModeChanged();
+        update();
+    }
+}
+
 void ValoShadowItemV2::setShadowOffsetY(float offset) {
     if (!qFuzzyCompare(m_shadowOffsetY, offset)) {
         m_shadowOffsetY = offset;
@@ -137,7 +145,7 @@ QSGNode *ValoShadowItemV2::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData
     SystaliaSurfacePropsV2 props;
     props.windowSize = QVector2D(static_cast<float>(w), static_cast<float>(h));
     props.radii = m_cornerRadii;
-    props.geometryMode = 0.0f; // CircularL2
+    props.geometryMode = static_cast<float>(m_geometryMode);
     props.shadowOffsetY = m_shadowOffsetY;
     props.shadowIntensity = m_shadowIntensity;
     props.slant = m_isolatedPass ? 1.0f : 0.0f; // 1.0 = Não oclui sob o vidro (Passe G isolado)

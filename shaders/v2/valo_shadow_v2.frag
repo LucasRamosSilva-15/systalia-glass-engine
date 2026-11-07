@@ -30,6 +30,11 @@ float evaluateSignedDistance(vec2 p, vec2 size, vec4 radii, float mode) {
                           : ((p.y < 0.0) ? radii.y : radii.w);
     vec2 b = halfSize - vec2(r);
     vec2 q = abs(p) - b;
+    if (mode > 0.5 && q.x > 0.0 && q.y > 0.0) {
+        vec2 q2 = q * q;
+        float l4 = q2.x * q2.x + q2.y * q2.y;
+        return (l4 > 1e-12) ? (pow(l4, 0.25) - r) : -r;
+    }
     return length(max(q, vec2(0.0))) + min(max(q.x, q.y), 0.0) - r;
 }
 

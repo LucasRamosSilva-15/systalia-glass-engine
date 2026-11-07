@@ -54,6 +54,54 @@ Item {
     // 1: Idle, 2: Hover, 3: Press, 4: Active, 5: Background Running, 6: Focused, 7: Reduced Motion / High Contrast
     property int testState: 0
 
+    // Integração com a Shell do Sistema e Gerenciamento de Processos
+    property var activeAppIds: []
+    property var launchedAppIds: []
+    property bool filesVisible: true
+    property bool settingsOpen: false
+    property bool keyboardNavActive: false
+
+    function isRunning(appIds) {
+        if (!appIds || appIds.length === 0) return false;
+        if (appIds.length === 1 && appIds[0] === "systalia-files") return filesVisible;
+        if (appIds.length === 1 && appIds[0] === "systalia-core") return settingsOpen;
+
+        for (var i = 0; i < appIds.length; ++i) {
+            var expected = String(appIds[i]).toLowerCase();
+            if (activeAppIds) {
+                for (var j = 0; j < activeAppIds.length; ++j) {
+                    if (String(activeAppIds[j]).toLowerCase() === expected) return true;
+                }
+            }
+            if (launchedAppIds) {
+                for (var k = 0; k < launchedAppIds.length; ++k) {
+                    if (String(launchedAppIds[k]).toLowerCase() === expected) return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    function isFocused(appIds) {
+        if (!appIds || appIds.length === 0) return false;
+        if (appIds.length === 1 && appIds[0] === "systalia-files") return filesVisible;
+        if (appIds.length === 1 && appIds[0] === "systalia-core") return settingsOpen;
+        if (!activeAppIds || activeAppIds.length === 0) return false;
+
+        for (var i = 0; i < appIds.length; ++i) {
+            var expected = String(appIds[i]).toLowerCase();
+            for (var j = 0; j < activeAppIds.length; ++j) {
+                if (String(activeAppIds[j]).toLowerCase() === expected) return true;
+            }
+        }
+        return false;
+    }
+
+    Keys.onTabPressed: (event) => { root.keyboardNavActive = true; event.accepted = false; }
+    Keys.onBacktabPressed: (event) => { root.keyboardNavActive = true; event.accepted = false; }
+    HoverHandler { onHoveredChanged: if (hovered) root.keyboardNavActive = false; }
+    TapHandler { onTapped: root.keyboardNavActive = false; }
+
     // Acessibilidade e Adaptação
     property bool userPrefersReducedMotion: false
     property bool userHighContrast: false
@@ -129,11 +177,11 @@ Item {
         visible: root.debugPass === "H" // Visível na composição final
 
         readonly property var launchersData: [
-            { action: "files",    label: "Arquivos",         icon: "valo-dock-folder.svg",   relX: 33.75 },
-            { action: "audio",    label: "Áudio",            icon: "valo-dock-speaker.svg",  relX: 128.75 },
-            { action: "terminal", label: "Terminal",         icon: "valo-dock-terminal.svg", relX: 222.75 },
-            { action: "ide",      label: "Editor de Código", icon: "valo-dock-code.svg",     relX: 316.75 },
-            { action: "settings", label: "Systalia Core",    icon: "valo-dock-spark.svg",    relX: 410.75 }
+            { action: "files",    label: "Systalia Files",   icon: "valo-dock-folder.svg",   appIds: ["systalia-files"], relX: 33.75 },
+            { action: "audio",    label: "Áudio",            icon: "valo-dock-speaker.svg",  appIds: ["pavucontrol", "pwvucontrol", "org.pulseaudio.pavucontrol"], relX: 128.75 },
+            { action: "terminal", label: "Terminal",         icon: "valo-dock-terminal.svg", appIds: ["alacritty", "foot"], relX: 222.75 },
+            { action: "ide",      label: "Editor de Código", icon: "valo-dock-code.svg",     appIds: ["code", "codium", "com.visualstudio.code"], relX: 316.75 },
+            { action: "settings", label: "Systalia Core",    icon: "valo-dock-spark.svg",    appIds: ["systalia-core"], relX: 410.75 }
         ]
 
         Repeater {
@@ -151,6 +199,9 @@ Item {
                 iconSource: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/" + modelData.icon
                 label: modelData.label
                 action: modelData.action
+                appIds: modelData.appIds
+                isRunning: (root.testState > 0) ? false : root.isRunning(modelData.appIds)
+                isFocused: (root.testState > 0) ? false : root.isFocused(modelData.appIds)
                 prefersReducedMotion: root.prefersReducedMotion || (root.testState === 7)
 
                 // Simulação e roteamento de estados para validação dos 7 estados canônicos
@@ -158,8 +209,7 @@ Item {
                 forcePressed: (root.testState === 3 && index === 2) // Terminal com press no estado 3
                 forceActive:  (root.testState === 4 && index === 0) || (root.testState === 7 && index === 0) // Files ativo
                 forceBackgroundRunning: (root.testState === 5 && (index === 1 || index === 3)) // Áudio e IDE em segundo plano
-                isFocused: (root.testState === 6 && index === 2) || activeFocus
-                showKeyboardFocus: (root.testState === 6 && index === 2) || activeFocus
+                showKeyboardFocus: (root.testState === 6 && index === 2) || root.keyboardNavActive || activeFocus
 
                 onActivated: {
                     root.launcherActivated(modelData.action);
@@ -175,6 +225,9 @@ Item {
 
     // Função auxiliar de acesso ao lançador por índice para testes unitários
     function itemAt(index) {
+        return launcherRepeater.itemAt(index);
+    }
+    function dockItemAt(index) {
         return launcherRepeater.itemAt(index);
     }
 }

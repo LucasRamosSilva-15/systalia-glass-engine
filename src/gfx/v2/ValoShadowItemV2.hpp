@@ -47,6 +47,7 @@ class ValoShadowItemV2 : public QQuickItem {
     QML_ELEMENT
 
     Q_PROPERTY(QVector4D cornerRadii READ cornerRadii WRITE setCornerRadii NOTIFY cornerRadiiChanged)
+    Q_PROPERTY(int geometryMode READ geometryMode WRITE setGeometryMode NOTIFY geometryModeChanged)
     Q_PROPERTY(float shadowOffsetY READ shadowOffsetY WRITE setShadowOffsetY NOTIFY shadowOffsetYChanged)
     Q_PROPERTY(float shadowIntensity READ shadowIntensity WRITE setShadowIntensity NOTIFY shadowIntensityChanged)
     Q_PROPERTY(bool isolatedPass READ isIsolatedPass WRITE setIsolatedPass NOTIFY isolatedPassChanged)
@@ -57,6 +58,9 @@ public:
 
     QVector4D cornerRadii() const noexcept { return m_cornerRadii; }
     void setCornerRadii(const QVector4D &radii);
+
+    int geometryMode() const noexcept { return m_geometryMode; }
+    void setGeometryMode(int mode);
 
     float shadowOffsetY() const noexcept { return m_shadowOffsetY; }
     void setShadowOffsetY(float offset);
@@ -69,6 +73,7 @@ public:
 
 signals:
     void cornerRadiiChanged();
+    void geometryModeChanged();
     void shadowOffsetYChanged();
     void shadowIntensityChanged();
     void isolatedPassChanged();
@@ -78,6 +83,7 @@ protected:
 
 private:
     QVector4D m_cornerRadii = {47.0f, 47.0f, 47.0f, 47.0f};
+    int m_geometryMode = 0;
     float m_shadowOffsetY = 12.0f;
     float m_shadowIntensity = 0.35f;
     bool m_isolatedPass = false;

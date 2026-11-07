@@ -236,6 +236,11 @@ qt_add_qml_module(sge_core
         src/qml/shell/SystaliaTaskSwitcher.qml
         src/qml/shell/SnapPreviewOverlay.qml
         src/qml/shell/TileSplitter.qml
+        src/qml/shell/SystaliaDockV2.qml
+        src/qml/shell/SystaliaTopBarV2.qml
+        src/qml/shell/SystaliaFilesWindowV2.qml
+        src/qml/shell/SystaliaControlCenterV2.qml
+        src/qml/graphics/v2/ValoMaterialSurfaceV2.qml
         src/qml/graphics/v2/ValoSurfaceV2.qml
         src/qml/graphics/v2/ValoDockItemV2.qml
         src/qml/graphics/v2/ValoDockV2.qml
@@ -299,6 +304,18 @@ qt_add_executable(valo_dock_v2_artifacts
     tools/generate_dock_v2_artifacts.cpp
 )
 target_link_libraries(valo_dock_v2_artifacts PRIVATE
+    sge_core
+    sge_shaders
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Quick
+)
+
+# Utilitário de geração de artefatos visuais e validação da Shell VALO V2 (Etapa 05)
+qt_add_executable(valo_shell_v2_artifacts
+    tools/generate_shell_v2_artifacts.cpp
+)
+target_link_libraries(valo_shell_v2_artifacts PRIVATE
     sge_core
     sge_shaders
     Qt6::Core

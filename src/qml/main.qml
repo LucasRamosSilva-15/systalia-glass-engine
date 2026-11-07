@@ -20,6 +20,7 @@ ApplicationWindow {
     property bool materialWindowMaximized: false
     property rect materialWindowRestoreGeometry: Qt.rect(810, 80, 700, 534)
     property int topZIndex: 20
+    readonly property bool useGraphicsV2: true
 
     function bringWindowToFront(win) {
         if (!win)
@@ -346,7 +347,7 @@ ApplicationWindow {
         parallaxFactor: 0.35
     }
 
-    Shell.SystaliaFilesWindow {
+    Shell.SystaliaFilesWindowV2 {
         id: glassChassis
         parent: clientWindowsLayer.workspacePageAt(0)
         x: 80
@@ -412,7 +413,7 @@ ApplicationWindow {
         }
     }
 
-    Shell.SystaliaTopBar {
+    Shell.SystaliaTopBarV2 {
         id: topBar
         anchors.left: parent.left
         anchors.right: parent.right
@@ -435,7 +436,7 @@ ApplicationWindow {
         id: multiMonitorTopBarInstantiator
         active: OutputManager.replicateTopBarOnAllScreens && OutputManager.screenCount > 1
         model: OutputManager.screenGeometries
-        delegate: Shell.SystaliaTopBar {
+        delegate: Shell.SystaliaTopBarV2 {
             required property int index
             required property rect modelData
             parent: rootWindow.contentItem
@@ -493,7 +494,7 @@ ApplicationWindow {
         }
         z: 95
 
-        Shell.SystaliaDock {
+        Shell.SystaliaDockV2 {
             id: systemDock
             anchors.fill: parent
             visible: !waylandServer.hasMaximizedToplevel
@@ -624,7 +625,7 @@ ApplicationWindow {
         onActivated: flowMenu.toggle()
     }
 
-    Shell.SystaliaControlCenter {
+    Shell.SystaliaControlCenterV2 {
         id: controlCenter
         backdropSource: backdropGrab
         screenResolution: Qt.vector2d(rootWindow.width * rootWindow.devicePixelRatio,
