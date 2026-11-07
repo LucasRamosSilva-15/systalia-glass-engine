@@ -31,6 +31,19 @@ QtObject {
     readonly property color primitiveBlack: "#000000"
     readonly property color primitiveTextMuted: "#9CBAD3"
 
+    // VALO V3: acrylic icon primitives from Figma
+    readonly property color primitiveIce100: "#F6FFFF"
+    readonly property color primitiveIce200: "#CFFBFF"
+    readonly property color primitiveIce300: "#A4F6FF"
+    readonly property color primitiveAqua400: "#79EFFF"
+    readonly property color primitiveAquaEdge: "#C1FAFF"
+    readonly property color primitiveAquaGlass: "#6ADEED"
+    readonly property color primitiveBlueFolder400: "#2BCCF5"
+    readonly property color primitiveBlueFolder700: "#235BA9"
+    readonly property color primitiveOceanAcrylic600: "#285D86"
+    readonly property color primitiveNavyAcrylic800: "#152C65"
+    readonly property color primitiveVioletEdge: "#738ADD"
+
     // =========================================================================
     // 2. SEMANTIC COLORS (23 tokens)
     // =========================================================================
@@ -68,6 +81,20 @@ QtObject {
     // Icon roles
     readonly property color iconDefault: primitiveCyan300
     readonly property color iconActive: primitiveCyan500
+
+    // VALO V3: semantic file and sidebar icon roles
+    readonly property color iconSidebarDefault: primitiveAqua400
+    readonly property color iconSidebarSelected: primitiveIce300
+    readonly property color iconFileEdge: primitiveAquaEdge
+    readonly property color iconFileHighlight: primitiveIce100
+    readonly property color iconFileGlassLight: primitiveIce200
+    readonly property color iconFileGlassMid: primitiveAquaGlass
+    readonly property color iconFileGlassDeep: primitiveOceanAcrylic600
+    readonly property color iconFileFold: primitiveIce300
+    readonly property color iconFolderFront: primitiveBlueFolder400
+    readonly property color iconFolderBack: primitiveBlueFolder700
+    readonly property color iconFileSymbol: primitiveAqua400
+    readonly property color iconFileEdgeShadow: primitiveVioletEdge
 
     // =========================================================================
     // 3. METRICS (28 tokens)
@@ -113,6 +140,14 @@ QtObject {
     readonly property int motionDurationNormalMs: 220
     readonly property int motionDurationSpringMs: 420
 
+    // VALO V3: dimensions and strokes for acrylic file icons
+    readonly property real sizeFileIconWidth: 55
+    readonly property real sizeFileIconHeight: 67
+    readonly property real sizeFolderIconWidth: 74
+    readonly property real sizeSidebarGlyph: 23
+    readonly property real strokeSidebarIcon: 1.65
+    readonly property real strokeFileOutline: 1.35
+
     // =========================================================================
     // 4. MATERIAL & OPTICAL (18 tokens)
     // =========================================================================
@@ -142,6 +177,12 @@ QtObject {
     readonly property real glassPrismAngleDeg: -31
     readonly property real glassBackdropFilterEnabled: 1.0
     readonly property bool backdropFilterEnabled: true
+
+    // VALO V3: optical parameters for acrylic file icons
+    readonly property real shadowFileY: 5
+    readonly property real shadowFileBlur: 7
+    readonly property real opacityFileHighlight: 0.36
+    readonly property real opacityFileGlassEdge: 0.88
 
     // =========================================================================
     // 5. COMPOSITE STYLES (windowFillStops, spectralOverlayStops, windowShadows)
