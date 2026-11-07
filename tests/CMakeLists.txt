@@ -261,6 +261,9 @@ endif()
 sge_add_expanded_test(tst_valo_theme unit/tst_ValoTheme.cpp unit)
 sge_add_expanded_test(tst_valo_glass unit/tst_ValoGlass.cpp unit)
 sge_add_expanded_test(tst_valo_decorations unit/tst_ValoDecorations.cpp unit)
+sge_add_expanded_test(tst_sdf_geometry_math_v2 unit/tst_SdfGeometryMathV2.cpp unit)
+sge_add_expanded_test(tst_surface_props_alignment_v2 unit/tst_SurfacePropsAlignmentV2.cpp unit)
+sge_add_expanded_test(tst_valo_organic_transform_v2 unit/tst_ValoOrganicTransformV2.cpp unit)
 
 # Integration tests exercise actual Wayland wire requests and model resets.
 sge_add_expanded_test(tst_protocol_roundtrip integration/tst_ProtocolRoundtrip.cpp integration)
@@ -304,6 +307,9 @@ add_custom_target(unit_tests DEPENDS
     tst_valo_theme
     tst_valo_glass
     tst_valo_decorations
+    tst_sdf_geometry_math_v2
+    tst_surface_props_alignment_v2
+    tst_valo_organic_transform_v2
 )
 add_custom_target(integration_tests DEPENDS
     tst_wayland_socket
@@ -343,6 +349,9 @@ set_tests_properties(
     tst_valo_theme
     tst_valo_glass
     tst_valo_decorations
+    tst_sdf_geometry_math_v2
+    tst_surface_props_alignment_v2
+    tst_valo_organic_transform_v2
     PROPERTIES LABELS "unit"
 )
 set_tests_properties(

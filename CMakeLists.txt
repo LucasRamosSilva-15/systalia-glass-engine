@@ -7,6 +7,8 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+option(SGE_GRAPHICS_V2 "Build VALO Graphics 2.0 foundation subsystem" ON)
+
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
@@ -90,6 +92,13 @@ qt_add_library(sge_core STATIC
     src/system/LogindSessionService.hpp
     src/system/LogindSessionService.cpp
     src/tokens/ValoTokens.hpp
+    src/gfx/v2/SystaliaSurfacePropsV2.hpp
+    src/gfx/v2/ValoGeometryEngineV2.hpp
+    src/gfx/v2/ValoGeometryEngineV2.cpp
+    src/gfx/v2/ValoOrganicTransform.hpp
+    src/gfx/v2/ValoOrganicTransform.cpp
+    src/gfx/v2/ValoOpticalContext.hpp
+    src/gfx/v2/ValoOpticalContext.cpp
 )
 
 qt6_generate_wayland_protocol_server_sources(sge_core
@@ -100,6 +109,7 @@ target_include_directories(sge_core PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>"
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gfx
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gfx/v2
     ${CMAKE_CURRENT_SOURCE_DIR}/src/compositor
     ${CMAKE_CURRENT_SOURCE_DIR}/src/system
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tokens
@@ -136,39 +146,15 @@ set_source_files_properties(src/qml/theme/SystaliaTheme.qml src/qml/theme/ValoTh
 )
 
 set(sge_valo_assets
-    src/qml/assets/figma/valo-ocean-atmosphere.png
-    src/qml/assets/figma/valo-mark.png
     src/qml/assets/figma/valo-systalia-symbol.svg
-    src/qml/assets/figma/valo-dock-folder.png
-    src/qml/assets/figma/valo-dock-speaker.png
-    src/qml/assets/figma/valo-dock-terminal.png
-    src/qml/assets/figma/valo-dock-code.png
-    src/qml/assets/figma/valo-dock-spark.png
     src/qml/assets/figma/valo-dock-folder.svg
     src/qml/assets/figma/valo-dock-speaker.svg
     src/qml/assets/figma/valo-dock-terminal.svg
     src/qml/assets/figma/valo-dock-code.svg
     src/qml/assets/figma/valo-dock-spark.svg
-    src/qml/assets/figma/valo-file-folder-body.png
-    src/qml/assets/figma/valo-file-folder-lip.png
-    src/qml/assets/figma/valo-file-documents-art.png
-    src/qml/assets/figma/valo-file-document.png
-    src/qml/assets/figma/valo-file-download.png
-    src/qml/assets/figma/valo-file-list.png
-    src/qml/assets/figma/valo-file-check.png
-    src/qml/assets/figma/valo-files-prism.png
-    src/qml/assets/figma/valo-files-ribbon.png
-    src/qml/assets/figma/valo-files-edge.png
-    src/qml/assets/figma/valo-control-prism.png
-    src/qml/assets/figma/valo-control-ribbon.png
-    src/qml/assets/figma/valo-control-edge.png
-    src/qml/assets/figma/valo-window-action-minimize-bg.png
-    src/qml/assets/figma/valo-window-action-maximize-bg.png
-    src/qml/assets/figma/valo-window-action-close-bg.png
-    src/qml/assets/figma/valo-window-minimize.png
-    src/qml/assets/figma/valo-window-maximize.png
-    src/qml/assets/figma/valo-window-close.png
-    src/qml/assets/figma/valo-window-shadow.png
+    src/qml/assets/figma/valo-window-close.svg
+    src/qml/assets/figma/valo-window-maximize.svg
+    src/qml/assets/figma/valo-window-minimize.svg
 )
 
 foreach(asset IN LISTS sge_valo_assets)
