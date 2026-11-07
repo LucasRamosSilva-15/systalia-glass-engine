@@ -72,6 +72,19 @@ qt6_add_shaders(sge_shaders "sge_shaders_v2_resource"
         shaders/v2/valo_shadow_v2.vert
         shaders/v2/valo_shadow_v2.frag
 )
+qt6_add_shaders(sge_shaders "sge_raw_shaders_resource"
+    PREFIX
+        "/raw_shaders"
+    BASE
+        "tools/raw_render_diagnostics/shaders"
+    FILES
+        tools/raw_render_diagnostics/shaders/raw_t2_minimal.vert
+        tools/raw_render_diagnostics/shaders/raw_t2_minimal.frag
+        tools/raw_render_diagnostics/shaders/raw_t3_ubo.vert
+        tools/raw_render_diagnostics/shaders/raw_t3_ubo.frag
+        tools/raw_render_diagnostics/shaders/raw_t4_sdf.vert
+        tools/raw_render_diagnostics/shaders/raw_t4_sdf.frag
+)
 target_link_libraries(sge_shaders PUBLIC
     Qt6::Core
     Qt6::Gui
@@ -286,6 +299,18 @@ qt_add_executable(valo_dock_v2_artifacts
     tools/generate_dock_v2_artifacts.cpp
 )
 target_link_libraries(valo_dock_v2_artifacts PRIVATE
+    sge_core
+    sge_shaders
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Quick
+)
+
+# Ferramenta de Diagnóstico de Renderização Crua (Etapa 04.1.1)
+qt_add_executable(raw_render_diagnostics
+    tools/raw_render_diagnostics/raw_render_diagnostics.cpp
+)
+target_link_libraries(raw_render_diagnostics PRIVATE
     sge_core
     sge_shaders
     Qt6::Core
