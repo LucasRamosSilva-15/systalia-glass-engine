@@ -90,20 +90,36 @@ flowchart LR
 - **Critério de Saída:** Documentação completa em `docs/graphics-v2/` aprovada e suíte de testes CTest 100% verde (36/36).
 
 #### Etapa 01 — Fundação do VALO Graphics V2 e Sistema Geométrico Analítico
-- **Escopo:** Criação de `src/gfx/v2/SystaliaSurfacePropsV2.hpp`, `ValoGeometryEngineV2` (cálculo de SDF $L_2$ e $G_2$ analítico) e novos alvos de compilação CMake.
-- **Entregas:** Testes unitários de geometria matemática (`tst_SdfGeometryMathV2`) comprovando erro $< 0.01\text{ px}$.
+- **Escopo:** Criação de `src/gfx/v2/SystaliaSurfacePropsV2.hpp`, `ValoGeometryEngineV2` (cálculo analítico unificado de SDF $L_2$ e $G_2$) e novos alvos de compilação CMake.
+- **Fundação VALO (Organic & Adaptive):**
+  - Definição do contrato de transformação orgânica desacoplado (`ValoOrganicTransform`: matriz de slant $3\text{D} \le 1.5^\circ$ e offsets inerciais).
+  - Isolamento estrito entre a caixa lógica de hit-test do compositor e a malha deformável do chassi.
+  - Implementação das flags de adaptação (`prefersReducedMotion`, `highContrastEnabled`).
+- **Entregas:** Testes unitários de geometria matemática (`tst_SdfGeometryMathV2`) comprovando erro analítico $< 0.01\text{ px}$ e respeito imediato a `reduced-motion`.
 
 #### Etapa 02 — Renderização de Materiais e Máscaras V2
 - **Escopo:** Implementação de `ValoGlassMaterialV2` e `ValoGlassItemV2` com shader `valo_optical_v2.frag` básico executando recorte e antialiasing em passe único.
-- **Entregas:** Renderização de superfícies com alfa pré-multiplicado e contorno especular unificado.
+- **Fundação VALO (Lucid & Vibrant):**
+  - Operação estrita em alpha pré-multiplicado (`rgb * a, a`) sem descoloração perimétrica.
+  - Separação rígida entre viewport da aplicação cliente (100% nítido, sem aberrações) e a moldura decorativa externa.
+  - Contrato de adaptação de luminância de fundo (`ValoOpticalContext::ambientLuminance` com modulação de opacidade de $0.25$ a $0.55$ para garantia de contraste WCAG AA).
+- **Entregas:** Renderização de superfícies com coerência subpixel ($|\Delta| \le 0.5\text{ px}$) e compensação automática de contraste.
 
 #### Etapa 03 — Dual-Kawase Backdrop Blur, Refração e Efeitos Ópticos V2
 - **Escopo:** Implementação do pipeline de blur Dual-Kawase em múltiplos FBOs reduzidos, amostragem refrativa com dispersão de Cauchy e cáusticas animadas.
-- **Entregas:** Teste de fidelidade óptica e medição de frametime estável em 60 FPS no perfil Balanced.
+- **Fundação VALO (Vibrant & Adaptive):**
+  - Suporte a múltiplos monitores com coordenadas normalizadas sobre o canvas virtual unificado.
+  - Sistema de dirty-tracking para o blur (evita re-renderizar FBOs quando o desktop e as janelas inferiores estiverem estáticos).
+  - Modulação das cáusticas por perfil de energia (redução de taxa de quadros ou congelamento em repouso).
+- **Entregas:** Teste de fidelidade óptica, taxa de 60 FPS no perfil Balanced e zero consumo de blur em estado ocioso.
 
 #### Etapa 04 — Protótipo Isolado da Dock VALO V2 e Validação Visual
 - **Escopo:** Construção do componente `ValoDockV2.qml` utilizando o novo motor óptico, os 5 ícones vetoriais do Figma e os 8 passes diagnósticos.
-- **Entregas:** Validação dos 7 estados interativos da Dock e aprovação visual em comparação direta com o Figma.
+- **Fundação VALO (Organic & Lucid):**
+  - Microinterações com física de mola amortecida ($k=300, \zeta=0.82$) no hover ($1.08\times$) e clique ($0.94\times$).
+  - Borda especular única de 1.25 px e gradiente oceânico fiel ao Figma sem descontinuidades internas.
+  - Sombra de contato suave externa projetada exclusivamente abaixo da cápsula.
+- **Entregas:** Validação dos 7 estados interativos da Dock, aprovação nos 8 passes diagnósticos e conformidade visual total com o Figma.
 
 #### Etapa 05 — Reconstrução dos Componentes QML da Shell
 - **Escopo:** Migração da `SystaliaTopBar.qml` (preservando o layout atual), `SystaliaFilesWindow.qml` e `SystaliaControlCenter.qml` para a infraestrutura V2.

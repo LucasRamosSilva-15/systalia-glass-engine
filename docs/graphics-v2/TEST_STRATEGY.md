@@ -57,14 +57,19 @@ Nenhum teste existente será descartado ou enfraquecido. A tabela abaixo mapeia 
 
 ---
 
-## 3. Testes Visuais e Medição Perimétrica de Desvio
+## 3. Testes Visuais, Métricas Perimétricas e Acessibilidade
 
-Ao contrário de testes unitários convencionais que apenas avaliam valores numéricos em memória, os testes visuais da V2 operam diretamente sobre o frame buffer renderizado pelo Scene Graph (`QQuickWindow::grabWindow()`):
+Ao contrário de testes unitários convencionais que apenas avaliam valores numéricos em memória, os testes visuais da V2 operam diretamente sobre o frame buffer renderizado pelo Scene Graph (`QQuickWindow::grabWindow()`) e sobre o analisador de acessibilidade:
 
-### 3.1 Critério de Tolerância Subpixel
-- **Desvio Perimetral Máximo:** $\Delta_{\text{max}} = \mathbf{0.00\text{ px}}$.
-- O contorno da máscara de recorte, o centro da borda especular e o limite do gradiente volumétrico devem coincidir exatamente na mesma coordenada em todo o perímetro da cápsula.
-- **Ferramenta de Auditoria:** Scripts automatizados em Python/Pillow executam testes de máscara de cor (Overlay Vermelho = SDF, Verde = Borda, Azul = Blur, Amarelo = Gradiente) e atestam que nenhuma cor vaza fora da tolerância subpixel.
+### 3.1 Critérios de Tolerância Geométrica Justificados
+- **Tolerância Analítica Contínua:** $|\Delta_{\text{analítico}}| < 0.01\text{ px}$ no espaço contínuo entre as fórmulas SDF e as curvas de vértices.
+- **Tolerância de Rasterização Discreta:** $|\Delta_{\text{raster}}| \le 0.5\text{ px}$ físico, correspondente ao limiar natural de antialiasing subpixel em grades discretas de pixels.
+- **Verificação Automatizada:** Scripts automatizados em Python/Pillow executam testes de máscara de cor (Overlay Vermelho = SDF, Verde = Borda, Azul = Blur, Amarelo = Gradiente) comprovando a eliminação do desvio histórico de 16.01 px da V1.
+
+### 3.2 Validação de Contraste e Acessibilidade (Lucid & Adaptive)
+- **Contraste WCAG AA:** Teste de luminância relativa que calcula $CR = (L_1 + 0.05) / (L_2 + 0.05)$ sobre amostras de texto e ícones contra o material translúcido. Aprovado apenas se $CR \ge 4.5:1$ para texto regular e $\ge 3.0:1$ para títulos e glifos.
+- **Redução de Movimento:** Validação de que ao alternar `ValoOpticalContext::prefersReducedMotion = true`, a taxa de atualização de $u\_Time$ é zerada e as molas físicas realizam salto direto para o estado de repouso, sem oscilação.
+- **Sincronização de Hit-Test (Organic):** Teste de coordenadas de clique simuladas comprovando que durante o arraste de janela (`drag slant`), o cursor do mouse e a região de entrada Wayland coincidem exatamente sem descolamento perceptível.
 
 ---
 

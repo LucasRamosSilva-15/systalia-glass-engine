@@ -79,22 +79,34 @@ sequenceDiagram
 
     QML->>Item: Define Geometria (555x125, r=47, circular=true, gradiente oceânico)
     Item->>Item: Avalia SDF Analítico Unificado (L2 ou G2)
-    Item->>Scene: Submete Geometria e UBO V2 (144 bytes)
+    Item->>Scene: Submete Geometria e UBO V2 (160 bytes)
     Scene->>RHI: Vincula Textura de Backdrop Pré-Filtrada (Dual-Kawase FBO)
     Scene->>RHI: Vincula Textura do Cliente (se houver)
     RHI->>GPU: Executa valo_optical_v2 em Passe Único
     Note over GPU: 1. SDF Masking & Antialiasing Subpixel<br/>2. Refração com Dispersão de Cauchy<br/>3. Amostragem do Backdrop Filtrado<br/>4. Preenchimento Volumétrico Integrado<br/>5. Prisma Espectral Integrado<br/>6. Borda Especular Analítica (Zenite + Bisel)<br/>7. Sombra de Contato Externa Suave
-    GPU-->>QML: Frame Composto com Zero Desvio Perimetral
+    GPU-->>QML: Frame Composto com Coerência Subpixel (|Delta| <= 0.5px)
 ```
 
-### 2.1 Requisitos do Novo Motor Óptico
+### 2.1 Requisitos e Métricas do Novo Motor Óptico
 1. **Definição Única de Geometria:** Uma única matriz de parâmetros geométricos (`width`, `height`, `radii`, `slant`) governa o contorno, o preenchimento, o recorte óptico e a borda especular.
 2. **SDF Compartilhado e Preciso:**  
    - Modo **$L_2$ Circular Analítico:** Utilizado na Dock e na TopBar para arcos de círculo euclidianos perfeitos.
    - Modo **$G_2$ Squircle Analítico:** Utilizado nas janelas de aplicativos para continuidade de curvatura suave ($C^2$).
-3. **Máscara Concomitante:** O recorte do blur, a aplicação do gradiente de cor e o contorno especular utilizam a mesmíssima função de distância com derivadas `fwidth(dist)`, garantindo **desvio de 0.00 px** em qualquer escala.
+3. **Métricas de Tolerância Perimétrica Justificadas:**
+   - **Tolerância Analítica Contínua:** $|\Delta_{\text{analítico}}| < 0.01\text{ px}$ entre as equações do shader e do gerador vetorial de vértices.
+   - **Tolerância de Rasterização Discreta:** $|\Delta_{\text{raster}}| \le 0.5\text{ px}$ físico, correspondente ao limiar natural de antialiasing subpixel em grades discretas de pixels (eliminando a discrepância histórica de 16.01 px da V1).
 4. **Refração e Dispersão Cromática Integradas:** Amostragem do fundo através de vetor normal derivado do SDF, com dispersão de comprimento de onda (canais R, G e B amostrados com offsets angulares).
-5. **Composição Alfa com Premultiplied Alpha:** Garantia de que a transparência e as cores translúcidas não produzam halos escuros ou artefatos esbranquiçados nas bordas ao mesclar com o desktop.
+5. **Composição com Alpha Pré-Multiplicado (Premultiplied Alpha):**  
+   - O pipeline opera estritamente com `fragColor = vec4(rgb * a, a)`.
+   - Texturas de clientes Wayland utilizam formato premultiplied nativo; a mesclagem no shader preserva a integridade de transparência sem descoloração perimétrica ou halos pretos causados por un-premultiply incorreto.
+6. **Coordenadas de Backdrop em Múltiplos Monitores:**
+   - A amostragem de tela converte a posição global absoluta do fragmento em coordenadas normalizadas sobre o canvas virtual unificado gerenciado por `OutputManagerService::virtualCanvasBounds()`.
+   - Isso elimina descontinuidades de refração ou repetição de UV em configurações multi-monitor ou monitores com orientações mistas.
+7. **Estratégia de Atualização de Blur (Dirty Tracking):**
+   - A pirâmide de FBOs do filtro Dual-Kawase é atualizada **apenas** quando o wallpaper for alterado, quando janelas abaixo da superfície translúcida se moverem ou quando houver animações em primeiro plano. Em repouso estático, os passes de blur são ignorados (dirty flag = false), reduzindo o consumo de energia a zero.
+8. **Separação Rígida entre Conteúdo Wayland e Decorações:**
+   - O buffer das aplicações clientes (`ShellSurfaceItem`) é preservado integralmente sem distorções, aberrações ópticas ou estiramentos.
+   - A deformação física ou óptica é restrita à moldura decorativa externa (chassi de vidro), enquanto o viewport cliente é protegido por um scissor/stencil retangular analítico.
 
 ---
 
