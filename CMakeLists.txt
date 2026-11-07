@@ -50,6 +50,15 @@ qt6_add_shaders(sge_shaders "sge_shaders_resource"
         shaders/valo_optical.vert
         shaders/valo_optical.frag
 )
+qt6_add_shaders(sge_shaders "sge_shaders_v2_resource"
+    PREFIX
+        "/shaders/v2"
+    BASE
+        "shaders/v2"
+    FILES
+        shaders/v2/valo_optical_v2.vert
+        shaders/v2/valo_optical_v2.frag
+)
 target_link_libraries(sge_shaders PUBLIC
     Qt6::Core
     Qt6::Gui
@@ -99,6 +108,10 @@ qt_add_library(sge_core STATIC
     src/gfx/v2/ValoOrganicTransform.cpp
     src/gfx/v2/ValoOpticalContext.hpp
     src/gfx/v2/ValoOpticalContext.cpp
+    src/gfx/v2/ValoGlassMaterialV2.hpp
+    src/gfx/v2/ValoGlassMaterialV2.cpp
+    src/gfx/v2/ValoGlassItemV2.hpp
+    src/gfx/v2/ValoGlassItemV2.cpp
 )
 
 qt6_generate_wayland_protocol_server_sources(sge_core
@@ -188,6 +201,7 @@ qt_add_qml_module(sge_core
         src/qml/shell/SystaliaTaskSwitcher.qml
         src/qml/shell/SnapPreviewOverlay.qml
         src/qml/shell/TileSplitter.qml
+        src/qml/graphics/v2/ValoSurfaceV2.qml
     RESOURCES
         ${sge_valo_assets}
     NO_PLUGIN
