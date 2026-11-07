@@ -368,3 +368,7 @@ set_tests_properties(tst_shell_state_regression PROPERTIES
 add_dependencies(integration_tests tst_shell_state_regression)
 
 add_dependencies(tst_shell_state_regression tst_xdg_resize)
+
+sge_add_expanded_test(tst_client_surface_visibility integration/tst_ClientSurfaceVisibility.cpp integration)
+add_dependencies(integration_tests tst_client_surface_visibility)
+add_dependencies(tst_client_surface_visibility tst_xdg_resize)

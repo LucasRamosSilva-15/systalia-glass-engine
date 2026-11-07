@@ -543,7 +543,7 @@ Item {
                 objectName: "clientTextureCapture"
                 sourceItem: clientSurfaceItem
                 live: windowContainer.visible
-                hideSource: true
+                hideSource: false
                 recursive: false
                 visible: false
                 format: ShaderEffectSource.RGBA8
