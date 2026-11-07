@@ -16,6 +16,7 @@ set(CMAKE_AUTOUIC ON)
 find_package(Qt6 6.7 REQUIRED COMPONENTS
     Core
     Gui
+    GuiPrivate
     Quick
     QuickControls2
     ShaderTools
@@ -120,6 +121,8 @@ qt_add_library(sge_core STATIC
     src/gfx/v2/ValoBackdropProviderV2.cpp
     src/gfx/v2/ValoBlurPipelineV2.hpp
     src/gfx/v2/ValoBlurPipelineV2.cpp
+    src/gfx/v2/ValoGpuBlurPipelineV2.hpp
+    src/gfx/v2/ValoGpuBlurPipelineV2.cpp
 )
 
 qt6_generate_wayland_protocol_server_sources(sge_core
@@ -139,6 +142,7 @@ target_include_directories(sge_core PUBLIC
 target_link_libraries(sge_core PUBLIC
     Qt6::Core
     Qt6::Gui
+    Qt6::GuiPrivate
     Qt6::Quick
     Qt6::WaylandCompositor
     Qt6::DBus
@@ -251,3 +255,15 @@ install(FILES data/systalia.desktop
 
 enable_testing()
 add_subdirectory(tests)
+
+# Utilitário de benchmark e extração de artefatos GPU VALO Graphics 2.0
+qt_add_executable(valo_gpu_benchmark
+    tools/bench_and_artifacts.cpp
+)
+target_link_libraries(valo_gpu_benchmark PRIVATE
+    sge_core
+    sge_shaders
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Quick
+)

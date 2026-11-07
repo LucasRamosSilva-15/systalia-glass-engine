@@ -7,8 +7,13 @@
 #include <QImage>
 #include <QPointer>
 #include <QSize>
+#include <memory>
+
+#include "ValoBlurPipelineV2.hpp"
 
 namespace Systalia::Gfx::V2 {
+
+class ValoGpuBlurPipelineV2;
 
 /**
  * @brief Provedor de textura de backdrop para o motor VALO Graphics 2.0 (Etapa 03).
@@ -23,10 +28,14 @@ class ValoBackdropProviderV2 : public QObject {
     Q_PROPERTY(QQuickItem* source READ source WRITE setSource NOTIFY sourceChanged)
     Q_PROPERTY(bool hasTexture READ hasTexture NOTIFY textureChanged)
     Q_PROPERTY(bool isDirty READ isDirty WRITE setDirty NOTIFY dirtyChanged)
+    Q_PROPERTY(Systalia::Gfx::V2::BlurProfile blurProfile READ blurProfile WRITE setBlurProfile NOTIFY blurProfileChanged)
 
 public:
     explicit ValoBackdropProviderV2(QObject *parent = nullptr);
     ~ValoBackdropProviderV2() override;
+
+    BlurProfile blurProfile() const noexcept { return m_blurProfile; }
+    void setBlurProfile(BlurProfile profile);
 
     QQuickItem *source() const noexcept { return m_source; }
     void setSource(QQuickItem *source);
@@ -47,6 +56,11 @@ public:
     QSGTexture *texture(QQuickWindow *window);
 
     /**
+     * @brief Obtém a textura de backdrop com desfoque Dual-Kawase multipass aplicado na GPU.
+     */
+    QSGTexture *blurredTexture(QQuickWindow *window);
+
+    /**
      * @brief Gera imagem de backdrop sintético com padrão calibrado de teste.
      */
     static QImage createSyntheticBackdrop(const QSize &size);
@@ -57,6 +71,7 @@ signals:
     void sourceChanged();
     void textureChanged();
     void dirtyChanged();
+    void blurProfileChanged();
 
 private slots:
     void onSourceTextureChanged();
@@ -66,7 +81,10 @@ private:
     QPointer<QQuickItem> m_consumerItem;
     QPointer<QSGTextureProvider> m_connectedProvider;
     QSGTexture *m_fallbackTexture = nullptr;
+    QSGTexture *m_qsgBlurredTexture = nullptr;
+    std::unique_ptr<ValoGpuBlurPipelineV2> m_gpuBlurPipeline;
     QPointer<QQuickWindow> m_resourceWindow;
+    BlurProfile m_blurProfile = BlurProfile::Performance;
     bool m_isDirty = true;
 };
 

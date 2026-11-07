@@ -1,6 +1,8 @@
 #include "ValoBackdropProviderV2.hpp"
+#include "ValoGpuBlurPipelineV2.hpp"
 #include <QPainter>
 #include <QLinearGradient>
+#include <rhi/qrhi.h>
 #include <utility>
 
 namespace Systalia::Gfx::V2 {
@@ -131,13 +133,76 @@ QImage ValoBackdropProviderV2::createSyntheticBackdrop(const QSize &size) {
     return img;
 }
 
+void ValoBackdropProviderV2::setBlurProfile(BlurProfile profile) {
+    if (m_blurProfile != profile) {
+        m_blurProfile = profile;
+        setDirty(true);
+        emit blurProfileChanged();
+        emit textureChanged();
+    }
+}
+
+QSGTexture *ValoBackdropProviderV2::blurredTexture(QQuickWindow *window) {
+    if (!window) return nullptr;
+
+    QSGTexture *srcTex = texture(window);
+    if (!srcTex || m_blurProfile == BlurProfile::Performance) {
+        return srcTex;
+    }
+
+    QRhi *rhi = window->rhi();
+    if (!rhi) {
+        return srcTex;
+    }
+
+    if (!m_gpuBlurPipeline) {
+        m_gpuBlurPipeline = std::make_unique<ValoGpuBlurPipelineV2>();
+    }
+
+    if (!m_qsgBlurredTexture || m_isDirty) {
+        const QSize srcSize = srcTex->textureSize();
+        if (srcSize.isValid() && !srcSize.isEmpty()) {
+            if (m_gpuBlurPipeline->prepare(rhi, srcSize, m_blurProfile)) {
+                QRhiTexture *rhiSrc = srcTex->rhiTexture();
+                if (rhiSrc) {
+                    QRhiCommandBuffer *cb = nullptr;
+                    if (rhi->beginOffscreenFrame(&cb) == QRhi::FrameOpSuccess) {
+                        m_gpuBlurPipeline->execute(cb, rhiSrc, m_blurProfile);
+                        rhi->endOffscreenFrame();
+                        rhi->finish();
+
+                        QRhiTexture *outRhi = m_gpuBlurPipeline->blurredTexture();
+                        if (outRhi) {
+                            delete std::exchange(m_qsgBlurredTexture, nullptr);
+                            m_qsgBlurredTexture = window->createTextureFromRhiTexture(
+                                outRhi, QQuickWindow::TextureHasAlphaChannel);
+                            if (m_qsgBlurredTexture) {
+                                m_qsgBlurredTexture->setFiltering(QSGTexture::Linear);
+                                m_qsgBlurredTexture->setHorizontalWrapMode(QSGTexture::ClampToEdge);
+                                m_qsgBlurredTexture->setVerticalWrapMode(QSGTexture::ClampToEdge);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return m_qsgBlurredTexture ? m_qsgBlurredTexture : srcTex;
+}
+
 void ValoBackdropProviderV2::releaseResources() {
     if (m_connectedProvider) {
         disconnect(m_connectedProvider, &QSGTextureProvider::textureChanged,
                    this, &ValoBackdropProviderV2::onSourceTextureChanged);
         m_connectedProvider = nullptr;
     }
+    delete std::exchange(m_qsgBlurredTexture, nullptr);
     delete std::exchange(m_fallbackTexture, nullptr);
+    if (m_gpuBlurPipeline) {
+        m_gpuBlurPipeline->releaseResources();
+        m_gpuBlurPipeline.reset();
+    }
 }
 
 } // namespace Systalia::Gfx::V2
