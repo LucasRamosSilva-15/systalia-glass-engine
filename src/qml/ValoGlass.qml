@@ -21,6 +21,12 @@ Item {
     // Raio de curvatura dos cantos (px)
     property real cornerRadius: ValoTheme.radiusWindow
 
+    // Gradiente de preenchimento customizado para o corpo volumétrico (opcional)
+    property ShapeGradient fillGradient: null
+
+    // Largura customizada da borda especular (0.0 usa ValoTheme.strokeWindow)
+    property real strokeWidth: 0.0
+
     // Vetor de raios individuais (topo-esq, topo-dir, inf-esq, inf-dir)
     property vector4d cornerRadii: Qt.vector4d(cornerRadius, cornerRadius, cornerRadius, cornerRadius)
     property alias radii: root.cornerRadii
@@ -193,9 +199,13 @@ Item {
         z: 2
         radii: root.effectiveRadii
         slant: root.slant
+        circularCorners: root.circularCorners
         opacity: Math.min(1.0, root.glassOpacity / ValoTheme.opacityWindowMax)
 
-        fillGradient: LinearGradient {
+        fillGradient: root.fillGradient ? root.fillGradient : defaultWindowGradient
+
+        LinearGradient {
+            id: defaultWindowGradient
             x1: 0
             y1: 0
             x2: volumetricBodyFrame.width
@@ -216,6 +226,7 @@ Item {
         z: 3
         radii: root.effectiveRadii
         slant: root.slant
+        circularCorners: root.circularCorners
         visible: root.showPrism && root.iridescenceStrength > 0.001 && !root.isPerformance
         opacity: root.iridescenceStrength * (root.active ? 1.0 : 0.40)
 
@@ -240,8 +251,9 @@ Item {
         z: 4
         radii: root.effectiveRadii
         slant: root.slant
+        circularCorners: root.circularCorners
         fillColor: "transparent"
-        strokeWidth: ValoTheme.strokeWindow
+        strokeWidth: root.strokeWidth > 0.0 ? root.strokeWidth : ValoTheme.strokeWindow
         strokeColor: ValoTheme.withAlpha(
             root.active ? ValoTheme.borderHighlight : ValoTheme.borderSubtle,
             (root.active ? 0.45 : 0.20) * root.borderIntensity

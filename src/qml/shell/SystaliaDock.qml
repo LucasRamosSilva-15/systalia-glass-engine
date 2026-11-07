@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Shapes
 import Systalia.Engine
 import Systalia.System 1.0
 
@@ -133,14 +134,34 @@ Item {
             objectName: "glassChassis"
             anchors.fill: parent
 
-            // Sombra inferior de oclusão suave VALO (box-shadow: 0px 12px 20px rgba(0, 13, 33, 0.35))
+            // Sombra externa independente de oclusão (projetada suavemente sob a base)
             Rectangle {
-                anchors.fill: parent
-                anchors.topMargin: 12
-                anchors.bottomMargin: -6
-                radius: dock.pillRadius
-                color: ValoTheme.withAlpha(ValoTheme.primitiveBlack, 0.35)
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: -12
+                width: parent.width - 24
+                height: 36
+                radius: 18
                 z: 0
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: "transparent" }
+                    GradientStop { position: 0.35; color: ValoTheme.withAlpha(ValoTheme.primitiveBlack, 0.28) }
+                    GradientStop { position: 0.70; color: ValoTheme.withAlpha(ValoTheme.primitiveBlack, 0.14) }
+                    GradientStop { position: 1.0; color: "transparent" }
+                }
+            }
+
+            // Gradiente oceânico VALO da Dock calibrado conforme Figma
+            LinearGradient {
+                id: dockOceanicGradient
+                x1: 0
+                y1: 0
+                x2: dock.width
+                y2: dock.height * 0.85
+                GradientStop { position: 0.00; color: "#4A5D9FB8" } // #5d9fb8 @ 0.29
+                GradientStop { position: 0.29; color: "#4A5D9FB8" }
+                GradientStop { position: 0.34; color: "#57194C70" } // #194c70 @ 0.34
+                GradientStop { position: 1.00; color: "#630A2741" } // #0a2741 @ 0.39
             }
 
             // Chassi de vidro óptico unificado VALO Glass
@@ -152,6 +173,8 @@ Item {
                 showShadow: false
                 cornerRadius: dock.pillRadius
                 circularCorners: true
+                strokeWidth: 1.25
+                fillGradient: dockOceanicGradient
                 glassOpacity: dock.materialActive ? dock.surfaceOpacity : 0.0
                 backdropSource: dock.backdropSource
                 screenResolution: dock.screenResolution
