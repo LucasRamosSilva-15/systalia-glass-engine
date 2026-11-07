@@ -138,6 +138,7 @@ set_source_files_properties(src/qml/theme/SystaliaTheme.qml src/qml/theme/ValoTh
 set(sge_valo_assets
     src/qml/assets/figma/valo-ocean-atmosphere.png
     src/qml/assets/figma/valo-mark.png
+    src/qml/assets/figma/valo-systalia-symbol.svg
     src/qml/assets/figma/valo-dock-folder.png
     src/qml/assets/figma/valo-dock-speaker.png
     src/qml/assets/figma/valo-dock-terminal.png
