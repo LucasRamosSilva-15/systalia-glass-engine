@@ -1,12 +1,14 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Shapes
 import Systalia.Engine
 import Systalia.System 1.0
 
 Item {
     id: dock
 
+    // =========================================================================
+    // 1. CONTRATOS FUNCIONAIS E PROPRIEDADES DA SHELL
+    // =========================================================================
     property var backdropSource: null
     property var screenResolution: Qt.vector2d(width, height)
     property var activeAppIds: []
@@ -14,6 +16,7 @@ Item {
     property real animationTime: 0.0
     property bool filesVisible: true
     property bool settingsOpen: true
+    property string performanceProfile: "balanced"
     property real refractiveIndex: 1.25
     property real dispersion: 0.040
     property real caustics: 0.65
@@ -21,10 +24,12 @@ Item {
     property bool materialActive: true
     readonly property real pillRadius: ValoTheme.radiusDock
     property vector4d cornerRadii: Qt.vector4d(pillRadius, pillRadius, pillRadius, pillRadius)
+    property bool keyboardNavActive: false
 
     readonly property int dockItemCount: launchers.length
     readonly property real dockWidth: width
     readonly property real dockHeight: height
+    readonly property alias valoGlassInstance: valoGlass
 
     width: 555
     height: 125
@@ -36,27 +41,25 @@ Item {
     signal ideRequested()
     signal settingsRequested()
 
-    // Sombra de oclusão exterior suave VALO (box-shadow: 0px 12px 20px rgba(0, 13, 33, 0.35))
-    Rectangle {
-        anchors.fill: parent
-        anchors.topMargin: 12
-        anchors.bottomMargin: -6
-        radius: dock.pillRadius
-        color: ValoTheme.withAlpha(ValoTheme.primitiveBlack, 0.35)
-        z: -2
+    // Suporte a detecção de navegação por teclado vs ponteiro
+    Keys.onTabPressed: (event) => {
+        dock.keyboardNavActive = true
+        event.accepted = false
+    }
+    Keys.onBacktabPressed: (event) => {
+        dock.keyboardNavActive = true
+        event.accepted = false
+    }
+    HoverHandler {
+        onHoveredChanged: if (hovered) dock.keyboardNavActive = false
+    }
+    TapHandler {
+        onTapped: dock.keyboardNavActive = false
     }
 
-    // Glow difuso periférico ciano
-    Rectangle {
-        anchors.fill: parent
-        anchors.margins: -1
-        radius: dock.pillRadius + 1
-        color: "transparent"
-        border.color: ValoTheme.withAlpha(ValoTheme.accentPrimary, 0.12)
-        border.width: 1
-        z: -1
-    }
-
+    // =========================================================================
+    // 2. MODELO DE INTERAÇÃO (DockInteractionModel)
+    // =========================================================================
     readonly property var launchers: [
         { action: "files", label: "Systalia Files", icon: "valo-dock-folder.svg", appIds: ["systalia-files"], relX: 33.75 },
         { action: "audio", label: "Áudio", icon: "valo-dock-speaker.svg", appIds: ["pavucontrol", "pwvucontrol", "org.pulseaudio.pavucontrol"], relX: 128.75 },
@@ -112,95 +115,83 @@ Item {
         else if (action === "settings") settingsRequested()
     }
 
-    // Camada de vidro óptico (motor de dispersão e cáusticas)
-    SystaliaGlassItem {
-        anchors.fill: parent
-        backdropSource: dock.backdropSource
-        screenResolution: dock.screenResolution
-        radii: dock.cornerRadii
-        circularCorners: true
-        slant: 0
-        ior: dock.refractiveIndex
-        chromaticDispersion: dock.dispersion
-        causticIntensity: dock.caustics
-        surfaceOpacity: dock.materialActive ? dock.surfaceOpacity : 0
-        time: dock.animationTime
+    function dockItemAt(index) {
+        return launcherRepeater.itemAt(index)
     }
 
-    // Moldura orgânica VALO Glass com contorno especular de 1.25px e gradiente a 167.3°
-    SystaliaG2Frame {
-        anchors.fill: parent
-        radii: dock.cornerRadii
-        fillGradient: LinearGradient {
-            x1: 0
-            y1: 0
-            x2: dock.width * 0.97
-            y2: dock.height * 0.22
-            GradientStop { position: 0.0714; color: ValoTheme.withAlpha(ValoTheme.ocean400, 0.29) }
-            GradientStop { position: 0.3571; color: ValoTheme.withAlpha(ValoTheme.ocean600, 0.34) }
-            GradientStop { position: 0.7857; color: ValoTheme.withAlpha(ValoTheme.backgroundDesktop, 0.39) }
-        }
-        strokeColor: ValoTheme.withAlpha(ValoTheme.borderHighlight, 0.38)
-        strokeWidth: 1.25
-    }
-
-    // Inset highlight superior (inset 0px 2px 2px rgba(255, 255, 255, 0.25))
-    Rectangle {
-        x: dock.pillRadius
-        y: 1.5
-        width: parent.width - 2 * dock.pillRadius
-        height: 1.5
-        radius: 1
-        gradient: Gradient {
-            orientation: Gradient.Horizontal
-            GradientStop { position: 0.0; color: "transparent" }
-            GradientStop { position: 0.2; color: ValoTheme.withAlpha(ValoTheme.textBright, 0.25) }
-            GradientStop { position: 0.8; color: ValoTheme.withAlpha(ValoTheme.textBright, 0.25) }
-            GradientStop { position: 1.0; color: "transparent" }
-        }
-        antialiasing: true
-    }
-
-    // Inset shadow inferior suave (inset 0px -3px 5px rgba(6, 19, 38, 0.35))
-    Rectangle {
-        x: dock.pillRadius
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: 2
-        width: parent.width - 2 * dock.pillRadius
-        height: 3
-        radius: 1.5
-        gradient: Gradient {
-            orientation: Gradient.Vertical
-            GradientStop { position: 0.0; color: "transparent" }
-            GradientStop { position: 1.0; color: ValoTheme.withAlpha(ValoTheme.primitiveBlack, 0.30) }
-        }
-        antialiasing: true
-    }
-
-    // Contêiner dos cinco itens da Dock com coordenadas originais Figma
+    // =========================================================================
+    // 3. RAIZ VISUAL (DockVisualRoot)
+    // =========================================================================
     Item {
-        id: itemsContainer
-        objectName: "dockItemsContainer"
+        id: dockVisualRoot
+        objectName: "dockVisualRoot"
         anchors.fill: parent
-        z: 2
 
-        Repeater {
-            model: dock.launchers
+        // GlassChassis — Único elemento responsável pelo chassi principal
+        Item {
+            id: glassChassis
+            objectName: "glassChassis"
+            anchors.fill: parent
 
-            delegate: ValoDockItem {
-                id: dockItemDelegate
-                objectName: "dockItem_" + modelData.action
-                required property var modelData
-                required property int index
-                x: modelData.relX
-                y: 13
-                iconSource: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/" + modelData.icon
-                label: modelData.label
-                action: modelData.action
-                appIds: modelData.appIds
-                isRunning: dock.isRunning(modelData.appIds)
-                isFocused: dock.isFocused(modelData.appIds)
-                onActivated: dock.activate(modelData.action)
+            // Sombra inferior de oclusão suave VALO (box-shadow: 0px 12px 20px rgba(0, 13, 33, 0.35))
+            Rectangle {
+                anchors.fill: parent
+                anchors.topMargin: 12
+                anchors.bottomMargin: -6
+                radius: dock.pillRadius
+                color: ValoTheme.withAlpha(ValoTheme.primitiveBlack, 0.35)
+                z: 0
+            }
+
+            // Chassi de vidro óptico unificado VALO Glass
+            ValoGlass {
+                id: valoGlass
+                objectName: "valoGlassChassis"
+                anchors.fill: parent
+                z: 1
+                showShadow: false
+                cornerRadius: dock.pillRadius
+                circularCorners: true
+                glassOpacity: dock.materialActive ? dock.surfaceOpacity : 0.0
+                backdropSource: dock.backdropSource
+                screenResolution: dock.screenResolution
+                time: dock.animationTime
+                performanceProfile: dock.performanceProfile
+                chromaticDispersion: dock.dispersion
+                refractionStrength: (dock.refractiveIndex - 1.0) / 0.25
+                active: true
+                borderIntensity: 1.0
+                glowIntensity: 1.0
+            }
+        }
+
+        // LauncherRow — Fila dos 5 lançadores vetoriais com coordenadas Figma
+        Item {
+            id: launcherRow
+            objectName: "launcherRow"
+            anchors.fill: parent
+            z: 10
+
+            Repeater {
+                id: launcherRepeater
+                model: dock.launchers
+
+                delegate: ValoDockItem {
+                    id: dockItemDelegate
+                    objectName: "dockItem_" + modelData.action
+                    required property var modelData
+                    required property int index
+                    x: modelData.relX
+                    y: 13
+                    iconSource: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/" + modelData.icon
+                    label: modelData.label
+                    action: modelData.action
+                    appIds: modelData.appIds
+                    isRunning: dock.isRunning(modelData.appIds)
+                    isFocused: dock.isFocused(modelData.appIds)
+                    showKeyboardFocus: dock.keyboardNavActive
+                    onActivated: dock.activate(modelData.action)
+                }
             }
         }
     }

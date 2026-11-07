@@ -282,16 +282,29 @@ private slots:
         QCOMPARE(evaluate("systemDock.height").toDouble(), 125.0);
         QCOMPARE(evaluate("systemDock.pillRadius").toDouble(), 47.0);
 
-        // Verifica que todos os 5 ícones utilizam vetores SVG oficiais do Figma
+        // Valida que o chassi óptico principal é um ValoGlass unificado com cantos circulares de 47px
+        QVERIFY(evaluate("systemDock.valoGlassInstance !== null").toBool());
+        QVERIFY(evaluate("systemDock.valoGlassInstance.circularCorners").toBool());
+        QCOMPARE(evaluate("systemDock.valoGlassInstance.cornerRadius").toDouble(), 47.0);
+        QCOMPARE(evaluate("systemDock.valoGlassInstance.glassOpacity").toDouble(), 0.34);
+        QVERIFY(!evaluate("systemDock.valoGlassInstance.showShadow").toBool());
+
+        // Verifica que todos os 5 ícones utilizam vetores SVG oficiais do Figma e posições exatas
+        const QVector<double> expectedRelX = {33.75, 128.75, 222.75, 316.75, 410.75};
         for (int i = 0; i < 5; ++i) {
             const QString icon = evaluate(QStringLiteral("systemDock.launchers[%1].icon").arg(i)).toString();
             QVERIFY2(icon.endsWith(QStringLiteral(".svg")), qPrintable(icon));
+            const double relX = evaluate(QStringLiteral("systemDock.launchers[%1].relX").arg(i)).toDouble();
+            QCOMPARE(relX, expectedRelX[i]);
         }
 
         // Valida contratos de execução e ativação
         QVERIFY(evaluate("systemDock.isRunning(['systalia-files'])").toBool());
         QVERIFY(evaluate("systemDock.isFocused(['systalia-files'])").toBool());
         QVERIFY(!evaluate("systemDock.isRunning(['non-existent-app'])").toBool());
+
+        // Valida ausência de foco de teclado na inicialização (sem círculo permanente na pasta)
+        QVERIFY(!evaluate("systemDock.keyboardNavActive").toBool());
     }
 
     void captureValoDesktopShellVisuals() {
@@ -310,6 +323,52 @@ private slots:
         QImage shellShot = window->grabWindow();
         QVERIFY(!shellShot.isNull());
         shellShot.save(artifactDir + QStringLiteral("/valo_shell_desktop_complete.png"));
+
+        // Helper para captura dos estados obrigatórios da Dock
+        auto captureDock = [&](const QString &filename) {
+            for (int i = 0; i < 4; ++i) {
+                QCoreApplication::processEvents();
+                QTest::qWait(25);
+            }
+            QImage full = window->grabWindow();
+            QVERIFY(!full.isNull());
+            QImage dockCrop = full.copy(520, 805, 620, 155);
+            dockCrop.save(artifactDir + "/" + filename);
+        };
+
+        // 1. Dock sem aplicações em execução
+        evaluate("systemDock.filesVisible = false; systemDock.settingsOpen = false; systemDock.activeAppIds = []; systemDock.launchedAppIds = []");
+        captureDock(QStringLiteral("dock_state_1_no_running.png"));
+
+        // 2. Dock com aplicações em execução
+        evaluate("systemDock.filesVisible = true; systemDock.settingsOpen = false; systemDock.activeAppIds = ['systalia-files']; systemDock.launchedAppIds = ['systalia-files', 'alacritty']");
+        captureDock(QStringLiteral("dock_state_2_with_running.png"));
+
+        // 3. Dock com hover sobre lançador
+        evaluate("var it = systemDock.dockItemAt(2); if (it) it.scale = 1.08");
+        captureDock(QStringLiteral("dock_state_3_hover_launchers.png"));
+        evaluate("var it = systemDock.dockItemAt(2); if (it) it.scale = 1.0");
+
+        // 4. Dock com foco por teclado
+        evaluate("systemDock.keyboardNavActive = true; var it = systemDock.dockItemAt(2); if (it) it.forceActiveFocus()");
+        captureDock(QStringLiteral("dock_state_4_keyboard_focus.png"));
+        evaluate("systemDock.keyboardNavActive = false");
+
+        // 5. Dock com um botão pressionado
+        evaluate("var it = systemDock.dockItemAt(2); if (it) it.scale = 0.94");
+        captureDock(QStringLiteral("dock_state_5_pressed.png"));
+        evaluate("var it = systemDock.dockItemAt(2); if (it) it.scale = 1.0");
+
+        // 6. Dock com perfil Quality
+        evaluate("systemDock.performanceProfile = 'quality'");
+        captureDock(QStringLiteral("dock_state_6_quality.png"));
+
+        // 7. Dock com perfil Performance
+        evaluate("systemDock.performanceProfile = 'performance'");
+        captureDock(QStringLiteral("dock_state_7_performance.png"));
+
+        // Restaura estado padrão
+        evaluate("systemDock.performanceProfile = 'balanced'; systemDock.filesVisible = true; systemDock.settingsOpen = true");
 
         evaluate("controlCenter.open()");
         for (int i = 0; i < 6; ++i) {

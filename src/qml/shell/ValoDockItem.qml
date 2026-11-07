@@ -12,18 +12,23 @@ Item {
     property var appIds: []
     property bool isRunning: false
     property bool isFocused: false
-    property real iconSize: ValoTheme.sizeDockIcon // 78
+    property bool showKeyboardFocus: false
+    property real iconSize: ValoTheme.sizeDockIcon
+
+    readonly property bool isHovered: hoverHandler.hovered
+    readonly property bool isPressed: tapHandler.pressed
 
     signal activated()
 
     width: iconSize
     height: iconSize + 16
-    focus: true
+    focus: false
     activeFocusOnTab: true
     Accessible.name: label
+    Accessible.role: Accessible.Button
 
-    // Escala e elevação dinâmica no hover / pressed
-    scale: tapHandler.pressed ? 0.94 : (hoverHandler.hovered ? 1.08 : 1.0)
+    // Microinterações de escala no hover e clique
+    scale: isPressed ? 0.94 : (isHovered ? 1.08 : 1.0)
     transformOrigin: Item.Center
 
     Behavior on scale {
@@ -37,19 +42,27 @@ Item {
     Keys.onReturnPressed: dockItem.activated()
     Keys.onSpacePressed: dockItem.activated()
 
-    // Indicador visual de foco por teclado
+    // Indicador de foco por teclado (visível estritamente quando navegado via teclado)
     Rectangle {
         anchors.centerIn: iconImage
-        width: iconSize + 8
-        height: iconSize + 8
-        radius: (iconSize + 8) / 2
+        width: iconSize + 10
+        height: iconSize + 10
+        radius: (iconSize + 10) / 2
         color: "transparent"
-        border.color: ValoTheme.withAlpha(ValoTheme.accentPrimary, 0.40)
-        border.width: 1
-        visible: dockItem.activeFocus
+        border.color: ValoTheme.withAlpha(ValoTheme.accentPrimary, 0.60)
+        border.width: 1.5
+        visible: dockItem.activeFocus && dockItem.showKeyboardFocus
+        opacity: (dockItem.activeFocus && dockItem.showKeyboardFocus) ? 1.0 : 0.0
+
+        Behavior on opacity {
+            NumberAnimation {
+                duration: ValoTheme.motionDurationFastMs
+                easing.type: Easing.OutCubic
+            }
+        }
     }
 
-    // Ícone vetorial com preservação de aspect ratio
+    // Ícone vetorial SVG do Figma
     Image {
         id: iconImage
         anchors.top: parent.top
@@ -57,13 +70,13 @@ Item {
         width: dockItem.iconSize
         height: dockItem.iconSize
         source: dockItem.iconSource
-        sourceSize: Qt.size(dockItem.iconSize, dockItem.iconSize)
+        sourceSize: Qt.size(dockItem.iconSize * 2, dockItem.iconSize * 2)
         fillMode: Image.PreserveAspectFit
         smooth: true
         asynchronous: false
     }
 
-    // Indicador de execução luminoso e discreto VALO
+    // Indicador de execução luminoso e adaptativo VALO
     Item {
         id: indicatorContainer
         anchors.horizontalCenter: parent.horizontalCenter
@@ -72,7 +85,7 @@ Item {
         width: 24
         height: 6
 
-        // Glow sutil para aplicação ativa
+        // Glow ambiente da aplicação ativa
         Rectangle {
             anchors.centerIn: parent
             width: indicatorPill.width + 6
@@ -83,7 +96,7 @@ Item {
             visible: dockItem.isRunning && dockItem.isFocused
         }
 
-        // Pílula / Dot indicador
+        // Pílula (ativa) ou Dot (segundo plano)
         Rectangle {
             id: indicatorPill
             anchors.centerIn: parent
@@ -94,7 +107,7 @@ Item {
             color: dockItem.isFocused
                    ? ValoTheme.accentBright
                    : ValoTheme.withAlpha(ValoTheme.accentPrimary, 0.75)
-            opacity: dockItem.isRunning ? (hoverHandler.hovered ? 1.0 : 0.85) : 0.0
+            opacity: dockItem.isRunning ? (dockItem.isHovered ? 1.0 : 0.85) : 0.0
             antialiasing: true
 
             Behavior on width {
@@ -129,5 +142,5 @@ Item {
 
     ToolTip.visible: hoverHandler.hovered
     ToolTip.text: dockItem.label
-    ToolTip.delay: 350
+    ToolTip.delay: 300
 }

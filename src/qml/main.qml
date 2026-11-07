@@ -507,7 +507,7 @@ ApplicationWindow {
             refractiveIndex: materialWindow.refractiveIndex
             dispersion: materialWindow.dispersion
             caustics: materialWindow.caustics
-            surfaceOpacity: materialWindow.surfaceOpacity
+            surfaceOpacity: ValoTheme.opacityDock
             materialActive: materialWindow.materialActive
 
             onFilesRequested: {
