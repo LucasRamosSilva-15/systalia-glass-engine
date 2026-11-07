@@ -20,6 +20,7 @@ private slots:
     void compositeStylesMatchSpecification();
     void qmlValoThemeSingletonExposesAllTokens();
     void qmlSystaliaThemeBackwardsCompatibility();
+    void acrylicIconTokensMatchFigmaV3();
 };
 
 void TestValoTheme::initTestCase() {
@@ -231,6 +232,47 @@ void TestValoTheme::qmlSystaliaThemeBackwardsCompatibility() {
     QCOMPARE(obj->property("textMuted").value<QColor>(), QColor("#9CBAD3"));
     QCOMPARE(obj->property("family").toString(), QStringLiteral("Inter"));
     QVERIFY(obj->property("hasValo").toBool());
+}
+
+
+// VALO V3: ensure the additive 33 tokens preserve the 91-token interface.
+void TestValoTheme::acrylicIconTokensMatchFigmaV3() {
+    using namespace Systalia::ValoTokens;
+    QCOMPARE(primitiveIce100, QColor("#F6FFFF"));
+    QCOMPARE(primitiveAqua400, QColor("#79EFFF"));
+    QCOMPARE(primitiveBlueFolder400, QColor("#2BCCF5"));
+    QCOMPARE(primitiveVioletEdge, QColor("#738ADD"));
+    QCOMPARE(iconSidebarDefault, primitiveAqua400);
+    QCOMPARE(iconFileEdge, primitiveAquaEdge);
+    QCOMPARE(iconFolderFront, primitiveBlueFolder400);
+    QCOMPARE(sizeFileIconWidth, 55.0);
+    QCOMPARE(sizeFileIconHeight, 67.0);
+    QCOMPARE(sizeFolderIconWidth, 74.0);
+    QCOMPARE(sizeSidebarGlyph, 23.0);
+    QCOMPARE(strokeSidebarIcon, 1.65);
+    QCOMPARE(strokeFileOutline, 1.35);
+    QCOMPARE(shadowFileY, 5.0);
+    QCOMPARE(shadowFileBlur, 7.0);
+    QCOMPARE(opacityFileHighlight, 0.36);
+    QCOMPARE(opacityFileGlassEdge, 0.88);
+
+    QQmlEngine engine;
+    QQmlComponent component(&engine);
+    component.setData(
+        "import QtQuick\n"
+        "import Systalia.Engine\n"
+        "Item {\n"
+        "  readonly property color sidebar: ValoTheme.iconSidebarDefault\n"
+        "  readonly property color folder: ValoTheme.iconFolderFront\n"
+        "  readonly property real iconWidth: ValoTheme.sizeFileIconWidth\n"
+        "  readonly property real highlight: ValoTheme.opacityFileHighlight\n"
+        "}\n", QUrl());
+    QScopedPointer<QObject> obj(component.create());
+    QVERIFY2(!obj.isNull(), qPrintable(component.errorString()));
+    QCOMPARE(obj->property("sidebar").value<QColor>(), primitiveAqua400);
+    QCOMPARE(obj->property("folder").value<QColor>(), primitiveBlueFolder400);
+    QCOMPARE(obj->property("iconWidth").toReal(), 55.0);
+    QCOMPARE(obj->property("highlight").toReal(), 0.36);
 }
 
 QTEST_MAIN(TestValoTheme)
