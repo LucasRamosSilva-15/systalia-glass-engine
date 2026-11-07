@@ -2,6 +2,7 @@
 
 #include <QObject>
 #include <algorithm>
+#include <QtQml/qqmlregistration.h>
 
 namespace Systalia::Gfx::V2 {
 
@@ -15,6 +16,7 @@ namespace Systalia::Gfx::V2 {
  */
 class ValoOpticalContext : public QObject {
     Q_OBJECT
+    QML_ELEMENT
 
     Q_PROPERTY(float ambientLuminance READ ambientLuminance WRITE setAmbientLuminance NOTIFY ambientLuminanceChanged)
     Q_PROPERTY(float adaptiveOpacityOffset READ adaptiveOpacityOffset WRITE setAdaptiveOpacityOffset NOTIFY adaptiveOpacityOffsetChanged)

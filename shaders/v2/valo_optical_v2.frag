@@ -213,30 +213,30 @@ void main() {
     // 12. Suporte aos 8 Modos de Diagnóstico
     int diagMode = (u_ShadowOffsetY < -0.5) ? int(-u_ShadowOffsetY + 0.5) : 0;
 
-    if (diagMode == 1) {
-        // Modo 1: Backdrop Raw Isolado
-        vec4 rawBackdrop = texture(u_BackdropTexture, screenUV);
-        fragColor = vec4(rawBackdrop.rgb, 1.0);
+    if (diagMode == 1 || diagMode == 3) {
+        // Modo A (1 / 3): Campo Geométrico SDF e Normais Analíticas
+        fragColor = vec4((normal * 0.5 + 0.5) * coverage, 0.0, coverage);
     } else if (diagMode == 2) {
-        // Modo 2: Backdrop Desfocado (Dual-Kawase filtrado)
-        fragColor = vec4(texture(u_BackdropTexture, screenUV).rgb, 1.0);
-    } else if (diagMode == 3) {
-        // Modo 3: Normais Analíticas SDF
-        fragColor = vec4(normal * 0.5 + 0.5, 0.0, 1.0);
+        // Modo B (2): Máscara Analítica (Coverage L2 / G2)
+        fragColor = vec4(vec3(coverage), coverage);
+    } else if (diagMode == 8) {
+        // Modo C (8): Preenchimento Volumétrico Oceânico Isolado
+        fragColor = vec4(baseVolumetric * coverage * max(u_SurfaceOpacity, 0.4), coverage);
     } else if (diagMode == 4) {
-        // Modo 4: Vetores de Refração
-        fragColor = vec4(abs(refractionVector) * 100.0, 0.0, 1.0);
+        // Modo D (4): Vetores de Refração e Menisco Óptico
+        fragColor = vec4(abs(refractionVector) * 250.0, meniscus * coverage, coverage);
     } else if (diagMode == 5) {
-        // Modo 5: Dispersão Cromática isolada
-        fragColor = vec4(refractedBackdrop, 1.0);
+        // Modo E (5): Blur Dual-Kawase GPU Filtrado Isolado
+        vec4 blurredSample = texture(u_BackdropTexture, screenUV);
+        fragColor = vec4(blurredSample.rgb * coverage, coverage);
     } else if (diagMode == 6) {
-        // Modo 6: Reflexos Prismáticos Espectrais isolados
-        fragColor = vec4(spectralReflection, 1.0);
+        // Modo F (6): Contorno Especular Isolado de 1.25px
+        fragColor = vec4(strokeColor * strokeAlpha, strokeAlpha);
     } else if (diagMode == 7) {
-        // Modo 7: Cáusticas Procedurais isoladas
-        fragColor = vec4(causticLight, 1.0);
+        // Modo 7: Reflexos Prismáticos e Cáusticas Isoladas
+        fragColor = vec4((spectralReflection + causticLight) * coverage, coverage);
     } else {
-        // Modo 8 / 0: Composição Final Completa com Alpha Pré-Multiplicado
+        // Modo H (0): Composição Final Completa com Alpha Pré-Multiplicado
         fragColor = vec4(compositeRgb * compositeAlpha, compositeAlpha);
     }
 }

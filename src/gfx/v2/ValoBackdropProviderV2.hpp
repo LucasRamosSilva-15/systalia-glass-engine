@@ -8,6 +8,7 @@
 #include <QPointer>
 #include <QSize>
 #include <memory>
+#include <QtQml/qqmlregistration.h>
 
 #include "ValoBlurPipelineV2.hpp"
 
@@ -24,18 +25,21 @@ class ValoGpuBlurPipelineV2;
  */
 class ValoBackdropProviderV2 : public QObject {
     Q_OBJECT
+    QML_ELEMENT
 
     Q_PROPERTY(QQuickItem* source READ source WRITE setSource NOTIFY sourceChanged)
     Q_PROPERTY(bool hasTexture READ hasTexture NOTIFY textureChanged)
     Q_PROPERTY(bool isDirty READ isDirty WRITE setDirty NOTIFY dirtyChanged)
-    Q_PROPERTY(Systalia::Gfx::V2::BlurProfile blurProfile READ blurProfile WRITE setBlurProfile NOTIFY blurProfileChanged)
+    Q_PROPERTY(int blurProfile READ blurProfileInt WRITE setBlurProfileInt NOTIFY blurProfileChanged)
 
 public:
     explicit ValoBackdropProviderV2(QObject *parent = nullptr);
     ~ValoBackdropProviderV2() override;
 
     BlurProfile blurProfile() const noexcept { return m_blurProfile; }
+    int blurProfileInt() const noexcept { return static_cast<int>(m_blurProfile); }
     void setBlurProfile(BlurProfile profile);
+    void setBlurProfileInt(int profile) { setBlurProfile(static_cast<BlurProfile>(profile)); }
 
     QQuickItem *source() const noexcept { return m_source; }
     void setSource(QQuickItem *source);

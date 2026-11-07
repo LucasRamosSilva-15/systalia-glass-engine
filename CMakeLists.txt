@@ -214,6 +214,9 @@ qt_add_qml_module(sge_core
         src/qml/shell/SnapPreviewOverlay.qml
         src/qml/shell/TileSplitter.qml
         src/qml/graphics/v2/ValoSurfaceV2.qml
+        src/qml/graphics/v2/ValoDockItemV2.qml
+        src/qml/graphics/v2/ValoDockV2.qml
+        src/qml/graphics/v2/ValoDockV2Scene.qml
     RESOURCES
         ${sge_valo_assets}
     NO_PLUGIN
@@ -261,6 +264,18 @@ qt_add_executable(valo_gpu_benchmark
     tools/bench_and_artifacts.cpp
 )
 target_link_libraries(valo_gpu_benchmark PRIVATE
+    sge_core
+    sge_shaders
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Quick
+)
+
+# Utilitário de geração de artefatos visuais e validação da Dock VALO V2 (Etapa 04)
+qt_add_executable(valo_dock_v2_artifacts
+    tools/generate_dock_v2_artifacts.cpp
+)
+target_link_libraries(valo_dock_v2_artifacts PRIVATE
     sge_core
     sge_shaders
     Qt6::Core
