@@ -275,6 +275,25 @@ private slots:
         QVERIFY(evaluate("topBar.isWorkspaceTrackVisible").toBool());
     }
 
+    void dockVisualStructureAndInteractionsAreValid() {
+        QVERIFY(evaluate("systemDock.visible").toBool());
+        QCOMPARE(evaluate("systemDock.dockItemCount").toInt(), 5);
+        QCOMPARE(evaluate("systemDock.width").toDouble(), 555.0);
+        QCOMPARE(evaluate("systemDock.height").toDouble(), 125.0);
+        QCOMPARE(evaluate("systemDock.pillRadius").toDouble(), 47.0);
+
+        // Verifica que todos os 5 ícones utilizam vetores SVG oficiais do Figma
+        for (int i = 0; i < 5; ++i) {
+            const QString icon = evaluate(QStringLiteral("systemDock.launchers[%1].icon").arg(i)).toString();
+            QVERIFY2(icon.endsWith(QStringLiteral(".svg")), qPrintable(icon));
+        }
+
+        // Valida contratos de execução e ativação
+        QVERIFY(evaluate("systemDock.isRunning(['systalia-files'])").toBool());
+        QVERIFY(evaluate("systemDock.isFocused(['systalia-files'])").toBool());
+        QVERIFY(!evaluate("systemDock.isRunning(['non-existent-app'])").toBool());
+    }
+
     void captureValoDesktopShellVisuals() {
         auto *window = qobject_cast<QQuickWindow *>(m_root);
         QVERIFY(window);

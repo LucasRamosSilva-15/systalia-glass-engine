@@ -22,6 +22,10 @@ Item {
     readonly property real pillRadius: ValoTheme.radiusDock
     property vector4d cornerRadii: Qt.vector4d(pillRadius, pillRadius, pillRadius, pillRadius)
 
+    readonly property int dockItemCount: launchers.length
+    readonly property real dockWidth: width
+    readonly property real dockHeight: height
+
     width: 555
     height: 125
     z: 95
@@ -32,21 +36,33 @@ Item {
     signal ideRequested()
     signal settingsRequested()
 
-    // Sombra de queda base conforme style.css: box-shadow: 0px 12px 20px rgba(0, 13, 33, 0.35)
+    // Sombra de oclusão exterior suave VALO (box-shadow: 0px 12px 20px rgba(0, 13, 33, 0.35))
     Rectangle {
         anchors.fill: parent
         anchors.topMargin: 12
+        anchors.bottomMargin: -6
         radius: dock.pillRadius
         color: ValoTheme.withAlpha(ValoTheme.primitiveBlack, 0.35)
+        z: -2
+    }
+
+    // Glow difuso periférico ciano
+    Rectangle {
+        anchors.fill: parent
+        anchors.margins: -1
+        radius: dock.pillRadius + 1
+        color: "transparent"
+        border.color: ValoTheme.withAlpha(ValoTheme.accentPrimary, 0.12)
+        border.width: 1
         z: -1
     }
 
     readonly property var launchers: [
-        { action: "files", label: "Systalia Files", icon: "valo-dock-folder.png", appIds: ["systalia-files"] },
-        { action: "audio", label: "Áudio", icon: "valo-dock-speaker.png", appIds: ["pavucontrol", "pwvucontrol", "org.pulseaudio.pavucontrol"] },
-        { action: "terminal", label: "Terminal", icon: "valo-dock-terminal.png", appIds: ["alacritty", "foot"] },
-        { action: "ide", label: "Editor de código", icon: "valo-dock-code.png", appIds: ["code", "codium", "com.visualstudio.code"] },
-        { action: "settings", label: "Systalia Core", icon: "valo-dock-spark.png", appIds: ["systalia-core"] }
+        { action: "files", label: "Systalia Files", icon: "valo-dock-folder.svg", appIds: ["systalia-files"], relX: 33.75 },
+        { action: "audio", label: "Áudio", icon: "valo-dock-speaker.svg", appIds: ["pavucontrol", "pwvucontrol", "org.pulseaudio.pavucontrol"], relX: 128.75 },
+        { action: "terminal", label: "Terminal", icon: "valo-dock-terminal.svg", appIds: ["alacritty", "foot"], relX: 222.75 },
+        { action: "ide", label: "Editor de código", icon: "valo-dock-code.svg", appIds: ["code", "codium", "com.visualstudio.code"], relX: 316.75 },
+        { action: "settings", label: "Systalia Core", icon: "valo-dock-spark.svg", appIds: ["systalia-core"], relX: 410.75 }
     ]
 
     function isRunning(appIds) {
@@ -69,6 +85,25 @@ Item {
         return false
     }
 
+    function isFocused(appIds) {
+        if (appIds.length === 1 && appIds[0] === "systalia-files")
+            return filesVisible
+        if (appIds.length === 1 && appIds[0] === "systalia-core")
+            return settingsOpen
+
+        if (!activeAppIds || activeAppIds.length === 0)
+            return false
+
+        for (var i = 0; i < appIds.length; ++i) {
+            var expected = String(appIds[i]).toLowerCase()
+            for (var j = 0; j < activeAppIds.length; ++j) {
+                if (String(activeAppIds[j]).toLowerCase() === expected)
+                    return true
+            }
+        }
+        return false
+    }
+
     function activate(action) {
         if (action === "files") filesRequested()
         else if (action === "audio") audioRequested()
@@ -77,6 +112,7 @@ Item {
         else if (action === "settings") settingsRequested()
     }
 
+    // Camada de vidro óptico (motor de dispersão e cáusticas)
     SystaliaGlassItem {
         anchors.fill: parent
         backdropSource: dock.backdropSource
@@ -91,122 +127,80 @@ Item {
         time: dock.animationTime
     }
 
+    // Moldura orgânica VALO Glass com contorno especular de 1.25px e gradiente a 167.3°
     SystaliaG2Frame {
         anchors.fill: parent
         radii: dock.cornerRadii
-        // Gradiente a 135deg conforme style.css e tokens VALO
         fillGradient: LinearGradient {
             x1: 0
             y1: 0
-            x2: dock.width
-            y2: dock.height
+            x2: dock.width * 0.97
+            y2: dock.height * 0.22
             GradientStop { position: 0.0714; color: ValoTheme.withAlpha(ValoTheme.ocean400, 0.29) }
             GradientStop { position: 0.3571; color: ValoTheme.withAlpha(ValoTheme.ocean600, 0.34) }
             GradientStop { position: 0.7857; color: ValoTheme.withAlpha(ValoTheme.backgroundDesktop, 0.39) }
         }
-        strokeColor: ValoTheme.withAlpha(ValoTheme.borderHighlight, 0.18)
-        strokeWidth: ValoTheme.strokeFine
+        strokeColor: ValoTheme.withAlpha(ValoTheme.borderHighlight, 0.38)
+        strokeWidth: 1.25
     }
 
-    // Inset highlight superior conforme style.css (inset 0px 2px 2px rgba(255, 255, 255, 0.25))
+    // Inset highlight superior (inset 0px 2px 2px rgba(255, 255, 255, 0.25))
     Rectangle {
         x: dock.pillRadius
-        y: 2
+        y: 1.5
         width: parent.width - 2 * dock.pillRadius
-        height: 2
+        height: 1.5
         radius: 1
         gradient: Gradient {
             orientation: Gradient.Horizontal
-            GradientStop { position: 0; color: "transparent" }
+            GradientStop { position: 0.0; color: "transparent" }
             GradientStop { position: 0.2; color: ValoTheme.withAlpha(ValoTheme.textBright, 0.25) }
             GradientStop { position: 0.8; color: ValoTheme.withAlpha(ValoTheme.textBright, 0.25) }
-            GradientStop { position: 1; color: "transparent" }
+            GradientStop { position: 1.0; color: "transparent" }
         }
         antialiasing: true
     }
 
-    // Inset shadow inferior conforme style.css (inset 0px -3px 5px rgba(6, 19, 38, 0.35))
+    // Inset shadow inferior suave (inset 0px -3px 5px rgba(6, 19, 38, 0.35))
     Rectangle {
         x: dock.pillRadius
         anchors.bottom: parent.bottom
         anchors.bottomMargin: 2
         width: parent.width - 2 * dock.pillRadius
-        height: 4
-        radius: 2
+        height: 3
+        radius: 1.5
         gradient: Gradient {
             orientation: Gradient.Vertical
-            GradientStop { position: 0; color: "transparent" }
-            GradientStop { position: 1; color: ValoTheme.withAlpha(ValoTheme.backgroundDesktop, 0.35) }
+            GradientStop { position: 0.0; color: "transparent" }
+            GradientStop { position: 1.0; color: ValoTheme.withAlpha(ValoTheme.primitiveBlack, 0.30) }
         }
         antialiasing: true
     }
 
-    Row {
-        id: iconsRow
-        x: (parent.width - implicitWidth) / 2
-        y: 21.75
-        spacing: 16
+    // Contêiner dos cinco itens da Dock com coordenadas originais Figma
+    Item {
+        id: itemsContainer
+        objectName: "dockItemsContainer"
+        anchors.fill: parent
         z: 2
 
         Repeater {
             model: dock.launchers
 
-            delegate: Item {
-                id: launcher
+            delegate: ValoDockItem {
+                id: dockItemDelegate
+                objectName: "dockItem_" + modelData.action
                 required property var modelData
-                readonly property bool activeRunning: dock.isRunning(launcher.modelData.appIds)
-                width: ValoTheme.sizeDockIcon
-                height: ValoTheme.sizeDockIcon + 8
-                scale: pointer.hovered ? 1.08 : 1.0
-
-                Behavior on scale {
-                    NumberAnimation {
-                        duration: ValoTheme.motionDurationFastMs
-                        easing.type: Easing.OutCubic
-                    }
-                }
-
-                Image {
-                    id: iconImg
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    anchors.top: parent.top
-                    width: ValoTheme.sizeDockIcon
-                    height: ValoTheme.sizeDockIcon
-                    source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/" + launcher.modelData.icon
-                    sourceSize: Qt.size(312, 312)
-                    fillMode: Image.PreserveAspectFit
-                    smooth: true
-                    mipmap: true
-                }
-
-                // Indicador luminoso de aplicativo aberto/ativo (dot ciano de 4px)
-                Rectangle {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    anchors.top: iconImg.bottom
-                    anchors.topMargin: 2
-                    width: launcher.activeRunning ? 16 : 0
-                    height: 3
-                    radius: 1.5
-                    color: ValoTheme.accentBright
-                    visible: launcher.activeRunning
-                    opacity: pointer.hovered ? 1.0 : 0.85
-                    antialiasing: true
-
-                    Behavior on width {
-                        NumberAnimation {
-                            duration: ValoTheme.motionDurationFastMs
-                            easing.type: Easing.OutCubic
-                        }
-                    }
-                }
-
-                HoverHandler { id: pointer }
-
-                ToolTip.visible: pointer.hovered
-                ToolTip.text: launcher.modelData.label
-                ToolTip.delay: 350
-
-                TapHandler { onTapped: dock.activate(launcher.modelData.action) }
+                required property int index
+                x: modelData.relX
+                y: 13
+                iconSource: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/" + modelData.icon
+                label: modelData.label
+                action: modelData.action
+                appIds: modelData.appIds
+                isRunning: dock.isRunning(modelData.appIds)
+                isFocused: dock.isFocused(modelData.appIds)
+                onActivated: dock.activate(modelData.action)
             }
         }
     }

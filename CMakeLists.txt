@@ -144,6 +144,11 @@ set(sge_valo_assets
     src/qml/assets/figma/valo-dock-terminal.png
     src/qml/assets/figma/valo-dock-code.png
     src/qml/assets/figma/valo-dock-spark.png
+    src/qml/assets/figma/valo-dock-folder.svg
+    src/qml/assets/figma/valo-dock-speaker.svg
+    src/qml/assets/figma/valo-dock-terminal.svg
+    src/qml/assets/figma/valo-dock-code.svg
+    src/qml/assets/figma/valo-dock-spark.svg
     src/qml/assets/figma/valo-file-folder-body.png
     src/qml/assets/figma/valo-file-folder-lip.png
     src/qml/assets/figma/valo-file-documents-art.png
@@ -185,6 +190,7 @@ qt_add_qml_module(sge_core
         src/qml/ValoGlass.qml
         src/qml/shell/SystaliaTopBar.qml
         src/qml/shell/SystaliaDock.qml
+        src/qml/shell/ValoDockItem.qml
         src/qml/shell/SystaliaG2Frame.qml
         src/qml/shell/SystaliaWindowAction.qml
         src/qml/shell/SystaliaWindowHeader.qml
