@@ -1,10 +1,12 @@
 #include <QTest>
 #include <QImage>
 #include <QColor>
+#include <QSignalSpy>
 #include <cmath>
 
 #include "ValoBackdropProviderV2.hpp"
 #include "ValoBlurPipelineV2.hpp"
+#include "ValoGlassItemV2.hpp"
 
 using namespace Systalia::Gfx::V2;
 
@@ -18,6 +20,7 @@ private slots:
     void testBlurImpulseResponseSpread();
     void testBlurEnergyConservation();
     void testBlurProfileHierarchy();
+    void testBackdropProviderItemBinding();
 };
 
 void tst_ValoBackdropBlurV2::testSyntheticBackdropGeneration() {
@@ -122,6 +125,23 @@ void tst_ValoBackdropBlurV2::testBlurProfileHierarchy() {
 
     // Performance preserva os pixels originais sem blur
     QCOMPARE(perf.pixel(64, 64), src.pixel(64, 64));
+}
+
+void tst_ValoBackdropBlurV2::testBackdropProviderItemBinding() {
+    ValoGlassItemV2 item;
+    QCOMPARE(item.backdropProvider(), nullptr);
+
+    ValoBackdropProviderV2 provider;
+    QSignalSpy spyChange(&item, &ValoGlassItemV2::backdropProviderChanged);
+
+    item.setBackdropProvider(&provider);
+    QCOMPARE(item.backdropProvider(), &provider);
+    QCOMPARE(spyChange.count(), 1);
+
+    // Desconecta e limpa cleanly
+    item.setBackdropProvider(nullptr);
+    QCOMPARE(item.backdropProvider(), nullptr);
+    QCOMPARE(spyChange.count(), 2);
 }
 
 QTEST_MAIN(tst_ValoBackdropBlurV2)

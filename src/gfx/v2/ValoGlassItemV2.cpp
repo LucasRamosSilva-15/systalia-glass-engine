@@ -170,6 +170,21 @@ void ValoGlassItemV2::setBlurProfile(int profile) {
   }
 }
 
+void ValoGlassItemV2::setBackdropProvider(ValoBackdropProviderV2 *provider) {
+  if (m_backdropProvider != provider) {
+    if (m_backdropProvider) {
+      disconnect(m_backdropProvider, nullptr, this, nullptr);
+    }
+    m_backdropProvider = provider;
+    if (m_backdropProvider) {
+      connect(m_backdropProvider, &ValoBackdropProviderV2::textureChanged,
+              this, &QQuickItem::update);
+    }
+    emit backdropProviderChanged();
+    update();
+  }
+}
+
 void ValoGlassItemV2::setOpticalContext(ValoOpticalContext *context) {
   if (m_opticalContext != context) {
     if (m_opticalContext) {
@@ -225,16 +240,24 @@ QSGNode *ValoGlassItemV2::updatePaintNode(QSGNode *oldNode,
       node->geometry(), QRectF(0.0, 0.0, w, h), QRectF(0.0, 0.0, 1.0, 1.0));
   node->markDirty(QSGNode::DirtyGeometry);
 
-  // Inicializa a textura padrão de backdrop se necessário
-  if (window() && !m_fallbackBackdropTexture) {
-    const QImage synthBackdrop =
-        ValoBackdropProviderV2::createSyntheticBackdrop(QSize(256, 256));
-    m_fallbackBackdropTexture =
-        window()->createTextureFromImage(synthBackdrop, QQuickWindow::TextureHasAlphaChannel);
+  // Vincula a textura do backdrop provider se conectado, caso contrário usa fallback sintético
+  QSGTexture *backdropTex = nullptr;
+  if (m_backdropProvider) {
+    backdropTex = m_backdropProvider->texture(window());
   }
 
-  if (m_fallbackBackdropTexture) {
-    material->setBackdropTexture(m_fallbackBackdropTexture);
+  if (!backdropTex) {
+    if (window() && !m_fallbackBackdropTexture) {
+      const QImage synthBackdrop =
+          ValoBackdropProviderV2::createSyntheticBackdrop(QSize(256, 256));
+      m_fallbackBackdropTexture =
+          window()->createTextureFromImage(synthBackdrop, QQuickWindow::TextureHasAlphaChannel);
+    }
+    backdropTex = m_fallbackBackdropTexture;
+  }
+
+  if (backdropTex) {
+    material->setBackdropTexture(backdropTex);
   }
 
   // Bloco uniforme std140 de 160 bytes

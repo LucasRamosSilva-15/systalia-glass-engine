@@ -11,6 +11,7 @@
 #include <QtQml/qqmlregistration.h>
 
 #include "SystaliaSurfacePropsV2.hpp"
+#include "ValoBackdropProviderV2.hpp"
 #include "ValoBlurPipelineV2.hpp"
 #include "ValoOpticalContext.hpp"
 
@@ -39,6 +40,7 @@ class ValoGlassItemV2 : public QQuickItem {
   Q_PROPERTY(float chromaticDispersion READ chromaticDispersion WRITE setChromaticDispersion NOTIFY chromaticDispersionChanged)
   Q_PROPERTY(float causticIntensity READ causticIntensity WRITE setCausticIntensity NOTIFY causticIntensityChanged)
   Q_PROPERTY(int blurProfile READ blurProfile WRITE setBlurProfile NOTIFY blurProfileChanged)
+  Q_PROPERTY(Systalia::Gfx::V2::ValoBackdropProviderV2 *backdropProvider READ backdropProvider WRITE setBackdropProvider NOTIFY backdropProviderChanged)
   Q_PROPERTY(Systalia::Gfx::V2::ValoOpticalContext *opticalContext READ opticalContext WRITE setOpticalContext NOTIFY opticalContextChanged)
 
 public:
@@ -91,6 +93,9 @@ public:
   int blurProfile() const noexcept { return m_blurProfile; }
   void setBlurProfile(int profile);
 
+  ValoBackdropProviderV2 *backdropProvider() const noexcept { return m_backdropProvider; }
+  void setBackdropProvider(ValoBackdropProviderV2 *provider);
+
   ValoOpticalContext *opticalContext() const noexcept { return m_opticalContext; }
   void setOpticalContext(ValoOpticalContext *context);
 
@@ -110,6 +115,7 @@ signals:
   void chromaticDispersionChanged();
   void causticIntensityChanged();
   void blurProfileChanged();
+  void backdropProviderChanged();
   void opticalContextChanged();
 
 protected:
@@ -133,6 +139,7 @@ private:
   float m_causticIntensity = 0.35f;
   int m_blurProfile = Quality;
 
+  QPointer<ValoBackdropProviderV2> m_backdropProvider;
   QPointer<ValoOpticalContext> m_opticalContext;
 
   QTimer m_idleTimer;
