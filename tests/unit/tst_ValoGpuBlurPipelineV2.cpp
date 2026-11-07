@@ -26,6 +26,7 @@ private slots:
     void testMultipassQualityExecution();
     void testImpulseSpreadAndEnergyConservation();
     void testDynamicResolutionResize();
+    void testNonZeroInputRegression();
 
 private:
     std::unique_ptr<QOffscreenSurface> m_fallbackSurface;
@@ -229,6 +230,48 @@ void tst_ValoGpuBlurPipelineV2::testDynamicResolutionResize() {
     img3.fill(Qt::red);
     QImage out3 = pipeline.filterOfflineGpu(m_rhi.get(), img3, BlurProfile::Balanced);
     QCOMPARE(out3.size(), sz3);
+}
+
+void tst_ValoGpuBlurPipelineV2::testNonZeroInputRegression() {
+    ValoGpuBlurPipelineV2 pipeline;
+    const QSize size(256, 256);
+
+    // Entrada com energia suficiente (impulso pontual com raio físico calibrado para evitar underflow)
+    QImage input(size, QImage::Format_RGBA8888_Premultiplied);
+    input.fill(Qt::black);
+    const int cx = size.width() / 2;
+    const int cy = size.height() / 2;
+    const int spotRadius = 12;
+    for (int y = -spotRadius; y <= spotRadius; ++y) {
+        for (int x = -spotRadius; x <= spotRadius; ++x) {
+            float dist = std::sqrt(float(x * x + y * y));
+            if (dist <= float(spotRadius)) {
+                float intensity = 1.0f - (dist / float(spotRadius + 1));
+                int val = std::clamp(static_cast<int>(255.0f * intensity), 0, 255);
+                input.setPixelColor(cx + x, cy + y, QColor(val, val, val, 255));
+            }
+        }
+    }
+
+    // Executa na GPU em Quality
+    const QImage output = pipeline.filterOfflineGpu(m_rhi.get(), input, BlurProfile::Quality);
+    QCOMPARE(output.size(), size);
+
+    // Regressão: a saída não pode ser inteiramente nula sob entrada não nula
+    int nonZeroCount = 0;
+    int maxBrightness = 0;
+    for (int y = 0; y < size.height(); ++y) {
+        for (int x = 0; x < size.width(); ++x) {
+            int r = output.pixelColor(x, y).red();
+            if (r > 0) {
+                ++nonZeroCount;
+                if (r > maxBrightness) maxBrightness = r;
+            }
+        }
+    }
+
+    QVERIFY2(nonZeroCount > 0, "Regressão: Entrada com energia não nula gerou saída GPU completamente preta (todos zeros)!");
+    QVERIFY2(maxBrightness >= 1, "Regressão: O pico central da PSF deve ser estritamente maior ou igual a 1!");
 }
 
 QTEST_MAIN(tst_ValoGpuBlurPipelineV2)
