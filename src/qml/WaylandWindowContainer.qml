@@ -466,47 +466,35 @@ Item {
         }
     }
 
-    BorderImage {
-        x: -60
-        y: -60
-        width: parent.width + 120
-        height: parent.height + 160
-        z: -1
-        source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-window-shadow.png"
-        border.left: 60
-        border.top: 60
-        border.right: 60
-        border.bottom: 100
-        horizontalTileMode: BorderImage.Stretch
-        verticalTileMode: BorderImage.Stretch
-        smooth: true
+    readonly property bool isWindowActive: {
+        if (toplevel && toplevel.activated !== undefined)
+            return toplevel.activated
+        if (clientSurfaceItem && clientSurfaceItem.activeFocus)
+            return true
+        return true
     }
 
-    // Chassi de Vidro Líquido Nativo do Systalia Glass Engine (SGE)
-    SystaliaGlassItem {
+    // Chassi VALO Glass Integrado (Motor Óptico SGE + Figma VALO Design System)
+    ValoGlass {
         id: glassChassis
         anchors.fill: parent
 
+        active: windowContainer.isWindowActive
         backdropSource: windowContainer.backdropSource
         clientTextureSource: clientTextureCapture
         screenResolution: Qt.vector2d(windowContainer.screenResolution.x, windowContainer.screenResolution.y)
         devicePixelRatio: windowContainer.currentScreenScale
         titleBarHeight: windowContainer.titleBarHeight
-        occluded: !windowContainer.visible
-
-        radii: windowContainer.frameRadii
-        Behavior on radii {
-            PropertyAnimation {
-                duration: 220
-                easing.type: Easing.OutCubic
-            }
-        }
+        cornerRadii: windowContainer.frameRadii
         slant: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.slant : 0.0
-        ior: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.ior : 1.25
-        chromaticDispersion: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.dispersion : 0.040
-        causticIntensity: 0.85
-        surfaceOpacity: 0.85
+        refractionStrength: windowContainer.opticalMetadata
+            ? Math.max(0.0, (windowContainer.opticalMetadata.ior - 1.0) / 0.25)
+            : 1.0
+        chromaticDispersion: windowContainer.opticalMetadata
+            ? windowContainer.opticalMetadata.dispersion
+            : 0.040
         time: windowContainer.animTime
+        occluded: !windowContainer.visible
 
         // A fonte Wayland fica atrás do passe óptico; o shader a compõe no mesmo frame.
         Item {
@@ -564,6 +552,7 @@ Item {
 
         Shell.SystaliaWindowHeader {
             id: sgeTitleBar
+            objectName: "sgeTitleBar"
             width: parent.width
             height: windowContainer.titleBarHeight
             z: 2
@@ -576,7 +565,7 @@ Item {
             badgeText: "SDE-KWIN | VALO"
             badgeWidth: 0
             maximized: windowContainer.maximizedBySge
-            glassSurface: true
+            glassSurface: false
             radii: windowContainer.frameRadii
             slant: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.slant : 0
             slantReferenceWidth: windowContainer.width
@@ -632,21 +621,6 @@ Item {
                 clientSurfaceItem.takeFocus()
             }
         }
-    }
-
-    Shell.SystaliaG2Frame {
-        anchors.fill: parent
-        z: 3
-        radii: windowContainer.frameRadii
-        Behavior on radii {
-            PropertyAnimation {
-                duration: 220
-                easing.type: Easing.OutCubic
-            }
-        }
-        slant: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.slant : 0
-        strokeColor: "#c9ffffff"
-        strokeWidth: 1.5
     }
 
     Repeater {

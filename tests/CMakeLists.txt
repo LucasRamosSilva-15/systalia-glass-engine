@@ -260,6 +260,7 @@ endif()
 
 sge_add_expanded_test(tst_valo_theme unit/tst_ValoTheme.cpp unit)
 sge_add_expanded_test(tst_valo_glass unit/tst_ValoGlass.cpp unit)
+sge_add_expanded_test(tst_valo_decorations unit/tst_ValoDecorations.cpp unit)
 
 # Integration tests exercise actual Wayland wire requests and model resets.
 sge_add_expanded_test(tst_protocol_roundtrip integration/tst_ProtocolRoundtrip.cpp integration)
@@ -302,6 +303,7 @@ add_custom_target(unit_tests DEPENDS
     tst_xwayland_integration
     tst_valo_theme
     tst_valo_glass
+    tst_valo_decorations
 )
 add_custom_target(integration_tests DEPENDS
     tst_wayland_socket
@@ -340,6 +342,7 @@ set_tests_properties(
     tst_xwayland_integration
     tst_valo_theme
     tst_valo_glass
+    tst_valo_decorations
     PROPERTIES LABELS "unit"
 )
 set_tests_properties(

@@ -7,14 +7,16 @@ ToolButton {
 
     property string glyph: "•"
     property string accessibleName: "Ação da janela"
-    property bool closeAction: false
-    property bool maximizeAction: glyph === "□" || glyph === "❐"
-    property bool minimizeAction: glyph === "−"
+    property string actionType: ""
+    property bool closeAction: actionType === "close" || glyph === "×" || glyph === "x" || glyph === "X"
+    property bool maximizeAction: actionType === "maximize" || glyph === "□" || glyph === "❐" || glyph === "+"
+    property bool minimizeAction: actionType === "minimize" || glyph === "−" || glyph === "-" || glyph === "_"
 
     Accessible.name: accessibleName
     width: 28
     height: 28
     hoverEnabled: true
+    opacity: enabled ? 1.0 : 0.35
     ToolTip.visible: hovered
     ToolTip.text: accessibleName
     ToolTip.delay: 450
@@ -151,6 +153,18 @@ ToolButton {
             Behavior on border.color {
                 ColorAnimation { duration: 150 }
             }
+        }
+
+        // Anel de foco acessível
+        Rectangle {
+            anchors.centerIn: parent
+            width: 32
+            height: 32
+            radius: 16
+            color: "transparent"
+            border.width: 1.5
+            border.color: "#49f3fc"
+            visible: action.activeFocus
         }
     }
 

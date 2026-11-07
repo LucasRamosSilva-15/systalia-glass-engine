@@ -6,11 +6,14 @@ Item {
     id: root
 
     // =========================================================================
-    // 1. PROPRIEDADES PRINCIPAIS (Requisitos Etapa 3)
+    // 1. PROPRIEDADES PRINCIPAIS (Requisitos Etapa 3 e 4)
     // =========================================================================
 
-    // Opacidade da camada de vidro translúcido
-    property real glassOpacity: ValoTheme.opacityWindowMax
+    // Estado ativo/focado da superfície (controla iluminação, reflexos e opacidade)
+    property bool active: true
+
+    // Opacidade da camada de vidro translúcido (conforme tokens window-min e window-max)
+    property real glassOpacity: active ? ValoTheme.opacityWindowMax : ValoTheme.opacityWindowMin
 
     // Raio de blur para o filtro de fundo (px)
     property real blurRadius: ValoTheme.blurBackdrop
@@ -20,6 +23,7 @@ Item {
 
     // Vetor de raios individuais (topo-esq, topo-dir, inf-esq, inf-dir)
     property vector4d cornerRadii: Qt.vector4d(cornerRadius, cornerRadius, cornerRadius, cornerRadius)
+    property alias radii: root.cornerRadii
 
     // Intensidade das bordas especulares
     property real borderIntensity: 1.0
@@ -35,9 +39,6 @@ Item {
 
     // Intensidade do brilho/sombra ambiente
     property real glowIntensity: 1.0
-
-    // Estado ativo/focado da superfície
-    property bool active: true
 
     // Perfil gráfico de desempenho: "quality", "balanced", "performance"
     property string performanceProfile: "balanced"
@@ -70,6 +71,9 @@ Item {
     // Alterna entre cantos euclidianos circulares (L2) ou Squircle G2 analítico
     property bool circularCorners: false
 
+    // Controla se a janela está ocluída (otimização de renderização)
+    property bool occluded: false
+
     // Controla a exibição da sombra projetada
     property bool showShadow: true
 
@@ -89,6 +93,7 @@ Item {
     // Permite que componentes filhos sejam inseridos diretamente no ValoGlass
     default property alias contentData: contentContainer.data
     property alias contentItem: contentContainer
+    property alias glassItem: glassItem
 
     // =========================================================================
     // 4. CÁLCULO DINÂMICO CONFORME PERFIL DE DESEMPENHO
@@ -154,7 +159,7 @@ Item {
         horizontalTileMode: BorderImage.Stretch
         verticalTileMode: BorderImage.Stretch
         smooth: true
-        opacity: root.glowIntensity * (root.isPerformance ? 0.35 : (root.active ? 1.0 : 0.5))
+        opacity: root.glowIntensity * (root.isPerformance ? 0.35 : (root.active ? 1.0 : 0.45))
         visible: root.showShadow && root.glowIntensity > 0.001
     }
 
@@ -170,7 +175,7 @@ Item {
         devicePixelRatio: root.devicePixelRatio
         titleBarHeight: root.titleBarHeight
         circularCorners: root.circularCorners
-        occluded: !root.visible
+        occluded: root.occluded || !root.visible
 
         radii: root.effectiveRadii
         slant: root.slant
@@ -212,7 +217,7 @@ Item {
         radii: root.effectiveRadii
         slant: root.slant
         visible: root.showPrism && root.iridescenceStrength > 0.001 && !root.isPerformance
-        opacity: root.iridescenceStrength * (root.active ? 1.0 : 0.45)
+        opacity: root.iridescenceStrength * (root.active ? 1.0 : 0.40)
 
         fillGradient: LinearGradient {
             x1: 0
@@ -228,7 +233,7 @@ Item {
         }
     }
 
-    // Camada E: Borda Especular Analítica G2 (Bisel e Chanfro de Luz)
+    // Camada E: Borda Especular Analítica G2 (Bisel e Chanfro de Luz de 1.5px)
     SystaliaG2Frame {
         id: specularStrokeFrame
         anchors.fill: parent
@@ -252,4 +257,3 @@ Item {
         clip: false
     }
 }
-
