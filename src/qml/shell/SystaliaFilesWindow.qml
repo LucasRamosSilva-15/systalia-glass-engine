@@ -34,129 +34,18 @@ Item {
     visible: true
     clip: false
 
-    BorderImage {
-        x: -60
-        y: -60
-        width: parent.width + 120
-        height: parent.height + 160
-        z: -1
-        source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-window-shadow.png"
-        border.left: 60
-        border.top: 60
-        border.right: 60
-        border.bottom: 100
-        horizontalTileMode: BorderImage.Stretch
-        verticalTileMode: BorderImage.Stretch
-        smooth: true
-    }
-
-    SystaliaGlassItem {
+    ValoGlass {
+        id: glassChassis
         anchors.fill: parent
+        active: fileWindow.visible
         backdropSource: fileWindow.backdropSource
         screenResolution: fileWindow.screenResolution
-        radii: fileWindow.cornerRadii
-        Behavior on radii {
-            PropertyAnimation {
-                duration: 220
-                easing.type: Easing.OutCubic
-            }
-        }
+        titleBarHeight: 36
+        cornerRadii: fileWindow.cornerRadii
         slant: fileWindow.surfaceSlant
-        ior: fileWindow.refractiveIndex
+        refractionStrength: Math.max(0.0, (fileWindow.refractiveIndex - 1.0) / 0.25)
         chromaticDispersion: fileWindow.dispersion
-        causticIntensity: fileWindow.caustics
-        surfaceOpacity: fileWindow.materialActive ? fileWindow.surfaceOpacity : 0
         time: fileWindow.animationTime
-    }
-
-    SystaliaG2Frame {
-        anchors.fill: parent
-        radii: fileWindow.cornerRadii
-        slant: fileWindow.surfaceSlant
-        fillGradient: LinearGradient {
-            x1: 0
-            y1: 0
-            x2: fileWindow.width
-            y2: fileWindow.height * 0.75
-            GradientStop { position: 0.08; color: "#4d264f76" }
-            GradientStop { position: 0.24; color: "#554bafc7" }
-            GradientStop { position: 0.52; color: "#48133a5d" }
-            GradientStop { position: 0.88; color: "#5509233f" }
-        }
-    }
-
-    // Camada de dispersão cromática e feixes cáusticos de refração
-    Item {
-        anchors.fill: parent
-        clip: true
-
-        // Prisma interno cáustico (âmbar dourado e ciano)
-        Image {
-            x: -8.92
-            y: 99.96
-            width: 565.335
-            height: 492.371
-            source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-files-prism.png"
-            sourceSize: Qt.size(1056, 804)
-            fillMode: Image.Stretch
-            smooth: true
-            mipmap: true
-            opacity: 1.85
-        }
-
-        // Fita espectral cáustica (dispersão ciano, dourada e violeta)
-        Image {
-            x: -88.44
-            y: 67.92
-            width: 599.68
-            height: 512.41
-            source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-files-ribbon.png"
-            sourceSize: Qt.size(994, 868)
-            fillMode: Image.Stretch
-            smooth: true
-            mipmap: true
-            opacity: 2.1
-        }
-
-        // Refração de borda violeta-ciano
-        Image {
-            x: 196.77
-            y: 13.5
-            width: 449.24
-            height: 524.653
-            source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-files-edge.png"
-            sourceSize: Qt.size(764, 962)
-            fillMode: Image.Stretch
-            smooth: true
-            mipmap: true
-            opacity: 1.65
-        }
-    }
-
-    Rectangle {
-        x: 4.5
-        y: 2.5
-        width: parent.width - 9
-        height: parent.height - 10
-        radius: 14
-        gradient: Gradient {
-            orientation: Gradient.Vertical
-            GradientStop { position: 0.0; color: "#40c8ffff" }
-            GradientStop { position: 0.34; color: "#1f61f0ff" }
-            GradientStop { position: 0.72; color: "#0b155279" }
-            GradientStop { position: 1.0; color: "#001b1834" }
-        }
-        border.color: "#24c8ffff"
-        border.width: 0.8
-        antialiasing: true
-    }
-
-    SystaliaG2Frame {
-        anchors.fill: parent
-        radii: fileWindow.cornerRadii
-        slant: fileWindow.surfaceSlant
-        strokeColor: "#a8ffffff"
-        strokeWidth: 1.25
     }
 
     SystaliaWindowHeader {
@@ -164,7 +53,7 @@ Item {
         height: 50
         iconGlyph: "▰"
         title: "Systalia Files"
-        badgeText: "ABYSSUS VES"
+        badgeText: "SDE-KWIN | VALO"
         badgeWidth: 120
         maximized: fileWindow.controller ? fileWindow.controller.filesWindowMaximized : false
         glassSurface: false
@@ -340,7 +229,7 @@ Item {
                 width: 150
                 text: navigationEntry.modelData.icon + "  " + navigationEntry.modelData.name
                 color: fileWindow.selectedLocation === navigationEntry.modelData.name ? "#eef9ff" : "#d5e2ee"
-                font.family: SystaliaTheme.fontFamily
+                font.family: ValoTheme.fontFamily
                 font.pixelSize: 16
                 font.weight: fileWindow.selectedLocation === navigationEntry.modelData.name ? Font.Medium : Font.Normal
                 antialiasing: true
@@ -361,7 +250,7 @@ Item {
         Text {
             text: "‹"
             color: "#eb8cf1ff"
-            font.family: SystaliaTheme.fontFamily
+            font.family: ValoTheme.fontFamily
             font.pixelSize: 26
             font.weight: Font.Bold
             antialiasing: true
@@ -371,7 +260,7 @@ Item {
         Text {
             text: "›"
             color: "#668cf1ff"
-            font.family: SystaliaTheme.fontFamily
+            font.family: ValoTheme.fontFamily
             font.pixelSize: 26
             font.weight: Font.Bold
             antialiasing: true
@@ -396,7 +285,7 @@ Item {
             anchors.centerIn: parent
             text: "⌂  " + fileWindow.selectedLocation
             color: "#e6fbff"
-            font.family: SystaliaTheme.fontFamily
+            font.family: ValoTheme.fontFamily
             font.pixelSize: 15
             font.weight: Font.Medium
             antialiasing: true
@@ -412,9 +301,9 @@ Item {
         width: 157
         height: 28
         placeholderText: "⌕ Search"
-        color: SystaliaTheme.text
+        color: ValoTheme.textPrimary
         placeholderTextColor: "#bdcfdc"
-        font.family: SystaliaTheme.fontFamily
+        font.family: ValoTheme.fontFamily
         font.pixelSize: 15
         leftPadding: 14
         topPadding: 0
@@ -439,7 +328,7 @@ Item {
         height: 28
         text: "≡"
         color: "#c2efff"
-        font.family: SystaliaTheme.fontFamily
+        font.family: ValoTheme.fontFamily
         font.pixelSize: 22
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
@@ -548,7 +437,7 @@ Item {
                     visible: fileEntry.modelData.glyph !== ""
                     text: fileEntry.modelData.glyph
                     color: "#8cf1ff"
-                    font.family: SystaliaTheme.fontFamily
+                    font.family: ValoTheme.fontFamily
                     font.pixelSize: fileEntry.modelData.glyph === "</>" ? 22 : 26
                     font.weight: Font.Bold
                     horizontalAlignment: Text.AlignHCenter
@@ -563,7 +452,7 @@ Item {
                     height: 26
                     text: fileEntry.modelData.name
                     color: "#eefcff"
-                    font.family: SystaliaTheme.fontFamily
+                    font.family: ValoTheme.fontFamily
                     font.pixelSize: 15
                     font.weight: Font.Medium
                     horizontalAlignment: Text.AlignHCenter

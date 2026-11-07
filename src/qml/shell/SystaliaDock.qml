@@ -15,11 +15,11 @@ Item {
     property bool filesVisible: true
     property bool settingsOpen: true
     property real refractiveIndex: 1.25
-    property real dispersion: 0.04
+    property real dispersion: 0.040
     property real caustics: 0.65
-    property real surfaceOpacity: 0.88
+    property real surfaceOpacity: ValoTheme.opacityDock
     property bool materialActive: true
-    readonly property real pillRadius: 47
+    readonly property real pillRadius: ValoTheme.radiusDock
     property vector4d cornerRadii: Qt.vector4d(pillRadius, pillRadius, pillRadius, pillRadius)
 
     width: 555
@@ -37,7 +37,7 @@ Item {
         anchors.fill: parent
         anchors.topMargin: 12
         radius: dock.pillRadius
-        color: "#59000d21"
+        color: ValoTheme.withAlpha(ValoTheme.primitiveBlack, 0.35)
         z: -1
     }
 
@@ -82,6 +82,7 @@ Item {
         backdropSource: dock.backdropSource
         screenResolution: dock.screenResolution
         radii: dock.cornerRadii
+        circularCorners: true
         slant: 0
         ior: dock.refractiveIndex
         chromaticDispersion: dock.dispersion
@@ -93,33 +94,32 @@ Item {
     SystaliaG2Frame {
         anchors.fill: parent
         radii: dock.cornerRadii
-        // Gradiente a 135deg conforme style.css:
-        // linear-gradient(135deg, rgba(93, 159, 184, 0.29) 7.14%, rgba(25, 76, 112, 0.34) 35.71%, rgba(10, 39, 65, 0.39) 78.57%)
+        // Gradiente a 135deg conforme style.css e tokens VALO
         fillGradient: LinearGradient {
             x1: 0
             y1: 0
             x2: dock.width
             y2: dock.height
-            GradientStop { position: 0.0714; color: "#4a5d9fb8" }
-            GradientStop { position: 0.3571; color: "#57194c70" }
-            GradientStop { position: 0.7857; color: "#630a2741" }
+            GradientStop { position: 0.0714; color: ValoTheme.withAlpha(ValoTheme.ocean400, 0.29) }
+            GradientStop { position: 0.3571; color: ValoTheme.withAlpha(ValoTheme.ocean600, 0.34) }
+            GradientStop { position: 0.7857; color: ValoTheme.withAlpha(ValoTheme.backgroundDesktop, 0.39) }
         }
-        strokeColor: "transparent"
-        strokeWidth: 0
+        strokeColor: ValoTheme.withAlpha(ValoTheme.borderHighlight, 0.18)
+        strokeWidth: ValoTheme.strokeFine
     }
 
     // Inset highlight superior conforme style.css (inset 0px 2px 2px rgba(255, 255, 255, 0.25))
     Rectangle {
-        x: 47
+        x: dock.pillRadius
         y: 2
-        width: parent.width - 94
+        width: parent.width - 2 * dock.pillRadius
         height: 2
         radius: 1
         gradient: Gradient {
             orientation: Gradient.Horizontal
             GradientStop { position: 0; color: "transparent" }
-            GradientStop { position: .2; color: "#40ffffff" }
-            GradientStop { position: .8; color: "#40ffffff" }
+            GradientStop { position: 0.2; color: ValoTheme.withAlpha(ValoTheme.textBright, 0.25) }
+            GradientStop { position: 0.8; color: ValoTheme.withAlpha(ValoTheme.textBright, 0.25) }
             GradientStop { position: 1; color: "transparent" }
         }
         antialiasing: true
@@ -127,23 +127,23 @@ Item {
 
     // Inset shadow inferior conforme style.css (inset 0px -3px 5px rgba(6, 19, 38, 0.35))
     Rectangle {
-        x: 47
+        x: dock.pillRadius
         anchors.bottom: parent.bottom
         anchors.bottomMargin: 2
-        width: parent.width - 94
+        width: parent.width - 2 * dock.pillRadius
         height: 4
         radius: 2
         gradient: Gradient {
             orientation: Gradient.Vertical
-            GradientStop { position: 0; color: "#00061326" }
-            GradientStop { position: 1; color: "#59061326" }
+            GradientStop { position: 0; color: "transparent" }
+            GradientStop { position: 1; color: ValoTheme.withAlpha(ValoTheme.backgroundDesktop, 0.35) }
         }
         antialiasing: true
     }
 
     Row {
         id: iconsRow
-        x: 33.75
+        x: (parent.width - implicitWidth) / 2
         y: 21.75
         spacing: 16
         z: 2
@@ -154,19 +154,24 @@ Item {
             delegate: Item {
                 id: launcher
                 required property var modelData
-                width: 78
-                height: 78
+                readonly property bool activeRunning: dock.isRunning(launcher.modelData.appIds)
+                width: ValoTheme.sizeDockIcon
+                height: ValoTheme.sizeDockIcon + 8
                 scale: pointer.hovered ? 1.08 : 1.0
 
                 Behavior on scale {
-                    NumberAnimation { duration: 130; easing.type: Easing.OutCubic }
+                    NumberAnimation {
+                        duration: ValoTheme.motionDurationFastMs
+                        easing.type: Easing.OutCubic
+                    }
                 }
 
                 Image {
+                    id: iconImg
                     anchors.horizontalCenter: parent.horizontalCenter
                     anchors.top: parent.top
-                    width: 78
-                    height: 78
+                    width: ValoTheme.sizeDockIcon
+                    height: ValoTheme.sizeDockIcon
                     source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/" + launcher.modelData.icon
                     sourceSize: Qt.size(312, 312)
                     fillMode: Image.PreserveAspectFit
@@ -174,10 +179,32 @@ Item {
                     mipmap: true
                 }
 
+                // Indicador luminoso de aplicativo aberto/ativo (dot ciano de 4px)
+                Rectangle {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.top: iconImg.bottom
+                    anchors.topMargin: 2
+                    width: launcher.activeRunning ? 16 : 0
+                    height: 3
+                    radius: 1.5
+                    color: ValoTheme.accentBright
+                    visible: launcher.activeRunning
+                    opacity: pointer.hovered ? 1.0 : 0.85
+                    antialiasing: true
+
+                    Behavior on width {
+                        NumberAnimation {
+                            duration: ValoTheme.motionDurationFastMs
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+                }
+
                 HoverHandler { id: pointer }
+
                 ToolTip.visible: pointer.hovered
                 ToolTip.text: launcher.modelData.label
-                ToolTip.delay: 400
+                ToolTip.delay: 350
 
                 TapHandler { onTapped: dock.activate(launcher.modelData.action) }
             }

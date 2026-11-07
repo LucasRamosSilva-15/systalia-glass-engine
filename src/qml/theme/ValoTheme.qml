@@ -171,7 +171,9 @@ QtObject {
 
     // Helper functions
     function withAlpha(baseColor, alpha) {
-        return Qt.rgba(baseColor.r, baseColor.g, baseColor.b, alpha)
+        if (!baseColor) return Qt.rgba(0, 0, 0, alpha)
+        const c = Qt.color(baseColor)
+        return Qt.rgba(c.r, c.g, c.b, alpha)
     }
 }
 

@@ -248,6 +248,55 @@ private slots:
         m_outputs.syncWithHostScreens();
         QCOMPARE(compositor->outputs(), original);
     }
+
+    void controlCenterSlidersInteractReliably() {
+        evaluate("controlCenter.open()");
+        QVERIFY(evaluate("controlCenter.opened").toBool());
+        auto *volumeSlider = m_root->findChild<QQuickItem *>("volumeSlider");
+        auto *brightnessSlider = m_root->findChild<QQuickItem *>("brightnessSlider");
+        QVERIFY(volumeSlider);
+        QVERIFY(brightnessSlider);
+
+        m_control.setVolume(50);
+        QCOMPARE(m_control.volume(), 50);
+        QCOMPARE(volumeSlider->property("value").toInt(), 50);
+
+        m_control.setBrightness(75);
+        QCOMPARE(m_control.brightness(), 75);
+        QCOMPARE(brightnessSlider->property("value").toInt(), 75);
+
+        evaluate("controlCenter.close()");
+        QVERIFY(!evaluate("controlCenter.opened").toBool());
+    }
+
+    void captureValoDesktopShellVisuals() {
+        auto *window = qobject_cast<QQuickWindow *>(m_root);
+        QVERIFY(window);
+        window->show();
+        QVERIFY(QTest::qWaitForWindowExposed(window));
+
+        evaluate("raiseFileWindow(); raiseMaterialWindow(); controlCenter.close()");
+        for (int i = 0; i < 6; ++i) {
+            QCoreApplication::processEvents();
+            QTest::qWait(25);
+        }
+
+        const QString artifactDir = QStringLiteral("/home/lucasramos/.gemini/antigravity/brain/db6eb3e4-2bf0-441e-9ef2-a1601d0a1c5f");
+        QImage shellShot = window->grabWindow();
+        QVERIFY(!shellShot.isNull());
+        shellShot.save(artifactDir + QStringLiteral("/valo_shell_desktop_complete.png"));
+
+        evaluate("controlCenter.open()");
+        for (int i = 0; i < 6; ++i) {
+            QCoreApplication::processEvents();
+            QTest::qWait(25);
+        }
+        QImage controlShot = window->grabWindow();
+        QVERIFY(!controlShot.isNull());
+        controlShot.save(artifactDir + QStringLiteral("/valo_control_center_live.png"));
+
+        evaluate("controlCenter.close()");
+    }
 };
 
 QTEST_MAIN(TestShellStateRegression)

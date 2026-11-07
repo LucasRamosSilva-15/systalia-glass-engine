@@ -39,14 +39,20 @@ Item {
         NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
     }
 
-    // Fundo escuro com clique para fechar
+    // Fundo escuro translúcido com clique fora do painel para fechar
     Rectangle {
         anchors.fill: parent
         visible: controlCenter.opened
-        color: "#32020a18"
-        MouseArea {
-            anchors.fill: parent
-            onClicked: controlCenter.close()
+        color: ValoTheme.withAlpha(ValoTheme.primitiveBlack, 0.35)
+        TapHandler {
+            target: null
+            gesturePolicy: TapHandler.WithinBounds
+            onTapped: (eventPoint) => {
+                const pt = mapToItem(panel, eventPoint.position.x, eventPoint.position.y)
+                if (pt.x < 0 || pt.x > panel.width || pt.y < 0 || pt.y > panel.height) {
+                    controlCenter.close()
+                }
+            }
         }
     }
 
@@ -58,14 +64,8 @@ Item {
         y: controlCenter.opened ? 52 : -height - 16
         clip: false
 
-        // Impede que cliques dentro do painel vazem para o MouseArea do fundo escuro
-        MouseArea {
-            anchors.fill: parent
-            onClicked: {}
-        }
-
         Behavior on y {
-            NumberAnimation { duration: 240; easing.type: Easing.OutCubic }
+            NumberAnimation { duration: ValoTheme.motionDurationNormalMs; easing.type: Easing.OutCubic }
         }
 
         // Sombra perimetral luminosa VALO
@@ -163,7 +163,7 @@ Item {
                     Text {
                         text: "ABYSS CONTROL"
                         color: "#f1fbff"
-                        font.family: SystaliaTheme.fontFamily
+                        font.family: ValoTheme.fontFamily
                         font.pixelSize: 14
                         font.bold: true
                         font.letterSpacing: 1.2
@@ -171,7 +171,7 @@ Item {
                     Text {
                         text: "Ajustes rápidos do sistema & energia"
                         color: "#8bb2c4"
-                        font.family: SystaliaTheme.fontFamily
+                        font.family: ValoTheme.fontFamily
                         font.pixelSize: 9
                     }
                 }
@@ -272,7 +272,7 @@ Item {
                         Layout.fillWidth: true
                         text: "VOLUME"
                         color: "#90b9cb"
-                        font.family: SystaliaTheme.fontFamily
+                        font.family: ValoTheme.fontFamily
                         font.pixelSize: 9
                         font.bold: true
                         font.letterSpacing: 0.8
@@ -281,25 +281,27 @@ Item {
                     Text {
                         text: SystemControl.isMuted ? "MUDO" : SystemControl.volume + "%"
                         color: SystemControl.isMuted ? "#fb7185" : "#dffaff"
-                        font.family: SystaliaTheme.fontFamily
+                        font.family: ValoTheme.fontFamily
                         font.pixelSize: 10
                         font.bold: true
                     }
 
                     // Botão alternar mudo
                     Rectangle {
-                        width: 22
-                        height: 18
-                        radius: 4
-                        color: muteMouse.containsMouse ? "#3317f5df" : "#15ffffff"
+                        width: 48
+                        height: 20
+                        radius: 6
+                        color: SystemControl.isMuted ? (muteMouse.containsMouse ? "#55ff4b72" : "#33ff4b72")
+                                                     : (muteMouse.containsMouse ? "#3317f5df" : "#15ffffff")
                         border.color: SystemControl.isMuted ? "#ff4b72" : "#3374d5ee"
                         border.width: 1
 
                         Text {
                             anchors.centerIn: parent
-                            text: SystemControl.isMuted ? "×" : "◖"
-                            color: SystemControl.isMuted ? "#fb7185" : "#17f5df"
-                            font.pixelSize: 11
+                            text: SystemControl.isMuted ? "MUDO" : "Mudo"
+                            color: SystemControl.isMuted ? "#fb7185" : "#90b9cb"
+                            font.family: ValoTheme.fontFamily
+                            font.pixelSize: 9
                             font.bold: true
                         }
 
@@ -315,12 +317,41 @@ Item {
 
                 Slider {
                     id: volumeSlider
+                    objectName: "volumeSlider"
                     Layout.fillWidth: true
                     implicitHeight: 24
                     from: 0
                     to: 100
+                    stepSize: 1
                     value: SystemControl.volume
                     onMoved: SystemControl.setVolume(Math.round(value))
+
+                    MouseArea {
+                        id: volumeMouseArea
+                        anchors.fill: parent
+                        preventStealing: true
+                        cursorShape: Qt.PointingHandCursor
+                        onPressed: (mouse) => {
+                            const ratio = Math.max(0.0, Math.min(1.0, mouse.x / volumeMouseArea.width))
+                            const nextVal = Math.round(ratio * 100)
+                            volumeSlider.value = nextVal
+                            SystemControl.setVolume(nextVal)
+                        }
+                        onPositionChanged: (mouse) => {
+                            if (pressed) {
+                                const ratio = Math.max(0.0, Math.min(1.0, mouse.x / volumeMouseArea.width))
+                                const nextVal = Math.round(ratio * 100)
+                                volumeSlider.value = nextVal
+                                SystemControl.setVolume(nextVal)
+                            }
+                        }
+                        onWheel: (wheel) => {
+                            const delta = wheel.angleDelta.y > 0 ? 5 : -5
+                            const nextVal = Math.max(0, Math.min(100, volumeSlider.value + delta))
+                            volumeSlider.value = nextVal
+                            SystemControl.setVolume(nextVal)
+                        }
+                    }
                     background: Rectangle {
                         x: volumeSlider.leftPadding
                         y: volumeSlider.topPadding + volumeSlider.availableHeight / 2 - height / 2
@@ -398,7 +429,7 @@ Item {
                         Layout.fillWidth: true
                         text: "BRILHO DO ECRÃ"
                         color: "#90b9cb"
-                        font.family: SystaliaTheme.fontFamily
+                        font.family: ValoTheme.fontFamily
                         font.pixelSize: 9
                         font.bold: true
                         font.letterSpacing: 0.8
@@ -407,7 +438,7 @@ Item {
                     Text {
                         text: SystemControl.brightness + "%"
                         color: "#dffaff"
-                        font.family: SystaliaTheme.fontFamily
+                        font.family: ValoTheme.fontFamily
                         font.pixelSize: 10
                         font.bold: true
                     }
@@ -415,12 +446,41 @@ Item {
 
                 Slider {
                     id: brightnessSlider
+                    objectName: "brightnessSlider"
                     Layout.fillWidth: true
                     implicitHeight: 24
                     from: 5
                     to: 100
+                    stepSize: 1
                     value: SystemControl.brightness
                     onMoved: SystemControl.setBrightness(Math.round(value))
+
+                    MouseArea {
+                        id: brightnessMouseArea
+                        anchors.fill: parent
+                        preventStealing: true
+                        cursorShape: Qt.PointingHandCursor
+                        onPressed: (mouse) => {
+                            const ratio = Math.max(0.0, Math.min(1.0, mouse.x / brightnessMouseArea.width))
+                            const nextVal = Math.round(5 + ratio * 95)
+                            brightnessSlider.value = nextVal
+                            SystemControl.setBrightness(nextVal)
+                        }
+                        onPositionChanged: (mouse) => {
+                            if (pressed) {
+                                const ratio = Math.max(0.0, Math.min(1.0, mouse.x / brightnessMouseArea.width))
+                                const nextVal = Math.round(5 + ratio * 95)
+                                brightnessSlider.value = nextVal
+                                SystemControl.setBrightness(nextVal)
+                            }
+                        }
+                        onWheel: (wheel) => {
+                            const delta = wheel.angleDelta.y > 0 ? 5 : -5
+                            const nextVal = Math.max(5, Math.min(100, brightnessSlider.value + delta))
+                            brightnessSlider.value = nextVal
+                            SystemControl.setBrightness(nextVal)
+                        }
+                    }
                     background: Rectangle {
                         x: brightnessSlider.leftPadding
                         y: brightnessSlider.topPadding + brightnessSlider.availableHeight / 2 - height / 2
@@ -487,7 +547,7 @@ Item {
                 Text {
                     text: "CONEXÃO ATIVA"
                     color: "#90b9cb"
-                    font.family: SystaliaTheme.fontFamily
+                    font.family: ValoTheme.fontFamily
                     font.pixelSize: 9
                     font.bold: true
                     font.letterSpacing: 0.8
@@ -526,7 +586,7 @@ Item {
                             Layout.fillWidth: true
                             text: SystemControl.activeNetworkName
                             color: "#ebf9ff"
-                            font.family: SystaliaTheme.fontFamily
+                            font.family: ValoTheme.fontFamily
                             font.pixelSize: 10
                             font.bold: true
                             elide: Text.ElideRight
@@ -535,7 +595,7 @@ Item {
                         Text {
                             text: "Conectado"
                             color: "#17f5df"
-                            font.family: SystaliaTheme.fontFamily
+                            font.family: ValoTheme.fontFamily
                             font.pixelSize: 9
                         }
                     }
@@ -551,7 +611,7 @@ Item {
                     text: controlCenter.activePowerConfirmAction.length > 0
                           ? "CONFIRMAR AÇÃO" : "ENERGIA & SESSÃO"
                     color: controlCenter.activePowerConfirmAction.length > 0 ? "#f43f5e" : "#90b9cb"
-                    font.family: SystaliaTheme.fontFamily
+                    font.family: ValoTheme.fontFamily
                     font.pixelSize: 9
                     font.bold: true
                     font.letterSpacing: 0.8
@@ -675,7 +735,7 @@ Item {
                 Layout.fillWidth: true
                 text: "VALO OCEANIC GLASS  •  SYSTALIA SDE"
                 color: "#658ea4"
-                font.family: SystaliaTheme.fontFamily
+                font.family: ValoTheme.fontFamily
                 font.pixelSize: 8
                 horizontalAlignment: Text.AlignHCenter
             }
@@ -741,7 +801,7 @@ Item {
                 Layout.fillWidth: true
                 text: toggleButton.label
                 color: toggleButton.active ? "#ffffff" : "#b0c9d9"
-                font.family: SystaliaTheme.fontFamily
+                font.family: ValoTheme.fontFamily
                 font.pixelSize: 10
                 font.bold: true
                 horizontalAlignment: Text.AlignHCenter
@@ -752,7 +812,7 @@ Item {
                 Layout.fillWidth: true
                 text: toggleButton.sublabel
                 color: toggleButton.active ? "#17f5df" : "#6f8ea1"
-                font.family: SystaliaTheme.fontFamily
+                font.family: ValoTheme.fontFamily
                 font.pixelSize: 8
                 horizontalAlignment: Text.AlignHCenter
                 elide: Text.ElideRight
@@ -822,7 +882,7 @@ Item {
                 Layout.fillWidth: true
                 text: powerBtn.label
                 color: powerBtn.hovered ? "#ffffff" : "#89aabf"
-                font.family: SystaliaTheme.fontFamily
+                font.family: ValoTheme.fontFamily
                 font.pixelSize: 8
                 horizontalAlignment: Text.AlignHCenter
                 elide: Text.ElideRight

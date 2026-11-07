@@ -32,129 +32,18 @@ Item {
     visible: true
     clip: false
 
-    BorderImage {
-        x: -60
-        y: -60
-        width: parent.width + 120
-        height: parent.height + 160
-        z: -1
-        source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-window-shadow.png"
-        border.left: 60
-        border.top: 60
-        border.right: 60
-        border.bottom: 100
-        horizontalTileMode: BorderImage.Stretch
-        verticalTileMode: BorderImage.Stretch
-        smooth: true
-    }
-
-    SystaliaGlassItem {
+    ValoGlass {
+        id: glassChassis
         anchors.fill: parent
+        active: materialWindow.visible
         backdropSource: materialWindow.backdropSource
         screenResolution: materialWindow.screenResolution
-        radii: materialWindow.cornerRadii
-        Behavior on radii {
-            PropertyAnimation {
-                duration: 220
-                easing.type: Easing.OutCubic
-            }
-        }
+        titleBarHeight: 36
+        cornerRadii: materialWindow.cornerRadii
         slant: materialWindow.surfaceSlant
-        ior: materialWindow.refractiveIndex
+        refractionStrength: Math.max(0.0, (materialWindow.refractiveIndex - 1.0) / 0.25)
         chromaticDispersion: materialWindow.dispersion
-        causticIntensity: materialWindow.caustics
-        surfaceOpacity: materialWindow.materialActive ? materialWindow.surfaceOpacity : 0
         time: materialWindow.animationTime
-    }
-
-    SystaliaG2Frame {
-        anchors.fill: parent
-        radii: materialWindow.cornerRadii
-        slant: materialWindow.surfaceSlant
-        fillGradient: LinearGradient {
-            x1: 0
-            y1: 0
-            x2: materialWindow.width
-            y2: materialWindow.height * 0.75
-            GradientStop { position: 0.08; color: "#4d264f76" }
-            GradientStop { position: 0.24; color: "#554bafc7" }
-            GradientStop { position: 0.52; color: "#48133a5d" }
-            GradientStop { position: 0.88; color: "#5509233f" }
-        }
-    }
-
-    // Camada de dispersão cromática e feixes cáusticos de refração
-    Item {
-        anchors.fill: parent
-        clip: true
-
-        // Prisma interno cáustico (âmbar dourado e ciano)
-        Image {
-            x: -9.11
-            y: 99.96
-            width: 564.729
-            height: 492.062
-            source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-control-prism.png"
-            sourceSize: Qt.size(1054, 804)
-            fillMode: Image.Stretch
-            smooth: true
-            mipmap: true
-            opacity: 1.85
-        }
-
-        // Fita espectral cáustica (dispersão ciano, dourada e violeta)
-        Image {
-            x: -88.52
-            y: 67.92
-            width: 599.029
-            height: 512.018
-            source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-control-ribbon.png"
-            sourceSize: Qt.size(992, 870)
-            fillMode: Image.Stretch
-            smooth: true
-            mipmap: true
-            opacity: 2.1
-        }
-
-        // Refração de borda violeta-ciano
-        Image {
-            x: 196.23
-            y: 13.5
-            width: 448.856
-            height: 524.482
-            source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-control-edge.png"
-            sourceSize: Qt.size(764, 962)
-            fillMode: Image.Stretch
-            smooth: true
-            mipmap: true
-            opacity: 1.65
-        }
-    }
-
-    Rectangle {
-        x: 4.5
-        y: 2.5
-        width: parent.width - 9
-        height: parent.height - 10
-        radius: 14
-        gradient: Gradient {
-            orientation: Gradient.Vertical
-            GradientStop { position: 0.0; color: "#40c8ffff" }
-            GradientStop { position: 0.34; color: "#1f61f0ff" }
-            GradientStop { position: 0.72; color: "#0b155279" }
-            GradientStop { position: 1.0; color: "#001b1834" }
-        }
-        border.color: "#24c8ffff"
-        border.width: 0.8
-        antialiasing: true
-    }
-
-    SystaliaG2Frame {
-        anchors.fill: parent
-        radii: materialWindow.cornerRadii
-        slant: materialWindow.surfaceSlant
-        strokeColor: "#a8ffffff"
-        strokeWidth: 1.25
     }
 
     SystaliaWindowHeader {
@@ -327,7 +216,7 @@ Item {
                 width: 160
                 text: navigationEntry.modelData.icon + "  " + navigationEntry.modelData.name
                 color: navigationEntry.modelData.name === materialWindow.selectedSection ? "#42e9ee" : "#d4e8ed"
-                font.family: SystaliaTheme.fontFamily
+                font.family: ValoTheme.fontFamily
                 font.pixelSize: 16
                 font.weight: navigationEntry.modelData.name === materialWindow.selectedSection ? Font.Medium : Font.Normal
                 antialiasing: true
@@ -355,7 +244,7 @@ Item {
         height: 29
         text: "Options"
         color: "#dceff7"
-        font.family: SystaliaTheme.fontFamily
+        font.family: ValoTheme.fontFamily
         font.pixelSize: 17
         antialiasing: true
     }
@@ -450,7 +339,7 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 text: optionButton.modelData.label
                 color: "#e9f8fc"
-                font.family: SystaliaTheme.fontFamily
+                font.family: ValoTheme.fontFamily
                 font.pixelSize: 15
                 antialiasing: true
             }
@@ -475,7 +364,7 @@ Item {
             height: 36
             text: "Options"
             color: "#f1faff"
-            font.family: SystaliaTheme.fontFamily
+            font.family: ValoTheme.fontFamily
             font.pixelSize: 21
             font.weight: Font.Medium
             antialiasing: true
@@ -708,7 +597,7 @@ Item {
             height: 24
             text: settingRow.label
             color: "#e4f7ff"
-            font.family: SystaliaTheme.fontFamily
+            font.family: ValoTheme.fontFamily
             font.pixelSize: 16
             antialiasing: true
         }
@@ -722,7 +611,7 @@ Item {
             height: 24
             text: settingRow.valueText
             color: "#d9ecf7"
-            font.family: SystaliaTheme.fontFamily
+            font.family: ValoTheme.fontFamily
             font.pixelSize: 15
             horizontalAlignment: Text.AlignRight
             verticalAlignment: Text.AlignVCenter

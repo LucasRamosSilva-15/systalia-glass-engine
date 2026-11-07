@@ -12,7 +12,8 @@ Item {
     property var screenResolution: Qt.vector2d(width, height)
     property real animationTime: 0
     property date dateNow: new Date()
-    property vector4d cornerRadii: Qt.vector4d(22, 22, 22, 22)
+    property vector4d cornerRadii: Qt.vector4d(ValoTheme.radiusTopbar, ValoTheme.radiusTopbar,
+                                               ValoTheme.radiusTopbar, ValoTheme.radiusTopbar)
 
     signal launcherRequested()
     signal controlCenterRequested()
@@ -32,11 +33,11 @@ Item {
     readonly property bool showWorkspaceIndicators: width >= 720
     readonly property bool isCompactBar: width < 860
 
-    // Sombra luminosa externa ciano conforme style.css: box-shadow: 0px 4px 18px rgba(9, 186, 237, 0.2)
+    // Sombra luminosa externa ciano conforme style.css e tokens VALO
     Rectangle {
         anchors.fill: parent
         radius: topBar.cornerRadii.x
-        color: "#3309baed"
+        color: ValoTheme.withAlpha(ValoTheme.accentPrimary, 0.20)
         z: -1
     }
 
@@ -50,17 +51,17 @@ Item {
         ior: 1.10
         chromaticDispersion: 0.012
         causticIntensity: 0.12
-        surfaceOpacity: 0.86
+        surfaceOpacity: ValoTheme.opacityTopbar
         time: topBar.animationTime
     }
 
-    // Contorno único de precisão conforme style.css: border: 1px solid rgba(116, 213, 238, 0.24)
+    // Contorno único de precisão conforme style.css e tokens VALO
     Rectangle {
         anchors.fill: parent
         radius: topBar.cornerRadii.x
-        color: "#db071628"
-        border.color: "#3d74d5ee"
-        border.width: 1
+        color: ValoTheme.withAlpha(ValoTheme.backgroundTopbar, ValoTheme.opacityTopbar)
+        border.color: ValoTheme.withAlpha(ValoTheme.borderHighlight, 0.24)
+        border.width: ValoTheme.strokeFine
     }
 
     // Seção esquerda: logotipo, branding do desktop e telemetria responsiva
@@ -93,10 +94,10 @@ Item {
         Text {
             anchors.verticalCenter: parent.verticalCenter
             text: "SYSTALIA"
-            color: "#c6e5f8"
-            font.family: SystaliaTheme.fontFamily
+            color: ValoTheme.textBright
+            font.family: ValoTheme.fontFamily
             font.pixelSize: topBar.isCompactBar ? 16 : 19
-            font.weight: Font.Medium
+            font.weight: Font.DemiBold
             antialiasing: true
         }
 
@@ -104,9 +105,9 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             visible: topBar.showDesktopBranding
             text: "SDE-KWIN | VALO"
-            color: "#9cbad3"
-            font.family: SystaliaTheme.fontFamily
-            font.pixelSize: 17
+            color: ValoTheme.textSecondary
+            font.family: ValoTheme.fontFamily
+            font.pixelSize: ValoTheme.fontCaption + 2
             antialiasing: true
         }
 
@@ -127,9 +128,9 @@ Item {
                     .arg(topBar.telemetry.ramUsageGb.toFixed(1))
                     .arg(topBar.telemetry.fps)
             }
-            color: "#9cbad3"
-            font.family: SystaliaTheme.fontFamily
-            font.pixelSize: topBar.isCompactBar ? 14 : 17
+            color: ValoTheme.textSecondary
+            font.family: ValoTheme.fontFamily
+            font.pixelSize: topBar.isCompactBar ? 13 : ValoTheme.fontCaption + 1
             elide: Text.ElideRight
             antialiasing: true
         }
@@ -154,13 +155,14 @@ Item {
                 }
                 return topBar.dateNow.toLocaleTimeString(Qt.locale("en_US"), "HH:mm:ss")
             }
-            color: "#c2d7df"
-            font.family: SystaliaTheme.fontFamily
-            font.pixelSize: topBar.isCompactBar ? 15 : 17
+            color: ValoTheme.textPrimary
+            font.family: ValoTheme.fontFamily
+            font.pixelSize: topBar.isCompactBar ? 15 : ValoTheme.fontBody
+            font.weight: Font.Medium
             antialiasing: true
         }
 
-        // Régua de 4 cápsulas translúcidas para os Espaços de Trabalho Virtuais (Etapa 4.1)
+        // Régua de cápsulas translúcidas para os Espaços de Trabalho Virtuais
         Rectangle {
             id: workspaceIndicatorTrack
             visible: topBar.showWorkspaceIndicators
@@ -168,14 +170,14 @@ Item {
             width: workspacePillsRow.implicitWidth + 16
             height: 26
             radius: 13
-            color: "#220a243d"
-            border.color: "#3374d5ee"
-            border.width: 1
+            color: ValoTheme.withAlpha(ValoTheme.backgroundDesktop, 0.40)
+            border.color: ValoTheme.withAlpha(ValoTheme.borderSubtle, 0.35)
+            border.width: ValoTheme.strokeFine
 
             Row {
                 id: workspacePillsRow
                 anchors.centerIn: parent
-                spacing: 8
+                spacing: ValoTheme.spacing8
 
                 Repeater {
                     model: topBar.workspaceManager ? topBar.workspaceManager.totalWorkspaces : 4
@@ -196,22 +198,22 @@ Item {
                         width: isActive ? 26 : 18
                         height: 12
                         radius: 6
-                        color: isActive ? "#00f0ff" : (pillHover.hovered ? "#4d74d5ee" : "#2674d5ee")
-                        border.color: isActive ? "#b3ffffff" : "#5574d5ee"
-                        border.width: 1
+                        color: isActive ? ValoTheme.accentBright : (pillHover.hovered ? ValoTheme.withAlpha(ValoTheme.borderHighlight, 0.30) : ValoTheme.withAlpha(ValoTheme.borderSubtle, 0.20))
+                        border.color: isActive ? ValoTheme.withAlpha(ValoTheme.textBright, 0.70) : ValoTheme.withAlpha(ValoTheme.borderSubtle, 0.40)
+                        border.width: ValoTheme.strokeFine
                         scale: isActive ? 1.15 : (pillHover.hovered ? 1.05 : 1.0)
                         antialiasing: true
 
                         Behavior on width {
                             NumberAnimation {
-                                duration: 180
+                                duration: ValoTheme.motionDurationFastMs
                                 easing.type: Easing.OutCubic
                             }
                         }
 
                         Behavior on scale {
                             NumberAnimation {
-                                duration: 180
+                                duration: ValoTheme.motionDurationFastMs
                                 easing.type: Easing.OutCubic
                             }
                         }
@@ -229,7 +231,7 @@ Item {
                             radius: 2
                             anchors.centerIn: parent
                             visible: workspacePill.hasWindows
-                            color: workspacePill.isActive ? "#06182c" : "#00f0ff"
+                            color: workspacePill.isActive ? ValoTheme.backgroundDesktop : ValoTheme.accentBright
                             antialiasing: true
                         }
 
@@ -258,7 +260,7 @@ Item {
         anchors.rightMargin: topBar.isCompactBar ? 10 : 18
         anchors.verticalCenter: parent.verticalCenter
         height: 30
-        spacing: topBar.isCompactBar ? 2 : 4
+        spacing: topBar.isCompactBar ? 2 : ValoTheme.spacing4
 
         Repeater {
             model: [
@@ -319,8 +321,8 @@ Item {
 
         contentItem: Text {
             text: statusButton.glyph
-            color: statusButton.hovered ? "#f4fcff" : "#a0e7fa"
-            font.family: SystaliaTheme.fontFamily
+            color: statusButton.hovered ? ValoTheme.textBright : ValoTheme.iconDefault
+            font.family: ValoTheme.fontFamily
             font.pixelSize: 15
             font.weight: Font.Medium
             horizontalAlignment: Text.AlignHCenter
@@ -328,10 +330,10 @@ Item {
             antialiasing: true
         }
         background: Rectangle {
-            radius: 8
-            color: statusButton.hovered ? "#2b3d8ea8" : "transparent"
-            border.color: statusButton.hovered ? "#60a8eaf5" : "transparent"
-            border.width: 1
+            radius: ValoTheme.radiusIcon
+            color: statusButton.hovered ? ValoTheme.withAlpha(ValoTheme.surfaceButton, 0.45) : "transparent"
+            border.color: statusButton.hovered ? ValoTheme.withAlpha(ValoTheme.borderHighlight, 0.40) : "transparent"
+            border.width: ValoTheme.strokeFine
             antialiasing: true
         }
     }
