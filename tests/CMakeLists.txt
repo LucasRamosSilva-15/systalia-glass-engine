@@ -258,6 +258,9 @@ if(TARGET PkgConfig::WAYLAND_SERVER)
     target_link_libraries(tst_xwayland_integration PRIVATE PkgConfig::WAYLAND_SERVER)
 endif()
 
+sge_add_expanded_test(tst_valo_theme unit/tst_ValoTheme.cpp unit)
+sge_add_expanded_test(tst_valo_glass unit/tst_ValoGlass.cpp unit)
+
 # Integration tests exercise actual Wayland wire requests and model resets.
 sge_add_expanded_test(tst_protocol_roundtrip integration/tst_ProtocolRoundtrip.cpp integration)
 target_link_libraries(tst_protocol_roundtrip PRIVATE
@@ -297,6 +300,8 @@ add_custom_target(unit_tests DEPENDS
     tst_input_hardware_backend
     tst_logind_integration
     tst_xwayland_integration
+    tst_valo_theme
+    tst_valo_glass
 )
 add_custom_target(integration_tests DEPENDS
     tst_wayland_socket
@@ -332,6 +337,9 @@ set_tests_properties(
     tst_phase4_audit
     tst_input_hardware_backend
     tst_logind_integration
+    tst_xwayland_integration
+    tst_valo_theme
+    tst_valo_glass
     PROPERTIES LABELS "unit"
 )
 set_tests_properties(

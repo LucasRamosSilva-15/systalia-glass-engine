@@ -89,6 +89,7 @@ qt_add_library(sge_core STATIC
     src/system/InputDeviceManager.cpp
     src/system/LogindSessionService.hpp
     src/system/LogindSessionService.cpp
+    src/tokens/ValoTokens.hpp
 )
 
 qt6_generate_wayland_protocol_server_sources(sge_core
@@ -101,6 +102,7 @@ target_include_directories(sge_core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gfx
     ${CMAKE_CURRENT_SOURCE_DIR}/src/compositor
     ${CMAKE_CURRENT_SOURCE_DIR}/src/system
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tokens
 )
 
 target_link_libraries(sge_core PUBLIC
@@ -129,7 +131,7 @@ if(TARGET PkgConfig::WAYLAND_SERVER)
     target_link_libraries(sge_core PUBLIC PkgConfig::WAYLAND_SERVER)
 endif()
 
-set_source_files_properties(src/qml/theme/SystaliaTheme.qml PROPERTIES
+set_source_files_properties(src/qml/theme/SystaliaTheme.qml src/qml/theme/ValoTheme.qml PROPERTIES
     QT_QML_SINGLETON_TYPE TRUE
 )
 
@@ -176,8 +178,10 @@ qt_add_qml_module(sge_core
         src/qml/main.qml
         src/qml/WorkspaceViewport.qml
         src/qml/theme/SystaliaTheme.qml
+        src/qml/theme/ValoTheme.qml
         src/qml/WaylandClientView.qml
         src/qml/WaylandWindowContainer.qml
+        src/qml/ValoGlass.qml
         src/qml/shell/SystaliaTopBar.qml
         src/qml/shell/SystaliaDock.qml
         src/qml/shell/SystaliaG2Frame.qml

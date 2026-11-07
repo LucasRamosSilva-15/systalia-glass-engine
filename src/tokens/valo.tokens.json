@@ -1,0 +1,254 @@
+{
+  "name": "SYSTALIA VALO",
+  "mode": "VALO Dark",
+  "figma": "https://www.figma.com/design/kax6aiYKgM2Fk7dllyZRRF",
+  "primitives": {
+    "navy-950": "#061426",
+    "navy-900": "#071628",
+    "navy-850": "#081A2D",
+    "navy-800": "#0A1930",
+    "navy-750": "#0A253F",
+    "navy-700": "#102B46",
+    "ocean-700": "#134966",
+    "ocean-600": "#194F76",
+    "ocean-500": "#206D91",
+    "ocean-400": "#4BAFC7",
+    "cyan-300": "#BDF5FF",
+    "cyan-200": "#DDF7FF",
+    "cyan-400": "#8AF5FF",
+    "cyan-500": "#49F3FC",
+    "cyan-600": "#16D9ED",
+    "blue-500": "#007DFC",
+    "violet-500": "#9B51E0",
+    "magenta-500": "#FF2D75",
+    "amber-300": "#FFCC7A",
+    "white": "#FFFFFF",
+    "black": "#000000",
+    "text-muted": "#9CBAD3"
+  },
+  "colors": {
+    "background/desktop": {
+      "alias": "navy-950",
+      "resolved": "#061426"
+    },
+    "background/topbar": {
+      "alias": "navy-900",
+      "resolved": "#071628"
+    },
+    "background/sidebar": {
+      "alias": "navy-850",
+      "resolved": "#081A2D"
+    },
+    "background/control-panel": {
+      "alias": "navy-800",
+      "resolved": "#0A1930"
+    },
+    "surface/window": {
+      "alias": "ocean-600",
+      "resolved": "#194F76"
+    },
+    "surface/dock": {
+      "alias": "navy-700",
+      "resolved": "#102B46"
+    },
+    "surface/button": {
+      "alias": "ocean-700",
+      "resolved": "#134966"
+    },
+    "surface/input": {
+      "alias": "navy-750",
+      "resolved": "#0A253F"
+    },
+    "text/primary": {
+      "alias": "cyan-200",
+      "resolved": "#DDF7FF"
+    },
+    "text/secondary": {
+      "alias": "text-muted",
+      "resolved": "#9CBAD3"
+    },
+    "text/bright": {
+      "alias": "white",
+      "resolved": "#FFFFFF"
+    },
+    "text/accent": {
+      "alias": "cyan-500",
+      "resolved": "#49F3FC"
+    },
+    "accent/primary": {
+      "alias": "cyan-600",
+      "resolved": "#16D9ED"
+    },
+    "accent/bright": {
+      "alias": "cyan-500",
+      "resolved": "#49F3FC"
+    },
+    "accent/blue": {
+      "alias": "blue-500",
+      "resolved": "#007DFC"
+    },
+    "accent/magenta": {
+      "alias": "magenta-500",
+      "resolved": "#FF2D75"
+    },
+    "accent/violet": {
+      "alias": "violet-500",
+      "resolved": "#9B51E0"
+    },
+    "accent/amber": {
+      "alias": "amber-300",
+      "resolved": "#FFCC7A"
+    },
+    "border/highlight": {
+      "alias": "cyan-300",
+      "resolved": "#BDF5FF"
+    },
+    "border/subtle": {
+      "alias": "ocean-400",
+      "resolved": "#4BAFC7"
+    },
+    "border/focus": {
+      "alias": "cyan-500",
+      "resolved": "#49F3FC"
+    },
+    "icon/default": {
+      "alias": "cyan-300",
+      "resolved": "#BDF5FF"
+    },
+    "icon/active": {
+      "alias": "cyan-500",
+      "resolved": "#49F3FC"
+    }
+  },
+  "metrics": {
+    "spacing/2": 2,
+    "spacing/4": 4,
+    "spacing/8": 8,
+    "spacing/12": 12,
+    "spacing/16": 16,
+    "spacing/20": 20,
+    "spacing/24": 24,
+    "spacing/32": 32,
+    "radius/icon": 9,
+    "radius/button": 15,
+    "radius/panel": 13,
+    "radius/sidebar": 14,
+    "radius/window": 20,
+    "radius/topbar": 22,
+    "radius/dock": 47,
+    "size/window-control": 28,
+    "size/toolbar-icon": 24,
+    "size/slider-height": 12,
+    "size/slider-thumb": 20,
+    "size/dock-icon": 78,
+    "stroke/fine": 1,
+    "stroke/window": 1.5,
+    "font/body": 16,
+    "font/caption": 14,
+    "font/heading": 21,
+    "motion/duration-fast-ms": 120,
+    "motion/duration-normal-ms": 220,
+    "motion/duration-spring-ms": 420
+  },
+  "material": {
+    "opacity/window-min": 0.25,
+    "opacity/window-max": 0.41,
+    "opacity/glass-spectral": 0.12,
+    "opacity/dock": 0.34,
+    "opacity/sidebar": 0.88,
+    "opacity/topbar": 0.86,
+    "blur/backdrop": 36,
+    "blur/caustic": 44,
+    "blur/document-highlight": 7,
+    "blur/volumetric-ray": 50,
+    "blur/halo": 35,
+    "shadow/window-anchor-y": 8,
+    "shadow/window-anchor-blur": 12,
+    "shadow/window-glow-blur": 40,
+    "shadow/dock-blur": 20,
+    "specular/stroke-width": 1.5,
+    "glass/prism-angle-deg": -31,
+    "glass/backdrop-filter-enabled": 1
+  },
+  "composite_styles": {
+    "windowFillStops": [
+      {
+        "position": 0,
+        "color": "#194F76",
+        "opacity": 0.39
+      },
+      {
+        "position": 0.2,
+        "color": "#4BAFC7",
+        "opacity": 0.27
+      },
+      {
+        "position": 0.53,
+        "color": "#133A5D",
+        "opacity": 0.27
+      },
+      {
+        "position": 1,
+        "color": "#09233F",
+        "opacity": 0.41
+      }
+    ],
+    "spectralOverlayStops": [
+      {
+        "position": 0,
+        "color": "#00EFFF",
+        "opacity": 0.1
+      },
+      {
+        "position": 0.29,
+        "color": "#F5FFFF",
+        "opacity": 0.12
+      },
+      {
+        "position": 0.6,
+        "color": "#F8C47B",
+        "opacity": 0.07
+      },
+      {
+        "position": 1,
+        "color": "#9E77FF",
+        "opacity": 0.08
+      }
+    ],
+    "backdropBlurRadius": 36,
+    "windowShadows": [
+      {
+        "type": "inner",
+        "x": 0,
+        "y": 1,
+        "blur": 0,
+        "color": "#FFFFFF",
+        "opacity": 0.26
+      },
+      {
+        "type": "inner",
+        "x": 0,
+        "y": -2,
+        "blur": 4,
+        "color": "#000A1B",
+        "opacity": 0.4
+      },
+      {
+        "type": "drop",
+        "x": 0,
+        "y": 8,
+        "blur": 12,
+        "color": "#000000",
+        "opacity": 0.45
+      },
+      {
+        "type": "drop",
+        "x": 0,
+        "y": 20,
+        "blur": 40,
+        "color": "#00E5FF",
+        "opacity": 0.14
+      }
+    ]
+  }
+}
