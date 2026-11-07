@@ -24,7 +24,18 @@
     "amber-300": "#FFCC7A",
     "white": "#FFFFFF",
     "black": "#000000",
-    "text-muted": "#9CBAD3"
+    "text-muted": "#9CBAD3",
+    "ice-100": "#F6FFFF",
+    "ice-200": "#CFFBFF",
+    "ice-300": "#A4F6FF",
+    "aqua-400": "#79EFFF",
+    "aqua-edge": "#C1FAFF",
+    "aqua-glass": "#6ADEED",
+    "blue-folder-400": "#2BCCF5",
+    "blue-folder-700": "#235BA9",
+    "ocean-acrylic-600": "#285D86",
+    "navy-acrylic-800": "#152C65",
+    "violet-edge": "#738ADD"
   },
   "colors": {
     "background/desktop": {
@@ -118,6 +129,54 @@
     "icon/active": {
       "alias": "cyan-500",
       "resolved": "#49F3FC"
+    },
+    "icon/sidebar/default": {
+      "alias": "aqua-400",
+      "resolved": "#79EFFF"
+    },
+    "icon/sidebar/selected": {
+      "alias": "ice-300",
+      "resolved": "#A4F6FF"
+    },
+    "icon/file/edge": {
+      "alias": "aqua-edge",
+      "resolved": "#C1FAFF"
+    },
+    "icon/file/highlight": {
+      "alias": "ice-100",
+      "resolved": "#F6FFFF"
+    },
+    "icon/file/glass-light": {
+      "alias": "ice-200",
+      "resolved": "#CFFBFF"
+    },
+    "icon/file/glass-mid": {
+      "alias": "aqua-glass",
+      "resolved": "#6ADEED"
+    },
+    "icon/file/glass-deep": {
+      "alias": "ocean-acrylic-600",
+      "resolved": "#285D86"
+    },
+    "icon/file/fold": {
+      "alias": "ice-300",
+      "resolved": "#A4F6FF"
+    },
+    "icon/folder/front": {
+      "alias": "blue-folder-400",
+      "resolved": "#2BCCF5"
+    },
+    "icon/folder/back": {
+      "alias": "blue-folder-700",
+      "resolved": "#235BA9"
+    },
+    "icon/file/symbol": {
+      "alias": "aqua-400",
+      "resolved": "#79EFFF"
+    },
+    "icon/file/edge-shadow": {
+      "alias": "violet-edge",
+      "resolved": "#738ADD"
     }
   },
   "metrics": {
@@ -148,7 +207,13 @@
     "font/heading": 21,
     "motion/duration-fast-ms": 120,
     "motion/duration-normal-ms": 220,
-    "motion/duration-spring-ms": 420
+    "motion/duration-spring-ms": 420,
+    "size/file-icon-width": 55,
+    "size/file-icon-height": 67,
+    "size/folder-icon-width": 74,
+    "size/sidebar-glyph": 23,
+    "stroke/sidebar-icon": 1.65,
+    "stroke/file-outline": 1.35
   },
   "material": {
     "opacity/window-min": 0.25,
@@ -168,7 +233,11 @@
     "shadow/dock-blur": 20,
     "specular/stroke-width": 1.5,
     "glass/prism-angle-deg": -31,
-    "glass/backdrop-filter-enabled": 1
+    "glass/backdrop-filter-enabled": 1,
+    "shadow/file-y": 5,
+    "shadow/file-blur": 7,
+    "opacity/file-highlight": 0.36,
+    "opacity/file-glass-edge": 0.88
   },
   "composite_styles": {
     "windowFillStops": [
@@ -250,5 +319,6 @@
         "opacity": 0.14
       }
     ]
-  }
+  },
+  "token_count": 124
 }

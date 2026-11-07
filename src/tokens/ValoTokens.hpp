@@ -31,6 +31,19 @@ inline const QColor primitiveWhite = QColor("#FFFFFF");
 inline const QColor primitiveBlack = QColor("#000000");
 inline const QColor primitiveTextMuted = QColor("#9CBAD3");
 
+// VALO V3 — 11 additive acrylic icon primitives (Figma 2026-11-07)
+inline const QColor primitiveIce100 = QColor("#F6FFFF");
+inline const QColor primitiveIce200 = QColor("#CFFBFF");
+inline const QColor primitiveIce300 = QColor("#A4F6FF");
+inline const QColor primitiveAqua400 = QColor("#79EFFF");
+inline const QColor primitiveAquaEdge = QColor("#C1FAFF");
+inline const QColor primitiveAquaGlass = QColor("#6ADEED");
+inline const QColor primitiveBlueFolder400 = QColor("#2BCCF5");
+inline const QColor primitiveBlueFolder700 = QColor("#235BA9");
+inline const QColor primitiveOceanAcrylic600 = QColor("#285D86");
+inline const QColor primitiveNavyAcrylic800 = QColor("#152C65");
+inline const QColor primitiveVioletEdge = QColor("#738ADD");
+
 // =========================================================================
 // 2. SEMANTIC COLORS (23 tokens)
 // =========================================================================
@@ -57,6 +70,20 @@ inline const QColor borderSubtle = QColor("#4BAFC7");
 inline const QColor borderFocus = QColor("#49F3FC");
 inline const QColor iconDefault = QColor("#BDF5FF");
 inline const QColor iconActive = QColor("#49F3FC");
+
+// VALO V3 — 12 semantic icon roles; primitive values are retained for compatibility
+inline const QColor iconSidebarDefault = primitiveAqua400;
+inline const QColor iconSidebarSelected = primitiveIce300;
+inline const QColor iconFileEdge = primitiveAquaEdge;
+inline const QColor iconFileHighlight = primitiveIce100;
+inline const QColor iconFileGlassLight = primitiveIce200;
+inline const QColor iconFileGlassMid = primitiveAquaGlass;
+inline const QColor iconFileGlassDeep = primitiveOceanAcrylic600;
+inline const QColor iconFileFold = primitiveIce300;
+inline const QColor iconFolderFront = primitiveBlueFolder400;
+inline const QColor iconFolderBack = primitiveBlueFolder700;
+inline const QColor iconFileSymbol = primitiveAqua400;
+inline const QColor iconFileEdgeShadow = primitiveVioletEdge;
 
 // =========================================================================
 // 3. METRICS (28 tokens)
@@ -91,6 +118,14 @@ inline constexpr qreal motionDurationFastMs = 120;
 inline constexpr qreal motionDurationNormalMs = 220;
 inline constexpr qreal motionDurationSpringMs = 420;
 
+// VALO V3 — 6 acrylic icon dimensions and strokes (logical pixels)
+inline constexpr qreal sizeFileIconWidth = 55;
+inline constexpr qreal sizeFileIconHeight = 67;
+inline constexpr qreal sizeFolderIconWidth = 74;
+inline constexpr qreal sizeSidebarGlyph = 23;
+inline constexpr qreal strokeSidebarIcon = 1.65;
+inline constexpr qreal strokeFileOutline = 1.35;
+
 // =========================================================================
 // 4. MATERIAL & OPTICAL (18 tokens)
 // =========================================================================
@@ -112,6 +147,12 @@ inline constexpr qreal shadowDockBlur = 20;
 inline constexpr qreal specularStrokeWidth = 1.5;
 inline constexpr qreal glassPrismAngleDeg = -31;
 inline constexpr qreal glassBackdropFilterEnabled = 1;
+
+// VALO V3 — 4 acrylic file icon material parameters
+inline constexpr qreal shadowFileY = 5;
+inline constexpr qreal shadowFileBlur = 7;
+inline constexpr qreal opacityFileHighlight = 0.36;
+inline constexpr qreal opacityFileGlassEdge = 0.88;
 
 // =========================================================================
 // 5. COMPOSITE STYLES
