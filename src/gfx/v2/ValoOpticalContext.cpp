@@ -64,7 +64,7 @@ float ValoOpticalContext::effectiveOpacity(float baseOpacity) const noexcept {
 }
 
 bool ValoOpticalContext::shouldAnimateCaustics() const noexcept {
-    return (!m_prefersReducedMotion && m_energySavingFactor > 0.10f);
+    return (!m_prefersReducedMotion && m_energySavingFactor > 0.25f);
 }
 
 } // namespace Systalia::Gfx::V2

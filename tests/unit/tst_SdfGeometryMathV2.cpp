@@ -21,6 +21,7 @@ private slots:
     void surfaceNormalsAreUnitLengthAndOutward();
     void degenerateGeometriesHandledSafely();
     void squircleG2CurvatureContinuity();
+    void squircleG2DiagonalGradientNormAndOrientation();
     void analyticalAccuracyStrictlyLessThanPointZeroOnePx();
     void explicitModeSelectionConsistency();
 };
@@ -222,6 +223,54 @@ void TestSdfGeometryMathV2::squircleG2CurvatureContinuity() {
         const float delta = std::abs(curDist - prevDist);
         QVERIFY2(delta < 0.5f, qPrintable(QString("Salto em x=%1: %2").arg(x).arg(delta)));
         prevDist = curDist;
+    }
+}
+
+void TestSdfGeometryMathV2::squircleG2DiagonalGradientNormAndOrientation() {
+    const QVector2D size(400.0f, 200.0f);
+    const float r = 30.0f;
+    const QVector4D radii(r, r, r, r);
+    const float bx = 200.0f;
+    const float by = 100.0f;
+
+    // Ponto sobre o contorno de nível zero ao longo da diagonal a 45 graus:
+    // (u^4 + u^4)^(1/4) = r => u = r / 2^(1/4) ~ 25.2269 px
+    const float u = r / std::pow(2.0f, 0.25f);
+    const QVector2D pDiagTR(bx - r + u, by - r + u);
+
+    // Avaliação do gradiente por diferenças finitas:
+    constexpr float eps = 0.05f;
+    const float dx = (ValoGeometryEngineV2::evaluateSignedDistanceG2(pDiagTR + QVector2D(eps, 0.0f), size, radii)
+                    - ValoGeometryEngineV2::evaluateSignedDistanceG2(pDiagTR - QVector2D(eps, 0.0f), size, radii)) / (2.0f * eps);
+    const float dy = (ValoGeometryEngineV2::evaluateSignedDistanceG2(pDiagTR + QVector2D(0.0f, eps), size, radii)
+                    - ValoGeometryEngineV2::evaluateSignedDistanceG2(pDiagTR - QVector2D(0.0f, eps), size, radii)) / (2.0f * eps);
+
+    const float gradNorm = std::sqrt(dx * dx + dy * dy);
+    // Verificação matemática da Seção 4: ||\nabla d_G2||_2 = 2^(-1/4) ~ 0.840896
+    constexpr float expectedGradNorm = 0.840896f;
+    QVERIFY2(std::abs(gradNorm - expectedGradNorm) < 0.01f,
+             qPrintable(QString("Norma do gradiente G2 esperada ~0.8409, obtida: %1").arg(gradNorm)));
+
+    // Verificação das normais normalizadas em todos os 4 quadrantes:
+    const QVector2D corners[4] = {
+        QVector2D(-(bx - r + u), -(by - r + u)), // Top-Left
+        QVector2D(  bx - r + u,  -(by - r + u)), // Top-Right
+        QVector2D(-(bx - r + u),   by - r + u ), // Bottom-Left
+        QVector2D(  bx - r + u,    by - r + u )  // Bottom-Right
+    };
+
+    for (int i = 0; i < 4; ++i) {
+        const QVector2D normal = ValoGeometryEngineV2::evaluateNormal(corners[i], size, radii, GeometryMode::SquircleG2);
+        // Cada normal deve ter comprimento estritamente 1.0
+        QVERIFY2(std::abs(normal.length() - 1.0f) < 0.002f,
+                 qPrintable(QString("Normal nao-unitaria no canto %1: len=%2").arg(i).arg(normal.length())));
+
+        // Orientação deve apontar para fora do centro
+        if (corners[i].x() > 0) QVERIFY(normal.x() > 0.5f);
+        else QVERIFY(normal.x() < -0.5f);
+
+        if (corners[i].y() > 0) QVERIFY(normal.y() > 0.5f);
+        else QVERIFY(normal.y() < -0.5f);
     }
 }
 

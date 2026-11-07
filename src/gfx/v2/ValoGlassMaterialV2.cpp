@@ -27,8 +27,7 @@ bool ValoGlassMaterialShaderV2::updateUniformData(RenderState &state,
   SystaliaSurfacePropsV2 props = mat->props();
   // Projeção MVP normalizada do Scene Graph do Qt
   props.matrix = state.combinedMatrix();
-  // Modulação da opacidade pela opacidade herdada do item na árvore do Scene
-  // Graph
+  // Modulação da opacidade pela opacidade herdada do item na árvore do Scene Graph
   props.surfaceOpacity = mat->props().surfaceOpacity * state.opacity();
 
   constexpr qsizetype uboSize =
@@ -47,6 +46,32 @@ bool ValoGlassMaterialShaderV2::updateUniformData(RenderState &state,
 
   std::memcpy(buf->data(), &props, uboSize);
   return true;
+}
+
+void ValoGlassMaterialShaderV2::updateSampledImage(RenderState &state,
+                                                   int binding,
+                                                   QSGTexture **texture,
+                                                   QSGMaterial *newMaterial,
+                                                   QSGMaterial *oldMaterial) {
+  Q_UNUSED(oldMaterial);
+  auto *mat = static_cast<ValoGlassMaterialV2 *>(newMaterial);
+  if (!mat || !texture) {
+    return;
+  }
+
+  QSGTexture *targetTexture = nullptr;
+  if (binding == 1) {
+    targetTexture = mat->backdropTexture();
+  } else if (binding == 2) {
+    targetTexture = mat->clientTexture();
+  }
+
+  if (targetTexture) {
+    targetTexture->commitTextureOperations(state.rhi(), state.resourceUpdateBatch());
+  }
+  if (targetTexture && *texture != targetTexture) {
+    *texture = targetTexture;
+  }
 }
 
 ValoGlassMaterialV2::ValoGlassMaterialV2() {
@@ -69,6 +94,13 @@ int ValoGlassMaterialV2::compare(const QSGMaterial *other) const {
   const auto *o = static_cast<const ValoGlassMaterialV2 *>(other);
   if (!o)
     return 1;
+
+  if (m_backdropTexture != o->m_backdropTexture) {
+    return (m_backdropTexture < o->m_backdropTexture) ? -1 : 1;
+  }
+  if (m_clientTexture != o->m_clientTexture) {
+    return (m_clientTexture < o->m_clientTexture) ? -1 : 1;
+  }
 
   // Agrupamento de estado: compara modo geométrico e propriedades estruturais
   if (m_props.geometryMode != o->m_props.geometryMode) {

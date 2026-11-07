@@ -1,49 +1,56 @@
 #pragma once
 
 #include <QColor>
+#include <QElapsedTimer>
 #include <QPointer>
 #include <QQuickItem>
+#include <QSGTexture>
+#include <QTimer>
 #include <QVector2D>
 #include <QVector4D>
 #include <QtQml/qqmlregistration.h>
 
 #include "SystaliaSurfacePropsV2.hpp"
+#include "ValoBlurPipelineV2.hpp"
 #include "ValoOpticalContext.hpp"
 
 namespace Systalia::Gfx::V2 {
 
 /**
- * @brief Item QML do Scene Graph para o motor gráfico VALO Graphics 2.0 (Etapa
- * 02).
+ * @brief Item QML do Scene Graph para o motor gráfico VALO Graphics 2.0 (Etapa 03).
  *
- * Gera a geometria retangular e ancora o material ValoGlassMaterialV2 com
- * SDF analítica (L2 / G2), contorno especular unificado e composição alpha.
+ * Ancara o material ValoGlassMaterialV2 com SDF analítica (L2 / G2),
+ * refração cromática Cauchy, reflexos espectrais -31°, cáusticas procedurais,
+ * congelamento de inatividade (idle-freeze) e perfis Dual-Kawase.
  */
 class ValoGlassItemV2 : public QQuickItem {
   Q_OBJECT
   QML_ELEMENT
 
-  Q_PROPERTY(QVector4D cornerRadii READ cornerRadii WRITE setCornerRadii NOTIFY
-                 cornerRadiiChanged)
-  Q_PROPERTY(int geometryMode READ geometryMode WRITE setGeometryMode NOTIFY
-                 geometryModeChanged)
-  Q_PROPERTY(float surfaceOpacity READ surfaceOpacity WRITE setSurfaceOpacity
-                 NOTIFY surfaceOpacityChanged)
-  Q_PROPERTY(float specularStrokeWidth READ specularStrokeWidth WRITE
-                 setSpecularStrokeWidth NOTIFY specularStrokeWidthChanged)
-  Q_PROPERTY(QColor volumetricTint READ volumetricTint WRITE setVolumetricTint
-                 NOTIFY volumetricTintChanged)
+  Q_PROPERTY(QVector4D cornerRadii READ cornerRadii WRITE setCornerRadii NOTIFY cornerRadiiChanged)
+  Q_PROPERTY(int geometryMode READ geometryMode WRITE setGeometryMode NOTIFY geometryModeChanged)
+  Q_PROPERTY(float surfaceOpacity READ surfaceOpacity WRITE setSurfaceOpacity NOTIFY surfaceOpacityChanged)
+  Q_PROPERTY(float specularStrokeWidth READ specularStrokeWidth WRITE setSpecularStrokeWidth NOTIFY specularStrokeWidthChanged)
+  Q_PROPERTY(QColor volumetricTint READ volumetricTint WRITE setVolumetricTint NOTIFY volumetricTintChanged)
   Q_PROPERTY(bool active READ isActive WRITE setActive NOTIFY activeChanged)
-  Q_PROPERTY(
-      int debugMode READ debugMode WRITE setDebugMode NOTIFY debugModeChanged)
+  Q_PROPERTY(int debugMode READ debugMode WRITE setDebugMode NOTIFY debugModeChanged)
   Q_PROPERTY(float slant READ slant WRITE setSlant NOTIFY slantChanged)
-  Q_PROPERTY(
-      Systalia::Gfx::V2::ValoOpticalContext *opticalContext READ opticalContext
-          WRITE setOpticalContext NOTIFY opticalContextChanged)
+  Q_PROPERTY(float ior READ ior WRITE setIor NOTIFY iorChanged)
+  Q_PROPERTY(float chromaticDispersion READ chromaticDispersion WRITE setChromaticDispersion NOTIFY chromaticDispersionChanged)
+  Q_PROPERTY(float causticIntensity READ causticIntensity WRITE setCausticIntensity NOTIFY causticIntensityChanged)
+  Q_PROPERTY(int blurProfile READ blurProfile WRITE setBlurProfile NOTIFY blurProfileChanged)
+  Q_PROPERTY(Systalia::Gfx::V2::ValoOpticalContext *opticalContext READ opticalContext WRITE setOpticalContext NOTIFY opticalContextChanged)
 
 public:
   enum GeometryModeType { CircularL2 = 0, SquircleG2 = 1 };
   Q_ENUM(GeometryModeType)
+
+  enum BlurProfileType {
+    Performance = 0,
+    Balanced = 1,
+    Quality = 2
+  };
+  Q_ENUM(BlurProfileType)
 
   explicit ValoGlassItemV2(QQuickItem *parent = nullptr);
   ~ValoGlassItemV2() override = default;
@@ -72,10 +79,23 @@ public:
   float slant() const noexcept { return m_slant; }
   void setSlant(float slant);
 
-  ValoOpticalContext *opticalContext() const noexcept {
-    return m_opticalContext;
-  }
+  float ior() const noexcept { return m_ior; }
+  void setIor(float ior);
+
+  float chromaticDispersion() const noexcept { return m_chromaticDispersion; }
+  void setChromaticDispersion(float dispersion);
+
+  float causticIntensity() const noexcept { return m_causticIntensity; }
+  void setCausticIntensity(float intensity);
+
+  int blurProfile() const noexcept { return m_blurProfile; }
+  void setBlurProfile(int profile);
+
+  ValoOpticalContext *opticalContext() const noexcept { return m_opticalContext; }
   void setOpticalContext(ValoOpticalContext *context);
+
+  void resetActivity();
+  bool isCausticFrozen() const noexcept { return m_causticFrozen; }
 
 signals:
   void cornerRadiiChanged();
@@ -86,11 +106,18 @@ signals:
   void activeChanged();
   void debugModeChanged();
   void slantChanged();
+  void iorChanged();
+  void chromaticDispersionChanged();
+  void causticIntensityChanged();
+  void blurProfileChanged();
   void opticalContextChanged();
 
 protected:
-  QSGNode *updatePaintNode(QSGNode *oldNode,
-                           UpdatePaintNodeData *data) override;
+  QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *data) override;
+
+private slots:
+  void onIdleTimeout();
+  void onAnimationFrame();
 
 private:
   QVector4D m_cornerRadii = {32.0f, 32.0f, 32.0f, 32.0f};
@@ -101,7 +128,20 @@ private:
   bool m_active = true;
   int m_debugMode = 0;
   float m_slant = 0.0f;
+  float m_ior = 1.12f;
+  float m_chromaticDispersion = 0.65f;
+  float m_causticIntensity = 0.35f;
+  int m_blurProfile = Quality;
+
   QPointer<ValoOpticalContext> m_opticalContext;
+
+  QTimer m_idleTimer;
+  QTimer m_animTimer;
+  QElapsedTimer m_elapsedTimer;
+  float m_accumulatedTime = 0.0f;
+  bool m_causticFrozen = false;
+
+  QSGTexture *m_fallbackBackdropTexture = nullptr;
 };
 
 } // namespace Systalia::Gfx::V2

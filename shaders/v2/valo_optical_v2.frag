@@ -5,6 +5,9 @@ layout(location = 1) in vec2 v_Position;
 
 layout(location = 0) out vec4 fragColor;
 
+layout(binding = 1) uniform sampler2D u_BackdropTexture;
+layout(binding = 2) uniform sampler2D u_ClientTexture;
+
 layout(std140, binding = 0) uniform buf {
     mat4 u_Matrix;
     vec4 u_Radii;
@@ -113,61 +116,127 @@ void main() {
         discard;
     }
 
-    // 3. Contorno especular unificado derivado da MESMA SDF analítica
+    // 3. Normal analítica por diferenças finitas centrais normalizadas
+    vec2 eps = vec2(1.0, 0.0);
+    vec2 grad = vec2(
+        evaluateSurfaceSDF(p + eps.xy, halfSize, normRadii, u_GeometryMode, u_Slant) -
+        evaluateSurfaceSDF(p - eps.xy, halfSize, normRadii, u_GeometryMode, u_Slant),
+        evaluateSurfaceSDF(p + eps.yx, halfSize, normRadii, u_GeometryMode, u_Slant) -
+        evaluateSurfaceSDF(p - eps.yx, halfSize, normRadii, u_GeometryMode, u_Slant)
+    ) * 0.5;
+    vec2 normal = (length(grad) > 1e-5) ? normalize(grad) : vec2(0.0);
+
+    // 4. Menisco óptico (curvatura da borda até ~24px)
+    float meniscusWidth = 24.0;
+    float meniscusDist = clamp(-dist / meniscusWidth, 0.0, 1.0);
+    float meniscus = (dist < 0.0) ? sin(meniscusDist * 3.14159265) : 0.0;
+
+    // 5. Refração e Dispersão Cromática Cauchy
+    vec2 screenUV = (u_ScreenResolution.x > 0.0 && u_ScreenResolution.y > 0.0)
+        ? (gl_FragCoord.xy / u_ScreenResolution)
+        : v_TexCoord;
+
+    float iorDelta = max(u_Ior - 1.0, 0.0);
+    vec2 refractionVector = normal * (iorDelta * 0.08) * meniscus;
+    float dispersion = u_ChromaticDispersion * 0.025 * meniscus;
+
+    vec2 uvR = screenUV + refractionVector * (1.0 + dispersion);
+    vec2 uvG = screenUV + refractionVector;
+    vec2 uvB = screenUV + refractionVector * (1.0 - dispersion);
+
+    float rBackdrop = texture(u_BackdropTexture, uvR).r;
+    float gBackdrop = texture(u_BackdropTexture, uvG).g;
+    float bBackdrop = texture(u_BackdropTexture, uvB).b;
+    vec3 refractedBackdrop = vec3(rBackdrop, gBackdrop, bBackdrop);
+
+    // 6. Reflexos Prismáticos Espectrais (ângulo nominal -31°)
+    vec2 lightIncidence = vec2(0.8572, -0.5150); // cos(-31°), sin(-31°)
+    float specDot = max(dot(-normal, lightIncidence), 0.0);
+    float specSharp = pow(specDot, 12.0);
+
+    vec3 valoCyan   = vec3(0.000, 0.937, 1.000); // #00EFFF
+    vec3 valoIce    = vec3(0.960, 1.000, 1.000); // #F5FFFF
+    vec3 valoAmber  = vec3(0.973, 0.769, 0.482); // #F8C47B
+    vec3 valoViolet = vec3(0.620, 0.467, 1.000); // #9E77FF
+
+    float anglePhase = atan(normal.y, normal.x) / 3.14159265 * 0.5 + 0.5;
+    vec3 spectralGradient = mix(valoCyan, valoAmber, smoothstep(0.25, 0.55, anglePhase));
+    spectralGradient = mix(spectralGradient, valoViolet, smoothstep(0.55, 0.85, anglePhase));
+    vec3 spectralReflection = mix(valoIce, spectralGradient, 0.45) * (specSharp * 1.5 * meniscus);
+
+    // 7. Cáusticas procedurais de baixa intensidade
+    vec3 causticLight = vec3(0.0);
+    if (u_CausticIntensity > 0.001) {
+        float c1 = sin(p.x * 0.06 + u_Time * 1.25) * cos(p.y * 0.06 + u_Time * 0.95);
+        float c2 = sin(p.x * 0.11 - u_Time * 0.80 + p.y * 0.04) * cos(p.y * 0.09 + u_Time * 1.10);
+        float causticWave = pow(max(0.0, c1 + c2), 2.5);
+        float interiorMask = smoothstep(-2.0, -18.0, dist);
+        causticLight = vec3(0.00, 0.88, 0.98) * (causticWave * u_CausticIntensity * 0.22 * interiorMask);
+    }
+
+    // 8. Contorno especular unificado
     float strokeWidth = max(u_SpecularStrokeWidth, 0.5);
-    // Traço especular interno posicionado ao longo da borda
     float strokeDist = abs(dist + 0.5 * strokeWidth) - 0.5 * strokeWidth;
     float strokeCoverage = 1.0 - smoothstep(-0.5 * aa, 0.5 * aa, strokeDist);
 
     float normY = clamp(v_Position.y / max(u_WindowSize.y, 1.0), 0.0, 1.0);
-    vec3 specularZenith = vec3(0.72, 0.90, 1.00); // Highlight ciano-branco eletroluminescente
-    vec3 specularNadir  = vec3(0.18, 0.42, 0.62); // Reflexo suave ciano inferior
+    vec3 specularZenith = vec3(0.72, 0.90, 1.00);
+    vec3 specularNadir  = vec3(0.18, 0.42, 0.62);
     vec3 strokeColor = mix(specularZenith, specularNadir, normY * normY);
     float strokeAlpha = strokeCoverage * 0.85;
 
-    // 4. Preenchimento volumétrico oceânico VALO
+    // 9. Preenchimento volumétrico oceânico VALO
     vec3 navyDeep = vec3(0.012, 0.071, 0.141);
     vec3 cyanGlass = vec3(0.024, 0.231, 0.427);
     vec3 baseVolumetric = mix(cyanGlass, navyDeep, normY);
 
-    // Modulação pelo token de tonalização volumétrica
     if (u_VolumetricTint.a > 0.0) {
         baseVolumetric = mix(baseVolumetric, u_VolumetricTint.rgb, u_VolumetricTint.a);
     }
 
-    // Reflexo difuso suave no topo (aurora top sheen)
     float sheen = exp(-normY * 5.0) * 0.22;
-    vec3 fillColor = baseVolumetric + vec3(sheen);
-    float fillAlpha = u_SurfaceOpacity;
+    vec3 glassBody = mix(refractedBackdrop, baseVolumetric + vec3(sheen), u_SurfaceOpacity);
+    glassBody += causticLight;
+    glassBody += spectralReflection;
 
-    // 5. Composição de cor com alpha pré-multiplicado
-    vec3 compositeRgb = mix(fillColor, strokeColor, strokeAlpha);
+    // 10. Integração com textura do cliente se presente (100% nítida)
+    if (u_HasClientTexture > 0.5) {
+        vec4 clientSample = texture(u_ClientTexture, v_TexCoord);
+        glassBody = mix(glassBody, clientSample.rgb, clientSample.a);
+    }
+
+    // 11. Composição de cor com contorno e alpha pré-multiplicado
+    vec3 compositeRgb = mix(glassBody, strokeColor, strokeAlpha);
+    float fillAlpha = max(u_SurfaceOpacity, 0.15);
     float compositeAlpha = clamp(fillAlpha + strokeAlpha * (1.0 - fillAlpha), 0.0, 1.0) * coverage;
 
-    // 6. Suporte aos Modos de Diagnóstico (Section 12)
-    // Se u_ShadowOffsetY < -0.5, seu módulo codifica o passe de diagnóstico ativo
+    // 12. Suporte aos 8 Modos de Diagnóstico
     int diagMode = (u_ShadowOffsetY < -0.5) ? int(-u_ShadowOffsetY + 0.5) : 0;
 
     if (diagMode == 1) {
-        // Passe 1: Visualização da Distância SDF e Isolinhass
-        float isolines = fract(abs(dist) * 0.1);
-        vec3 sdfCol = (dist < 0.0) ? vec3(0.0, 0.45, 0.85) : vec3(0.85, 0.20, 0.10);
-        vec3 vis = mix(sdfCol, vec3(1.0), step(0.88, isolines));
-        fragColor = vec4(vis, 1.0);
+        // Modo 1: Backdrop Raw Isolado
+        vec4 rawBackdrop = texture(u_BackdropTexture, screenUV);
+        fragColor = vec4(rawBackdrop.rgb, 1.0);
     } else if (diagMode == 2) {
-        // Passe 2: Máscara de Cobertura Antialiased
-        fragColor = vec4(vec3(coverage), 1.0);
+        // Modo 2: Backdrop Desfocado (Dual-Kawase filtrado)
+        fragColor = vec4(texture(u_BackdropTexture, screenUV).rgb, 1.0);
     } else if (diagMode == 3) {
-        // Passe 3: Preenchimento Volumétrico Isolado
-        float fa = fillAlpha * coverage;
-        fragColor = vec4(fillColor * fa, fa);
+        // Modo 3: Normais Analíticas SDF
+        fragColor = vec4(normal * 0.5 + 0.5, 0.0, 1.0);
     } else if (diagMode == 4) {
-        // Passe 4: Contorno Especular Isolado
-        float sa = strokeAlpha * coverage;
-        fragColor = vec4(strokeColor * sa, sa);
+        // Modo 4: Vetores de Refração
+        fragColor = vec4(abs(refractionVector) * 100.0, 0.0, 1.0);
+    } else if (diagMode == 5) {
+        // Modo 5: Dispersão Cromática isolada
+        fragColor = vec4(refractedBackdrop, 1.0);
+    } else if (diagMode == 6) {
+        // Modo 6: Reflexos Prismáticos Espectrais isolados
+        fragColor = vec4(spectralReflection, 1.0);
+    } else if (diagMode == 7) {
+        // Modo 7: Cáusticas Procedurais isoladas
+        fragColor = vec4(causticLight, 1.0);
     } else {
-        // Passe 0 / 5: Composição Final com Alpha Pré-Multiplicado (rgb * alpha, alpha)
+        // Modo 8 / 0: Composição Final Completa com Alpha Pré-Multiplicado
         fragColor = vec4(compositeRgb * compositeAlpha, compositeAlpha);
     }
 }
-

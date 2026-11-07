@@ -3,14 +3,16 @@
 #include "SystaliaSurfacePropsV2.hpp"
 #include <QSGMaterial>
 #include <QSGMaterialShader>
+#include <QSGTexture>
 
 namespace Systalia::Gfx::V2 {
 
 /**
  * @brief Shader do material óptico VALO Graphics 2.0.
  *
- * Gerencia o upload do Uniform Buffer Object (UBO) std140 de 160 bytes
- * e vincula os bytecodes SPIR-V compilados via Qt ShaderTools (QSB).
+ * Gerencia o upload do Uniform Buffer Object (UBO) std140 de 160 bytes,
+ * vincula os bytecodes SPIR-V compilados via Qt ShaderTools (QSB) e
+ * provê o binding de samplers de textura (backdrop filtrado e cliente).
  */
 class ValoGlassMaterialShaderV2 : public QSGMaterialShader {
 public:
@@ -18,14 +20,19 @@ public:
 
   bool updateUniformData(RenderState &state, QSGMaterial *newMaterial,
                          QSGMaterial *oldMaterial) override;
+
+  void updateSampledImage(RenderState &state, int binding, QSGTexture **texture,
+                          QSGMaterial *newMaterial,
+                          QSGMaterial *oldMaterial) override;
 };
 
 /**
- * @brief Material gráfico para o Scene Graph do Qt Quick (Etapa 02).
+ * @brief Material gráfico para o Scene Graph do Qt Quick (Etapa 03).
  *
  * Encapsula o pipeline de renderização analítica SDF (L2 / G2),
- * preenchimento volumétrico oceânico, contorno especular unificado
- * e composição alpha pré-multiplicada.
+ * refração com dispersão cromática Cauchy, reflexos espectrais -31°,
+ * cáusticas procedurais, preenchimento volumétrico oceânico e
+ * composição alpha pré-multiplicada.
  */
 class ValoGlassMaterialV2 : public QSGMaterial {
 public:
@@ -43,8 +50,16 @@ public:
   const SystaliaSurfacePropsV2 &props() const noexcept { return m_props; }
   SystaliaSurfacePropsV2 &props() noexcept { return m_props; }
 
+  QSGTexture *backdropTexture() const noexcept { return m_backdropTexture; }
+  void setBackdropTexture(QSGTexture *tex) noexcept { m_backdropTexture = tex; }
+
+  QSGTexture *clientTexture() const noexcept { return m_clientTexture; }
+  void setClientTexture(QSGTexture *tex) noexcept { m_clientTexture = tex; }
+
 private:
   SystaliaSurfacePropsV2 m_props;
+  QSGTexture *m_backdropTexture = nullptr;
+  QSGTexture *m_clientTexture = nullptr;
 };
 
 } // namespace Systalia::Gfx::V2

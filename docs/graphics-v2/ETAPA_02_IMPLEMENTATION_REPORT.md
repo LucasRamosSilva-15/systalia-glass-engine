@@ -56,7 +56,7 @@ $$d_{G2}(\mathbf{p}) = \left( q_x^4 + q_y^4 \right)^{1/4} - r_i \quad (\text{par
 $$d_{G2}(\mathbf{p}) = \max(q_x, q_y) - r_i \quad (\text{para } q_x \le 0 \text{ ou } q_y \le 0)$$
 
 #### 3.1. Natureza Métrica do Campo de Distâncias
-- **SDF Euclidiano Exato vs Pseudo-Euclidiano:** A expressão $L_4$ Minkowski define uma função de distância analítica exata sobre o contorno de nível zero ($d_{G2} = 0$), mas fora do contorno a magnitude do gradiente varia entre $\|\nabla d\| = 1.0$ (nos eixos) e $\|\nabla d\| = 2^{1/4} \approx 1.1892$ (ao longo da diagonal a 45°). Trata-se de uma métrica de Minkowski algébrica contínua e suave.
+- **SDF Euclidiano Exato vs Pseudo-Euclidiano:** A expressão $L_4$ Minkowski define uma função de distância analítica exata sobre o contorno de nível zero ($d_{G2} = 0$), mas fora do contorno a magnitude do gradiente euclidiano varia entre $\|\nabla d\| = 1.0$ (nos eixos ortogonais) e $\|\nabla d\| = 2^{-1/4} \approx 0.8409$ (ao longo da diagonal a 45°). O valor $2^{1/4} \approx 1.1892$ corresponde ao inverso dessa norma. Trata-se de uma métrica de Minkowski algébrica contínua e suave.
 - **Compensação de Antialiasing:** O uso de `fwidth(dist)` na rasterização do fragment shader calcula a derivada local no espaço de tela $\left( \left|\frac{\partial d}{\partial x}\right| + \left|\frac{\partial d}{\partial y}\right| \right)$, normalizando intrinsecamente a largura do gradiente subpixel e garantindo cobertura idêntica à de um SDF euclidiano exato.
 
 #### 3.2. Continuidade de Curvatura $C^2$ (G2)

@@ -58,6 +58,10 @@ qt6_add_shaders(sge_shaders "sge_shaders_v2_resource"
     FILES
         shaders/v2/valo_optical_v2.vert
         shaders/v2/valo_optical_v2.frag
+        shaders/v2/valo_kawase_down.vert
+        shaders/v2/valo_kawase_down.frag
+        shaders/v2/valo_kawase_up.vert
+        shaders/v2/valo_kawase_up.frag
 )
 target_link_libraries(sge_shaders PUBLIC
     Qt6::Core
@@ -112,6 +116,10 @@ qt_add_library(sge_core STATIC
     src/gfx/v2/ValoGlassMaterialV2.cpp
     src/gfx/v2/ValoGlassItemV2.hpp
     src/gfx/v2/ValoGlassItemV2.cpp
+    src/gfx/v2/ValoBackdropProviderV2.hpp
+    src/gfx/v2/ValoBackdropProviderV2.cpp
+    src/gfx/v2/ValoBlurPipelineV2.hpp
+    src/gfx/v2/ValoBlurPipelineV2.cpp
 )
 
 qt6_generate_wayland_protocol_server_sources(sge_core
