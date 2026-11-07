@@ -1441,7 +1441,7 @@ height: 45px;
 left: 8px;
 top: 4px;
 
-background: rgba(7, 22, 40, 0.86);
+background: #071628;
 border: 1px solid rgba(116, 213, 238, 0.24);
 box-shadow: 0px 4px 18px rgba(9, 186, 237, 0.2);
 border-radius: 22px;
@@ -1450,6 +1450,7 @@ border-radius: 22px;
 /* Systalia Mark */
 
 position: absolute;
+visibility: hidden;
 width: 18px;
 height: 23px;
 left: 18px;
@@ -1533,6 +1534,7 @@ color: #C2D7DF;
 /* Status Icons */
 
 position: absolute;
+visibility: hidden;
 width: 290px;
 height: 32.3px;
 left: 1340px;
@@ -1546,6 +1548,333 @@ line-height: 23px;
 
 color: #A0E7FA;
 
+
+
+/* Systalia — símbolo */
+
+position: absolute;
+width: 21px;
+height: 28px;
+left: 16px;
+top: 7px;
+
+
+
+/* Vector */
+
+position: absolute;
+left: 3.33%;
+right: 17.68%;
+top: 2.5%;
+bottom: 34.56%;
+
+background: linear-gradient(135deg, #8CFFFF 0%, #18E3F3 46%, #0784EA 100%);
+
+
+/* Vector */
+
+position: absolute;
+left: 15.28%;
+right: 3.33%;
+top: 35.83%;
+bottom: 2.5%;
+
+background: linear-gradient(225deg, #0864D1 0%, #1CA7F4 55%, #78FFFF 100%);
+
+
+/* Vector */
+
+position: absolute;
+left: 17.78%;
+right: 5.56%;
+top: 69.17%;
+bottom: 4.17%;
+
+border: 2px solid rgba(181, 255, 255, 0.65);
+
+
+/* TopBar / RightActions — VALO vectors */
+
+position: absolute;
+width: 291px;
+height: 28px;
+left: 1333px;
+top: 8px;
+
+
+
+/* TopBar / RightActions / Window / Overview */
+
+position: absolute;
+width: 20px;
+height: 20px;
+left: 5px;
+top: 4px;
+
+
+
+/* Group */
+
+position: absolute;
+left: 16%;
+right: 16%;
+top: 16%;
+bottom: 16%;
+
+
+
+/* Vector */
+
+position: absolute;
+left: 16%;
+right: 16%;
+top: 16%;
+bottom: 16%;
+
+border: 1.55px solid #77E9F7;
+
+
+/* Vector */
+
+position: absolute;
+left: 35%;
+right: 35%;
+top: 35%;
+bottom: 35%;
+
+border: 1.55px solid #77E9F7;
+
+
+/* TopBar / RightActions / Terminal */
+
+position: absolute;
+width: 20px;
+height: 20px;
+left: 53px;
+top: 4px;
+
+
+
+/* Group */
+
+position: absolute;
+left: 20%;
+right: 15%;
+top: 26%;
+bottom: 25%;
+
+
+
+/* Vector */
+
+position: absolute;
+left: 20%;
+right: 53.5%;
+top: 26%;
+bottom: 26%;
+
+border: 1.55px solid #77E9F7;
+
+
+/* Vector */
+
+position: absolute;
+left: 55%;
+right: 15%;
+top: 75%;
+bottom: 25%;
+
+border: 1.55px solid #77E9F7;
+
+
+/* TopBar / RightActions / Applications / Launcher */
+
+position: absolute;
+width: 20px;
+height: 20px;
+left: 101px;
+top: 4px;
+
+
+
+/* Group */
+
+position: absolute;
+left: 15%;
+right: 15%;
+top: 15%;
+bottom: 15%;
+
+
+
+/* Vector */
+
+position: absolute;
+left: 15%;
+right: 57.5%;
+top: 15%;
+bottom: 57.5%;
+
+border: 1.55px solid #77E9F7;
+
+
+/* Vector */
+
+position: absolute;
+left: 57.5%;
+right: 15%;
+top: 15%;
+bottom: 57.5%;
+
+border: 1.55px solid #77E9F7;
+
+
+/* Vector */
+
+position: absolute;
+left: 15%;
+right: 57.5%;
+top: 57.5%;
+bottom: 15%;
+
+border: 1.55px solid #77E9F7;
+
+
+/* Vector */
+
+position: absolute;
+left: 57.5%;
+right: 15%;
+top: 57.5%;
+bottom: 15%;
+
+border: 1.55px solid #77E9F7;
+
+
+/* TopBar / RightActions / Brightness */
+
+position: absolute;
+width: 20px;
+height: 20px;
+left: 149px;
+top: 4px;
+
+
+
+/* Group */
+
+position: absolute;
+left: 9%;
+right: 9%;
+top: 9%;
+bottom: 9%;
+
+
+
+/* Vector */
+
+position: absolute;
+left: 34%;
+right: 34%;
+top: 34%;
+bottom: 34%;
+
+border: 1.55px solid #77E9F7;
+
+
+/* Vector */
+
+position: absolute;
+left: 9%;
+right: 9%;
+top: 9%;
+bottom: 9%;
+
+border: 1.55px solid #77E9F7;
+
+
+/* TopBar / RightActions / Audio / Volume */
+
+position: absolute;
+width: 20px;
+height: 20px;
+left: 197px;
+top: 4px;
+
+
+
+/* Group */
+
+position: absolute;
+left: 15%;
+right: 9.25%;
+top: 17.5%;
+bottom: 17.5%;
+
+
+
+/* Vector */
+
+position: absolute;
+left: 15%;
+right: 47.5%;
+top: 19%;
+bottom: 19%;
+
+border: 1.55px solid #77E9F7;
+
+
+/* Vector */
+
+position: absolute;
+left: 65%;
+right: 9.25%;
+top: 17.5%;
+bottom: 17.5%;
+
+border: 1.55px solid #77E9F7;
+
+
+/* TopBar / RightActions / Power */
+
+position: absolute;
+width: 20px;
+height: 20px;
+left: 245px;
+top: 4px;
+
+
+
+/* Group */
+
+position: absolute;
+left: 15%;
+right: 15%;
+top: 10%;
+bottom: 14.78%;
+
+
+
+/* Vector */
+
+position: absolute;
+left: 50%;
+right: 50%;
+top: 10%;
+bottom: 50%;
+
+border: 1.55px solid #77E9F7;
+
+
+/* Vector */
+
+position: absolute;
+left: 15%;
+right: 15%;
+top: 21.5%;
+bottom: 14.78%;
+
+border: 1.55px solid #77E9F7;
 
 
 /* Systalia Files — editable window */
@@ -1571,7 +1900,7 @@ position: absolute;
 width: 689px;
 height: 524px;
 left: 6px;
-top: 4px;
+top: 5px;
 
 background: linear-gradient(130.23deg, rgba(200, 255, 255, 0.25) 13.02%, rgba(97, 240, 255, 0.13) 45.8%, rgba(21, 82, 121, 0.03) 74.83%, rgba(11, 24, 52, 0) 106.67%);
 box-shadow: inset 0px 1px 1px rgba(255, 255, 255, 0.21);
@@ -1654,36 +1983,6 @@ color: #F4FCFF;
 
 
 
-/* Label */
-
-position: absolute;
-width: 120px;
-height: 26px;
-left: 184px;
-top: 14px;
-
-background: rgba(10, 44, 70, 0.72);
-border-radius: 6px;
-
-
-/* VES Badge */
-
-position: absolute;
-width: 115px;
-height: 23.8px;
-left: 193px;
-top: 18px;
-
-font-family: 'Inter';
-font-style: normal;
-font-weight: 400;
-font-size: 14px;
-line-height: 17px;
-
-color: #86B7D9;
-
-
-
 /* Window action 0 */
 
 box-sizing: border-box;
@@ -1737,7 +2036,7 @@ height: 469px;
 left: 10px;
 top: 51px;
 
-background: rgba(8, 26, 45, 0.88);
+background: #081A2D;
 border-radius: 14px;
 
 
@@ -1746,7 +2045,7 @@ border-radius: 14px;
 position: absolute;
 width: 150px;
 height: 27.2px;
-left: 18px;
+left: 50px;
 top: 16px;
 
 font-family: 'Inter';
@@ -1779,7 +2078,7 @@ border-radius: 7px;
 position: absolute;
 width: 150px;
 height: 27.2px;
-left: 18px;
+left: 50px;
 top: 50px;
 
 font-family: 'Inter';
@@ -1797,7 +2096,7 @@ color: #EEF9FF;
 position: absolute;
 width: 150px;
 height: 27.2px;
-left: 18px;
+left: 50px;
 top: 84px;
 
 font-family: 'Inter';
@@ -1815,7 +2114,7 @@ color: #D5E2EE;
 position: absolute;
 width: 150px;
 height: 27.2px;
-left: 18px;
+left: 50px;
 top: 118px;
 
 font-family: 'Inter';
@@ -1833,7 +2132,7 @@ color: #D5E2EE;
 position: absolute;
 width: 150px;
 height: 27.2px;
-left: 18px;
+left: 50px;
 top: 152px;
 
 font-family: 'Inter';
@@ -1851,7 +2150,7 @@ color: #D5E2EE;
 position: absolute;
 width: 150px;
 height: 27.2px;
-left: 18px;
+left: 50px;
 top: 186px;
 
 font-family: 'Inter';
@@ -1869,7 +2168,7 @@ color: #D5E2EE;
 position: absolute;
 width: 150px;
 height: 27.2px;
-left: 18px;
+left: 50px;
 top: 220px;
 
 font-family: 'Inter';
@@ -1887,7 +2186,7 @@ color: #D5E2EE;
 position: absolute;
 width: 150px;
 height: 27.2px;
-left: 18px;
+left: 50px;
 top: 254px;
 
 font-family: 'Inter';
@@ -1905,7 +2204,7 @@ color: #D5E2EE;
 position: absolute;
 width: 150px;
 height: 27.2px;
-left: 18px;
+left: 50px;
 top: 306px;
 
 font-family: 'Inter';
@@ -1916,6 +2215,527 @@ line-height: 19px;
 
 color: #D5E2EE;
 
+
+
+/* VALO V2 / Sidebar / Recent */
+
+position: absolute;
+visibility: hidden;
+width: 23px;
+height: 23px;
+left: 19px;
+top: 18px;
+
+
+
+/* Vector */
+
+position: absolute;
+left: 16.62%;
+right: 21.72%;
+top: -3.2%;
+bottom: 36.53%;
+
+border: 1.53333px solid #6CEBFC;
+
+
+/* VALO V2 / Sidebar / Home */
+
+position: absolute;
+visibility: hidden;
+width: 23px;
+height: 23px;
+left: 19px;
+top: 52px;
+
+
+
+/* Vector */
+
+position: absolute;
+left: 12.5%;
+right: 12.5%;
+top: 12.5%;
+bottom: 12.5%;
+
+border: 1.53333px solid #6CEBFC;
+
+
+/* VALO V2 / Sidebar / Desktop */
+
+position: absolute;
+visibility: hidden;
+width: 23px;
+height: 23px;
+left: 19px;
+top: 86px;
+
+
+
+/* Vector */
+
+position: absolute;
+left: 12.5%;
+right: 12.5%;
+top: 25%;
+bottom: 12.5%;
+
+border: 1.53333px solid #6CEBFC;
+
+
+/* VALO V2 / Sidebar / Documents */
+
+position: absolute;
+visibility: hidden;
+width: 23px;
+height: 23px;
+left: 19px;
+top: 120px;
+
+
+
+/* Vector */
+
+position: absolute;
+left: 20.83%;
+right: 16.67%;
+top: 8.33%;
+bottom: 8.33%;
+
+border: 1.53333px solid #6CEBFC;
+
+
+/* VALO V2 / Sidebar / Downloads */
+
+position: absolute;
+visibility: hidden;
+width: 23px;
+height: 23px;
+left: 19px;
+top: 154px;
+
+
+
+/* Vector */
+
+position: absolute;
+left: 16.67%;
+right: 16.67%;
+top: 12.5%;
+bottom: 12.5%;
+
+border: 1.53333px solid #6CEBFC;
+
+
+/* VALO V2 / Sidebar / Music */
+
+position: absolute;
+visibility: hidden;
+width: 23px;
+height: 23px;
+left: 19px;
+top: 188px;
+
+
+
+/* Vector */
+
+position: absolute;
+left: 37.5%;
+right: 16.67%;
+top: 12.5%;
+bottom: 25%;
+
+border: 1.53333px solid #6CEBFC;
+
+
+/* VALO V2 / Sidebar / Pictures */
+
+position: absolute;
+visibility: hidden;
+width: 23px;
+height: 23px;
+left: 19px;
+top: 222px;
+
+
+
+/* Vector */
+
+position: absolute;
+left: 12.5%;
+right: 12.5%;
+top: 20.83%;
+bottom: 20.83%;
+
+border: 1.53333px solid #6CEBFC;
+
+
+/* VALO V2 / Sidebar / Trash */
+
+position: absolute;
+visibility: hidden;
+width: 23px;
+height: 23px;
+left: 19px;
+top: 256px;
+
+
+
+/* Vector */
+
+position: absolute;
+left: 16.67%;
+right: 16.67%;
+top: 16.67%;
+bottom: 12.5%;
+
+border: 1.53333px solid #6CEBFC;
+
+
+/* VALO V2 / Sidebar / Other Items */
+
+position: absolute;
+visibility: hidden;
+width: 23px;
+height: 23px;
+left: 19px;
+top: 308px;
+
+
+
+/* Vector */
+
+position: absolute;
+left: 12.5%;
+right: 12.5%;
+top: 12.5%;
+bottom: 12.5%;
+
+border: 1.53333px solid #6CEBFC;
+
+
+/* VALO V3 / Sidebar Recent */
+
+position: absolute;
+width: 23px;
+height: 23px;
+left: 19px;
+top: 18px;
+
+
+
+/* Group */
+
+position: absolute;
+left: 15.83%;
+right: 15.83%;
+top: 15.83%;
+bottom: 15.83%;
+
+
+
+/* Vector */
+
+position: absolute;
+left: 15.83%;
+right: 15.83%;
+top: 15.83%;
+bottom: 15.83%;
+
+border: 1.58125px solid #79EFFF;
+
+
+/* Vector */
+
+position: absolute;
+left: 50%;
+right: 35%;
+top: 26.67%;
+bottom: 41.67%;
+
+border: 1.58125px solid #79EFFF;
+
+
+/* VALO V3 / Sidebar Home */
+
+position: absolute;
+width: 23px;
+height: 23px;
+left: 19px;
+top: 52px;
+
+
+
+/* Group */
+
+position: absolute;
+left: 12.5%;
+right: 12.5%;
+top: 12.5%;
+bottom: 12.5%;
+
+
+
+/* Vector */
+
+position: absolute;
+left: 12.5%;
+right: 12.5%;
+top: 12.5%;
+bottom: 12.5%;
+
+border: 1.58125px solid #A4F6FF;
+
+
+/* VALO V3 / Sidebar Desktop */
+
+position: absolute;
+width: 23px;
+height: 23px;
+left: 19px;
+top: 86px;
+
+
+
+/* Group */
+
+position: absolute;
+left: 12.5%;
+right: 12.5%;
+top: 25%;
+bottom: 12.5%;
+
+
+
+/* Vector */
+
+position: absolute;
+left: 12.5%;
+right: 12.5%;
+top: 25%;
+bottom: 12.5%;
+
+border: 1.58125px solid #79EFFF;
+
+
+/* VALO V3 / Sidebar Documents */
+
+position: absolute;
+width: 23px;
+height: 23px;
+left: 19px;
+top: 120px;
+
+
+
+/* Group */
+
+position: absolute;
+left: 20.83%;
+right: 16.67%;
+top: 8.33%;
+bottom: 8.33%;
+
+
+
+/* Vector */
+
+position: absolute;
+left: 20.83%;
+right: 16.67%;
+top: 8.33%;
+bottom: 8.33%;
+
+border: 1.58125px solid #79EFFF;
+
+
+/* VALO V3 / Sidebar Downloads */
+
+position: absolute;
+width: 23px;
+height: 23px;
+left: 19px;
+top: 154px;
+
+
+
+/* Group */
+
+position: absolute;
+left: 16.67%;
+right: 16.67%;
+top: 12.5%;
+bottom: 12.5%;
+
+
+
+/* Vector */
+
+position: absolute;
+left: 16.67%;
+right: 16.67%;
+top: 12.5%;
+bottom: 12.5%;
+
+border: 1.58125px solid #79EFFF;
+
+
+/* VALO V3 / Sidebar Music */
+
+position: absolute;
+width: 23px;
+height: 23px;
+left: 19px;
+top: 188px;
+
+
+
+/* Group */
+
+position: absolute;
+left: 16.67%;
+right: 16.67%;
+top: 16.67%;
+bottom: 13.33%;
+
+
+
+/* Vector */
+
+position: absolute;
+left: 37.5%;
+right: 16.67%;
+top: 16.67%;
+bottom: 25%;
+
+border: 1.58125px solid #79EFFF;
+
+
+/* Vector */
+
+position: absolute;
+left: 16.67%;
+right: 62.5%;
+top: 65.83%;
+bottom: 13.33%;
+
+border: 1.58125px solid #79EFFF;
+
+
+/* Vector */
+
+position: absolute;
+left: 62.5%;
+right: 16.67%;
+top: 57.5%;
+bottom: 21.67%;
+
+border: 1.58125px solid #79EFFF;
+
+
+/* VALO V3 / Sidebar Pictures */
+
+position: absolute;
+width: 23px;
+height: 23px;
+left: 19px;
+top: 222px;
+
+
+
+/* Group */
+
+position: absolute;
+left: 12.5%;
+right: 12.5%;
+top: 20.83%;
+bottom: 20.83%;
+
+
+
+/* Vector */
+
+position: absolute;
+left: 12.5%;
+right: 12.5%;
+top: 20.83%;
+bottom: 20.83%;
+
+border: 1.58125px solid #79EFFF;
+
+
+/* Vector */
+
+position: absolute;
+left: 29.17%;
+right: 62.5%;
+top: 33.33%;
+bottom: 58.33%;
+
+border: 1.58125px solid #79EFFF;
+
+
+/* VALO V3 / Sidebar Trash */
+
+position: absolute;
+width: 23px;
+height: 23px;
+left: 19px;
+top: 256px;
+
+
+
+/* Group */
+
+position: absolute;
+left: 16.67%;
+right: 16.67%;
+top: 16.67%;
+bottom: 12.5%;
+
+
+
+/* Vector */
+
+position: absolute;
+left: 16.67%;
+right: 16.67%;
+top: 16.67%;
+bottom: 12.5%;
+
+border: 1.58125px solid #79EFFF;
+
+
+/* VALO V3 / Sidebar Other Items */
+
+position: absolute;
+width: 23px;
+height: 23px;
+left: 19px;
+top: 308px;
+
+
+
+/* Group */
+
+position: absolute;
+left: 12.5%;
+right: 12.5%;
+top: 12.5%;
+bottom: 12.5%;
+
+
+
+/* Vector */
+
+position: absolute;
+left: 12.5%;
+right: 12.5%;
+top: 12.5%;
+bottom: 12.5%;
+
+border: 1.58125px solid #79EFFF;
 
 
 /* Arrows */
@@ -1969,6 +2789,7 @@ color: #E6FBFF;
 /* View toggle */
 
 position: absolute;
+visibility: hidden;
 width: 30px;
 height: 35.7px;
 left: 490px;
@@ -2030,13 +2851,13 @@ background: rgba(178, 243, 253, 0.3);
 box-sizing: border-box;
 
 position: absolute;
+visibility: hidden;
 width: 62px;
 height: 67px;
 left: 221px;
 top: 127px;
 
 background: linear-gradient(135deg, rgba(208, 248, 255, 0.86) 13.89%, rgba(84, 222, 251, 0.91) 27.08%, rgba(35, 133, 202, 0.83) 52.08%, rgba(66, 116, 176, 0.82) 68.06%, rgba(20, 54, 91, 0.9) 83.33%);
-box-shadow: 0px 7px 10px rgba(0, 21, 43, 0.54), inset 0px -2px 3px rgba(5, 44, 83, 0.45), inset 0px 2px 2px rgba(255, 255, 255, 0.4);
 border-radius: 8px;
 
 
@@ -2045,13 +2866,13 @@ border-radius: 8px;
 box-sizing: border-box;
 
 position: absolute;
+visibility: hidden;
 width: 70px;
 height: 47px;
 left: 221px;
 top: 147px;
 
 background: linear-gradient(135deg, rgba(208, 248, 255, 0.86) 13.89%, rgba(84, 222, 251, 0.91) 27.08%, rgba(35, 133, 202, 0.83) 52.08%, rgba(66, 116, 176, 0.82) 68.06%, rgba(20, 54, 91, 0.9) 83.33%);
-box-shadow: 0px 7px 10px rgba(0, 21, 43, 0.54), inset 0px -2px 3px rgba(5, 44, 83, 0.45), inset 0px 2px 2px rgba(255, 255, 255, 0.4);
 border-radius: 7px;
 
 
@@ -2241,18 +3062,19 @@ color: #EEFCFF;
 /* VALO / Folded translucent sheet File icon / Document */
 
 position: absolute;
+visibility: hidden;
 width: 55px;
 height: 67px;
 left: 467px;
 top: 127px;
 
 background: linear-gradient(130.54deg, rgba(242, 255, 255, 0.25) 10.64%, rgba(133, 246, 255, 0.18) 26.95%, rgba(61, 151, 206, 0.14) 47.52%, rgba(171, 151, 238, 0.16) 65.96%, rgba(27, 81, 142, 0.3) 81.56%);
-box-shadow: 0px 0px 10px rgba(77, 234, 251, 0.13), 0px 7px 10px rgba(0, 16, 32, 0.54), inset 0px -3px 5px rgba(0, 29, 61, 0.42), inset 0px 2px 2px rgba(255, 255, 255, 0.38);
 
 
 /* VALO / Paper fold */
 
 position: absolute;
+visibility: hidden;
 width: 16px;
 height: 16px;
 left: 506px;
@@ -2265,6 +3087,7 @@ border: 0.8px solid rgba(217, 250, 255, 0.65);
 /* Glyph 2 */
 
 position: absolute;
+visibility: hidden;
 width: 55px;
 height: 44.2px;
 left: 474px;
@@ -2283,18 +3106,19 @@ color: rgba(140, 241, 255, 0.92);
 /* VALO / Folded translucent sheet File icon / Download2 */
 
 position: absolute;
+visibility: hidden;
 width: 55px;
 height: 67px;
 left: 585px;
 top: 127px;
 
 background: linear-gradient(130.54deg, rgba(242, 255, 255, 0.25) 10.64%, rgba(133, 246, 255, 0.18) 26.95%, rgba(61, 151, 206, 0.14) 47.52%, rgba(171, 151, 238, 0.16) 65.96%, rgba(27, 81, 142, 0.3) 81.56%);
-box-shadow: 0px 0px 10px rgba(77, 234, 251, 0.13), 0px 7px 10px rgba(0, 16, 32, 0.54), inset 0px -3px 5px rgba(0, 29, 61, 0.42), inset 0px 2px 2px rgba(255, 255, 255, 0.38);
 
 
 /* VALO / Paper fold */
 
 position: absolute;
+visibility: hidden;
 width: 16px;
 height: 16px;
 left: 624px;
@@ -2307,6 +3131,7 @@ border: 0.8px solid rgba(217, 250, 255, 0.65);
 /* Glyph 3 */
 
 position: absolute;
+visibility: hidden;
 width: 55px;
 height: 44.2px;
 left: 592px;
@@ -2325,18 +3150,19 @@ color: rgba(140, 241, 255, 0.92);
 /* VALO / Folded translucent sheet File icon / Divides 1 */
 
 position: absolute;
+visibility: hidden;
 width: 55px;
 height: 67px;
 left: 231px;
 top: 247px;
 
 background: linear-gradient(130.54deg, rgba(242, 255, 255, 0.25) 10.64%, rgba(133, 246, 255, 0.18) 26.95%, rgba(61, 151, 206, 0.14) 47.52%, rgba(171, 151, 238, 0.16) 65.96%, rgba(27, 81, 142, 0.3) 81.56%);
-box-shadow: 0px 0px 10px rgba(77, 234, 251, 0.13), 0px 7px 10px rgba(0, 16, 32, 0.54), inset 0px -3px 5px rgba(0, 29, 61, 0.42), inset 0px 2px 2px rgba(255, 255, 255, 0.38);
 
 
 /* VALO / Paper fold */
 
 position: absolute;
+visibility: hidden;
 width: 16px;
 height: 16px;
 left: 270px;
@@ -2349,6 +3175,7 @@ border: 0.8px solid rgba(217, 250, 255, 0.65);
 /* Glyph 4 */
 
 position: absolute;
+visibility: hidden;
 width: 55px;
 height: 44.2px;
 left: 238px;
@@ -2367,18 +3194,19 @@ color: rgba(140, 241, 255, 0.92);
 /* VALO / Folded translucent sheet File icon / Systion 4 */
 
 position: absolute;
+visibility: hidden;
 width: 55px;
 height: 67px;
 left: 349px;
 top: 247px;
 
 background: linear-gradient(130.54deg, rgba(242, 255, 255, 0.25) 10.64%, rgba(133, 246, 255, 0.18) 26.95%, rgba(61, 151, 206, 0.14) 47.52%, rgba(171, 151, 238, 0.16) 65.96%, rgba(27, 81, 142, 0.3) 81.56%);
-box-shadow: 0px 0px 10px rgba(77, 234, 251, 0.13), 0px 7px 10px rgba(0, 16, 32, 0.54), inset 0px -3px 5px rgba(0, 29, 61, 0.42), inset 0px 2px 2px rgba(255, 255, 255, 0.38);
 
 
 /* VALO / Paper fold */
 
 position: absolute;
+visibility: hidden;
 width: 16px;
 height: 16px;
 left: 388px;
@@ -2391,6 +3219,7 @@ border: 0.8px solid rgba(217, 250, 255, 0.65);
 /* Glyph 5 */
 
 position: absolute;
+visibility: hidden;
 width: 55px;
 height: 44.2px;
 left: 356px;
@@ -2477,13 +3306,13 @@ border: 1.6px solid rgba(255, 255, 255, 0.94);
 box-sizing: border-box;
 
 position: absolute;
+visibility: hidden;
 width: 55px;
 height: 67px;
 left: 349px;
 top: 127px;
 
 background: linear-gradient(130.54deg, rgba(242, 255, 255, 0.25) 10.64%, rgba(133, 246, 255, 0.18) 26.95%, rgba(61, 151, 206, 0.14) 47.52%, rgba(171, 151, 238, 0.16) 65.96%, rgba(27, 81, 142, 0.3) 81.56%);
-box-shadow: 0px 0px 10px rgba(77, 234, 251, 0.13), 0px 7px 10px rgba(0, 16, 32, 0.54), inset 0px -3px 5px rgba(0, 29, 61, 0.42), inset 0px 2px 2px rgba(255, 255, 255, 0.38);
 
 
 /* Vector */
@@ -2513,6 +3342,7 @@ border: 1.2px solid rgba(203, 250, 255, 0.85);
 /* Glyph 1 */
 
 position: absolute;
+visibility: hidden;
 width: 55px;
 height: 44.2px;
 left: 356px;
@@ -2531,66 +3361,1088 @@ color: #74F1FF;
 /* VALO / Document acrylic glint */
 
 position: absolute;
+visibility: hidden;
 width: 38.5px;
 height: 18.09px;
 left: 465.11px;
 top: 131px;
 
 background: linear-gradient(130.54deg, rgba(255, 255, 255, 0.35) 10.64%, rgba(162, 248, 255, 0.15) 46.1%, rgba(255, 255, 255, 0) 81.56%);
-filter: blur(3.5px);
 transform: rotate(19deg);
 
 
 /* VALO / Document acrylic glint */
 
 position: absolute;
+visibility: hidden;
 width: 38.5px;
 height: 18.09px;
 left: 583.11px;
 top: 131px;
 
 background: linear-gradient(130.54deg, rgba(255, 255, 255, 0.35) 10.64%, rgba(162, 248, 255, 0.15) 46.1%, rgba(255, 255, 255, 0) 81.56%);
-filter: blur(3.5px);
 transform: rotate(19deg);
 
 
 /* VALO / Document acrylic glint */
 
 position: absolute;
+visibility: hidden;
 width: 38.5px;
 height: 18.09px;
 left: 229.11px;
 top: 251px;
 
 background: linear-gradient(130.54deg, rgba(255, 255, 255, 0.35) 10.64%, rgba(162, 248, 255, 0.15) 46.1%, rgba(255, 255, 255, 0) 81.56%);
-filter: blur(3.5px);
 transform: rotate(19deg);
 
 
 /* VALO / Document acrylic glint */
 
 position: absolute;
+visibility: hidden;
 width: 38.5px;
 height: 18.09px;
 left: 347.11px;
 top: 251px;
 
 background: linear-gradient(130.54deg, rgba(255, 255, 255, 0.35) 10.64%, rgba(162, 248, 255, 0.15) 46.1%, rgba(255, 255, 255, 0) 81.56%);
-filter: blur(3.5px);
 transform: rotate(19deg);
 
 
 /* VALO / Document acrylic glint */
 
 position: absolute;
+visibility: hidden;
 width: 38.5px;
 height: 18.09px;
 left: 347.11px;
 top: 131px;
 
 background: linear-gradient(130.54deg, rgba(255, 255, 255, 0.35) 10.64%, rgba(162, 248, 255, 0.15) 46.1%, rgba(255, 255, 255, 0) 81.56%);
-filter: blur(3.5px);
 transform: rotate(19deg);
+
+
+/* VALO / Menu icon · 20px
+
+Minimal three-line menu icon for VALO toolbars, cyan glass UI
+*/
+
+position: absolute;
+width: 24px;
+height: 24px;
+left: 487px;
+top: 62px;
+
+
+
+/* Menu stroke 1 */
+
+position: absolute;
+width: 16px;
+height: 1.6px;
+left: 4px;
+top: 5px;
+
+background: rgba(166, 245, 255, 0.95);
+border-radius: 0.8px;
+
+
+/* Menu stroke 2 */
+
+position: absolute;
+width: 15px;
+height: 1.6px;
+left: 4px;
+top: 11px;
+
+background: rgba(166, 245, 255, 0.95);
+border-radius: 0.8px;
+
+
+/* Menu stroke 3 */
+
+position: absolute;
+width: 16px;
+height: 1.6px;
+left: 4px;
+top: 17px;
+
+background: rgba(166, 245, 255, 0.95);
+border-radius: 0.8px;
+
+
+/* VALO V2 / All Files / 3D acrylic vector */
+
+position: absolute;
+visibility: hidden;
+width: 74px;
+height: 67px;
+left: 221px;
+top: 127px;
+
+
+
+/* Group */
+
+position: absolute;
+left: 4.05%;
+right: 5.18%;
+top: 11.94%;
+bottom: 4.48%;
+
+
+
+/* Vector */
+
+position: absolute;
+left: 4.05%;
+right: 12.16%;
+top: 11.94%;
+bottom: 23.88%;
+
+background: linear-gradient(135deg, #0BF3FF 0%, #1899E8 55%, #16468B 100%);
+border: 1.2px solid #92EDFF;
+
+
+/* Vector */
+
+position: absolute;
+left: 5.41%;
+right: 10.81%;
+top: 29.85%;
+bottom: 7.46%;
+
+background: #EBFFFF;
+opacity: 0.9;
+
+
+/* Vector */
+
+position: absolute;
+left: 6.76%;
+right: 5.18%;
+top: 41.79%;
+bottom: 4.48%;
+
+background: linear-gradient(138.01deg, #A9FAFF 0%, #31D9FA 23.82%, #27B2EE 60.02%, #244D9F 95.26%);
+border: 1.2px solid #C6FAFF;
+
+
+/* Vector */
+
+position: absolute;
+left: 13.51%;
+right: 16.22%;
+top: 47.76%;
+bottom: 52.24%;
+
+background: #000000;
+opacity: 0.55;
+border: 1.5px solid #F9FFFF;
+
+
+/* VALO V2 / Documents / 3D acrylic vector */
+
+position: absolute;
+visibility: hidden;
+width: 55px;
+height: 67px;
+left: 349px;
+top: 127px;
+
+
+
+/* Group */
+
+position: absolute;
+left: 1.82%;
+right: 1.82%;
+top: 1.79%;
+bottom: 2.24%;
+
+
+
+/* Vector */
+
+position: absolute;
+left: 1.82%;
+right: 1.82%;
+top: 1.79%;
+bottom: 2.24%;
+
+background: linear-gradient(135deg, rgba(165, 251, 255, 0.43) 0%, rgba(106, 220, 241, 0.32) 35%, rgba(50, 106, 154, 0.56) 70%, rgba(23, 46, 103, 0.88) 100%);
+
+
+/* Vector */
+
+position: absolute;
+left: 70.91%;
+right: 1.82%;
+top: 1.79%;
+bottom: 75.67%;
+
+background: linear-gradient(135deg, #FFFFFF 0%, #A6E4FF 100%);
+border: 1.3px solid #DFFFFF;
+
+
+/* Vector */
+
+position: absolute;
+left: 9.09%;
+right: 90.91%;
+top: 7.46%;
+bottom: 8.96%;
+
+background: #000000;
+opacity: 0.4;
+border: 1px solid #F5FFFF;
+
+
+/* Vector */
+
+position: absolute;
+left: 9.09%;
+right: 58.18%;
+top: 88.06%;
+bottom: 5.97%;
+
+background: #000000;
+opacity: 0.65;
+border: 1.2px solid #46E9FF;
+
+
+/* Vector */
+
+position: absolute;
+left: 28.18%;
+right: 28.18%;
+top: 37.31%;
+bottom: 26.87%;
+
+background: linear-gradient(135deg, #CFFFFF 0%, #40CFF8 50%, #3675E6 100%);
+border: 1.1px solid #B3FFFF;
+
+
+/* Vector */
+
+position: absolute;
+left: 36.36%;
+right: 36.36%;
+top: 44.03%;
+bottom: 33.58%;
+
+background: #257AB0;
+border: 1.4px solid #84F8FF;
+
+
+/* Vector */
+
+position: absolute;
+left: 44.55%;
+right: 44.55%;
+top: 50.75%;
+bottom: 40.3%;
+
+background: #D3FFFF;
+opacity: 0.7;
+
+
+/* VALO V2 / Document / 3D acrylic vector */
+
+position: absolute;
+visibility: hidden;
+width: 55px;
+height: 67px;
+left: 467px;
+top: 127px;
+
+
+
+/* Group */
+
+position: absolute;
+left: 1.82%;
+right: 1.82%;
+top: 1.79%;
+bottom: 2.24%;
+
+
+
+/* Vector */
+
+position: absolute;
+left: 1.82%;
+right: 1.82%;
+top: 1.79%;
+bottom: 2.24%;
+
+background: linear-gradient(135deg, rgba(242, 255, 255, 0.95) 0%, rgba(106, 220, 241, 0.89) 35%, rgba(50, 106, 154, 0.67) 70%, rgba(23, 46, 103, 0.88) 100%);
+
+
+/* Vector */
+
+position: absolute;
+left: 70.91%;
+right: 1.82%;
+top: 1.79%;
+bottom: 75.67%;
+
+background: linear-gradient(135deg, #FFFFFF 0%, #A6E4FF 100%);
+border: 1.3px solid #DFFFFF;
+
+
+/* Vector */
+
+position: absolute;
+left: 9.09%;
+right: 90.91%;
+top: 7.46%;
+bottom: 8.96%;
+
+background: #000000;
+opacity: 0.4;
+border: 1px solid #F5FFFF;
+
+
+/* Vector */
+
+position: absolute;
+left: 9.09%;
+right: 58.18%;
+top: 88.06%;
+bottom: 5.97%;
+
+background: #000000;
+opacity: 0.65;
+border: 1.2px solid #46E9FF;
+
+
+/* Vector */
+
+position: absolute;
+left: 21.82%;
+right: 21.82%;
+top: 37.31%;
+bottom: 26.87%;
+
+border: 3.4px solid #329EE3;
+
+
+/* VALO V2 / Download2 / 3D acrylic vector */
+
+position: absolute;
+visibility: hidden;
+width: 55px;
+height: 67px;
+left: 585px;
+top: 127px;
+
+
+
+/* Group */
+
+position: absolute;
+left: 1.82%;
+right: 1.82%;
+top: 1.79%;
+bottom: 2.24%;
+
+
+
+/* Vector */
+
+position: absolute;
+left: 1.82%;
+right: 1.82%;
+top: 1.79%;
+bottom: 2.24%;
+
+background: linear-gradient(135deg, rgba(165, 251, 255, 0.43) 0%, rgba(106, 220, 241, 0.32) 35%, rgba(50, 106, 154, 0.56) 70%, rgba(23, 46, 103, 0.88) 100%);
+
+
+/* Vector */
+
+position: absolute;
+left: 70.91%;
+right: 1.82%;
+top: 1.79%;
+bottom: 75.67%;
+
+background: linear-gradient(135deg, #FFFFFF 0%, #A6E4FF 100%);
+border: 1.3px solid #DFFFFF;
+
+
+/* Vector */
+
+position: absolute;
+left: 9.09%;
+right: 90.91%;
+top: 7.46%;
+bottom: 8.96%;
+
+background: #000000;
+opacity: 0.4;
+border: 1px solid #F5FFFF;
+
+
+/* Vector */
+
+position: absolute;
+left: 9.09%;
+right: 58.18%;
+top: 88.06%;
+bottom: 5.97%;
+
+background: #000000;
+opacity: 0.65;
+border: 1.2px solid #46E9FF;
+
+
+/* Vector */
+
+position: absolute;
+left: 30.91%;
+right: 27.27%;
+top: 35.82%;
+bottom: 22.39%;
+
+background: linear-gradient(180deg, #A4E9F6 0%, #3887BE 100%);
+border: 0.8px solid #9FF5FF;
+
+
+/* Vector */
+
+position: absolute;
+left: 40.91%;
+right: 37.27%;
+top: 44.78%;
+bottom: 32.84%;
+
+border: 3.2px solid #EAFDFF;
+
+
+/* VALO V2 / Divides 1 / 3D acrylic vector */
+
+position: absolute;
+visibility: hidden;
+width: 55px;
+height: 67px;
+left: 231px;
+top: 247px;
+
+
+
+/* Group */
+
+position: absolute;
+left: 1.82%;
+right: 1.82%;
+top: 1.79%;
+bottom: 2.24%;
+
+
+
+/* Vector */
+
+position: absolute;
+left: 1.82%;
+right: 1.82%;
+top: 1.79%;
+bottom: 2.24%;
+
+background: linear-gradient(135deg, rgba(165, 251, 255, 0.43) 0%, rgba(106, 220, 241, 0.32) 35%, rgba(50, 106, 154, 0.56) 70%, rgba(23, 46, 103, 0.88) 100%);
+
+
+/* Vector */
+
+position: absolute;
+left: 70.91%;
+right: 1.82%;
+top: 1.79%;
+bottom: 75.67%;
+
+background: linear-gradient(135deg, #FFFFFF 0%, #A6E4FF 100%);
+border: 1.3px solid #DFFFFF;
+
+
+/* Vector */
+
+position: absolute;
+left: 9.09%;
+right: 90.91%;
+top: 7.46%;
+bottom: 8.96%;
+
+background: #000000;
+opacity: 0.4;
+border: 1px solid #F5FFFF;
+
+
+/* Vector */
+
+position: absolute;
+left: 9.09%;
+right: 58.18%;
+top: 88.06%;
+bottom: 5.97%;
+
+background: #000000;
+opacity: 0.65;
+border: 1.2px solid #46E9FF;
+
+
+/* Vector */
+
+position: absolute;
+left: 30.91%;
+right: 30.91%;
+top: 44.78%;
+bottom: 31.34%;
+
+background: #000000;
+border: 3.6px solid #A8F3FF;
+
+
+/* VALO V2 / Systion 4 / 3D acrylic vector */
+
+position: absolute;
+visibility: hidden;
+width: 55px;
+height: 67px;
+left: 349px;
+top: 247px;
+
+
+
+/* Group */
+
+position: absolute;
+left: 1.82%;
+right: 1.82%;
+top: 1.79%;
+bottom: 2.24%;
+
+
+
+/* Vector */
+
+position: absolute;
+left: 1.82%;
+right: 1.82%;
+top: 1.79%;
+bottom: 2.24%;
+
+background: linear-gradient(135deg, rgba(165, 251, 255, 0.43) 0%, rgba(106, 220, 241, 0.32) 35%, rgba(50, 106, 154, 0.56) 70%, rgba(23, 46, 103, 0.88) 100%);
+
+
+/* Vector */
+
+position: absolute;
+left: 70.91%;
+right: 1.82%;
+top: 1.79%;
+bottom: 75.67%;
+
+background: linear-gradient(135deg, #FFFFFF 0%, #A6E4FF 100%);
+border: 1.3px solid #DFFFFF;
+
+
+/* Vector */
+
+position: absolute;
+left: 9.09%;
+right: 90.91%;
+top: 7.46%;
+bottom: 8.96%;
+
+background: #000000;
+opacity: 0.4;
+border: 1px solid #F5FFFF;
+
+
+/* Vector */
+
+position: absolute;
+left: 9.09%;
+right: 58.18%;
+top: 88.06%;
+bottom: 5.97%;
+
+background: #000000;
+opacity: 0.65;
+border: 1.2px solid #46E9FF;
+
+
+/* Vector */
+
+position: absolute;
+left: 29.09%;
+right: 25.45%;
+top: 41.79%;
+bottom: 29.85%;
+
+
+
+/* VALO V3 / Clean All Files */
+
+position: absolute;
+width: 74px;
+height: 67px;
+left: 221px;
+top: 127px;
+
+/* VALO / Icons / Acrylic Folder Shadow */
+filter: drop-shadow(0px 5px 7px rgba(0, 11, 31, 0.37));
+
+
+/* Vector */
+
+position: absolute;
+left: 5.41%;
+right: 10.81%;
+top: 11.94%;
+bottom: 19.4%;
+
+background: linear-gradient(145.01deg, #95F9FF 0%, #2BCCF5 30.68%, #235BA9 87.65%);
+border: 1.2px solid #B7F8FF;
+
+
+/* Vector */
+
+position: absolute;
+left: 10.81%;
+right: 12.16%;
+top: 31.34%;
+bottom: 20.9%;
+
+background: #C9F9FF;
+border: 1.1px solid #EFFFFF;
+
+
+/* Vector */
+
+position: absolute;
+left: 6.76%;
+right: 6.49%;
+top: 43.28%;
+bottom: 5.97%;
+
+background: linear-gradient(145.01deg, #95F9FF 0%, #2BCCF5 30.68%, #235BA9 87.65%);
+border: 1.4px solid #C1FAFF;
+
+
+/* Vector */
+
+position: absolute;
+left: 14.86%;
+right: 17.57%;
+top: 47.76%;
+bottom: 52.24%;
+
+background: #000000;
+border: 1.5px solid rgba(255, 255, 255, 0.55);
+
+
+/* VALO V3 / Clean Documents */
+
+position: absolute;
+width: 55px;
+height: 67px;
+left: 349px;
+top: 127px;
+
+/* VALO / Icons / Acrylic Document Shadow */
+filter: drop-shadow(0px 5px 7px rgba(0, 11, 31, 0.37));
+
+
+/* Vector */
+
+position: absolute;
+left: 3.09%;
+right: 3.09%;
+top: 2.24%;
+bottom: 2.99%;
+
+background: linear-gradient(141.34deg, rgba(207, 251, 255, 0.56) 0%, rgba(106, 222, 237, 0.43) 25.51%, rgba(40, 93, 134, 0.46) 65.6%, rgba(21, 44, 101, 0.76) 91.11%);
+
+
+/* Vector */
+
+position: absolute;
+left: 70%;
+right: 3.09%;
+top: 2.24%;
+bottom: 75.52%;
+
+background: rgba(214, 248, 255, 0.94);
+border: 0.9px solid #E6FCFF;
+
+
+/* Vector */
+
+position: absolute;
+left: 10.18%;
+right: 36.73%;
+top: 7.46%;
+bottom: 92.54%;
+
+background: #000000;
+border: 1.4px solid rgba(255, 255, 255, 0.36);
+
+
+/* Vector */
+
+position: absolute;
+left: 10%;
+right: 10.91%;
+top: 89.55%;
+bottom: 10.45%;
+
+background: #000000;
+border: 1px solid rgba(107, 223, 255, 0.16);
+
+
+/* Vector */
+
+position: absolute;
+left: 30.91%;
+right: 30.91%;
+top: 38.06%;
+bottom: 30.6%;
+
+background: linear-gradient(145.01deg, #95F9FF 0%, #2BCCF5 30.68%, #235BA9 87.65%);
+border: 1.5px solid #C2FFFF;
+
+
+/* Vector */
+
+position: absolute;
+left: 40.18%;
+right: 40.18%;
+top: 45.67%;
+bottom: 38.21%;
+
+background: #245B9B;
+border: 1.7px solid #9AF8FF;
+
+
+/* VALO V3 / Clean Document */
+
+position: absolute;
+width: 55px;
+height: 67px;
+left: 467px;
+top: 127px;
+
+filter: drop-shadow(0px 5px 7px rgba(0, 11, 31, 0.37));
+
+
+/* Vector */
+
+position: absolute;
+left: 3.09%;
+right: 3.09%;
+top: 2.24%;
+bottom: 2.99%;
+
+background: linear-gradient(141.34deg, #F6FFFF 0%, #A4F6FF 43.73%, #3694C2 91.11%);
+
+
+/* Vector */
+
+position: absolute;
+left: 70%;
+right: 3.09%;
+top: 2.24%;
+bottom: 75.52%;
+
+background: rgba(214, 248, 255, 0.94);
+border: 0.9px solid #E6FCFF;
+
+
+/* Vector */
+
+position: absolute;
+left: 10.18%;
+right: 36.73%;
+top: 7.46%;
+bottom: 92.54%;
+
+background: #000000;
+border: 1.4px solid rgba(255, 255, 255, 0.36);
+
+
+/* Vector */
+
+position: absolute;
+left: 10%;
+right: 10.91%;
+top: 89.55%;
+bottom: 10.45%;
+
+background: #000000;
+border: 1px solid rgba(107, 223, 255, 0.16);
+
+
+/* Vector */
+
+position: absolute;
+left: 22.73%;
+right: 22.73%;
+top: 37.31%;
+bottom: 29.85%;
+
+border: 3.5px solid #38B4E9;
+
+
+/* VALO V3 / Clean Download2 */
+
+position: absolute;
+width: 55px;
+height: 67px;
+left: 585px;
+top: 127px;
+
+filter: drop-shadow(0px 5px 7px rgba(0, 11, 31, 0.37));
+
+
+/* Vector */
+
+position: absolute;
+left: 3.09%;
+right: 3.09%;
+top: 2.24%;
+bottom: 2.99%;
+
+background: linear-gradient(141.34deg, rgba(207, 251, 255, 0.56) 0%, rgba(106, 222, 237, 0.43) 25.51%, rgba(40, 93, 134, 0.46) 65.6%, rgba(21, 44, 101, 0.76) 91.11%);
+
+
+/* Vector */
+
+position: absolute;
+left: 70%;
+right: 3.09%;
+top: 2.24%;
+bottom: 75.52%;
+
+background: rgba(214, 248, 255, 0.94);
+border: 0.9px solid #E6FCFF;
+
+
+/* Vector */
+
+position: absolute;
+left: 10.18%;
+right: 36.73%;
+top: 7.46%;
+bottom: 92.54%;
+
+background: #000000;
+border: 1.4px solid rgba(255, 255, 255, 0.36);
+
+
+/* Vector */
+
+position: absolute;
+left: 10%;
+right: 10.91%;
+top: 89.55%;
+bottom: 10.45%;
+
+background: #000000;
+border: 1px solid rgba(107, 223, 255, 0.16);
+
+
+/* Vector */
+
+position: absolute;
+left: 30.91%;
+right: 29.09%;
+top: 38.81%;
+bottom: 20.9%;
+
+background: linear-gradient(145.01deg, #95F9FF 0%, #2BCCF5 30.68%, #235BA9 87.65%);
+border: 1px solid #A8F9FF;
+
+
+/* Vector */
+
+position: absolute;
+left: 41.82%;
+right: 40%;
+top: 46.27%;
+bottom: 34.33%;
+
+border: 3.2px solid #F2FFFF;
+
+
+/* VALO V3 / Clean Divides 1 */
+
+position: absolute;
+width: 55px;
+height: 67px;
+left: 231px;
+top: 247px;
+
+filter: drop-shadow(0px 5px 7px rgba(0, 11, 31, 0.37));
+
+
+/* Vector */
+
+position: absolute;
+left: 3.09%;
+right: 3.09%;
+top: 2.24%;
+bottom: 2.99%;
+
+background: linear-gradient(141.34deg, rgba(207, 251, 255, 0.56) 0%, rgba(106, 222, 237, 0.43) 25.51%, rgba(40, 93, 134, 0.46) 65.6%, rgba(21, 44, 101, 0.76) 91.11%);
+
+
+/* Vector */
+
+position: absolute;
+left: 70%;
+right: 3.09%;
+top: 2.24%;
+bottom: 75.52%;
+
+background: rgba(214, 248, 255, 0.94);
+border: 0.9px solid #E6FCFF;
+
+
+/* Vector */
+
+position: absolute;
+left: 10.18%;
+right: 36.73%;
+top: 7.46%;
+bottom: 92.54%;
+
+background: #000000;
+border: 1.4px solid rgba(255, 255, 255, 0.36);
+
+
+/* Vector */
+
+position: absolute;
+left: 10%;
+right: 10.91%;
+top: 89.55%;
+bottom: 10.45%;
+
+background: #000000;
+border: 1px solid rgba(107, 223, 255, 0.16);
+
+
+/* Vector */
+
+position: absolute;
+left: 32.73%;
+right: 32.73%;
+top: 43.28%;
+bottom: 32.84%;
+
+border: 3.1px solid #C4F5FF;
+
+
+/* VALO V3 / Clean Systion 4 */
+
+position: absolute;
+width: 55px;
+height: 67px;
+left: 349px;
+top: 247px;
+
+filter: drop-shadow(0px 5px 7px rgba(0, 11, 31, 0.37));
+
+
+/* Vector */
+
+position: absolute;
+left: 3.09%;
+right: 3.09%;
+top: 2.24%;
+bottom: 2.99%;
+
+background: linear-gradient(141.34deg, rgba(207, 251, 255, 0.56) 0%, rgba(106, 222, 237, 0.43) 25.51%, rgba(40, 93, 134, 0.46) 65.6%, rgba(21, 44, 101, 0.76) 91.11%);
+
+
+/* Vector */
+
+position: absolute;
+left: 70%;
+right: 3.09%;
+top: 2.24%;
+bottom: 75.52%;
+
+background: rgba(214, 248, 255, 0.94);
+border: 0.9px solid #E6FCFF;
+
+
+/* Vector */
+
+position: absolute;
+left: 10.18%;
+right: 36.73%;
+top: 7.46%;
+bottom: 92.54%;
+
+background: #000000;
+border: 1.4px solid rgba(255, 255, 255, 0.36);
+
+
+/* Vector */
+
+position: absolute;
+left: 10%;
+right: 10.91%;
+top: 89.55%;
+bottom: 10.45%;
+
+background: #000000;
+border: 1px solid rgba(107, 223, 255, 0.16);
+
+
+/* Vector */
+
+position: absolute;
+left: 29.09%;
+right: 27.27%;
+top: 40.3%;
+bottom: 34.33%;
+
+
+
+/* VALO V3 / Sidebar Home */
+
+position: absolute;
+width: 11px;
+height: 13px;
+left: 287px;
+top: 69px;
+
+
+
+/* Group */
+
+position: absolute;
+left: 9.09%;
+right: 9.09%;
+top: 7.69%;
+bottom: 15.38%;
+
+
+
+/* Vector */
+
+position: absolute;
+left: 9.09%;
+right: 9.09%;
+top: 7.69%;
+bottom: 15.38%;
+
+border: 1.58125px solid #79EFFF;
 
 
 /* Systalia Control Center — editable window */
@@ -2696,36 +4548,6 @@ font-size: 20px;
 line-height: 24px;
 
 color: #F3FBFF;
-
-
-
-/* Engine badge */
-
-position: absolute;
-width: 172px;
-height: 25px;
-left: 275px;
-top: 14px;
-
-background: rgba(12, 49, 79, 0.78);
-border-radius: 6px;
-
-
-/* Engine */
-
-position: absolute;
-width: 165px;
-height: 23.8px;
-left: 286px;
-top: 19px;
-
-font-family: 'Inter';
-font-style: normal;
-font-weight: 400;
-font-size: 14px;
-line-height: 17px;
-
-color: #87BADA;
 
 
 
@@ -4189,3 +6011,55 @@ top: 20.51%;
 bottom: 50%;
 
 border: 1.7px solid rgba(255, 255, 255, 0.35);
+
+
+/* Dock / Files / State=Active
+
+Indicador de execução para os ícones da Dock VALO. Instanciar e posicionar sob o aplicativo correspondente.
+*/
+
+position: absolute;
+width: 20px;
+height: 12px;
+left: 64px;
+top: 102px;
+
+
+
+/* Running state / Active */
+
+position: absolute;
+width: 14px;
+height: 3.5px;
+left: 3px;
+top: 4.25px;
+
+background: #2EE8F0;
+box-shadow: 0px 0px 5px rgba(46, 232, 240, 0.44);
+border-radius: 1.75px;
+
+
+/* Dock / Spark / State=Active
+
+Indicador de execução para os ícones da Dock VALO. Instanciar e posicionar sob o aplicativo correspondente.
+*/
+
+position: absolute;
+width: 20px;
+height: 12px;
+left: 441px;
+top: 102px;
+
+
+
+/* Running state / Active */
+
+position: absolute;
+width: 14px;
+height: 3.5px;
+left: 3px;
+top: 4.25px;
+
+background: #2EE8F0;
+box-shadow: 0px 0px 5px rgba(46, 232, 240, 0.44);
+border-radius: 1.75px;
