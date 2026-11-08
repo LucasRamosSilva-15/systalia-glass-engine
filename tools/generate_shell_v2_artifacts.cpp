@@ -157,8 +157,8 @@ int main(int argc, char **argv) {
                     id: filesWindowItem
                     x: 320
                     y: 160
-                    width: 900
-                    height: 600
+                    width: 701
+                    height: 534
                     visible: true
                     activeFocusOnTab: true
                 }
@@ -277,7 +277,7 @@ int main(int argc, char **argv) {
 
     // 3. FilesWindow V2
     std::cout << "\n--- Capturando Artefato 3: valo_files_window_v2.png ---" << std::endl;
-    saveCropOrComposite(desktopComplete, QRect(300, 140, 940, 640), "valo_files_window_v2.png");
+    saveCropOrComposite(desktopComplete, QRect(300, 140, 741, 574), "valo_files_window_v2.png");
 
     // 4. ControlCenter V2
     std::cout << "\n--- Capturando Artefato 4: valo_control_center_v2.png ---" << std::endl;

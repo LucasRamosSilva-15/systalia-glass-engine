@@ -193,16 +193,9 @@ set_source_files_properties(src/qml/theme/SystaliaTheme.qml src/qml/theme/ValoTh
     QT_QML_SINGLETON_TYPE TRUE
 )
 
-set(sge_valo_assets
-    src/qml/assets/figma/valo-systalia-symbol.svg
-    src/qml/assets/figma/valo-dock-folder.svg
-    src/qml/assets/figma/valo-dock-speaker.svg
-    src/qml/assets/figma/valo-dock-terminal.svg
-    src/qml/assets/figma/valo-dock-code.svg
-    src/qml/assets/figma/valo-dock-spark.svg
-    src/qml/assets/figma/valo-window-close.svg
-    src/qml/assets/figma/valo-window-maximize.svg
-    src/qml/assets/figma/valo-window-minimize.svg
+file(GLOB sge_valo_assets RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+    "src/qml/assets/figma/*.svg"
+    "src/qml/assets/figma/*.png"
 )
 
 foreach(asset IN LISTS sge_valo_assets)

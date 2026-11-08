@@ -173,15 +173,15 @@ Item {
 
         Repeater {
             model: [
-                { name: "Recent", icon: "◷", top: 16 },
-                { name: "Home", icon: "⌂", top: 50 },
-                { name: "Desktop", icon: "▱", top: 84 },
-                { name: "Documents", icon: "♧", top: 118 },
-                { name: "Downloads", icon: "↓", top: 152 },
-                { name: "Music", icon: "♫", top: 186 },
-                { name: "Pictures", icon: "▧", top: 220 },
-                { name: "Trash", icon: "♜", top: 254 },
-                { name: "Other Items", icon: "+", top: 306 }
+                { name: "Recent", icon: "valo-sidebar-recent.svg", top: 16 },
+                { name: "Home", icon: "valo-sidebar-home.svg", top: 50 },
+                { name: "Desktop", icon: "valo-sidebar-desktop.svg", top: 84 },
+                { name: "Documents", icon: "valo-sidebar-documents.svg", top: 118 },
+                { name: "Downloads", icon: "valo-sidebar-downloads.svg", top: 152 },
+                { name: "Music", icon: "valo-sidebar-music.svg", top: 186 },
+                { name: "Pictures", icon: "valo-sidebar-pictures.svg", top: 220 },
+                { name: "Trash", icon: "valo-sidebar-trash.svg", top: 254 },
+                { name: "Other Items", icon: "valo-sidebar-other.svg", top: 306 }
             ]
 
             delegate: Item {
@@ -221,20 +221,35 @@ Item {
                     }
                 }
 
-                Text {
-                    x: 9
+                Image {
+                    id: navIcon
+                    x: 10
                     anchors.verticalCenter: parent.verticalCenter
-                    width: 150
-                    text: navigationEntry.modelData.icon + "  " + navigationEntry.modelData.name
+                    width: 18
+                    height: 18
+                    source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/" + navigationEntry.modelData.icon
+                    fillMode: Image.PreserveAspectFit
+                    smooth: true
+                    mipmap: true
+                    antialiasing: true
+                }
+
+                Text {
+                    x: 38
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 116
+                    text: navigationEntry.modelData.name
                     color: fileWindow.selectedLocation === navigationEntry.modelData.name ? "#eef9ff" : "#d5e2ee"
                     font.family: ValoTheme.fontFamily
-                    font.pixelSize: 16
+                    font.pixelSize: 15
                     font.weight: fileWindow.selectedLocation === navigationEntry.modelData.name ? Font.Medium : Font.Normal
+                    elide: Text.ElideRight
                     antialiasing: true
-                    HoverHandler { cursorShape: Qt.PointingHandCursor }
-                    TapHandler {
-                        onTapped: fileWindow.selectedLocation = navigationEntry.modelData.name
-                    }
+                }
+
+                HoverHandler { cursorShape: Qt.PointingHandCursor }
+                TapHandler {
+                    onTapped: fileWindow.selectedLocation = navigationEntry.modelData.name
                 }
             }
         }
@@ -271,9 +286,9 @@ Item {
 
         // Indicador de pasta atual no breadcrumb
         Rectangle {
-            x: 276
-            y: 60
-            width: Math.max(90, folderNameText.implicitWidth + 24)
+            x: 275
+            y: 59
+            width: Math.max(90, breadcrumbRow.implicitWidth + 24)
             height: 30
             radius: 7
             color: "#d9103852"
@@ -282,15 +297,31 @@ Item {
             antialiasing: true
             z: 15
 
-            Text {
-                id: folderNameText
+            Row {
+                id: breadcrumbRow
                 anchors.centerIn: parent
-                text: "⌂  " + fileWindow.selectedLocation
-                color: "#e6fbff"
-                font.family: ValoTheme.fontFamily
-                font.pixelSize: 15
-                font.weight: Font.Medium
-                antialiasing: true
+                spacing: 8
+
+                Image {
+                    source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-breadcrumb-home.svg"
+                    width: 12
+                    height: 13
+                    anchors.verticalCenter: parent.verticalCenter
+                    fillMode: Image.PreserveAspectFit
+                    smooth: true
+                    mipmap: true
+                }
+
+                Text {
+                    id: folderNameText
+                    text: fileWindow.selectedLocation
+                    color: "#e6fbff"
+                    font.family: ValoTheme.fontFamily
+                    font.pixelSize: 15
+                    font.weight: Font.Medium
+                    anchors.verticalCenter: parent.verticalCenter
+                    antialiasing: true
+                }
             }
         }
 
@@ -323,19 +354,17 @@ Item {
         }
 
         // Alternador de visualização grade/lista
-        Text {
+        Image {
+            id: filesMenuButton
             anchors.right: searchField.left
-            anchors.rightMargin: 6
-            y: 62
-            width: 30
-            height: 28
-            text: "≡"
-            color: "#c2efff"
-            font.family: ValoTheme.fontFamily
-            font.pixelSize: 22
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-            antialiasing: true
+            anchors.rightMargin: 10
+            y: 61
+            width: 24
+            height: 24
+            source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-files-menu.svg"
+            fillMode: Image.PreserveAspectFit
+            smooth: true
+            mipmap: true
             z: 15
             HoverHandler { cursorShape: Qt.PointingHandCursor }
         }
@@ -368,12 +397,12 @@ Item {
             z: 15
 
             model: [
-                { name: "All Files", icon: "valo-file-document.png", glyph: "" },
-                { name: "Documents", icon: "valo-file-documents-art.png", glyph: "◉" },
-                { name: "Document", icon: "valo-file-document.png", glyph: "</>" },
-                { name: "Download2", icon: "valo-file-download.png", glyph: "⬇" },
-                { name: "Divides 1", icon: "valo-file-list.png", glyph: "≡" },
-                { name: "Systion 4", icon: "valo-file-check.png", glyph: "✓" }
+                { name: "All Files", icon: "valo-file-folder.svg" },
+                { name: "Documents", icon: "valo-file-documents-art.svg" },
+                { name: "Document", icon: "valo-file-document.svg" },
+                { name: "Download2", icon: "valo-file-download.svg" },
+                { name: "Divides 1", icon: "valo-file-list.svg" },
+                { name: "Systion 4", icon: "valo-file-check.svg" }
             ]
 
             delegate: Item {
@@ -400,63 +429,21 @@ Item {
                     height: 106
 
                     Image {
-                        x: -7
-                        y: -10
-                        width: 82
-                        height: 87
-                        visible: fileEntry.modelData.name === "All Files"
-                        source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-file-folder-body.png"
-                        sourceSize: Qt.size(512, 543)
-                        fillMode: Image.PreserveAspectFit
-                        smooth: true
-                        mipmap: true
-                    }
-
-                    Image {
-                        x: -7
-                        y: 10
-                        width: 90
-                        height: 67
-                        visible: fileEntry.modelData.name === "All Files"
-                        source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-file-folder-lip.png"
-                        sourceSize: Qt.size(512, 381)
-                        fillMode: Image.PreserveAspectFit
-                        smooth: true
-                        mipmap: true
-                    }
-
-                    Image {
-                        x: fileEntry.modelData.name === "Documents" ? 3 : 2
-                        y: fileEntry.modelData.name === "Documents" ? -13.5 : -14.5
-                        width: fileEntry.modelData.name === "Documents" ? 75 : 77
-                        height: fileEntry.modelData.name === "Documents" ? 94 : 96
-                        visible: fileEntry.modelData.name !== "All Files"
+                        id: fileIconImg
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        y: fileEntry.modelData.name === "All Files" ? 2 : 0
+                        width: fileEntry.modelData.name === "All Files" ? 76 : 58
+                        height: 70
                         source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/" + fileEntry.modelData.icon
-                        sourceSize: Qt.size(512, 642)
                         fillMode: Image.PreserveAspectFit
                         smooth: true
                         mipmap: true
-                    }
-
-                    Text {
-                        x: 20
-                        y: 16
-                        width: 55
-                        height: 44
-                        visible: fileEntry.modelData.glyph !== ""
-                        text: fileEntry.modelData.glyph
-                        color: "#8cf1ff"
-                        font.family: ValoTheme.fontFamily
-                        font.pixelSize: fileEntry.modelData.glyph === "</>" ? 22 : 26
-                        font.weight: Font.Bold
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
                         antialiasing: true
                     }
 
                     Text {
                         x: 0
-                        y: 78
+                        y: 76
                         width: 96
                         height: 26
                         text: fileEntry.modelData.name
