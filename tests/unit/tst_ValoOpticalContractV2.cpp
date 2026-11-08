@@ -4,6 +4,7 @@
 #include <QQmlComponent>
 #include "ValoBackdropProviderV2.hpp"
 #include "ValoGlassItemV2.hpp"
+#include "ValoOpticalContext.hpp"
 #include <QTest>
 #include <QQuickWindow>
 #include <QSGGeometryNode>
@@ -213,6 +214,25 @@ Item {
         // Destroy consumer before provider and QML source.
         delete glass;
         root->setParentItem(nullptr);
+    }
+    void idleFreezePreservesCausticEnergy() {
+        QQuickWindow w; w.resize(256,192); w.setColor(Qt::transparent);
+        auto *glass = new ValoGlassItemV2(w.contentItem());
+        glass->setSize(QSizeF(256,192)); glass->setCausticIntensity(1); glass->setDebugMode(7);
+        w.show(); QVERIFY(QTest::qWaitForWindowExposed(&w));
+        QVERIFY(QMetaObject::invokeMethod(glass, "onIdleTimeout"));
+        QVERIFY(glass->isCausticFrozen());
+        QTest::qWait(50);
+        const auto frozen=w.grabWindow(); QVERIFY(!frozen.isNull());
+        QVERIFY(pixel(frozen,128,96).alpha()>0);
+        QVERIFY(pixel(frozen,128,96).blue()>0);
+        Systalia::Gfx::V2::ValoOpticalContext context;
+        context.setPrefersReducedMotion(true);
+        glass->setOpticalContext(&context);
+        QTest::qWait(50);
+        const auto disabled=w.grabWindow(); QVERIFY(!disabled.isNull());
+        QCOMPARE(pixel(disabled,128,96).alpha(),0);
+        glass->setOpticalContext(nullptr);
     }
     void diagnosticEnergy() {
         QQuickWindow w; w.resize(256,192); w.setColor(Qt::black);

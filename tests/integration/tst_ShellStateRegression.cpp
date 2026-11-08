@@ -42,6 +42,13 @@ private:
     std::unique_ptr<QQmlApplicationEngine> m_engine;
     QObject *m_root = nullptr;
 
+    static QQuickItem *visualItem(QQuickItem *root, const QString &name) {
+        if (root->objectName() == name) return root;
+        for (auto *child : root->childItems())
+            if (auto *found = visualItem(child, name)) return found;
+        return nullptr;
+    }
+
     QVariant evaluate(const QString &code) {
         QQmlExpression expression(QQmlEngine::contextForObject(m_root), m_root, code);
         QVariant value = expression.evaluate();
@@ -98,6 +105,7 @@ private slots:
         QCOMPARE(surface->findChildren<ValoShadowItemV2 *>().size(), 1);
         QCOMPARE(surface->findChildren<SystaliaGlassItem *>().size(), 0);
         QCOMPARE(evaluate("materialWindow.opticalSurface.geometryMode").toInt(), 1);
+        QCOMPARE(evaluate("materialWindow.blurProfile").toInt(), 1);
         QVERIFY(evaluate("filesOpticalItem !== null && dockOpticalItem !== null").toBool());
         auto change = [&](const char *name, double value) {
             auto *row = m_root->findChild<QObject *>(QString::fromLatin1(name));
@@ -108,14 +116,14 @@ private slots:
         QVERIFY(qAbs(evaluate("filesOpticalItem.ior").toDouble()-1.4)<.0001);
         QVERIFY(qAbs(evaluate("dockOpticalItem.ior").toDouble()-1.4)<.0001);
         QVERIFY(qAbs(evaluate("materialWindow.opticalSurface.glassItemInstance.ior").toDouble()-1.4)<.0001);
-        QVERIFY(change("blurSetting", .2));
+        evaluate("materialWindow.blurProfile = 0");
         QCOMPARE(evaluate("materialWindow.blurProfile").toInt(), 0);
         QCOMPARE(evaluate("glassChassis.blurProfile").toInt(), 0);
         QCOMPARE(evaluate("systemDock.blurProfile").toInt(), 0);
         QCOMPARE(evaluate("materialWindow.refractiveIndex").toDouble(), 1.4);
-        QVERIFY(change("blurSetting", .5));
+        evaluate("materialWindow.blurProfile = 1");
         QCOMPARE(evaluate("glassChassis.blurProfile").toInt(), 1);
-        QVERIFY(change("blurSetting", .75));
+        evaluate("materialWindow.blurProfile = 2");
         QCOMPARE(evaluate("glassChassis.blurProfile").toInt(), 2);
         QVERIFY(change("opacitySetting", .4));
         QCOMPARE(evaluate("glassChassis.surfaceOpacity").toDouble(), .4);
@@ -145,7 +153,7 @@ private slots:
         QTest::mouseClick(window, Qt::LeftButton, Qt::NoModifier,
                           slider->mapToScene(QPointF(slider->width()*.8, slider->height()/2)).toPoint());
         QVERIFY(evaluate("materialWindow.refractiveIndex > 1.3").toBool());
-        for (const char *name : {"opacitySettingSlider", "blurSettingSlider", "dispersionSettingSlider",
+        for (const char *name : {"opacitySettingSlider", "dispersionSettingSlider",
                                  "causticsSettingSlider", "dispersionStrengthSettingSlider"}) {
             auto *control = m_root->findChild<QQuickItem *>(QString::fromLatin1(name));
             QVERIFY(control);
@@ -167,8 +175,42 @@ private slots:
         evaluate("closeMaterialWindow()");
         QVERIFY(!evaluate("materialWindow.visible || materialWindow.windowOpen").toBool());
         evaluate("raiseMaterialWindow(); materialWindow.refractiveIndex = 1.25;"
-                 "materialWindow.surfaceOpacity = .85; materialWindow.blurAmount = .75;"
+                 "materialWindow.surfaceOpacity = .85; materialWindow.blurProfile = 1;"
                  "materialWindow.dispersion = .04; materialWindow.dispersionStrength = 1; materialWindow.caustics = .85");
+    }
+
+    void repeatedGraphicsProfiles() {
+        auto *window = qobject_cast<QQuickWindow *>(m_root);
+        QVERIFY(window);
+        const QSize original = window->size();
+        for (int cycle = 0; cycle < 12; ++cycle) {
+            window->resize(original.width() - (cycle % 2) * 16, original.height() - (cycle % 2) * 8);
+            for (int profile : {0, 1, 2, 1, 0, 2}) {
+                auto *button = visualItem(window->contentItem(), QString("graphicsProfile%1").arg(profile));
+                QVERIFY(button);
+                QTest::mouseClick(window, Qt::LeftButton, Qt::NoModifier,
+                    button->mapToScene(QPointF(button->width()/2, button->height()/2)).toPoint());
+                QCOMPARE(evaluate("materialWindow.blurProfile").toInt(), profile);
+                int checked = 0;
+                for (int p = 0; p < 3; ++p)
+                    checked += visualItem(window->contentItem(), QString("graphicsProfile%1").arg(p))->property("checked").toBool();
+                QCOMPARE(checked, 1);
+                window->update();
+                QTest::qWait(45);
+                QVERIFY(!window->grabWindow().isNull());
+            }
+        }
+        window->resize(original);
+        window->setPersistentGraphics(false);
+        window->setPersistentSceneGraph(false);
+        window->hide();
+        window->releaseResources();
+        QTest::qWait(100);
+        window->show();
+        QVERIFY(QTest::qWaitForWindowExposed(window));
+        QTest::qWait(100);
+        QVERIFY(!window->grabWindow().isNull());
+        evaluate("materialWindow.blurProfile = 1");
     }
 
     void minimizedMaterialStaysHiddenAfterWorkspaceRoundtrip() {

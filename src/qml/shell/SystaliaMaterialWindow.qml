@@ -16,9 +16,8 @@ Item {
     property real dispersion: 0.04
     property real caustics: 0.85
     property real surfaceOpacity: 0.85
-    // Preserve the two formerly local slider values; blur selects existing GPU profiles.
-    property real blurAmount: 0.75
-    readonly property int blurProfile: Math.min(2, Math.max(0, Math.floor((blurAmount - 0.2) / 0.8 * 3)))
+    // Discrete GPU profiles. No persisted preference exists in the current shell.
+    property int blurProfile: 1
     property real dispersionStrength: 1.0
     readonly property real effectiveDispersion: dispersion * dispersionStrength
     property alias opticalSurface: glassChassis
@@ -551,17 +550,53 @@ Item {
             valueText: Math.round(value * 100).toString()
             onChanged: val => materialWindow.surfaceOpacity = val
         }
-        SettingSlider {
+        Item {
             x: 22
             y: 183
             width: parent.width - 44
-            objectName: "blurSetting"
-            label: "Backdrop Blur Filter"
-            value: materialWindow.blurAmount
-            from: 0.2
-            to: 1.0
-            valueText: ["Off", "Balanced", "Quality"][materialWindow.blurProfile]
-            onChanged: val => materialWindow.blurAmount = val
+            height: 50
+            Text {
+                text: "Graphics Profile"
+                color: "#e4f7ff"
+                font.family: ValoTheme.fontFamily
+                font.pixelSize: 16
+            }
+            ButtonGroup { id: graphicsProfiles; exclusive: true }
+            Row {
+                y: 24
+                width: parent.width
+                spacing: 4
+                Repeater {
+                    model: ["Performance", "Balanced", "Quality"]
+                    delegate: Button {
+                        required property int index
+                        required property string modelData
+                        objectName: "graphicsProfile" + index
+                        width: (parent.width - 8) / 3
+                        height: 26
+                        text: modelData
+                        checkable: true
+                        ButtonGroup.group: graphicsProfiles
+                        checked: materialWindow.blurProfile === index
+                        onClicked: materialWindow.blurProfile = index
+                        Accessible.name: modelData
+                        background: Rectangle {
+                            radius: 5
+                            color: parent.checked ? "#155578" : "#09253b"
+                            border.color: parent.checked ? "#42e9ee" : "#4273bada"
+                            border.width: 1
+                        }
+                        contentItem: Text {
+                            text: parent.text
+                            color: parent.checked ? "#42e9ee" : "#d4e8ed"
+                            font.family: ValoTheme.fontFamily
+                            font.pixelSize: 12
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                    }
+                }
+            }
         }
         SettingSlider {
             x: 22

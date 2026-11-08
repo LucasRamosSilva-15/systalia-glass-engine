@@ -1,0 +1,112 @@
+{
+    "backdropTextures": {
+        "surface0": {
+            "height": 975,
+            "textureId": "7f6f2416e520",
+            "width": 1662
+        },
+        "surface1": {
+            "height": 975,
+            "textureId": "7f6f2416e520",
+            "width": 1662
+        },
+        "surface2": {
+            "height": 975,
+            "textureId": "7f6f2416e520",
+            "width": 1662
+        },
+        "surface3": {
+            "height": 975,
+            "textureId": "7f6f2416e520",
+            "width": 1662
+        },
+        "surface4": {
+            "height": 975,
+            "textureId": "7f6f2416e520",
+            "width": 1662
+        }
+    },
+    "height": 975,
+    "seconds": 10,
+    "surface0": {
+        "adaptiveOffset": 0,
+        "ambient": 0.3499999940395355,
+        "animateAllowed": true,
+        "caustics": 0.8500000238418579,
+        "dirty": false,
+        "effectiveOpacity": 0.8500000238418579,
+        "energy": 1,
+        "frozen": true,
+        "itemOpacity": 1,
+        "luminance": 0.1195460337081955,
+        "opacity": 0.8500000238418579,
+        "profile": 1,
+        "sceneX": 80,
+        "sceneY": 140
+    },
+    "surface1": {
+        "adaptiveOffset": 0,
+        "ambient": 0.3499999940395355,
+        "animateAllowed": true,
+        "caustics": 0.8500000238418579,
+        "dirty": false,
+        "effectiveOpacity": 0.8500000238418579,
+        "energy": 1,
+        "frozen": true,
+        "itemOpacity": 1,
+        "luminance": 0.2779682172255298,
+        "opacity": 0.8500000238418579,
+        "profile": 1,
+        "sceneX": 810,
+        "sceneY": 140
+    },
+    "surface2": {
+        "adaptiveOffset": 0,
+        "ambient": 0.3499999940395355,
+        "animateAllowed": true,
+        "caustics": 0.18000000715255737,
+        "dirty": false,
+        "effectiveOpacity": 0.41999998688697815,
+        "energy": 1,
+        "frozen": true,
+        "itemOpacity": 1,
+        "luminance": 0.3354563251062162,
+        "opacity": 0.41999998688697815,
+        "profile": 2,
+        "sceneX": 8,
+        "sceneY": 4
+    },
+    "surface3": {
+        "adaptiveOffset": 0,
+        "ambient": 0.3499999940395355,
+        "animateAllowed": true,
+        "caustics": 0.8500000238418579,
+        "dirty": false,
+        "effectiveOpacity": 0.3400000035762787,
+        "energy": 1,
+        "frozen": true,
+        "itemOpacity": 1,
+        "luminance": 0.2077672836186387,
+        "opacity": 0.3400000035762787,
+        "profile": 1,
+        "sceneX": 553.5,
+        "sceneY": 817
+    },
+    "surface4": {
+        "adaptiveOffset": 0,
+        "ambient": 0.3499999940395355,
+        "animateAllowed": true,
+        "caustics": 0.18000000715255737,
+        "dirty": true,
+        "effectiveOpacity": 0.5199999809265137,
+        "energy": 1,
+        "frozen": true,
+        "itemOpacity": 1,
+        "luminance": 0,
+        "opacity": 0.5199999809265137,
+        "profile": 2,
+        "sceneX": 1268,
+        "sceneY": -586
+    },
+    "width": 1662
+}

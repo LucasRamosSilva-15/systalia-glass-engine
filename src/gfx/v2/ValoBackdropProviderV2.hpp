@@ -8,6 +8,7 @@
 #include <QPointer>
 #include <QSize>
 #include <memory>
+#include <atomic>
 #include <QtQml/qqmlregistration.h>
 
 #include "ValoBlurPipelineV2.hpp"
@@ -39,7 +40,7 @@ public:
     BlurProfile blurProfile() const noexcept { return m_blurProfile; }
     int blurProfileInt() const noexcept { return static_cast<int>(m_blurProfile); }
     void setBlurProfile(BlurProfile profile);
-    void setBlurProfileInt(int profile) { setBlurProfile(static_cast<BlurProfile>(profile)); }
+    void setBlurProfileInt(int profile) { if (profile >= 0 && profile <= 2) setBlurProfile(static_cast<BlurProfile>(profile)); }
 
     QQuickItem *source() const noexcept { return m_source; }
     void setSource(QQuickItem *source);
@@ -90,8 +91,10 @@ private:
     QSGTexture *m_qsgBlurredTexture = nullptr;
     std::unique_ptr<ValoGpuBlurPipelineV2> m_gpuBlurPipeline;
     QPointer<QQuickWindow> m_resourceWindow;
+    QThread *m_renderThread = nullptr;
     BlurProfile m_blurProfile = BlurProfile::Performance;
-    bool m_isDirty = true;
+    std::atomic_bool m_isDirty{true};
+    BlurProfile m_renderProfile = BlurProfile::Performance;
 };
 
 } // namespace Systalia::Gfx::V2

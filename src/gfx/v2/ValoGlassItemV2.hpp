@@ -101,6 +101,7 @@ public:
 
   void resetActivity();
   bool isCausticFrozen() const noexcept { return m_causticFrozen; }
+  float causticTime() const noexcept { return m_accumulatedTime; }
 
 signals:
   void cornerRadiiChanged();

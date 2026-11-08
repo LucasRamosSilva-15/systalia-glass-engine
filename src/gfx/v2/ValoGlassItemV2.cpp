@@ -296,9 +296,8 @@ QSGNode *ValoGlassItemV2::updatePaintNode(QSGNode *oldNode,
                            !m_opticalContext->shouldAnimateCaustics())) {
     effectiveCaustics = 0.0f;
   }
-  if (m_causticFrozen) {
-    effectiveCaustics = 0.0f;
-  }
+  // Idle freezes accumulated time, not optical energy. Accessibility/energy
+  // policy above can still suppress caustics explicitly.
   props.causticIntensity = effectiveCaustics;
   props.time = m_accumulatedTime;
 

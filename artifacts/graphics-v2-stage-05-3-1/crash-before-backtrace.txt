@@ -1,0 +1,457 @@
+
+This GDB supports auto-downloading debuginfo from the following URLs:
+  <ima:enforcing>
+  <https://debuginfod.fedoraproject.org/>
+  <ima:ignore>
+Enable debuginfod for this session? (y or [n]) [answered N; input not from terminal]
+Debuginfod has been disabled.
+To make this setting permanent, add 'set debuginfod enabled off' to .gdbinit.
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib64/libthread_db.so.1".
+[New Thread 0x7fffe2c6d6c0 (LWP 63072) (id 2)]
+[New Thread 0x7fffda5ff6c0 (LWP 63073) (id 3)]
+[New Thread 0x7fffd9dfe6c0 (LWP 63074) (id 4)]
+[Detaching after vfork from child process 63075]
+[Detaching after vfork from child process 63076]
+[Detaching after vfork from child process 63077]
+[Detaching after vfork from child process 63078]
+********* Start testing of TestShellStateRegression *********
+Config: Using QtTest library 6.11.2, Qt 6.11.2 (x86_64-little_endian-lp64 shared (dynamic) release build; by GCC 16.2.1 20260819 (Red Hat 16.2.1-2)), fedora 44
+[New Thread 0x7fffd91fd6c0 (LWP 63082) (id 5)]
+[New Thread 0x7fffc72c66c0 (LWP 63145) (id 6)]
+[New Thread 0x7fffc6ac56c0 (LWP 63146) (id 7)]
+[New Thread 0x7fffc62c46c0 (LWP 63147) (id 8)]
+[New Thread 0x7fffc5ac36c0 (LWP 63148) (id 9)]
+[New Thread 0x7fffc52c26c0 (LWP 63149) (id 10)]
+[New Thread 0x7fffc49466c0 (LWP 63150) (id 11)]
+[New Thread 0x7fffae5166c0 (LWP 63152) (id 12)]
+[New Thread 0x7fffadb126c0 (LWP 63153) (id 13)]
+[New Thread 0x7fffad3116c0 (LWP 63154) (id 14)]
+[New Thread 0x7fffacb106c0 (LWP 63155) (id 15)]
+QWARN  : TestShellStateRegression::initTestCase() qt.waylandcompositor.hardwareintegration: Failed to initialize EGL display. There is no EGL_WL_bind_wayland_display extension.
+QINFO  : TestShellStateRegression::initTestCase() [SGE-WAYLAND] Servidor ativo em: wayland-systalia-0
+QINFO  : TestShellStateRegression::initTestCase() [SGE-WAYLAND] XDG Shell registrado: true
+QINFO  : TestShellStateRegression::initTestCase() [SGE-WAYLAND] XDG Decoration Manager registrado (SSD forçado): true
+QINFO  : TestShellStateRegression::initTestCase() [SGE-WAYLAND] Viewporter (wp_viewporter) registrado: true
+QINFO  : TestShellStateRegression::initTestCase() [SGE-WAYLAND] Assento padrão inicializado com teclado e ponteiro.
+QINFO  : TestShellStateRegression::initTestCase() [SGE-XWAYLAND] Iniciando processo: /usr/bin/Xwayland :1 -rootless -terminate -core -listenfd 61 -wm 58 -displayfd 60
+[Detaching after fork from child process 63156]
+QINFO  : TestShellStateRegression::initTestCase() [SGE-XWAYLAND] Processo Xwayland finalizado. Código: 15 | Status: CrashExit
+PASS   : TestShellStateRegression::initTestCase()
+[New Thread 0x7fff9bbff6c0 (LWP 63157) (id 16)]
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() qt.svg.draw: The requested buffer size is too big, ignoring
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() qt.svg.draw: The requested buffer size is too big, ignoring
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() qt.svg.draw: The requested buffer size is too big, ignoring
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() qt.svg.draw: The requested buffer size is too big, ignoring
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() qt.svg.draw: The requested buffer size is too big, ignoring
+[New Thread 0x7fff801ff6c0 (LWP 63158) (id 17)]
+[New Thread 0x7fff989fc6c0 (LWP 63159) (id 18)]
+[New Thread 0x7fff75fff6c0 (LWP 63160) (id 19)]
+[New Thread 0x7fff9b3fe6c0 (LWP 63161) (id 20)]
+[New Thread 0x7fff9abfd6c0 (LWP 63162) (id 21)]
+[New Thread 0x7fff9a3fc6c0 (LWP 63163) (id 22)]
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xf518a0, w=701.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-BACKDROP-V2] REAL TEXTURE ATIVA: size=1662x975, rhiTex=0x0, rhi=0x7fff8801cde0
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfceae0, w=700.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfdd750, w=1646.0, h=45.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0x10802f0, w=555.0, h=125.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0x10bebb0, w=376.0, h=570.0, active=0, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-BACKDROP-V2] onBeforeRendering frame=1: srcTex=0x7fff881f2520, rhiSrc=0x7fff8883e6a0, srcSize=1662x975
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7fff888bc5a0, format=1, size=1662x975
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0x10802f0, w=555.0, h=125.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfdd750, w=1646.0, h=45.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfceae0, w=700.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xf518a0, w=701.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-BACKDROP-V2] onBeforeRendering frame=2: srcTex=0x7fff881f2520, rhiSrc=0x7fff8883e6a0, srcSize=1662x975
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7fff888bc5a0, format=1, size=1662x975
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xf518a0, w=701.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfceae0, w=700.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0x10802f0, w=555.0, h=125.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-BACKDROP-V2] onBeforeRendering frame=3: srcTex=0x7fff881f2520, rhiSrc=0x7fff8883e6a0, srcSize=1662x975
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7fff89058450, format=1, size=1662x975
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-BACKDROP-V2] onBeforeRendering frame=4: srcTex=0x7fff881f2520, rhiSrc=0x7fff8883e6a0, srcSize=1662x975
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7fff890528a0, format=1, size=1662x975
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-BACKDROP-V2] onBeforeRendering frame=5: srcTex=0x7fff881f2520, rhiSrc=0x7fff8883e6a0, srcSize=1662x975
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7fff8845cf30, format=1, size=1662x975
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0x10802f0, w=555.0, h=125.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfdd750, w=1646.0, h=45.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfceae0, w=700.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xf518a0, w=701.0, h=534.0, active=1, window=0xf12080
+[Detaching after vfork from child process 63165]
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xf518a0, w=701.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfceae0, w=700.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0x10802f0, w=555.0, h=125.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfdd750, w=1646.0, h=45.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xf518a0, w=701.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfceae0, w=700.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0x10802f0, w=555.0, h=125.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfdd750, w=1646.0, h=45.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xf518a0, w=701.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfceae0, w=700.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0x10802f0, w=555.0, h=125.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xf518a0, w=701.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfceae0, w=700.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0x10802f0, w=555.0, h=125.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfdd750, w=1646.0, h=45.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xf518a0, w=701.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfceae0, w=700.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0x10802f0, w=555.0, h=125.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfdd750, w=1646.0, h=45.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xf518a0, w=701.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfceae0, w=700.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0x10802f0, w=555.0, h=125.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfdd750, w=1646.0, h=45.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xf518a0, w=701.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfceae0, w=700.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0x10802f0, w=555.0, h=125.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xf518a0, w=701.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfceae0, w=700.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0x10802f0, w=555.0, h=125.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfdd750, w=1646.0, h=45.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xf518a0, w=701.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfceae0, w=700.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0x10802f0, w=555.0, h=125.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfdd750, w=1646.0, h=45.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xf518a0, w=701.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfceae0, w=700.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0x10802f0, w=555.0, h=125.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfdd750, w=1646.0, h=45.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xf518a0, w=701.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfceae0, w=700.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0x10802f0, w=555.0, h=125.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfdd750, w=1646.0, h=45.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xf518a0, w=701.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfceae0, w=700.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0x10802f0, w=555.0, h=125.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xf518a0, w=701.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfceae0, w=700.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0x10802f0, w=555.0, h=125.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfdd750, w=1646.0, h=45.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xf518a0, w=701.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfceae0, w=700.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0x10802f0, w=555.0, h=125.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfdd750, w=1646.0, h=45.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xf518a0, w=701.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfceae0, w=700.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0x10802f0, w=555.0, h=125.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfdd750, w=1646.0, h=45.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xf518a0, w=701.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfceae0, w=700.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0x10802f0, w=555.0, h=125.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xf518a0, w=701.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfceae0, w=700.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0x10802f0, w=555.0, h=125.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfdd750, w=1646.0, h=45.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xf518a0, w=701.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfceae0, w=700.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0x10802f0, w=555.0, h=125.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfdd750, w=1646.0, h=45.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xf518a0, w=701.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfceae0, w=700.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0x10802f0, w=555.0, h=125.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfdd750, w=1646.0, h=45.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xf518a0, w=701.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfceae0, w=700.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0x10802f0, w=555.0, h=125.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xf518a0, w=701.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfceae0, w=700.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0x10802f0, w=555.0, h=125.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfdd750, w=1646.0, h=45.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xf518a0, w=701.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfceae0, w=700.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0x10802f0, w=555.0, h=125.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfdd750, w=1646.0, h=45.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xf518a0, w=701.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfceae0, w=700.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0x10802f0, w=555.0, h=125.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfdd750, w=1646.0, h=45.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfdd750, w=1646.0, h=45.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xf518a0, w=701.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfceae0, w=700.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0x10802f0, w=555.0, h=125.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xf518a0, w=701.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfceae0, w=700.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0x10802f0, w=555.0, h=125.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfdd750, w=1646.0, h=45.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xf518a0, w=701.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfceae0, w=700.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0x10802f0, w=555.0, h=125.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfdd750, w=1646.0, h=45.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xf518a0, w=701.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfceae0, w=700.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0x10802f0, w=555.0, h=125.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xf518a0, w=701.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfceae0, w=700.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0x10802f0, w=555.0, h=125.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfdd750, w=1646.0, h=45.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xf518a0, w=701.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfceae0, w=700.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0x10802f0, w=555.0, h=125.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfdd750, w=1646.0, h=45.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xf518a0, w=701.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfceae0, w=700.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0x10802f0, w=555.0, h=125.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfdd750, w=1646.0, h=45.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xf518a0, w=701.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0xfceae0, w=700.0, h=534.0, active=1, window=0xf12080
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-GLASS-V2-DEBUG] updatePaintNode called for item 0x10802f0, w=555.0, h=125.0, active=1, window=0xf12080
+
+Thread 16 "QSGRenderThread" received signal SIGSEGV, Segmentation fault.
+[Switching to thread 16 (Thread 0x7fff9bbff6c0 (LWP 63157))]
+0x0000000000000000 in ?? ()
+
+Thread 22 (Thread 0x7fff9a3fc6c0 (LWP 63163) "tst_she:disk$3"):
+#0  0x00007ffff4c82352 in __syscall_cancel_arch () at /lib64/libc.so.6
+#1  0x00007ffff4c7654c in __internal_syscall_cancel () at /lib64/libc.so.6
+#2  0x00007ffff4c76897 in __futex_abstimed_wait_cancelable64 () at /lib64/libc.so.6
+#3  0x00007ffff4c790ec in pthread_cond_wait@@GLIBC_2.3.2 () at /lib64/libc.so.6
+#4  0x00007fff763941dd in cnd_wait () at /usr/lib64/libvulkan_radeon.so
+#5  0x00007fff7635decc in util_queue_thread_func () at /usr/lib64/libvulkan_radeon.so
+#6  0x00007fff7639414c in impl_thrd_routine () at /usr/lib64/libvulkan_radeon.so
+#7  0x00007ffff4c79c42 in start_thread () at /lib64/libc.so.6
+#8  0x00007ffff4cfd5ac in __clone3 () at /lib64/libc.so.6
+
+Thread 21 (Thread 0x7fff9abfd6c0 (LWP 63162) "tst_she:disk$2"):
+#0  0x00007ffff4c82352 in __syscall_cancel_arch () at /lib64/libc.so.6
+#1  0x00007ffff4c7654c in __internal_syscall_cancel () at /lib64/libc.so.6
+#2  0x00007ffff4c76897 in __futex_abstimed_wait_cancelable64 () at /lib64/libc.so.6
+#3  0x00007ffff4c790ec in pthread_cond_wait@@GLIBC_2.3.2 () at /lib64/libc.so.6
+#4  0x00007fff763941dd in cnd_wait () at /usr/lib64/libvulkan_radeon.so
+#5  0x00007fff7635decc in util_queue_thread_func () at /usr/lib64/libvulkan_radeon.so
+#6  0x00007fff7639414c in impl_thrd_routine () at /usr/lib64/libvulkan_radeon.so
+#7  0x00007ffff4c79c42 in start_thread () at /lib64/libc.so.6
+#8  0x00007ffff4cfd5ac in __clone3 () at /lib64/libc.so.6
+
+Thread 20 (Thread 0x7fff9b3fe6c0 (LWP 63161) "tst_she:disk$1"):
+#0  0x00007ffff4c82352 in __syscall_cancel_arch () at /lib64/libc.so.6
+#1  0x00007ffff4c7654c in __internal_syscall_cancel () at /lib64/libc.so.6
+#2  0x00007ffff4c76897 in __futex_abstimed_wait_cancelable64 () at /lib64/libc.so.6
+#3  0x00007ffff4c790ec in pthread_cond_wait@@GLIBC_2.3.2 () at /lib64/libc.so.6
+#4  0x00007fff763941dd in cnd_wait () at /usr/lib64/libvulkan_radeon.so
+#5  0x00007fff7635decc in util_queue_thread_func () at /usr/lib64/libvulkan_radeon.so
+#6  0x00007fff7639414c in impl_thrd_routine () at /usr/lib64/libvulkan_radeon.so
+#7  0x00007ffff4c79c42 in start_thread () at /lib64/libc.so.6
+#8  0x00007ffff4cfd5ac in __clone3 () at /lib64/libc.so.6
+
+Thread 19 (Thread 0x7fff75fff6c0 (LWP 63160) "tst_she:disk$0"):
+#0  0x00007ffff4c82352 in __syscall_cancel_arch () at /lib64/libc.so.6
+#1  0x00007ffff4c7654c in __internal_syscall_cancel () at /lib64/libc.so.6
+#2  0x00007ffff4c76897 in __futex_abstimed_wait_cancelable64 () at /lib64/libc.so.6
+#3  0x00007ffff4c790ec in pthread_cond_wait@@GLIBC_2.3.2 () at /lib64/libc.so.6
+#4  0x00007fff763941dd in cnd_wait () at /usr/lib64/libvulkan_radeon.so
+#5  0x00007fff7635decc in util_queue_thread_func () at /usr/lib64/libvulkan_radeon.so
+#6  0x00007fff7639414c in impl_thrd_routine () at /usr/lib64/libvulkan_radeon.so
+#7  0x00007ffff4c79c42 in start_thread () at /lib64/libc.so.6
+#8  0x00007ffff4cfd5ac in __clone3 () at /lib64/libc.so.6
+
+Thread 18 (Thread 0x7fff989fc6c0 (LWP 63159) "tst_she:disk$0"):
+#0  0x00007ffff4c82352 in __syscall_cancel_arch () at /lib64/libc.so.6
+#1  0x00007ffff4c7654c in __internal_syscall_cancel () at /lib64/libc.so.6
+#2  0x00007ffff4c76897 in __futex_abstimed_wait_cancelable64 () at /lib64/libc.so.6
+#3  0x00007ffff4c790ec in pthread_cond_wait@@GLIBC_2.3.2 () at /lib64/libc.so.6
+#4  0x00007fff763941dd in cnd_wait () at /usr/lib64/libvulkan_radeon.so
+#5  0x00007fff7635decc in util_queue_thread_func () at /usr/lib64/libvulkan_radeon.so
+#6  0x00007fff7639414c in impl_thrd_routine () at /usr/lib64/libvulkan_radeon.so
+#7  0x00007ffff4c79c42 in start_thread () at /lib64/libc.so.6
+#8  0x00007ffff4cfd5ac in __clone3 () at /lib64/libc.so.6
+
+Thread 17 (Thread 0x7fff801ff6c0 (LWP 63158) "Thread (pooled)"):
+#0  0x00007ffff4c82352 in __syscall_cancel_arch () at /lib64/libc.so.6
+#1  0x00007ffff4c7654c in __internal_syscall_cancel () at /lib64/libc.so.6
+#2  0x00007ffff4c76897 in __futex_abstimed_wait_cancelable64 () at /lib64/libc.so.6
+#3  0x00007ffff4c79302 in pthread_cond_timedwait@@GLIBC_2.3.2 () at /lib64/libc.so.6
+#4  0x00007ffff551028e in QWaitCondition::wait(QMutex*, QDeadlineTimer) () at /lib64/libQt6Core.so.6
+#5  0x00007ffff544ff02 in QThreadPoolThread::run() () at /lib64/libQt6Core.so.6
+#6  0x00007ffff550788f in QThreadPrivate::start(void*) () at /lib64/libQt6Core.so.6
+#7  0x00007ffff4c79c42 in start_thread () at /lib64/libc.so.6
+#8  0x00007ffff4cfd5ac in __clone3 () at /lib64/libc.so.6
+
+Thread 16 (Thread 0x7fff9bbff6c0 (LWP 63157) "QSGRenderThread"):
+#0  0x0000000000000000 in ??? ()
+#1  0x00000000004d67b1 in Systalia::Gfx::V2::ValoGlassMaterialShaderV2::updateSampledImage(QSGMaterialShader::RenderState&, int, QSGTexture**, QSGMaterial*, QSGMaterial*) ()
+#2  0x00007ffff73d3082 in QSGBatchRenderer::Renderer::updateMaterialDynamicData(QSGBatchRenderer::ShaderManagerShader*, QSGMaterialShader::RenderState&, QSGMaterial*, QSGBatchRenderer::Batch const*, QSGBatchRenderer::Element*, int, int, char*) () at /lib64/libQt6Quick.so.6
+#3  0x00007ffff73d5eb3 in QSGBatchRenderer::Renderer::prepareRenderUnmergedBatch(QSGBatchRenderer::Batch*, QSGBatchRenderer::Renderer::PreparedRenderBatch*) [clone .part.0] () at /lib64/libQt6Quick.so.6
+#4  0x00007ffff73d72d9 in QSGBatchRenderer::Renderer::prepareRenderPass(QSGBatchRenderer::Renderer::RenderPassContext*) () at /lib64/libQt6Quick.so.6
+#5  0x00007ffff73d9349 in QSGBatchRenderer::Renderer::render() () at /lib64/libQt6Quick.so.6
+#6  0x00007ffff73f0a90 in QSGRenderer::renderScene() () at /lib64/libQt6Quick.so.6
+#7  0x00007ffff7381a29 in QQuickWindowPrivate::renderSceneGraph() () at /lib64/libQt6Quick.so.6
+#8  0x00007ffff75f129c in QSGRenderThread::syncAndRender() () at /lib64/libQt6Quick.so.6
+#9  0x00007ffff75f26c1 in QSGRenderThread::run() () at /lib64/libQt6Quick.so.6
+#10 0x00007ffff550788f in QThreadPrivate::start(void*) () at /lib64/libQt6Core.so.6
+#11 0x00007ffff4c79c42 in start_thread () at /lib64/libc.so.6
+
+Thread 15 (Thread 0x7fffacb106c0 (LWP 63155) "tst_sh:sh_opt0"):
+#0  0x00007ffff4c82352 in __syscall_cancel_arch () at /lib64/libc.so.6
+#1  0x00007ffff4c7654c in __internal_syscall_cancel () at /lib64/libc.so.6
+#2  0x00007ffff4c76897 in __futex_abstimed_wait_cancelable64 () at /lib64/libc.so.6
+#3  0x00007ffff4c790ec in pthread_cond_wait@@GLIBC_2.3.2 () at /lib64/libc.so.6
+#4  0x00007fffa4dfa20d in cnd_wait () at /lib64/libgallium-26.2.5.so
+#5  0x00007fffa4daf82c in util_queue_thread_func () at /lib64/libgallium-26.2.5.so
+#6  0x00007fffa4dfa14c in impl_thrd_routine () at /lib64/libgallium-26.2.5.so
+#7  0x00007ffff4c79c42 in start_thread () at /lib64/libc.so.6
+#8  0x00007ffff4cfd5ac in __clone3 () at /lib64/libc.so.6
+
+Thread 14 (Thread 0x7fffad3116c0 (LWP 63154) "tst_shell_:sh0"):
+#0  0x00007ffff4c82352 in __syscall_cancel_arch () at /lib64/libc.so.6
+#1  0x00007ffff4c7654c in __internal_syscall_cancel () at /lib64/libc.so.6
+#2  0x00007ffff4c76897 in __futex_abstimed_wait_cancelable64 () at /lib64/libc.so.6
+#3  0x00007ffff4c790ec in pthread_cond_wait@@GLIBC_2.3.2 () at /lib64/libc.so.6
+#4  0x00007fffa4dfa20d in cnd_wait () at /lib64/libgallium-26.2.5.so
+#5  0x00007fffa4daf82c in util_queue_thread_func () at /lib64/libgallium-26.2.5.so
+#6  0x00007fffa4dfa14c in impl_thrd_routine () at /lib64/libgallium-26.2.5.so
+#7  0x00007ffff4c79c42 in start_thread () at /lib64/libc.so.6
+#8  0x00007ffff4cfd5ac in __clone3 () at /lib64/libc.so.6
+
+Thread 13 (Thread 0x7fffadb126c0 (LWP 63153) "tst_she:disk$0"):
+#0  0x00007ffff4c82352 in __syscall_cancel_arch () at /lib64/libc.so.6
+#1  0x00007ffff4c7654c in __internal_syscall_cancel () at /lib64/libc.so.6
+#2  0x00007ffff4c76897 in __futex_abstimed_wait_cancelable64 () at /lib64/libc.so.6
+#3  0x00007ffff4c790ec in pthread_cond_wait@@GLIBC_2.3.2 () at /lib64/libc.so.6
+#4  0x00007fffa4dfa20d in cnd_wait () at /lib64/libgallium-26.2.5.so
+#5  0x00007fffa4daf82c in util_queue_thread_func () at /lib64/libgallium-26.2.5.so
+#6  0x00007fffa4dfa14c in impl_thrd_routine () at /lib64/libgallium-26.2.5.so
+#7  0x00007ffff4c79c42 in start_thread () at /lib64/libc.so.6
+#8  0x00007ffff4cfd5ac in __clone3 () at /lib64/libc.so.6
+
+Thread 12 (Thread 0x7fffae5166c0 (LWP 63152) "tst_shell_:cs0"):
+#0  0x00007ffff4c82352 in __syscall_cancel_arch () at /lib64/libc.so.6
+#1  0x00007ffff4c7654c in __internal_syscall_cancel () at /lib64/libc.so.6
+#2  0x00007ffff4c76897 in __futex_abstimed_wait_cancelable64 () at /lib64/libc.so.6
+#3  0x00007ffff4c790ec in pthread_cond_wait@@GLIBC_2.3.2 () at /lib64/libc.so.6
+#4  0x00007fffa4dfa20d in cnd_wait () at /lib64/libgallium-26.2.5.so
+#5  0x00007fffa4daf82c in util_queue_thread_func () at /lib64/libgallium-26.2.5.so
+#6  0x00007fffa4dfa14c in impl_thrd_routine () at /lib64/libgallium-26.2.5.so
+#7  0x00007ffff4c79c42 in start_thread () at /lib64/libc.so.6
+#8  0x00007ffff4cfd5ac in __clone3 () at /lib64/libc.so.6
+
+Thread 11 (Thread 0x7fffc49466c0 (LWP 63150) "QQuickPixmapRea"):
+#0  0x00007ffff4c82352 in __syscall_cancel_arch () at /lib64/libc.so.6
+#1  0x00007ffff4c7654c in __internal_syscall_cancel () at /lib64/libc.so.6
+#2  0x00007ffff4c76594 in __syscall_cancel () at /lib64/libc.so.6
+#3  0x00007ffff4cf0466 in ppoll () at /lib64/libc.so.6
+#4  0x00007ffff4391165 in g_main_context_iterate_unlocked.isra () at /lib64/libglib-2.0.so.0
+#5  0x00007ffff4391223 in g_main_context_iteration () at /lib64/libglib-2.0.so.0
+#6  0x00007ffff565defd in QEventDispatcherGlib::processEvents(QFlags<QEventLoop::ProcessEventsFlag>) () at /lib64/libQt6Core.so.6
+#7  0x00007ffff531a78b in QEventLoop::exec(QFlags<QEventLoop::ProcessEventsFlag>) () at /lib64/libQt6Core.so.6
+#8  0x00007ffff544b34a in QThread::exec() () at /lib64/libQt6Core.so.6
+#9  0x00007ffff74f4e5a in QQuickPixmapReader::run() () at /lib64/libQt6Quick.so.6
+#10 0x00007ffff550788f in QThreadPrivate::start(void*) () at /lib64/libQt6Core.so.6
+#11 0x00007ffff4c79c42 in start_thread () at /lib64/libc.so.6
+
+Thread 10 (Thread 0x7fffc52c26c0 (LWP 63149) "Thread (pooled)"):
+#0  0x00007ffff4c82352 in __syscall_cancel_arch () at /lib64/libc.so.6
+#1  0x00007ffff4c7654c in __internal_syscall_cancel () at /lib64/libc.so.6
+#2  0x00007ffff4c76897 in __futex_abstimed_wait_cancelable64 () at /lib64/libc.so.6
+#3  0x00007ffff4c79302 in pthread_cond_timedwait@@GLIBC_2.3.2 () at /lib64/libc.so.6
+#4  0x00007ffff551028e in QWaitCondition::wait(QMutex*, QDeadlineTimer) () at /lib64/libQt6Core.so.6
+#5  0x00007ffff544ff02 in QThreadPoolThread::run() () at /lib64/libQt6Core.so.6
+#6  0x00007ffff550788f in QThreadPrivate::start(void*) () at /lib64/libQt6Core.so.6
+#7  0x00007ffff4c79c42 in start_thread () at /lib64/libc.so.6
+#8  0x00007ffff4cfd5ac in __clone3 () at /lib64/libc.so.6
+
+Thread 9 (Thread 0x7fffc5ac36c0 (LWP 63148) "Thread (pooled)"):
+#0  0x00007ffff4c82352 in __syscall_cancel_arch () at /lib64/libc.so.6
+#1  0x00007ffff4c7654c in __internal_syscall_cancel () at /lib64/libc.so.6
+#2  0x00007ffff4c76897 in __futex_abstimed_wait_cancelable64 () at /lib64/libc.so.6
+#3  0x00007ffff4c79302 in pthread_cond_timedwait@@GLIBC_2.3.2 () at /lib64/libc.so.6
+#4  0x00007ffff551028e in QWaitCondition::wait(QMutex*, QDeadlineTimer) () at /lib64/libQt6Core.so.6
+#5  0x00007ffff544ff02 in QThreadPoolThread::run() () at /lib64/libQt6Core.so.6
+#6  0x00007ffff550788f in QThreadPrivate::start(void*) () at /lib64/libQt6Core.so.6
+#7  0x00007ffff4c79c42 in start_thread () at /lib64/libc.so.6
+#8  0x00007ffff4cfd5ac in __clone3 () at /lib64/libc.so.6
+
+Thread 8 (Thread 0x7fffc62c46c0 (LWP 63147) "Thread (pooled)"):
+#0  0x00007ffff4c82352 in __syscall_cancel_arch () at /lib64/libc.so.6
+#1  0x00007ffff4c7654c in __internal_syscall_cancel () at /lib64/libc.so.6
+#2  0x00007ffff4c76897 in __futex_abstimed_wait_cancelable64 () at /lib64/libc.so.6
+#3  0x00007ffff4c79302 in pthread_cond_timedwait@@GLIBC_2.3.2 () at /lib64/libc.so.6
+#4  0x00007ffff551028e in QWaitCondition::wait(QMutex*, QDeadlineTimer) () at /lib64/libQt6Core.so.6
+#5  0x00007ffff544ff02 in QThreadPoolThread::run() () at /lib64/libQt6Core.so.6
+#6  0x00007ffff550788f in QThreadPrivate::start(void*) () at /lib64/libQt6Core.so.6
+#7  0x00007ffff4c79c42 in start_thread () at /lib64/libc.so.6
+#8  0x00007ffff4cfd5ac in __clone3 () at /lib64/libc.so.6
+
+Thread 7 (Thread 0x7fffc6ac56c0 (LWP 63146) "Thread (pooled)"):
+#0  0x00007ffff4c82352 in __syscall_cancel_arch () at /lib64/libc.so.6
+#1  0x00007ffff4c7654c in __internal_syscall_cancel () at /lib64/libc.so.6
+#2  0x00007ffff4c76897 in __futex_abstimed_wait_cancelable64 () at /lib64/libc.so.6
+#3  0x00007ffff4c79302 in pthread_cond_timedwait@@GLIBC_2.3.2 () at /lib64/libc.so.6
+#4  0x00007ffff551028e in QWaitCondition::wait(QMutex*, QDeadlineTimer) () at /lib64/libQt6Core.so.6
+#5  0x00007ffff544ff02 in QThreadPoolThread::run() () at /lib64/libQt6Core.so.6
+#6  0x00007ffff550788f in QThreadPrivate::start(void*) () at /lib64/libQt6Core.so.6
+#7  0x00007ffff4c79c42 in start_thread () at /lib64/libc.so.6
+#8  0x00007ffff4cfd5ac in __clone3 () at /lib64/libc.so.6
+
+Thread 6 (Thread 0x7fffc72c66c0 (LWP 63145) "Thread (pooled)"):
+#0  0x00007ffff4c82352 in __syscall_cancel_arch () at /lib64/libc.so.6
+#1  0x00007ffff4c7654c in __internal_syscall_cancel () at /lib64/libc.so.6
+#2  0x00007ffff4c76897 in __futex_abstimed_wait_cancelable64 () at /lib64/libc.so.6
+#3  0x00007ffff4c79302 in pthread_cond_timedwait@@GLIBC_2.3.2 () at /lib64/libc.so.6
+#4  0x00007ffff551028e in QWaitCondition::wait(QMutex*, QDeadlineTimer) () at /lib64/libQt6Core.so.6
+#5  0x00007ffff544ff02 in QThreadPoolThread::run() () at /lib64/libQt6Core.so.6
+#6  0x00007ffff550788f in QThreadPrivate::start(void*) () at /lib64/libQt6Core.so.6
+#7  0x00007ffff4c79c42 in start_thread () at /lib64/libc.so.6
+#8  0x00007ffff4cfd5ac in __clone3 () at /lib64/libc.so.6
+
+Thread 5 (Thread 0x7fffd91fd6c0 (LWP 63082) "QQmlThread"):
+#0  0x00007ffff4c82352 in __syscall_cancel_arch () at /lib64/libc.so.6
+#1  0x00007ffff4c7654c in __internal_syscall_cancel () at /lib64/libc.so.6
+#2  0x00007ffff4c76594 in __syscall_cancel () at /lib64/libc.so.6
+#3  0x00007ffff4cf0466 in ppoll () at /lib64/libc.so.6
+#4  0x00007ffff4391165 in g_main_context_iterate_unlocked.isra () at /lib64/libglib-2.0.so.0
+#5  0x00007ffff4391223 in g_main_context_iteration () at /lib64/libglib-2.0.so.0
+#6  0x00007ffff565defd in QEventDispatcherGlib::processEvents(QFlags<QEventLoop::ProcessEventsFlag>) () at /lib64/libQt6Core.so.6
+#7  0x00007ffff531a78b in QEventLoop::exec(QFlags<QEventLoop::ProcessEventsFlag>) () at /lib64/libQt6Core.so.6
+#8  0x00007ffff544b34a in QThread::exec() () at /lib64/libQt6Core.so.6
+#9  0x00007ffff550788f in QThreadPrivate::start(void*) () at /lib64/libQt6Core.so.6
+#10 0x00007ffff4c79c42 in start_thread () at /lib64/libc.so.6
+#11 0x00007ffff4cfd5ac in __clone3 () at /lib64/libc.so.6
+
+Thread 4 (Thread 0x7fffd9dfe6c0 (LWP 63074) "WaylandEventThr"):
+#0  0x00007ffff4c82352 in __syscall_cancel_arch () at /lib64/libc.so.6
+#1  0x00007ffff4c7654c in __internal_syscall_cancel () at /lib64/libc.so.6
+#2  0x00007ffff4c76594 in __syscall_cancel () at /lib64/libc.so.6
+#3  0x00007ffff4cefe3e in poll () at /lib64/libc.so.6
+#4  0x00007fffe2c9243b in QtWaylandClient::EventThread::run() () at /lib64/libQt6WaylandClient.so.6
+#5  0x00007ffff550788f in QThreadPrivate::start(void*) () at /lib64/libQt6Core.so.6
+#6  0x00007ffff4c79c42 in start_thread () at /lib64/libc.so.6
+#7  0x00007ffff4cfd5ac in __clone3 () at /lib64/libc.so.6
+
+Thread 3 (Thread 0x7fffda5ff6c0 (LWP 63073) "WaylandEventThr"):
+#0  0x00007ffff4c82352 in __syscall_cancel_arch () at /lib64/libc.so.6
+#1  0x00007ffff4c7654c in __internal_syscall_cancel () at /lib64/libc.so.6
+#2  0x00007ffff4c76897 in __futex_abstimed_wait_cancelable64 () at /lib64/libc.so.6
+#3  0x00007ffff4c790ec in pthread_cond_wait@@GLIBC_2.3.2 () at /lib64/libc.so.6
+#4  0x00007ffff551032b in QWaitCondition::wait(QMutex*, QDeadlineTimer) () at /lib64/libQt6Core.so.6
+#5  0x00007fffe2c923de in QtWaylandClient::EventThread::run() () at /lib64/libQt6WaylandClient.so.6
+#6  0x00007ffff550788f in QThreadPrivate::start(void*) () at /lib64/libQt6Core.so.6
+#7  0x00007ffff4c79c42 in start_thread () at /lib64/libc.so.6
+#8  0x00007ffff4cfd5ac in __clone3 () at /lib64/libc.so.6
+
+Thread 2 (Thread 0x7fffe2c6d6c0 (LWP 63072) "QDBusConnection"):
+#0  0x00007ffff4c82352 in __syscall_cancel_arch () at /lib64/libc.so.6
+#1  0x00007ffff4c7654c in __internal_syscall_cancel () at /lib64/libc.so.6
+#2  0x00007ffff4c76594 in __syscall_cancel () at /lib64/libc.so.6
+#3  0x00007ffff4cf0466 in ppoll () at /lib64/libc.so.6
+#4  0x00007ffff4391165 in g_main_context_iterate_unlocked.isra () at /lib64/libglib-2.0.so.0
+#5  0x00007ffff4391223 in g_main_context_iteration () at /lib64/libglib-2.0.so.0
+#6  0x00007ffff565defd in QEventDispatcherGlib::processEvents(QFlags<QEventLoop::ProcessEventsFlag>) () at /lib64/libQt6Core.so.6
+#7  0x00007ffff531a78b in QEventLoop::exec(QFlags<QEventLoop::ProcessEventsFlag>) () at /lib64/libQt6Core.so.6
+#8  0x00007ffff544b34a in QThread::exec() () at /lib64/libQt6Core.so.6
+#9  0x00007ffff713e5c4 in QDBusConnectionManager::run() () at /lib64/libQt6DBus.so.6
+#10 0x00007ffff550788f in QThreadPrivate::start(void*) () at /lib64/libQt6Core.so.6
+#11 0x00007ffff4c79c42 in start_thread () at /lib64/libc.so.6
+
+Thread 1 (Thread 0x7ffff0cede80 (LWP 63069) "tst_shell_state"):
+#0  0x00007ffff4c82352 in __syscall_cancel_arch () at /lib64/libc.so.6
+#1  0x00007ffff4c7654c in __internal_syscall_cancel () at /lib64/libc.so.6
+#2  0x00007ffff4cc5c82 in clock_nanosleep@GLIBC_2.2.5 () at /lib64/libc.so.6
+#3  0x00007ffff4cd1f37 in nanosleep () at /lib64/libc.so.6
+#4  0x00007ffff5391b2d in QTest::qSleep(std::chrono::duration<long, std::ratio<1l, 1000l> >) () at /lib64/libQt6Core.so.6
+#5  0x00007ffff5391c0c in QTest::qWait(std::chrono::duration<long, std::ratio<1l, 1000l> >) () at /lib64/libQt6Core.so.6
+#6  0x000000000040b6a1 in TestShellStateRegression::repeatedGraphicsProfiles() ()
+#7  0x0000000000405753 in TestShellStateRegression::qt_static_metacall(QObject*, QMetaObject::Call, int, void**) ()
+#8  0x00007ffff5322480 in QMetaMethodInvoker::invokeImpl(QMetaMethod, void*, Qt::ConnectionType, long long, void const* const*, char const* const*, QtPrivate::QMetaTypeInterface const* const*) () at /lib64/libQt6Core.so.6
+#9  0x00007ffff5323117 in QMetaMethod::invokeImpl(QMetaMethod, void*, Qt::ConnectionType, long long, void const* const*, char const* const*, QtPrivate::QMetaTypeInterface const* const*) () at /lib64/libQt6Core.so.6
+#10 0x00007ffff7f3229a in QTest::invokeTestMethodIfValid(QMetaMethod, QObject*) () at /lib64/libQt6Test.so.6
+#11 0x00007ffff7f3ac3a in QTest::TestMethods::invokeTestOnData(int) const () at /lib64/libQt6Test.so.6

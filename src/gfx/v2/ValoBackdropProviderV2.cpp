@@ -4,6 +4,8 @@
 #include <QLinearGradient>
 #include <rhi/qrhi.h>
 #include <utility>
+#include <QThread>
+#include <QRunnable>
 
 namespace Systalia::Gfx::V2 {
 
@@ -13,6 +15,7 @@ public:
     explicit ValoRhiTextureWrapper(QRhiTexture *tex) : m_tex(tex) {}
     ~ValoRhiTextureWrapper() override = default;
 
+    void setTexture(QRhiTexture *tex) { m_tex = tex; }
     QRhiTexture *rhiTexture() const override { return m_tex; }
     QSize textureSize() const override { return m_tex ? m_tex->pixelSize() : QSize(); }
     bool hasAlphaChannel() const override { return true; }
@@ -85,6 +88,7 @@ void ValoBackdropProviderV2::attachToWindow(QQuickWindow *window) {
         disconnect(m_resourceWindow, &QObject::destroyed, this, nullptr);
     }
     m_resourceWindow = window;
+    m_renderThread = QThread::currentThread(); // attach is called during SG synchronization
     if (m_resourceWindow) {
         connect(m_resourceWindow, &QQuickWindow::beforeRendering,
                 this, &ValoBackdropProviderV2::onBeforeRendering,
@@ -132,7 +136,7 @@ QSGTexture *ValoBackdropProviderV2::texture(QQuickWindow *window) {
                     qWarning("[SGE-BACKDROP-V2] Transição: textura real do provedor obtida (%dx%d), descartando fallback sintético.",
                              tex->textureSize().width(), tex->textureSize().height());
                     delete std::exchange(m_fallbackTexture, nullptr);
-                    delete std::exchange(m_qsgBlurredTexture, nullptr);
+                    // Preserve the wrapper identity while materials may still reference it.
                     setDirty(true);
                 }
                 return tex;
@@ -208,7 +212,7 @@ void ValoBackdropProviderV2::setBlurProfile(BlurProfile profile) {
 
 void ValoBackdropProviderV2::onBeforeRendering() {
     if (!m_resourceWindow) return;
-    if (m_blurProfile == BlurProfile::Performance) {
+    if (m_renderProfile == BlurProfile::Performance) {
         return;
     }
 
@@ -239,14 +243,6 @@ void ValoBackdropProviderV2::onBeforeRendering() {
     }
     if (!rhiSrc) return;
 
-    if (!m_gpuBlurPipeline) {
-        m_gpuBlurPipeline = std::make_unique<ValoGpuBlurPipelineV2>();
-    }
-
-    if (!m_gpuBlurPipeline->prepare(rhi, srcSize, m_blurProfile)) {
-        return;
-    }
-
     QRhiCommandBuffer *cb = nullptr;
     QRhiSwapChain *swapchain = m_resourceWindow->swapChain();
     if (swapchain) {
@@ -258,9 +254,21 @@ void ValoBackdropProviderV2::onBeforeRendering() {
     }
     if (!cb) return;
 
+    // Only rebuild after a valid frame command buffer is available. On allocation
+    // failure the persistent wrapper must not retain a deleted pyramid texture.
+    if (m_qsgBlurredTexture)
+        static_cast<ValoRhiTextureWrapper *>(m_qsgBlurredTexture)->setTexture(rhiSrc);
+    if (!m_gpuBlurPipeline) {
+        m_gpuBlurPipeline = std::make_unique<ValoGpuBlurPipelineV2>();
+    }
+
+    if (!m_gpuBlurPipeline->prepare(rhi, srcSize, m_renderProfile)) {
+        return;
+    }
+
     // Executa os passes Dual-Kawase multipass com total segurança no estágio beforeRendering
     // (após beginFrame(), mas antes do beginPass() da cena principal do Scene Graph)
-    m_gpuBlurPipeline->execute(cb, rhiSrc, m_blurProfile);
+    m_gpuBlurPipeline->execute(cb, rhiSrc, m_renderProfile);
 
     QRhiTexture *outRhi = m_gpuBlurPipeline->blurredTexture();
     static int s_blurLogCount = 0;
@@ -273,15 +281,17 @@ void ValoBackdropProviderV2::onBeforeRendering() {
                  outRhi ? outRhi->pixelSize().height() : 0);
     }
     if (outRhi) {
-        if (!m_qsgBlurredTexture || m_qsgBlurredTexture->rhiTexture() != outRhi) {
-            delete std::exchange(m_qsgBlurredTexture, nullptr);
+        if (!m_qsgBlurredTexture) {
             auto *wrapper = new ValoRhiTextureWrapper(outRhi);
             wrapper->setFiltering(QSGTexture::Linear);
             wrapper->setHorizontalWrapMode(QSGTexture::ClampToEdge);
             wrapper->setVerticalWrapMode(QSGTexture::ClampToEdge);
             m_qsgBlurredTexture = wrapper;
             m_resourceWindow->update();
-            m_resourceWindow->update();
+        } else {
+            // updatePaintNode already handed this wrapper to a material this frame.
+            // Never delete it in beforeRendering when profile/size rebuilds the pyramid.
+            static_cast<ValoRhiTextureWrapper *>(m_qsgBlurredTexture)->setTexture(outRhi);
         }
     }
     m_isDirty = false;
@@ -290,6 +300,11 @@ void ValoBackdropProviderV2::onBeforeRendering() {
 QSGTexture *ValoBackdropProviderV2::blurredTexture(QQuickWindow *window) {
     if (!window) return nullptr;
     attachToWindow(window);
+    // Synchronization blocks the GUI thread: snapshot configuration for this frame.
+    if (m_renderProfile != m_blurProfile) {
+        m_renderProfile = m_blurProfile;
+        setDirty(true);
+    }
 
     QSGTexture *srcTex = texture(window);
     if (!srcTex || m_blurProfile == BlurProfile::Performance) {
@@ -302,6 +317,7 @@ QSGTexture *ValoBackdropProviderV2::blurredTexture(QQuickWindow *window) {
 }
 
 void ValoBackdropProviderV2::releaseResources() {
+    QQuickWindow *resourceWindow = m_resourceWindow;
     if (m_connectedProvider) {
         disconnect(m_connectedProvider, &QSGTextureProvider::textureChanged,
                    this, &ValoBackdropProviderV2::onSourceTextureChanged);
@@ -315,12 +331,26 @@ void ValoBackdropProviderV2::releaseResources() {
         disconnect(m_resourceWindow, &QObject::destroyed, this, nullptr);
         m_resourceWindow = nullptr;
     }
-    delete std::exchange(m_qsgBlurredTexture, nullptr);
-    delete std::exchange(m_fallbackTexture, nullptr);
-    if (m_gpuBlurPipeline) {
-        m_gpuBlurPipeline->releaseResources();
-        m_gpuBlurPipeline.reset();
+    auto *wrapper = std::exchange(m_qsgBlurredTexture, nullptr);
+    auto *fallback = std::exchange(m_fallbackTexture, nullptr);
+    auto pipeline = std::move(m_gpuBlurPipeline);
+    // A QML provider may be destroyed on the GUI thread with a live scene graph.
+    // QRhi/QSG resources must be disposed on the owning render thread.
+    if (resourceWindow && m_renderThread != QThread::currentThread()) {
+        resourceWindow->scheduleRenderJob(QRunnable::create(
+            [wrapper, fallback, pipeline = std::move(pipeline)]() mutable {
+                delete wrapper;
+                delete fallback;
+                pipeline.reset();
+            }), QQuickWindow::AfterRenderingStage);
+        resourceWindow->update();
+    } else {
+        delete wrapper;
+        delete fallback;
+        pipeline.reset();
     }
+    m_renderThread = nullptr;
+    m_isDirty = true;
 }
 
 } // namespace Systalia::Gfx::V2

@@ -17,6 +17,7 @@
 #include "OutputManagerService.hpp"
 #include "InputDeviceManager.hpp"
 #include "LogindSessionService.hpp"
+#include "diagnostics/ValoStabilityProbe.hpp"
 
 void qml_register_types_Systalia_Engine();
 
@@ -102,6 +103,7 @@ int main(int argc, char *argv[]) {
 
     if (auto *window = engine.rootObjects().isEmpty() ? nullptr
                      : qobject_cast<QQuickWindow *>(engine.rootObjects().first())) {
+        installValoStabilityProbe(window);
         QObject::connect(&logindSessionService, &LogindSessionService::gpuSubmissionSuspendedChanged,
                          window, [window, wasVisible = false](bool suspended) mutable {
             if (suspended) {
