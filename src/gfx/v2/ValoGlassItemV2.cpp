@@ -213,6 +213,8 @@ void ValoGlassItemV2::setOpticalContext(ValoOpticalContext *context) {
 
 QSGNode *ValoGlassItemV2::updatePaintNode(QSGNode *oldNode,
                                           UpdatePaintNodeData *) {
+  qWarning("[SGE-GLASS-V2-DEBUG] updatePaintNode called for item %p, w=%.1f, h=%.1f, active=%d, window=%p",
+           static_cast<void*>(this), width(), height(), m_active, static_cast<void*>(window()));
   const qreal w = width();
   const qreal h = height();
 

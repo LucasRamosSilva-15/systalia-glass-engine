@@ -49,6 +49,7 @@ Item {
     // Acessibilidade
     property bool highContrast: false
     property bool prefersReducedMotion: false
+    property alias debugPass: glassChassis.debugPass
 
     width: 701
     height: 534

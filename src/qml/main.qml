@@ -315,7 +315,9 @@ ApplicationWindow {
                              Math.max(1, rootWindow.height * rootWindow.devicePixelRatio))
         live: true
         hideSource: false
-        visible: false
+        visible: true
+        opacity: 0.0
+        z: -100
         recursive: false
         format: ShaderEffectSource.RGBA8
     }

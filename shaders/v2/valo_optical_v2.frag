@@ -140,19 +140,21 @@ void main() {
     vec2 refractionVector = normal * (iorDelta * 0.08) * meniscus;
     float dispersion = u_ChromaticDispersion * 0.025 * meniscus;
 
-    vec2 uvR = screenUV + refractionVector * (1.0 + dispersion);
-    vec2 uvG = screenUV + refractionVector;
-    vec2 uvB = screenUV + refractionVector * (1.0 - dispersion);
+    vec2 uvR = clamp(screenUV + refractionVector * (1.0 + dispersion), vec2(0.001), vec2(0.999));
+    vec2 uvG = clamp(screenUV + refractionVector, vec2(0.001), vec2(0.999));
+    vec2 uvB = clamp(screenUV + refractionVector * (1.0 - dispersion), vec2(0.001), vec2(0.999));
 
     float rBackdrop = texture(u_BackdropTexture, uvR).r;
     float gBackdrop = texture(u_BackdropTexture, uvG).g;
     float bBackdrop = texture(u_BackdropTexture, uvB).b;
     vec3 refractedBackdrop = vec3(rBackdrop, gBackdrop, bBackdrop);
 
-    // 6. Reflexos Prismáticos Espectrais (ângulo nominal -31°)
+    // 6. Reflexos Prismáticos Espectrais Calibrados (ângulo nominal -31°)
     vec2 lightIncidence = vec2(0.8572, -0.5150); // cos(-31°), sin(-31°)
     float specDot = max(dot(-normal, lightIncidence), 0.0);
-    float specSharp = pow(specDot, 12.0);
+    float specBroad = pow(specDot, 3.5);
+    float rimGleam = pow(meniscus, 2.0) * 0.22;
+    float specFactor = (specBroad * 0.38 + rimGleam * 0.18) * meniscus;
 
     vec3 valoCyan   = vec3(0.000, 0.937, 1.000); // #00EFFF
     vec3 valoIce    = vec3(0.960, 1.000, 1.000); // #F5FFFF
@@ -162,17 +164,21 @@ void main() {
     float anglePhase = atan(normal.y, normal.x) / 3.14159265 * 0.5 + 0.5;
     vec3 spectralGradient = mix(valoCyan, valoAmber, smoothstep(0.25, 0.55, anglePhase));
     spectralGradient = mix(spectralGradient, valoViolet, smoothstep(0.55, 0.85, anglePhase));
-    vec3 spectralReflection = mix(valoIce, spectralGradient, 0.45) * (specSharp * 1.5 * meniscus);
+    vec3 spectralReflection = mix(valoIce, spectralGradient, 0.40) * specFactor;
 
-    // 7. Cáusticas procedurais de baixa intensidade
+    // 7. Cáusticas procedurais suaves de baixa frequência (sem manchas circulares)
     vec3 causticLight = vec3(0.0);
     if (u_CausticIntensity > 0.001) {
-        float c1 = sin(p.x * 0.06 + u_Time * 1.25) * cos(p.y * 0.06 + u_Time * 0.95);
-        float c2 = sin(p.x * 0.11 - u_Time * 0.80 + p.y * 0.04) * cos(p.y * 0.09 + u_Time * 1.10);
-        float causticWave = pow(max(0.0, c1 + c2), 2.5);
-        // Correção Etapa 04.1: ordem canônica das bordas no smoothstep (edge0 < edge1)
-        float interiorMask = 1.0 - smoothstep(-18.0, -2.0, dist);
-        causticLight = vec3(0.00, 0.88, 0.98) * (causticWave * u_CausticIntensity * 0.22 * interiorMask);
+        float interiorMask = 1.0 - smoothstep(-24.0, -4.0, dist);
+        vec2 pWave = p * 0.008;
+        float w1 = sin(pWave.x * 1.1 + pWave.y * 0.7 + u_Time * 0.45);
+        float w2 = cos(pWave.x * 0.8 - pWave.y * 1.2 - u_Time * 0.35);
+        float w3 = sin((pWave.x + pWave.y) * 0.9 + u_Time * 0.25);
+        float waveSum = (w1 + w2 + w3) * 0.3333;
+        float causticWave = smoothstep(0.2, 0.85, waveSum * 0.5 + 0.5);
+
+        vec3 causticColor = vec3(0.12, 0.55, 0.75);
+        causticLight = causticColor * (causticWave * u_CausticIntensity * 0.10 * interiorMask);
     }
 
     // 8. Contorno especular unificado
@@ -186,16 +192,16 @@ void main() {
     vec3 strokeColor = mix(specularZenith, specularNadir, normY * normY);
     float strokeAlpha = strokeCoverage * 0.85;
 
-    // 9. Preenchimento volumétrico oceânico VALO
-    vec3 navyDeep = vec3(0.012, 0.071, 0.141);
-    vec3 cyanGlass = vec3(0.024, 0.231, 0.427);
+    // 9. Preenchimento volumétrico oceânico calibrado VALO
+    vec3 navyDeep = vec3(0.020, 0.095, 0.180);
+    vec3 cyanGlass = vec3(0.035, 0.245, 0.435);
     vec3 baseVolumetric = mix(cyanGlass, navyDeep, normY);
 
     if (u_VolumetricTint.a > 0.0) {
         baseVolumetric = mix(baseVolumetric, u_VolumetricTint.rgb, u_VolumetricTint.a);
     }
 
-    float sheen = exp(-normY * 5.0) * 0.22;
+    float sheen = (1.0 - normY) * 0.08 + exp(-normY * 3.0) * 0.08;
     vec3 glassBody = mix(refractedBackdrop, baseVolumetric + vec3(sheen), u_SurfaceOpacity);
     glassBody += causticLight;
     glassBody += spectralReflection;

@@ -120,12 +120,30 @@ QSGTexture *ValoBackdropProviderV2::texture(QQuickWindow *window) {
             }
             QSGTexture *tex = provider->texture();
             if (tex) {
+                static bool s_loggedReal = false;
+                if (!s_loggedReal) {
+                    s_loggedReal = true;
+                    qWarning("[SGE-BACKDROP-V2] REAL TEXTURE ATIVA: size=%dx%d, rhiTex=%p, rhi=%p",
+                             tex->textureSize().width(), tex->textureSize().height(),
+                             static_cast<void*>(tex->rhiTexture()),
+                             static_cast<void*>(window ? window->rhi() : nullptr));
+                }
+                if (m_fallbackTexture) {
+                    qWarning("[SGE-BACKDROP-V2] Transição: textura real do provedor obtida (%dx%d), descartando fallback sintético.",
+                             tex->textureSize().width(), tex->textureSize().height());
+                    delete std::exchange(m_fallbackTexture, nullptr);
+                    delete std::exchange(m_qsgBlurredTexture, nullptr);
+                    setDirty(true);
+                }
                 return tex;
+            } else {
+                qWarning("[SGE-BACKDROP-V2] Provedor de textura conectado mas provider->texture() é nulo.");
             }
         }
     }
 
     // 2. Fallback / Teste Isolado: Textura sintética calibrada
+    qWarning("[SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=%p)", static_cast<void*>(m_source.data()));
     if (!m_fallbackTexture || m_isDirty) {
         delete std::exchange(m_fallbackTexture, nullptr);
 
@@ -204,10 +222,21 @@ void ValoBackdropProviderV2::onBeforeRendering() {
     QSGTexture *srcTex = texture(m_resourceWindow);
     if (!srcTex) return;
 
+    if (auto *dynTex = qobject_cast<QSGDynamicTexture *>(srcTex)) {
+        dynTex->updateTexture();
+    }
+
     const QSize srcSize = srcTex->textureSize();
     if (!srcSize.isValid() || srcSize.isEmpty()) return;
 
     QRhiTexture *rhiSrc = srcTex->rhiTexture();
+    static int s_beforeRenderingCount = 0;
+    if (s_beforeRenderingCount < 5) {
+        s_beforeRenderingCount++;
+        qWarning("[SGE-BACKDROP-V2] onBeforeRendering frame=%d: srcTex=%p, rhiSrc=%p, srcSize=%dx%d",
+                 s_beforeRenderingCount, static_cast<void*>(srcTex), static_cast<void*>(rhiSrc),
+                 srcSize.width(), srcSize.height());
+    }
     if (!rhiSrc) return;
 
     if (!m_gpuBlurPipeline) {
@@ -234,6 +263,15 @@ void ValoBackdropProviderV2::onBeforeRendering() {
     m_gpuBlurPipeline->execute(cb, rhiSrc, m_blurProfile);
 
     QRhiTexture *outRhi = m_gpuBlurPipeline->blurredTexture();
+    static int s_blurLogCount = 0;
+    if (s_blurLogCount < 5) {
+        s_blurLogCount++;
+        qWarning("[SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=%p, format=%d, size=%dx%d",
+                 static_cast<void*>(outRhi),
+                 outRhi ? outRhi->format() : 0,
+                 outRhi ? outRhi->pixelSize().width() : 0,
+                 outRhi ? outRhi->pixelSize().height() : 0);
+    }
     if (outRhi) {
         if (!m_qsgBlurredTexture || m_qsgBlurredTexture->rhiTexture() != outRhi) {
             delete std::exchange(m_qsgBlurredTexture, nullptr);

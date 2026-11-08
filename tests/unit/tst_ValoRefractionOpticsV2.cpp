@@ -97,7 +97,7 @@ void tst_ValoRefractionOpticsV2::testDiagnosticModesRange() {
     // Modo padrão = 0 (Composição normal)
     QCOMPARE(item.debugMode(), 0);
 
-    for (int mode = 1; mode <= 8; ++mode) {
+    for (int mode = 1; mode <= 9; ++mode) {
         item.setDebugMode(mode);
         QCOMPARE(item.debugMode(), mode);
     }

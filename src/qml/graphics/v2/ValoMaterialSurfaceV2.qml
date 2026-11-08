@@ -57,6 +57,9 @@ Item {
         if (debugPass === "D") return 4; // Vetores de refração
         if (debugPass === "E") return 5; // Blur GPU amostrado
         if (debugPass === "F") return 6; // Borda especular isolada
+        if (debugPass === "I") return 7; // Cáusticas isoladas
+        if (debugPass === "J") return 8; // Reflexão prismática isolada
+        if (debugPass === "K") return 9; // Material básico (sem cáusticas/reflexões)
         return 0; // H = Composição final completa
     }
 

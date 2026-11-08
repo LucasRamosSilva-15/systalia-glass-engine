@@ -32,6 +32,18 @@ ValoGlassMaterialShaderV2::ValoGlassMaterialShaderV2(int diagnosticMode) {
     setShaderFileName(FragmentStage,
                       QStringLiteral(":/shaders/v2/valo_diag_specular.frag.qsb"));
     break;
+  case 7:
+    setShaderFileName(FragmentStage,
+                      QStringLiteral(":/shaders/v2/valo_diag_caustics.frag.qsb"));
+    break;
+  case 8:
+    setShaderFileName(FragmentStage,
+                      QStringLiteral(":/shaders/v2/valo_diag_reflection.frag.qsb"));
+    break;
+  case 9:
+    setShaderFileName(FragmentStage,
+                      QStringLiteral(":/shaders/v2/valo_diag_basic.frag.qsb"));
+    break;
   default:
     setShaderFileName(FragmentStage,
                       QStringLiteral(":/shaders/v2/valo_optical_v2.frag.qsb"));
@@ -117,8 +129,8 @@ ValoGlassMaterialV2::ValoGlassMaterialV2(int diagnosticMode)
 }
 
 QSGMaterialType *ValoGlassMaterialV2::type() const {
-  static QSGMaterialType s_types[8];
-  const int idx = std::clamp(m_diagnosticMode, 0, 7);
+  static QSGMaterialType s_types[16];
+  const int idx = std::clamp(m_diagnosticMode, 0, 15);
   return &s_types[idx];
 }
 

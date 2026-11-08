@@ -69,6 +69,9 @@ qt6_add_shaders(sge_shaders "sge_shaders_v2_resource"
         shaders/v2/valo_diag_refraction.frag
         shaders/v2/valo_diag_blur.frag
         shaders/v2/valo_diag_specular.frag
+        shaders/v2/valo_diag_caustics.frag
+        shaders/v2/valo_diag_reflection.frag
+        shaders/v2/valo_diag_basic.frag
         shaders/v2/valo_shadow_v2.vert
         shaders/v2/valo_shadow_v2.frag
 )
@@ -309,6 +312,18 @@ qt_add_executable(valo_shell_v2_artifacts
     tools/generate_shell_v2_artifacts.cpp
 )
 target_link_libraries(valo_shell_v2_artifacts PRIVATE
+    sge_core
+    sge_shaders
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Quick
+)
+
+# Utilitário de validação óptica e diagnósticos (Etapa 05.1)
+qt_add_executable(valo_stage_05_1_artifacts
+    tools/generate_stage_05_1_artifacts.cpp
+)
+target_link_libraries(valo_stage_05_1_artifacts PRIVATE
     sge_core
     sge_shaders
     Qt6::Core
