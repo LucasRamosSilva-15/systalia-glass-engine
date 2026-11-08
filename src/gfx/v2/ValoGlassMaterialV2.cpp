@@ -1,5 +1,6 @@
 #include "ValoGlassMaterialV2.hpp"
 #include <cstring>
+#include <rhi/qrhi.h>
 
 namespace Systalia::Gfx::V2 {
 
@@ -69,7 +70,12 @@ bool ValoGlassMaterialShaderV2::updateUniformData(RenderState &state,
   // Projeção MVP normalizada do Scene Graph do Qt
   props.matrix = state.combinedMatrix();
   // Modulação da opacidade pela opacidade herdada do item na árvore do Scene Graph
-  props.surfaceOpacity = mat->props().surfaceOpacity * state.opacity();
+  // The optical mix remains independent of scene opacity. Slot 124 is unused
+  // by V2 geometry; only the GPU copy aliases it as inherited opacity.
+  props.titleBarHeight = state.opacity();
+  // Signed height carries framebuffer orientation without changing the 160-byte ABI.
+  if (state.rhi() && state.rhi()->isYUpInFramebuffer())
+    props.screenResolution.setY(-props.screenResolution.y());
 
   constexpr qsizetype uboSize =
       static_cast<qsizetype>(sizeof(SystaliaSurfacePropsV2));

@@ -18,7 +18,7 @@ layout(std140, binding = 0) uniform buf {
     float u_SurfaceOpacity;
     float u_Time;
     float u_HasClientTexture;
-    float u_TitleBarHeight;
+    float u_InheritedOpacity; // offset 124: render-state opacity, uploaded by material
     float u_SpecularStrokeWidth;
     float u_GeometryMode; // 0.0 = CircularL2, 1.0 = SquircleG2
     float u_ShadowIntensity;

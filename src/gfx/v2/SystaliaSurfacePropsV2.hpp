@@ -32,7 +32,7 @@ struct alignas(16) SystaliaSurfacePropsV2 {
     Matrix4x4_std140 matrix;               // offset 0,   tamanho 64 (Matriz MVP normalizada)
     QVector4D radii;                       // offset 64,  tamanho 16 (TL, TR, BL, BR em pixels)
     QVector2D windowSize;                  // offset 80,  tamanho 8  (Largura, Altura lógicas)
-    QVector2D screenResolution;            // offset 88,  tamanho 8  (Resolução do Viewport)
+    QVector2D screenResolution;            // offset 88, tamanho 8 (CPU: viewport físico; upload: sinal Y indica framebuffer Y-up)
     float slant = 0.0f;                    // offset 96,  tamanho 4  (Inclinação visual 3D em radianos)
     float ior = 1.25f;                     // offset 100, tamanho 4  (Índice de refração: 1.00 a 1.25)
     float chromaticDispersion = 0.040f;    // offset 104, tamanho 4  (Dispersão de Cauchy)
@@ -40,7 +40,7 @@ struct alignas(16) SystaliaSurfacePropsV2 {
     float surfaceOpacity = 0.34f;          // offset 112, tamanho 4  (Opacidade de base: 0.25 a 0.55)
     float time = 0.0f;                     // offset 116, tamanho 4  (Tempo decorrido em segundos)
     float hasClientTexture = 0.0f;         // offset 120, tamanho 4  (Flag 0.0f ou 1.0f)
-    float titleBarHeight = 36.0f;          // offset 124, tamanho 4  (Altura da barra de título)
+    float titleBarHeight = 36.0f;          // offset 124, tamanho 4 (CPU legado; upload do material V2: opacidade herdada)
     // --- Campos de Expansão V2 ---
     float specularStrokeWidth = 1.25f;     // offset 128, tamanho 4  (Espessura da borda especular em pixels)
     float geometryMode = 0.0f;             // offset 132, tamanho 4  (0.0f = CircularL2, 1.0f = SquircleG2)

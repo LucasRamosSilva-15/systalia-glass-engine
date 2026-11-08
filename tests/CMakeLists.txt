@@ -408,3 +408,8 @@ add_dependencies(tst_shell_state_regression tst_xdg_resize)
 sge_add_expanded_test(tst_client_surface_visibility integration/tst_ClientSurfaceVisibility.cpp integration)
 add_dependencies(integration_tests tst_client_surface_visibility)
 add_dependencies(tst_client_surface_visibility tst_xdg_resize)
+
+sge_add_expanded_test(tst_valo_optical_contract_v2 unit/tst_ValoOpticalContractV2.cpp unit)
+set_tests_properties(tst_valo_optical_contract_v2 PROPERTIES
+    ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_QUICK_BACKEND=rhi;QSG_RHI_BACKEND=opengl"
+)

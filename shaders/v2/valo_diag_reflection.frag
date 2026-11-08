@@ -16,7 +16,7 @@ layout(std140, binding = 0) uniform buf {
     float u_SurfaceOpacity;
     float u_Time;
     float u_HasClientTexture;
-    float u_TitleBarHeight;
+    float u_InheritedOpacity; // offset 124: render-state opacity, uploaded by material
     float u_SpecularStrokeWidth;
     float u_GeometryMode;
     float u_ShadowIntensity;
@@ -95,16 +95,16 @@ void main() {
     ) * 0.5;
     vec2 normal = (length(grad) > 1e-5) ? normalize(grad) : vec2(0.0);
 
-    float meniscusWidth = 24.0;
-    float meniscusDist = clamp(-dist / meniscusWidth, 0.0, 1.0);
-    float meniscus = (dist < 0.0) ? sin(meniscusDist * 3.14159265) : 0.0;
+    // First-order Euclidean correction of the L4 field; leave silhouette/AA unchanged.
+    float physicalDepth = max(-dist, 0.0) / max(length(grad), 0.05);
+    float meniscus = 1.0 - smoothstep(0.0, 24.0, physicalDepth);
 
     // Reflexo prismático espectral calibrado
     vec2 lightIncidence = vec2(0.8572, -0.5150);
     float specDot = max(dot(-normal, lightIncidence), 0.0);
-    float specBroad = pow(specDot, 3.5);
+    float specBroad = specDot;
     float rimGleam = pow(meniscus, 2.0) * 0.22;
-    float specFactor = (specBroad * 0.38 + rimGleam * 0.18) * meniscus;
+    float specFactor = (0.12 + specBroad * 0.12 + rimGleam * 0.18) * meniscus;
 
     vec3 valoCyan   = vec3(0.000, 0.937, 1.000);
     vec3 valoIce    = vec3(0.960, 1.000, 1.000);
@@ -115,9 +115,12 @@ void main() {
     vec3 spectralGradient = mix(valoCyan, valoAmber, smoothstep(0.25, 0.55, anglePhase));
     spectralGradient = mix(spectralGradient, valoViolet, smoothstep(0.55, 0.85, anglePhase));
     vec3 reflectionColor = mix(valoIce, spectralGradient, 0.40);
-    vec3 spectralReflection = reflectionColor * specFactor;
+    float strokeWidth = max(u_SpecularStrokeWidth, 0.5);
+    float strokeDist = abs(dist + 0.5 * strokeWidth) - 0.5 * strokeWidth;
+    float strokeAlpha = (1.0 - smoothstep(-0.5 * aa, 0.5 * aa, strokeDist)) * 0.85;
+    specFactor *= 1.0 - strokeAlpha; // same occlusion by the stroke as H
 
-    float alpha = clamp(specFactor * 1.5, 0.0, 1.0) * coverage;
-    fragColor = vec4(spectralReflection * coverage, alpha);
+    // Premultiplied source-over diagnostic; on black RGB is the isolated energy.
+    float alpha = specFactor * coverage * clamp(u_InheritedOpacity, 0.0, 1.0);
+    fragColor = vec4(reflectionColor * alpha, alpha);
 }
-

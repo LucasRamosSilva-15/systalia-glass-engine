@@ -16,7 +16,7 @@ layout(std140, binding = 0) uniform buf {
     float u_SurfaceOpacity;
     float u_Time;
     float u_HasClientTexture;
-    float u_TitleBarHeight;
+    float u_InheritedOpacity; // offset 124: render-state opacity, uploaded by material
     float u_SpecularStrokeWidth;
     float u_GeometryMode;
     float u_ShadowIntensity;
@@ -96,9 +96,10 @@ void main() {
     float causticWave = smoothstep(0.2, 0.85, waveSum * 0.5 + 0.5);
 
     vec3 causticColor = vec3(0.12, 0.55, 0.75);
-    vec3 causticLight = causticColor * (causticWave * max(u_CausticIntensity, 0.15) * 0.55 * interiorMask);
 
-    float alpha = coverage * clamp(causticWave * interiorMask, 0.05, 0.85);
-    fragColor = vec4(causticLight * coverage, alpha);
+    float energy = (u_CausticIntensity > 0.001)
+        ? causticWave * u_CausticIntensity * 0.10 * interiorMask : 0.0;
+    // No floor: disabled effects contribute neither color nor alpha.
+    float alpha = energy * coverage * clamp(u_InheritedOpacity, 0.0, 1.0);
+    fragColor = vec4(causticColor * alpha, alpha);
 }
-

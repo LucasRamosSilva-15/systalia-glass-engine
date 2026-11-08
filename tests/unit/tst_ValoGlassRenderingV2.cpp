@@ -70,7 +70,11 @@ void TestValoGlassRenderingV2::renderCircularL2AndVerifySilhouette() {
     // 3. Contorno especular na borda: o highlight especular intensifica a opacidade em relação ao interior
     const int aInside = frame.pixelColor(295, 100).alpha();
     const int aBorder = frame.pixelColor(299, 100).alpha();
-    QVERIFY(aBorder > aInside);
+    // The resolved backdrop now covers the interior once. Border contrast is RGB,
+    // while alpha tracks SDF coverage (not a second transmission mix).
+    QVERIFY(aInside == 255);
+    QVERIFY(aBorder > 0);
+    QVERIFY(frame.pixelColor(299, 100).blue() > frame.pixelColor(295, 100).blue());
 
     frame.save(m_artifactDir + QStringLiteral("/valo_v2_circular_l2.png"));
 }

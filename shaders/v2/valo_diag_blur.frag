@@ -42,7 +42,8 @@ void main() {
     aa = max(aa, 0.7);
     float coverage = 1.0 - smoothstep(-0.5 * aa, 0.5 * aa, dist);
 
-    vec2 screenUV = gl_FragCoord.xy / max(u_ScreenResolution, vec2(1.0));
+    vec2 screenUV = gl_FragCoord.xy / max(abs(u_ScreenResolution), vec2(1.0));
+    if (u_ScreenResolution.y < 0.0) screenUV.y = 1.0 - screenUV.y;
     vec4 blurredSample = texture(u_BackdropTexture, screenUV);
 
     // Amostra filtrada diretamente pela GPU, modulada pela máscara de cobertura analítica

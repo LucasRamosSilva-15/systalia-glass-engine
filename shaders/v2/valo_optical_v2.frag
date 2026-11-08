@@ -20,7 +20,7 @@ layout(std140, binding = 0) uniform buf {
     float u_SurfaceOpacity;
     float u_Time;
     float u_HasClientTexture;
-    float u_TitleBarHeight;
+    float u_InheritedOpacity; // offset 124: render-state opacity, uploaded by material
     float u_SpecularStrokeWidth;
     float u_GeometryMode; // 0.0 = CircularL2, 1.0 = SquircleG2
     float u_ShadowIntensity;
@@ -127,14 +127,15 @@ void main() {
     vec2 normal = (length(grad) > 1e-5) ? normalize(grad) : vec2(0.0);
 
     // 4. Menisco óptico (curvatura da borda até ~24px)
-    float meniscusWidth = 24.0;
-    float meniscusDist = clamp(-dist / meniscusWidth, 0.0, 1.0);
-    float meniscus = (dist < 0.0) ? sin(meniscusDist * 3.14159265) : 0.0;
+    // First-order Euclidean correction of the L4 field; leave silhouette/AA unchanged.
+    float physicalDepth = max(-dist, 0.0) / max(length(grad), 0.05);
+    float meniscus = 1.0 - smoothstep(0.0, 24.0, physicalDepth);
 
     // 5. Refração e Dispersão Cromática Cauchy
-    vec2 screenUV = (u_ScreenResolution.x > 0.0 && u_ScreenResolution.y > 0.0)
-        ? (gl_FragCoord.xy / u_ScreenResolution)
+    vec2 screenUV = (u_ScreenResolution.x > 0.0 && abs(u_ScreenResolution.y) > 0.0)
+        ? (gl_FragCoord.xy / abs(u_ScreenResolution))
         : v_TexCoord;
+    if (u_ScreenResolution.y < 0.0) screenUV.y = 1.0 - screenUV.y;
 
     float iorDelta = max(u_Ior - 1.0, 0.0);
     vec2 refractionVector = normal * (iorDelta * 0.08) * meniscus;
@@ -152,9 +153,9 @@ void main() {
     // 6. Reflexos Prismáticos Espectrais Calibrados (ângulo nominal -31°)
     vec2 lightIncidence = vec2(0.8572, -0.5150); // cos(-31°), sin(-31°)
     float specDot = max(dot(-normal, lightIncidence), 0.0);
-    float specBroad = pow(specDot, 3.5);
+    float specBroad = specDot;
     float rimGleam = pow(meniscus, 2.0) * 0.22;
-    float specFactor = (specBroad * 0.38 + rimGleam * 0.18) * meniscus;
+    float specFactor = (0.12 + specBroad * 0.12 + rimGleam * 0.18) * meniscus;
 
     vec3 valoCyan   = vec3(0.000, 0.937, 1.000); // #00EFFF
     vec3 valoIce    = vec3(0.960, 1.000, 1.000); // #F5FFFF
@@ -214,9 +215,7 @@ void main() {
 
     // 11. Composição de cor com contorno e alpha pré-multiplicado
     vec3 compositeRgb = clamp(mix(glassBody, strokeColor, strokeAlpha), 0.0, 1.0);
-    float fillAlpha = max(u_SurfaceOpacity, 0.15);
-    float compositeAlpha = clamp(fillAlpha + strokeAlpha * (1.0 - fillAlpha), 0.0, 1.0) * coverage;
-
-    // 12. Saída Oficial de Produção com Alpha Pré-Multiplicado Rigoroso
+    // Backdrop is already composited into glassBody: cover it once, then fade the result.
+    float compositeAlpha = coverage * clamp(u_InheritedOpacity, 0.0, 1.0);
     fragColor = vec4(compositeRgb * compositeAlpha, compositeAlpha);
 }
