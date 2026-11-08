@@ -22,6 +22,31 @@ ApplicationWindow {
     property int topZIndex: 20
     readonly property bool useGraphicsV2: true
 
+    // Integration adapter: reach the typed V2 render item without changing migrated components.
+    function opticalItemIn(item) {
+        if (!item) return null
+        if (item instanceof ValoGlassItemV2) return item
+        for (let child of item.children) {
+            const found = opticalItemIn(child)
+            if (found) return found
+        }
+        return null
+    }
+    readonly property var filesOpticalItem: opticalItemIn(glassChassis)
+    readonly property var dockOpticalItem: opticalItemIn(systemDock)
+
+    component MaterialOpticalBindings: Item {
+        required property var opticalItem
+        visible: false
+        Binding { target: opticalItem; property: "ior"; value: materialWindow.materialActive ? materialWindow.refractiveIndex : 1.0; when: opticalItem !== null }
+        Binding { target: opticalItem; property: "chromaticDispersion"; value: materialWindow.materialActive ? materialWindow.effectiveDispersion : 0.0; when: opticalItem !== null }
+        Binding { target: opticalItem; property: "causticIntensity"; value: materialWindow.materialActive ? materialWindow.caustics : 0.0; when: opticalItem !== null }
+    }
+    MaterialOpticalBindings { opticalItem: rootWindow.filesOpticalItem }
+    MaterialOpticalBindings { opticalItem: rootWindow.dockOpticalItem }
+    Binding { target: rootWindow.filesOpticalItem; property: "slant"; value: glassChassis.surfaceSlant; when: rootWindow.filesOpticalItem !== null }
+    Binding { target: rootWindow.dockOpticalItem; property: "surfaceOpacity"; value: systemDock.materialActive ? (systemDock.highContrast ? 0.82 : systemDock.surfaceOpacity) : 0.0; when: rootWindow.dockOpticalItem !== null }
+
     function bringWindowToFront(win) {
         if (!win)
             return
@@ -362,12 +387,13 @@ ApplicationWindow {
         controller: rootWindow
         waylandServer: waylandServer
         refractiveIndex: materialWindow.refractiveIndex
-        dispersion: materialWindow.dispersion
+        dispersion: materialWindow.effectiveDispersion
         caustics: materialWindow.caustics
         surfaceOpacity: materialWindow.surfaceOpacity
         surfaceSlant: materialWindow.surfaceSlant
         cornerRadius: materialWindow.cornerRadius
         materialActive: materialWindow.materialActive
+        blurProfile: materialWindow.materialActive ? materialWindow.blurProfile : 0
     }
 
     Shell.SystaliaMaterialWindow {
@@ -508,10 +534,12 @@ ApplicationWindow {
             filesVisible: glassChassis.visible
             settingsOpen: materialWindow.visible
             refractiveIndex: materialWindow.refractiveIndex
-            dispersion: materialWindow.dispersion
+            dispersion: materialWindow.effectiveDispersion
             caustics: materialWindow.caustics
             surfaceOpacity: ValoTheme.opacityDock
             materialActive: materialWindow.materialActive
+            performanceProfile: !materialWindow.materialActive || materialWindow.blurProfile === 0
+                                ? "performance" : materialWindow.blurProfile === 1 ? "balanced" : "quality"
 
             onFilesRequested: {
                 if (glassChassis.visible)

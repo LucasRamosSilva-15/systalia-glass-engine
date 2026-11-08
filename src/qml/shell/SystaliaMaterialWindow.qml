@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Shapes
 import Systalia.Engine
 import Systalia.System 1.0
+import "../graphics/v2" as GfxV2
 
 Item {
     id: materialWindow
@@ -15,6 +16,12 @@ Item {
     property real dispersion: 0.04
     property real caustics: 0.85
     property real surfaceOpacity: 0.85
+    // Preserve the two formerly local slider values; blur selects existing GPU profiles.
+    property real blurAmount: 0.75
+    readonly property int blurProfile: Math.min(2, Math.max(0, Math.floor((blurAmount - 0.2) / 0.8 * 3)))
+    property real dispersionStrength: 1.0
+    readonly property real effectiveDispersion: dispersion * dispersionStrength
+    property alias opticalSurface: glassChassis
     property real surfaceSlant: 0
     property real cornerRadius: 20
     property int snapState: 0
@@ -32,18 +39,25 @@ Item {
     visible: true
     clip: false
 
-    ValoGlass {
+    GfxV2.ValoMaterialSurfaceV2 {
         id: glassChassis
+        objectName: "materialWindowOpticalSurfaceV2"
         anchors.fill: parent
-        active: materialWindow.visible
-        backdropSource: materialWindow.backdropSource
-        screenResolution: materialWindow.screenResolution
-        titleBarHeight: 36
+        geometryMode: ValoGlassItemV2.SquircleG2
         cornerRadii: materialWindow.cornerRadii
+        cornerRadius: materialWindow.cornerRadius
         slant: materialWindow.surfaceSlant
-        refractionStrength: Math.max(0.0, (materialWindow.refractiveIndex - 1.0) / 0.25)
-        chromaticDispersion: materialWindow.dispersion
-        time: materialWindow.animationTime
+        surfaceOpacity: materialWindow.materialActive ? materialWindow.surfaceOpacity : 0.0
+        volumetricTint: Qt.rgba(0.025, 0.12, 0.22, 0.52)
+        shadowOffsetY: 16.0
+        shadowIntensity: 0.38
+        blurProfile: materialWindow.materialActive ? materialWindow.blurProfile : 0
+        backdropSource: materialWindow.backdropSource
+        ior: materialWindow.materialActive ? materialWindow.refractiveIndex : 1.0
+        chromaticDispersion: materialWindow.materialActive ? materialWindow.effectiveDispersion : 0.0
+        causticIntensity: materialWindow.materialActive ? materialWindow.caustics : 0.0
+        active: materialWindow.visible && materialWindow.materialActive
+        z: -1
     }
 
     SystaliaWindowHeader {
@@ -517,17 +531,19 @@ Item {
             x: 22
             y: 55
             width: parent.width - 44
-            label: "Backdrop Blur Filter"
+            objectName: "iorSetting"
+            label: "Glass Refraction · IOR"
             value: materialWindow.refractiveIndex
             from: 1.0
             to: 1.5
-            valueText: Math.round(52 + (value - 1.0) * 26) + "%"
+            valueText: value.toFixed(2)
             onChanged: val => materialWindow.refractiveIndex = val
         }
         SettingSlider {
             x: 22
             y: 119
             width: parent.width - 44
+            objectName: "opacitySetting"
             label: "Glass Layer Opacity"
             value: materialWindow.surfaceOpacity
             from: 0.2
@@ -539,43 +555,49 @@ Item {
             x: 22
             y: 183
             width: parent.width - 44
-            label: "Glass Layer Opacity · Secondary"
-            value: 0.75
+            objectName: "blurSetting"
+            label: "Backdrop Blur Filter"
+            value: materialWindow.blurAmount
             from: 0.2
             to: 1.0
-            valueText: Math.round(value * 100) + "%"
+            valueText: ["Off", "Balanced", "Quality"][materialWindow.blurProfile]
+            onChanged: val => materialWindow.blurAmount = val
         }
         SettingSlider {
             x: 22
             y: 247
             width: parent.width - 44
-            label: "Ambient Halo Dispersion"
+            objectName: "dispersionSetting"
+            label: "Chromatic Dispersion"
             value: materialWindow.dispersion
             from: 0
             to: 0.08
-            valueText: value > 0.01 ? "On" : "Off"
+            valueText: value.toFixed(3)
             onChanged: val => materialWindow.dispersion = val
         }
         SettingSlider {
             x: 22
             y: 311
             width: parent.width - 44
-            label: "Ambient Halo Filters"
+            objectName: "causticsSetting"
+            label: "Caustic Intensity"
             value: materialWindow.caustics
             from: 0
             to: 1.5
-            valueText: Math.round(value * 12).toString()
+            valueText: Math.min(value, 1.0).toFixed(2)
             onChanged: val => materialWindow.caustics = val
         }
         SettingSlider {
             x: 22
             y: 375
             width: parent.width - 44
-            label: "Ambient Halo Dispersion · Strength"
-            value: 1.0
+            objectName: "dispersionStrengthSetting"
+            label: "Chromatic Dispersion · Strength"
+            value: materialWindow.dispersionStrength
             from: 0.2
             to: 1.0
             valueText: Math.round(value * 100) + "%"
+            onChanged: val => materialWindow.dispersionStrength = val
         }
     }
 
@@ -620,6 +642,7 @@ Item {
 
         Slider {
             id: slider
+            objectName: settingRow.objectName + "Slider"
             x: 0
             y: 20
             width: Math.max(100, parent.width - 65)

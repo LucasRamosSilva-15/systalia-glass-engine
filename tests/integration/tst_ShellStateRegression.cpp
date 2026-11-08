@@ -13,6 +13,8 @@
 
 #include "SystaliaCompositor.hpp"
 #include "SystaliaGlassItem.hpp"
+#include "gfx/v2/ValoGlassItemV2.hpp"
+#include "gfx/v2/ValoShadowItemV2.hpp"
 #include "SystemTelemetryService.hpp"
 #include "ProcessLauncherService.hpp"
 #include "AppRegistryService.hpp"
@@ -86,6 +88,87 @@ private slots:
         evaluate("WorkspaceManager.setWindowWorkspace(glassChassis, 0);"
                  "WorkspaceManager.setWindowWorkspace(materialWindow, 0);"
                  "raiseFileWindow(); raiseMaterialWindow(); flowMenu.close()");
+    }
+
+    void materialWindowUsesOneV2ChassisAndLiveSettings() {
+        using namespace Systalia::Gfx::V2;
+        auto *surface = m_root->findChild<QObject *>("materialWindowOpticalSurfaceV2");
+        QVERIFY(surface);
+        QCOMPARE(surface->findChildren<ValoGlassItemV2 *>().size(), 1);
+        QCOMPARE(surface->findChildren<ValoShadowItemV2 *>().size(), 1);
+        QCOMPARE(surface->findChildren<SystaliaGlassItem *>().size(), 0);
+        QCOMPARE(evaluate("materialWindow.opticalSurface.geometryMode").toInt(), 1);
+        QVERIFY(evaluate("filesOpticalItem !== null && dockOpticalItem !== null").toBool());
+        auto change = [&](const char *name, double value) {
+            auto *row = m_root->findChild<QObject *>(QString::fromLatin1(name));
+            return row && QMetaObject::invokeMethod(row, "changed", Q_ARG(double, value));
+        };
+        QVERIFY(change("iorSetting", 1.4));
+        QCOMPARE(evaluate("materialWindow.refractiveIndex").toDouble(), 1.4);
+        QVERIFY(qAbs(evaluate("filesOpticalItem.ior").toDouble()-1.4)<.0001);
+        QVERIFY(qAbs(evaluate("dockOpticalItem.ior").toDouble()-1.4)<.0001);
+        QVERIFY(qAbs(evaluate("materialWindow.opticalSurface.glassItemInstance.ior").toDouble()-1.4)<.0001);
+        QVERIFY(change("blurSetting", .2));
+        QCOMPARE(evaluate("materialWindow.blurProfile").toInt(), 0);
+        QCOMPARE(evaluate("glassChassis.blurProfile").toInt(), 0);
+        QCOMPARE(evaluate("systemDock.blurProfile").toInt(), 0);
+        QCOMPARE(evaluate("materialWindow.refractiveIndex").toDouble(), 1.4);
+        QVERIFY(change("blurSetting", .5));
+        QCOMPARE(evaluate("glassChassis.blurProfile").toInt(), 1);
+        QVERIFY(change("blurSetting", .75));
+        QCOMPARE(evaluate("glassChassis.blurProfile").toInt(), 2);
+        QVERIFY(change("opacitySetting", .4));
+        QCOMPARE(evaluate("glassChassis.surfaceOpacity").toDouble(), .4);
+        QVERIFY(qAbs(evaluate("materialWindow.opticalSurface.surfaceOpacity").toDouble()-.4)<.0001);
+        QVERIFY(change("dispersionSetting", .06));
+        QVERIFY(change("dispersionStrengthSetting", .5));
+        QVERIFY(qAbs(evaluate("filesOpticalItem.chromaticDispersion").toDouble()-.03)<.0001);
+        QVERIFY(qAbs(evaluate("dockOpticalItem.chromaticDispersion").toDouble()-.03)<.0001);
+        QVERIFY(change("causticsSetting", .7));
+        QVERIFY(qAbs(evaluate("filesOpticalItem.causticIntensity").toDouble()-.7)<.0001);
+        QVERIFY(qAbs(evaluate("dockOpticalItem.causticIntensity").toDouble()-.7)<.0001);
+        evaluate("materialWindow.materialActive = false");
+        QCOMPARE(evaluate("filesOpticalItem.ior").toDouble(), 1.0);
+        QCOMPARE(evaluate("filesOpticalItem.causticIntensity").toDouble(), 0.0);
+        QCOMPARE(evaluate("dockOpticalItem.causticIntensity").toDouble(), 0.0);
+        QCOMPARE(evaluate("materialWindow.opticalSurface.causticIntensity").toDouble(), 0.0);
+        evaluate("materialWindow.materialActive = true; materialWindow.refractiveIndex = 1.25;"
+                 "materialWindow.surfaceOpacity = .85; materialWindow.dispersion = .04;"
+                 "materialWindow.dispersionStrength = 1; materialWindow.caustics = .85");
+    }
+
+    void materialWindowSliderInputAndWindowActions() {
+        auto *window = qobject_cast<QQuickWindow *>(m_root);
+        QVERIFY(window);
+        auto *slider = m_root->findChild<QQuickItem *>("iorSettingSlider");
+        QVERIFY(slider);
+        QTest::mouseClick(window, Qt::LeftButton, Qt::NoModifier,
+                          slider->mapToScene(QPointF(slider->width()*.8, slider->height()/2)).toPoint());
+        QVERIFY(evaluate("materialWindow.refractiveIndex > 1.3").toBool());
+        for (const char *name : {"opacitySettingSlider", "blurSettingSlider", "dispersionSettingSlider",
+                                 "causticsSettingSlider", "dispersionStrengthSettingSlider"}) {
+            auto *control = m_root->findChild<QQuickItem *>(QString::fromLatin1(name));
+            QVERIFY(control);
+            const double previous = control->property("value").toDouble();
+            QTest::mouseClick(window, Qt::LeftButton, Qt::NoModifier,
+                              control->mapToScene(QPointF(control->width()*.3, control->height()/2)).toPoint());
+            QVERIFY2(qAbs(control->property("value").toDouble()-previous)>.001, name);
+        }
+        QVERIFY(qAbs(evaluate("filesOpticalItem.ior - materialWindow.refractiveIndex").toDouble())<.0001);
+        QVERIFY(qAbs(evaluate("filesOpticalItem.chromaticDispersion - materialWindow.effectiveDispersion").toDouble())<.0001);
+        QVERIFY(qAbs(evaluate("filesOpticalItem.causticIntensity - materialWindow.caustics").toDouble())<.0001);
+        QCOMPARE(evaluate("glassChassis.blurProfile").toInt(), evaluate("materialWindow.blurProfile").toInt());
+        evaluate("toggleMaterialWindowMaximized()");
+        QVERIFY(evaluate("materialWindowMaximized && materialWindow.x === 8").toBool());
+        evaluate("toggleMaterialWindowMaximized(); raiseMaterialWindow()");
+        QVERIFY(!evaluate("materialWindowMaximized").toBool());
+        evaluate("materialWindow.x += 12; materialWindow.y += 8; raiseMaterialWindow()");
+        QCOMPARE(m_workspaces.activeWindow(), evaluate("materialWindow").value<QObject *>());
+        evaluate("closeMaterialWindow()");
+        QVERIFY(!evaluate("materialWindow.visible || materialWindow.windowOpen").toBool());
+        evaluate("raiseMaterialWindow(); materialWindow.refractiveIndex = 1.25;"
+                 "materialWindow.surfaceOpacity = .85; materialWindow.blurAmount = .75;"
+                 "materialWindow.dispersion = .04; materialWindow.dispersionStrength = 1; materialWindow.caustics = .85");
     }
 
     void minimizedMaterialStaysHiddenAfterWorkspaceRoundtrip() {
