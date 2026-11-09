@@ -385,10 +385,16 @@ private slots:
         QTRY_VERIFY(evaluate("overlayBackdrop.topBarAvailable").toBool());
         QVERIFY(!evaluate("overlayBackdrop.dockAvailable").toBool());
         QVERIFY(evaluate("topBarOpticalItem.backdropProvider.upstreamBlurProvider === filesOpticalItem.backdropProvider").toBool());
-        evaluate("materialWindow.visible=true");
-        QTRY_COMPARE(evaluate("overlayBackdrop.coverageMode").toString(),QString("wallpaper-only"));
-        QVERIFY(evaluate("dockOpticalItem.backdropProvider.upstreamBlurProvider === null && topBarOpticalItem.backdropProvider.upstreamBlurProvider === null").toBool());
-        evaluate("glassChassis.x=80; glassChassis.y=80; materialWindow.visible=true");
+        evaluate("materialWindow.x=600; materialWindow.y=-45; materialWindow.visible=true; raiseMaterialWindow()");
+        QTRY_COMPARE(evaluate("overlayBackdrop.coverageMode").toString(),QString("limited-internal-windows"));
+        QVERIFY(evaluate("overlayBackdrop.requiresBoth && overlayBackdrop.producerFor(topBar) === materialWindow").toBool());
+        QVERIFY(evaluate("topBarOpticalItem.backdropProvider.upstreamBlurProvider === materialWindow.opticalSurface.effectiveBackdropProvider").toBool());
+        evaluate("raiseFileWindow()");
+        QTRY_VERIFY(evaluate("overlayBackdrop.producerFor(topBar) === glassChassis").toBool());
+        QVERIFY(evaluate("topBarOpticalItem.backdropProvider.upstreamBlurProvider === filesOpticalItem.backdropProvider").toBool());
+        evaluate("materialWindow.y=80");
+        QTRY_VERIFY(!evaluate("overlayBackdrop.requiresBoth").toBool());
+        evaluate("glassChassis.x=80; glassChassis.y=80; materialWindow.x=810; materialWindow.y=80; materialWindow.visible=true");
     }
 
     void windowHeadersReleaseBadgeSpace() {

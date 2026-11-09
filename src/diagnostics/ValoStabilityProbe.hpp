@@ -84,6 +84,10 @@ inline void installValoStabilityProbe(QQuickWindow *window) {
         evaluate("materialWindow.visible=false; glassChassis.visible=true; glassChassis.x=500; glassChassis.y=450; raiseFileWindow()");
     if (qEnvironmentVariableIsSet("SGE_VALO_OVERLAY_TOPBAR_SCENARIO"))
         evaluate("materialWindow.visible=false; glassChassis.visible=true; glassChassis.x=500; glassChassis.y=-45; raiseFileWindow()");
+    if (qEnvironmentVariableIsSet("SGE_VALO_LIMITED_DOCK_SCENARIO"))
+        evaluate("glassChassis.visible=true; materialWindow.visible=true; glassChassis.x=400; glassChassis.y=450; materialWindow.x=600; materialWindow.y=450; raiseMaterialWindow()");
+    if (qEnvironmentVariableIsSet("SGE_VALO_LIMITED_TOPBAR_SCENARIO"))
+        evaluate("glassChassis.visible=true; materialWindow.visible=true; glassChassis.x=400; glassChassis.y=-45; materialWindow.x=600; materialWindow.y=-45; raiseMaterialWindow()");
     if (qEnvironmentVariableIsSet("SGE_VALO_PARTICLES_ONLY")) {
         for(auto *item : window->findChildren<Systalia::Gfx::V2::ValoGlassItemV2 *>()) {
             item->setCausticIntensity(0);
@@ -302,6 +306,8 @@ inline void installValoStabilityProbe(QQuickWindow *window) {
         result["overlayCoverage"] = evaluate("overlayBackdrop.coverageMode").toString();
         result["dockComposite"] = evaluate("overlayBackdrop.dockAvailable").toBool();
         result["topBarComposite"] = evaluate("overlayBackdrop.topBarAvailable").toBool();
+        result["dockSelected"] = evaluate("dockStack.selected.map(w => w === glassChassis ? 'Files' : 'Material').join(',')").toString();
+        result["topBarSelected"] = evaluate("topStack.selected.map(w => w === glassChassis ? 'Files' : 'Material').join(',')").toString();
         result["filesZ"] = evaluate("glassChassis.z").toDouble();
         result["materialZ"] = evaluate("materialWindow.z").toDouble();
         int index = 0;

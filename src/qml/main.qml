@@ -462,50 +462,99 @@ ApplicationWindow {
         mappingRevision: clientWindowsLayer.viewportOffset
     }
 
-    GfxV2.ValoSingleWindowBackdropV2 {
+    Item {
         id: overlayBackdrop
-        objectName: "singleWindowOverlayBackdrop"
+        objectName: "limitedOverlayBackdrop"
         anchors.fill: parent
-        firstWindow: glassChassis
-        secondWindow: materialWindow
-        wallpaperSource: backdropGrab
-        workspacePage: clientWindowsLayer.workspacePageAt(WorkspaceManager.currentWorkspace)
-        topBar: topBar
-        dock: systemDock
-        mappingRevision: clientWindowsLayer.viewportOffset
-        externalClientsPresent: waylandServer.windowCount > 0
-        enabledForWorkspace: !WorkspaceManager.isTransitioning && !LiquidTiling.previewVisible
+        visible: false
+        property bool enabledForWorkspace: !WorkspaceManager.isTransitioning && !LiquidTiling.previewVisible
             && !LiquidTiling.hasActiveSplitInWorkspace(WorkspaceManager.currentWorkspace)
             && OutputManager.screenCount <= 1
+        readonly property bool bothVisible: glassChassis.visible && materialWindow.visible
+        readonly property bool dockAvailable: bothVisible ? dockStack.compositeAvailable : singleStack.dockAvailable
+        readonly property bool topBarAvailable: bothVisible ? topStack.compositeAvailable : singleStack.topBarAvailable
+        readonly property bool requiresBoth: bothVisible && (dockStack.selectedCount === 2 || topStack.selectedCount === 2)
+        readonly property string coverageMode: bothVisible && (dockAvailable || topBarAvailable)
+            ? "limited-internal-windows" : singleStack.coverageMode
+        readonly property var producer: singleStack.producer
+        function producerFor(consumer) {
+            if (!bothVisible) return singleStack.producer
+            const selected = consumer === topBar ? topStack.selected : dockStack.selected
+            return selected.length ? selected[selected.length - 1] : null
+        }
+        function sourceFor(consumer) {
+            if (!bothVisible) return singleStack.sourceFor(consumer)
+            const stack = consumer === topBar ? topStack : dockStack
+            return stack.compositeAvailable ? stack.compositeSource : backdropGrab
+        }
+        GfxV2.ValoSingleWindowBackdropV2 {
+            id: singleStack
+            anchors.fill: parent
+            firstWindow: glassChassis; secondWindow: materialWindow
+            wallpaperSource: backdropGrab
+            workspacePage: clientWindowsLayer.workspacePageAt(WorkspaceManager.currentWorkspace)
+            topBar: topBar; dock: systemDock
+            mappingRevision: clientWindowsLayer.viewportOffset
+            externalClientsPresent: waylandServer.windowCount > 0
+            enabledForWorkspace: overlayBackdrop.enabledForWorkspace
+        }
+        GfxV2.ValoLimitedBackdropV2 {
+            id: dockStack
+            objectName: "dockLimitedBackdrop"
+            anchors.fill: parent
+            wallpaperSource: backdropGrab
+            workspacePage: clientWindowsLayer.workspacePageAt(WorkspaceManager.currentWorkspace)
+            consumer: systemDock
+            candidates: [glassChassis, materialWindow]
+            consumerAboveWorkspace: true
+            externalClientsPresent: waylandServer.windowCount > 0
+            enabledForWorkspace: overlayBackdrop.enabledForWorkspace && singleStack.overlaysDisjoint && overlayBackdrop.bothVisible
+            mappingRevision: clientWindowsLayer.viewportOffset
+        }
+        GfxV2.ValoLimitedBackdropV2 {
+            id: topStack
+            objectName: "topBarLimitedBackdrop"
+            anchors.fill: parent
+            wallpaperSource: backdropGrab
+            workspacePage: clientWindowsLayer.workspacePageAt(WorkspaceManager.currentWorkspace)
+            consumer: topBar
+            candidates: [glassChassis, materialWindow]
+            consumerAboveWorkspace: true
+            externalClientsPresent: waylandServer.windowCount > 0
+            enabledForWorkspace: overlayBackdrop.enabledForWorkspace && singleStack.overlaysDisjoint && overlayBackdrop.bothVisible
+            mappingRevision: clientWindowsLayer.viewportOffset
+        }
     }
     Binding {
         target: rootWindow.topBarOpticalItem ? rootWindow.topBarOpticalItem.backdropProvider : null
         property: "upstreamBlurProvider"
-        value: overlayBackdrop.topBarAvailable && overlayBackdrop.producer
-               && rootWindow.opticalItemIn(overlayBackdrop.producer)
-            ? rootWindow.opticalItemIn(overlayBackdrop.producer).backdropProvider : null
+        value: overlayBackdrop.topBarAvailable && overlayBackdrop.producerFor(topBar)
+               && rootWindow.opticalItemIn(overlayBackdrop.producerFor(topBar))
+            ? rootWindow.opticalItemIn(overlayBackdrop.producerFor(topBar)).backdropProvider : null
         when: rootWindow.topBarOpticalItem !== null
     }
     Binding {
         target: rootWindow.dockOpticalItem ? rootWindow.dockOpticalItem.backdropProvider : null
         property: "upstreamBlurProvider"
-        value: overlayBackdrop.dockAvailable && overlayBackdrop.producer
-               && rootWindow.opticalItemIn(overlayBackdrop.producer)
-            ? rootWindow.opticalItemIn(overlayBackdrop.producer).backdropProvider : null
+        value: overlayBackdrop.dockAvailable && overlayBackdrop.producerFor(systemDock)
+               && rootWindow.opticalItemIn(overlayBackdrop.producerFor(systemDock))
+            ? rootWindow.opticalItemIn(overlayBackdrop.producerFor(systemDock)).backdropProvider : null
         when: rootWindow.dockOpticalItem !== null
     }
 
     Binding {
         target: rootWindow.filesOpticalItem ? rootWindow.filesOpticalItem.backdropProvider : null
         property: "upstreamBlurProvider"
-        value: internalWindowBackdrop.compositeAvailable && internalWindowBackdrop.frontWindow === glassChassis
+        value: (internalWindowBackdrop.compositeAvailable && internalWindowBackdrop.frontWindow === glassChassis)
+            || (overlayBackdrop.requiresBoth && glassChassis.z > materialWindow.z)
             ? materialWindow.opticalSurface.effectiveBackdropProvider : null
         when: rootWindow.filesOpticalItem !== null
     }
     Binding {
         target: materialWindow.opticalSurface.effectiveBackdropProvider
         property: "upstreamBlurProvider"
-        value: internalWindowBackdrop.compositeAvailable && internalWindowBackdrop.frontWindow === materialWindow
+        value: (internalWindowBackdrop.compositeAvailable && internalWindowBackdrop.frontWindow === materialWindow)
+            || (overlayBackdrop.requiresBoth && glassChassis.z <= materialWindow.z)
             ? (rootWindow.filesOpticalItem ? rootWindow.filesOpticalItem.backdropProvider : null) : null
     }
 

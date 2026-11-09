@@ -548,6 +548,54 @@ Item {
         QVERIFY(pixel(grab(),120,60).blue()>180);
     }
 
+    void limitedBackdropSelectsNearestLayers() {
+        QQmlEngine engine; QQmlComponent component(&engine);
+        component.setData(R"(
+import QtQuick
+import Systalia.Engine as V2
+Item {
+    id: root; width: 256; height: 192
+    property bool external: false
+    Rectangle { id: wall; anchors.fill: parent; color: "blue" }
+    ShaderEffectSource { id: wallpaper; sourceItem: wall; visible: false; live: true }
+    Rectangle { id: a; objectName: "a"; x: 0; y: 0; width: 256; height: 192; z: 1; color: "red" }
+    Rectangle { id: b; objectName: "b"; x: 0; y: 0; width: 190; height: 192; z: 2; color: "green" }
+    Rectangle { id: c; objectName: "c"; x: 0; y: 0; width: 120; height: 192; z: 3; color: "yellow" }
+    Rectangle { id: d; objectName: "d"; x: 0; y: 0; width: 60; height: 192; z: 4; color: "white" }
+    V2.ValoLimitedBackdropV2 {
+        id: stack; objectName: "limitedStack"; anchors.fill: parent
+        wallpaperSource: wallpaper; workspacePage: root; consumer: front
+        candidates: [a,b,c,d]; externalClientsPresent: root.external
+    }
+    V2.ValoMaterialSurfaceV2 {
+        id: front; objectName: "front"; anchors.fill: parent; z: 10
+        surfaceOpacity: 0; ior: 1; chromaticDispersion: 0; causticIntensity: 0
+        particleIntensity: 0; showShadow: false; cornerRadius: 0; blurProfile: 0
+        backdropSource: stack.compositeAvailable ? stack.compositeSource : wallpaper
+    }
+})",QUrl());
+        QScopedPointer<QObject> object(component.create()); QVERIFY2(object,qPrintable(component.errorString()));
+        QQuickWindow window; window.resize(256,192);
+        auto *root=qobject_cast<QQuickItem *>(object.data()); QVERIFY(root); root->setParentItem(window.contentItem());
+        auto *stack=object->findChild<QObject *>("limitedStack"); QVERIFY(stack);
+        auto *a=object->findChild<QQuickItem *>("a"); auto *b=object->findChild<QQuickItem *>("b");
+        auto *c=object->findChild<QQuickItem *>("c"); auto *d=object->findChild<QQuickItem *>("d");
+        QVERIFY(a && b && c && d); window.show(); QVERIFY(QTest::qWaitForWindowExposed(&window));
+        auto grab=[&] {window.update();QTest::qWait(150);return window.grabWindow();};
+        QCOMPARE(stack->property("selectedCount").toInt(),3);
+        auto image=grab(); QVERIFY(!image.isNull());
+        QVERIFY(pixel(image,25,90).red()>200 && pixel(image,25,90).green()>200);
+        QVERIFY(pixel(image,90,90).red()>200 && pixel(image,90,90).green()>200);
+        QVERIFY(pixel(image,150,90).green()>80 && pixel(image,150,90).red()<40);
+        QVERIFY(pixel(image,225,90).blue()>180); // a is excluded, not hidden in the real scene.
+        a->setZ(5); QTRY_COMPARE(stack->property("selectedCount").toInt(),3);
+        image=grab(); QVERIFY(pixel(image,225,90).red()>180);
+        a->setVisible(false); b->setOpacity(0); QTRY_COMPARE(stack->property("selectedCount").toInt(),2);
+        c->setX(300); QTRY_COMPARE(stack->property("selectedCount").toInt(),1);
+        root->setProperty("external",true); QTRY_COMPARE(stack->property("selectedCount").toInt(),0);
+        image=grab(); QVERIFY(pixel(image,225,90).blue()>180);
+    }
+
     void particleSchedulingWithoutCaustics() {
         QQuickWindow w; w.resize(256,192);
         auto *glass=new ValoGlassItemV2(w.contentItem()); glass->setSize(QSizeF(256,192));

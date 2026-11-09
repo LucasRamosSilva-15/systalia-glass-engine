@@ -1,0 +1,14 @@
+{
+    "cpuFrame": {
+        "meanMs": 0.5784576617647059,
+        "p95Ms": 0.754368,
+        "samples": 204
+    },
+    "gpuCompletedFrame": {
+        "meanMs": 1.4292916211427427,
+        "p95Ms": 1.6863000392913818,
+        "samples": 204
+    },
+    "gpuTimingAvailable": true,
+    "warmupMs": 2000
+}
