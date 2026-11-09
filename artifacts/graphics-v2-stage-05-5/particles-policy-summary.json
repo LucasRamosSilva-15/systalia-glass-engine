@@ -1,0 +1,39 @@
+{
+  "phaseSamples": [
+    {
+      "seconds": 0,
+      "phase": 0.9189993143081665,
+      "timer": true,
+      "reducedMotion": false
+    },
+    {
+      "seconds": 2,
+      "phase": 3.024003744125366,
+      "timer": false,
+      "reducedMotion": true
+    },
+    {
+      "seconds": 4,
+      "phase": 3.024003744125366,
+      "timer": false,
+      "reducedMotion": true
+    },
+    {
+      "seconds": 6,
+      "phase": 3.024003744125366,
+      "timer": false,
+      "reducedMotion": false
+    },
+    {
+      "seconds": 8,
+      "phase": 4.770998954772949,
+      "timer": true,
+      "reducedMotion": false
+    }
+  ],
+  "changedPixelsAbove2BetweenReducedMotionSamples2and4": {
+    "Files": 0,
+    "Material": 0,
+    "Dock": 0
+  }
+}

@@ -19,6 +19,8 @@
 #include <QSGTexture>
 #include "ValoGlassMaterialV2.hpp"
 
+void qml_register_types_Systalia_Engine();
+
 using namespace Systalia::Gfx::V2;
 
 // Render the production QSBs with a known backdrop, independent of synthetic fallback.
@@ -112,6 +114,7 @@ class OpticalContract : public QObject {
                              qFloor((y + .5) * im.height() / 192.));
     }
 private slots:
+    void initTestCase() { qml_register_types_Systalia_Engine(); }
     void transmission_data() {
         QTest::addColumn<int>("mode"); QTest::addColumn<float>("mix"); QTest::addColumn<QColor>("background");
         for (int mode : {0, 9}) for (float s : {0.f, .4f, 1.f})
@@ -349,6 +352,152 @@ Item {
         QVERIFY(energies[1]<energies[0]*.5); QVERIFY(energies[2]<energies[1]*.7);
         QObject::disconnect(&window,&QQuickWindow::afterRendering,&window,nullptr);
         delete glass;
+    }
+
+    void internalWindowBackdropPixels() {
+        QTest::failOnWarning(QRegularExpression(".*(texture.*loop|recurs|feedback).*", QRegularExpression::CaseInsensitiveOption));
+        QQmlEngine engine;
+        QQmlComponent component(&engine);
+        component.setData(R"(
+import QtQuick
+import Systalia.Engine
+import "qrc:/qt/qml/Systalia/Engine/src/qml/graphics/v2" as V2
+Item {
+    id: root
+    width: 256; height: 192
+    property bool orderedBlur: true
+    property bool firstPainted: true
+    property bool secondPainted: false
+    property color firstColor: "red"
+    property int profile: 0
+    Rectangle { id: wall; anchors.fill: parent; color: "blue"
+        Rectangle { y: 96; width: 256; height: 96; color: "yellow" }
+    }
+    ShaderEffectSource { id: wallpaper; sourceItem: wall; visible: false; live: true }
+    V2.ValoInternalWindowBackdropV2 {
+        id: stack; objectName: "stack"; anchors.fill: parent
+        firstWindow: first; secondWindow: second; wallpaperSource: wallpaper
+    }
+    V2.ValoMaterialSurfaceV2 {
+        id: first; objectName: "first"; x: 16; y: 20; width: 150; height: 140; z: 1
+        surfaceOpacity: 0; ior: 1; chromaticDispersion: 0; causticIntensity: 0
+        particleIntensity: 0; showShadow: false; cornerRadius: 0; blurProfile: root.profile
+        backdropSource: stack.sourceFor(first)
+        effectiveBackdropProvider.upstreamBlurProvider: root.orderedBlur && stack.compositeAvailable && stack.frontWindow === first
+            ? second.effectiveBackdropProvider : null
+        Rectangle { anchors.fill: parent; color: root.firstColor; visible: root.firstPainted }
+    }
+    V2.ValoMaterialSurfaceV2 {
+        id: second; objectName: "second"; x: 80; y: 40; width: 150; height: 140; z: 2
+        surfaceOpacity: 0; ior: 1; chromaticDispersion: 0; causticIntensity: 0
+        particleIntensity: 0; showShadow: false; cornerRadius: 0; blurProfile: root.profile
+        backdropSource: stack.sourceFor(second)
+        effectiveBackdropProvider.upstreamBlurProvider: root.orderedBlur && stack.compositeAvailable && stack.frontWindow === second
+            ? first.effectiveBackdropProvider : null
+        Rectangle { anchors.fill: parent; color: "lime"; visible: root.secondPainted }
+    }
+})", QUrl());
+        QScopedPointer<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        QQuickWindow w; w.resize(256,192);
+        auto *root=qobject_cast<QQuickItem *>(object.data()); QVERIFY(root); root->setParentItem(w.contentItem());
+        const bool negativeControl=qEnvironmentVariableIsSet("SGE_VALO_DEPENDENCY_NEGATIVE_CONTROL");
+        root->setProperty("orderedBlur",!negativeControl);
+        auto *stack=object->findChild<QObject *>("stack"); QVERIFY(stack);
+        auto *first=object->findChild<QQuickItem *>("first"); QVERIFY(first);
+        w.show(); QVERIFY(QTest::qWaitForWindowExposed(&w));
+        auto grab=[&] { w.update(); QTest::qWait(120); return w.grabWindow(); };
+        QVERIFY(stack->property("compositeAvailable").toBool());
+        auto initial=grab(); QVERIFY2(pixel(initial,120,100).red()>180,"Front glass must sample the rear internal window, not wallpaper");
+        root->setProperty("firstPainted",false);
+        const auto uv=pixel(grab(),120,110);
+        QVERIFY2(uv.red()>100 && uv.green()>100 && uv.blue()<100,
+                 "Rear optical body in capture must retain viewport UV, not local render-target UV");
+        root->setProperty("firstPainted",true);
+        root->setProperty("firstColor",QColor(Qt::green));
+        QElapsedTimer latency; latency.start(); int frames=0; QColor changed;
+        do { w.update(); QTest::qWait(16); changed=pixel(w.grabWindow(),120,100); ++frames; }
+        while(changed.green()<=changed.blue()*2 && frames<8);
+        QVERIFY2(changed.green()>changed.blue()*2,"Rear damage must reach the front optical sampler");
+        const auto latencyMs=latency.nsecsElapsed()/1000000.0;
+        const QString output=qEnvironmentVariable("SGE_VALO_GPU_METRICS_DIR");
+        if(!output.isEmpty()) {
+            QDir().mkpath(output); initial.save(output+"/overlap-production.png");
+            QFile file(output+"/overlap-latency.json"); QVERIFY(file.open(QIODevice::WriteOnly));
+            file.write(QJsonDocument(QJsonObject{{"readbackAttempts",frames},{"changeToReadbackMs",latencyMs},
+                {"note","Diagnostic upper bound including qWait, scheduling and readback; not presentation latency"}}).toJson());
+        }
+        root->setProperty("firstColor",QColor(Qt::red));
+        stack->setProperty("enabledForWorkspace",false);
+        QVERIFY(pixel(grab(),120,70).blue()>180); // Explicit wallpaper fallback.
+        stack->setProperty("enabledForWorkspace",true);
+        for(int i=0;i<36;++i) {
+            const bool rearIsFirst=i%2==0;
+            first->setZ(rearIsFirst?1:3); root->setProperty("firstPainted",rearIsFirst);
+            root->setProperty("secondPainted",!rearIsFirst);
+            root->setProperty("profile",i%3);
+            if(!negativeControl) {
+                auto *a=first->findChild<ValoGlassItemV2 *>()->backdropProvider();
+                auto *b=object->findChild<QQuickItem *>("second")->findChild<ValoGlassItemV2 *>()->backdropProvider();
+                QCOMPARE((rearIsFirst?b:a)->upstreamBlurProvider(),rearIsFirst?a:b);
+                QCOMPARE((rearIsFirst?a:b)->upstreamBlurProvider(),nullptr);
+            }
+            const auto image=grab(); const auto c=pixel(image,120,100);
+            QVERIFY2(rearIsFirst ? c.red()>80 && c.red()>c.blue()*2 && c.red()>c.green()*2
+                                : c.green()>80 && c.green()>c.blue()*2 && c.green()>c.red()*2,
+                     "Order change must not include self/front content or retain the old backdrop");
+        }
+        root->setProperty("profile",0); first->setZ(1); root->setProperty("firstPainted",true); root->setProperty("secondPainted",false);
+        auto a=grab(); auto b=grab(); QCOMPARE(pixel(a,120,100),pixel(b,120,100)); // No recursive accumulation.
+        first->setVisible(false); QVERIFY(!stack->property("compositeAvailable").toBool());
+        QVERIFY(pixel(grab(),120,70).blue()>180);
+    }
+
+    void particleSchedulingWithoutCaustics() {
+        QQuickWindow w; w.resize(256,192);
+        auto *glass=new ValoGlassItemV2(w.contentItem()); glass->setSize(QSizeF(256,192));
+        ValoOpticalContext context; glass->setOpticalContext(&context); glass->setCausticIntensity(0);
+        glass->setParticleIntensity(.35); glass->setBlurProfile(2);
+        w.show(); QVERIFY(QTest::qWaitForWindowExposed(&w));
+        QTest::qWait(100); QVERIFY(glass->causticTime()>0); QVERIFY(glass->animationRunning());
+        context.setPrefersReducedMotion(true); const float t=glass->causticTime();
+        QTest::qWait(80); QCOMPARE(glass->causticTime(),t); QCOMPARE(glass->particleIntensity(),.35f);
+        context.setPrefersReducedMotion(false); QTest::qWait(80); QVERIFY(glass->causticTime()>t);
+        glass->setBlurProfile(0); QVERIFY(!glass->animationRunning());
+        glass->setOpticalContext(nullptr); delete glass;
+    }
+
+    void suspendedParticlePixels() {
+        QQmlEngine engine; QQmlComponent component(&engine);
+        component.loadUrl(QUrl("qrc:/qt/qml/Systalia/Engine/src/qml/graphics/v2/ValoOpticalParticlesV2.qml"));
+        QScopedPointer<QObject> object(component.create()); QVERIFY2(object,qPrintable(component.errorString()));
+        QQuickWindow w; w.resize(256,192); w.setColor(Qt::transparent);
+        auto *item=qobject_cast<QQuickItem *>(object.data()); QVERIFY(item);
+        item->setSize(QSizeF(256,192)); item->setParentItem(w.contentItem());
+        w.show(); QVERIFY(QTest::qWaitForWindowExposed(&w));
+        auto grab=[&] { item->update(); QTest::qWait(70); return w.grabWindow(); };
+        auto energy=[](const QImage &image) { qint64 sum=0; for(int y=0;y<image.height();++y) for(int x=0;x<image.width();++x) sum+=image.pixelColor(x,y).alpha(); return sum; };
+        const QString output=qEnvironmentVariable("SGE_VALO_GPU_METRICS_DIR");
+        if(!output.isEmpty()) QDir().mkpath(output);
+        auto a=grab();
+        if(!output.isEmpty()) a.save(output+"/particles-quality-0.png");
+        QVERIFY(energy(a)>0); QVERIFY(energy(a)<256*192*2); // Sparse, no large luminous patches.
+        item->setProperty("animationTime",15.0); auto b=grab(); QVERIFY(a!=b);
+        if(!output.isEmpty()) b.save(output+"/particles-quality-15.png");
+        for(double t : {30.,60.}) {
+            item->setProperty("animationTime",t); auto rendered=grab(); QVERIFY(rendered!=a);
+            if(!output.isEmpty()) rendered.save(output+QString("/particles-quality-%1.png").arg(t));
+        }
+        item->setProperty("animationTime",15.0);
+        QCOMPARE(b,grab()); // A paused phase renders identically (Reduced Motion policy).
+        item->setProperty("quality",1.0); const auto balanced=grab(); QVERIFY(energy(balanced)>0); QVERIFY(energy(balanced)<energy(b));
+        item->setProperty("quality",0.0); QCOMPARE(energy(grab()),0);
+        item->setProperty("quality",2.0); item->setOpacity(0); QCOMPARE(energy(grab()),0);
+        item->setOpacity(.5); const auto half=grab(); item->setOpacity(1); const auto full=grab();
+        QVERIFY(std::abs(energy(half)*2-energy(full))<500);
+        item->setProperty("intensity",0.0); QCOMPARE(energy(grab()),0);
+        item->setProperty("intensity",.35); item->setProperty("slant",.3); item->setProperty("geometryMode",1.0);
+        const auto masked=grab(); QCOMPARE(masked.pixelColor(0,0).alpha(),0);
     }
 
     void diagnosticEnergy() {

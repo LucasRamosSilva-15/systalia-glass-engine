@@ -1,0 +1,58 @@
+********* Start testing of OpticalContract *********
+Config: Using QtTest library 6.11.2, Qt 6.11.2 (x86_64-little_endian-lp64 shared (dynamic) release build; by GCC 16.2.1 20260819 (Red Hat 16.2.1-2)), fedora 44
+PASS   : OpticalContract::initTestCase()
+PASS   : OpticalContract::transmission(0-0-#ff0000)
+PASS   : OpticalContract::transmission(0-0-#000000)
+PASS   : OpticalContract::transmission(0-0-#ffffff)
+PASS   : OpticalContract::transmission(0-0.4-#ff0000)
+PASS   : OpticalContract::transmission(0-0.4-#000000)
+PASS   : OpticalContract::transmission(0-0.4-#ffffff)
+PASS   : OpticalContract::transmission(0-1-#ff0000)
+PASS   : OpticalContract::transmission(0-1-#000000)
+PASS   : OpticalContract::transmission(0-1-#ffffff)
+PASS   : OpticalContract::transmission(9-0-#ff0000)
+PASS   : OpticalContract::transmission(9-0-#000000)
+PASS   : OpticalContract::transmission(9-0-#ffffff)
+PASS   : OpticalContract::transmission(9-0.4-#ff0000)
+PASS   : OpticalContract::transmission(9-0.4-#000000)
+PASS   : OpticalContract::transmission(9-0.4-#ffffff)
+PASS   : OpticalContract::transmission(9-1-#ff0000)
+PASS   : OpticalContract::transmission(9-1-#000000)
+PASS   : OpticalContract::transmission(9-1-#ffffff)
+PASS   : OpticalContract::inheritedOpacityAndDisabledCaustics()
+PASS   : OpticalContract::refractionDoesNotRetainOriginalLine()
+PASS   : OpticalContract::diagnosticAlphaOnKnownBackgrounds()
+PASS   : OpticalContract::meniscusCuts()
+QWARN  : OpticalContract::backdropUpdateAndCoordinates(raw) [SGE-BACKDROP-V2] REAL TEXTURE ATIVA: size=-1x-1, rhiTex=0x0, rhi=0x7f16b0003d40
+QWARN  : OpticalContract::backdropUpdateAndCoordinates(raw) [SGE-BACKDROP-V2] onBeforeRendering frame=1: srcTex=0x7f16b028ccb0, rhiSrc=0x7f16b028e410, srcSize=256x192
+QWARN  : OpticalContract::backdropUpdateAndCoordinates(raw) [SGE-BACKDROP-V2] onBeforeRendering frame=2: srcTex=0x7f16b028ccb0, rhiSrc=0x7f16b028e410, srcSize=256x192
+QWARN  : OpticalContract::backdropUpdateAndCoordinates(raw) [SGE-BACKDROP-V2] onBeforeRendering frame=3: srcTex=0x7f16b028ccb0, rhiSrc=0x7f16b028e410, srcSize=256x192
+QWARN  : OpticalContract::backdropUpdateAndCoordinates(raw) [SGE-BACKDROP-V2] onBeforeRendering frame=4: srcTex=0x7f16b028ccb0, rhiSrc=0x7f16b028e410, srcSize=256x192
+QINFO  : OpticalContract::backdropUpdateAndCoordinates(raw) profile 0 top QColor(ARGB 1, 1, 0, 0) bottom QColor(ARGB 1, 0, 0, 1)
+QWARN  : OpticalContract::backdropUpdateAndCoordinates(raw) [SGE-BACKDROP-V2] onBeforeRendering frame=5: srcTex=0x7f16b028ccb0, rhiSrc=0x7f16b028e410, srcSize=256x192
+PASS   : OpticalContract::backdropUpdateAndCoordinates(raw)
+QWARN  : OpticalContract::backdropUpdateAndCoordinates(quality) [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7f16b05f3cc0, format=1, size=256x192
+QWARN  : OpticalContract::backdropUpdateAndCoordinates(quality) [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7f16b05f3cc0, format=1, size=256x192
+QINFO  : OpticalContract::backdropUpdateAndCoordinates(quality) profile 2 top QColor(ARGB 1, 0.94902, 0, 0.0509804) bottom QColor(ARGB 1, 0.0470588, 0, 0.952941)
+QWARN  : OpticalContract::backdropUpdateAndCoordinates(quality) [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7f16b05f3cc0, format=1, size=256x192
+PASS   : OpticalContract::backdropUpdateAndCoordinates(quality)
+PASS   : OpticalContract::profileAnimationAndStaticEnergy()
+QWARN  : OpticalContract::gpuBackdropProfileSharpness() [SGE-BACKDROP-V2] Provedor de textura conectado mas provider->texture() é nulo.
+QWARN  : OpticalContract::gpuBackdropProfileSharpness() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x290428c0)
+QWARN  : OpticalContract::gpuBackdropProfileSharpness() [SGE-BACKDROP-V2] Transição: textura real do provedor obtida (256x192), descartando fallback sintético.
+QINFO  : OpticalContract::gpuBackdropProfileSharpness() GPU profile 0 gradient energy 0.134206 filtered material false
+QWARN  : OpticalContract::gpuBackdropProfileSharpness() [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7f16bce76420, format=1, size=256x192
+QINFO  : OpticalContract::gpuBackdropProfileSharpness() GPU profile 1 gradient energy 0.00121329 filtered material true
+QWARN  : OpticalContract::gpuBackdropProfileSharpness() [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7f16bce74b60, format=1, size=256x192
+QINFO  : OpticalContract::gpuBackdropProfileSharpness() GPU profile 2 gradient energy 3.27697e-06 filtered material true
+QINFO  : OpticalContract::gpuBackdropProfileSharpness() GPU profile 0 gradient energy 0.134206 filtered material false
+QINFO  : OpticalContract::gpuBackdropProfileSharpness() GPU profile 2 gradient energy 3.27697e-06 filtered material true
+QINFO  : OpticalContract::gpuBackdropProfileSharpness() GPU profile 1 gradient energy 0.00121329 filtered material true
+PASS   : OpticalContract::gpuBackdropProfileSharpness()
+PASS   : OpticalContract::internalWindowBackdropPixels()
+PASS   : OpticalContract::particleSchedulingWithoutCaustics()
+PASS   : OpticalContract::suspendedParticlePixels()
+PASS   : OpticalContract::diagnosticEnergy()
+PASS   : OpticalContract::cleanupTestCase()
+Totals: 32 passed, 0 failed, 0 skipped, 0 blacklisted, 17739ms
+********* Finished testing of OpticalContract *********

@@ -1,0 +1,197 @@
+
+This GDB supports auto-downloading debuginfo from the following URLs:
+  <ima:enforcing>
+  <https://debuginfod.fedoraproject.org/>
+  <ima:ignore>
+Enable debuginfod for this session? (y or [n]) [answered N; input not from terminal]
+Debuginfod has been disabled.
+To make this setting permanent, add 'set debuginfod enabled off' to .gdbinit.
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib64/libthread_db.so.1".
+********* Start testing of OpticalContract *********
+Config: Using QtTest library 6.11.2, Qt 6.11.2 (x86_64-little_endian-lp64 shared (dynamic) release build; by GCC 16.2.1 20260819 (Red Hat 16.2.1-2)), fedora 44
+PASS   : OpticalContract::initTestCase()
+[New Thread 0x7fffe23606c0 (LWP 52417) (id 2)]
+[New Thread 0x7fffe17f56c0 (LWP 52418) (id 3)]
+[New Thread 0x7fffe0df16c0 (LWP 52419) (id 4)]
+[New Thread 0x7fffcfbff6c0 (LWP 52420) (id 5)]
+[New Thread 0x7fffcf3fe6c0 (LWP 52421) (id 6)]
+[New Thread 0x7fffcebfd6c0 (LWP 52422) (id 7)]
+[New Thread 0x7fffce3fc6c0 (LWP 52423) (id 8)]
+[New Thread 0x7fffcdbfb6c0 (LWP 52424) (id 9)]
+[Thread 0x7fffcdbfb6c0 (LWP 52424) (id 9) exited]
+[Thread 0x7fffce3fc6c0 (LWP 52423) (id 8) exited]
+[Thread 0x7fffcebfd6c0 (LWP 52422) (id 7) exited]
+[New Thread 0x7fffcebfd6c0 (LWP 52425) (id 10)]
+[New Thread 0x7fffce3fc6c0 (LWP 52426) (id 11)]
+[New Thread 0x7fffcdbfb6c0 (LWP 52427) (id 12)]
+[New Thread 0x7fffcd3fa6c0 (LWP 52428) (id 13)]
+[New Thread 0x7fffccbf96c0 (LWP 52429) (id 14)]
+[New Thread 0x7fffa7fff6c0 (LWP 52430) (id 15)]
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] REAL TEXTURE ATIVA: size=-1x-1, rhiTex=0x0, rhi=0x7fffbc003d40
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] onBeforeRendering frame=1: srcTex=0x7fffbc367810, rhiSrc=0x7fffbc371a50, srcSize=256x192
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] onBeforeRendering frame=2: srcTex=0x7fffbc35fe00, rhiSrc=0x7fffbca57b70, srcSize=256x192
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] onBeforeRendering frame=3: srcTex=0x7fffbc367810, rhiSrc=0x7fffbc371a50, srcSize=256x192
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] onBeforeRendering frame=4: srcTex=0x7fffbc35fe00, rhiSrc=0x7fffbca57b70, srcSize=256x192
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] onBeforeRendering frame=5: srcTex=0x7fffbc367810, rhiSrc=0x7fffbc371a50, srcSize=256x192
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7fffbcb03e80, format=1, size=256x192
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7fffbcb1c4f0, format=1, size=256x192
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7fffbcb1c4f0, format=1, size=256x192
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7fffbcc12790, format=1, size=256x192
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7fffbcbf4580, format=1, size=256x192
+free(): invalid pointer
+
+Thread 13 "tst_valo_o:gl0" received signal SIGABRT, Aborted.
+[Switching to thread 13 (Thread 0x7fffcd3fa6c0 (LWP 52428))]
+0x00007ffff4c08818 in abort () from /lib64/libc.so.6
+
+Thread 15 (Thread 0x7fffa7fff6c0 (LWP 52430) "tst_va:traceq0"):
+#0  0x00007ffff4c82352 in __syscall_cancel_arch () at /lib64/libc.so.6
+#1  0x00007ffff4c7654c in __internal_syscall_cancel () at /lib64/libc.so.6
+#2  0x00007ffff4c76897 in __futex_abstimed_wait_cancelable64 () at /lib64/libc.so.6
+#3  0x00007ffff4c790ec in pthread_cond_wait@@GLIBC_2.3.2 () at /lib64/libc.so.6
+#4  0x00007fffd8dfa20d in cnd_wait () at /lib64/libgallium-26.2.5.so
+#5  0x00007fffd8daf82c in util_queue_thread_func () at /lib64/libgallium-26.2.5.so
+#6  0x00007fffd8dfa14c in impl_thrd_routine () at /lib64/libgallium-26.2.5.so
+#7  0x00007ffff4c79c42 in start_thread () at /lib64/libc.so.6
+#8  0x00007ffff4cfd5ac in __clone3 () at /lib64/libc.so.6
+
+Thread 14 (Thread 0x7fffccbf96c0 (LWP 52429) "tst_va:traceq0"):
+#0  0x00007ffff4c82352 in __syscall_cancel_arch () at /lib64/libc.so.6
+#1  0x00007ffff4c7654c in __internal_syscall_cancel () at /lib64/libc.so.6
+#2  0x00007ffff4c76897 in __futex_abstimed_wait_cancelable64 () at /lib64/libc.so.6
+#3  0x00007ffff4c790ec in pthread_cond_wait@@GLIBC_2.3.2 () at /lib64/libc.so.6
+#4  0x00007fffd8dfa20d in cnd_wait () at /lib64/libgallium-26.2.5.so
+#5  0x00007fffd8daf82c in util_queue_thread_func () at /lib64/libgallium-26.2.5.so
+#6  0x00007fffd8dfa14c in impl_thrd_routine () at /lib64/libgallium-26.2.5.so
+#7  0x00007ffff4c79c42 in start_thread () at /lib64/libc.so.6
+#8  0x00007ffff4cfd5ac in __clone3 () at /lib64/libc.so.6
+
+Thread 13 (Thread 0x7fffcd3fa6c0 (LWP 52428) "tst_valo_o:gl0"):
+#0  0x00007ffff4c08818 in abort () at /lib64/libc.so.6
+#1  0x00007ffff4c09804 in __libc_message_impl.cold () at /lib64/libc.so.6
+#2  0x00007ffff4c860cc in malloc_printerr () at /lib64/libc.so.6
+#3  0x00007ffff4c860e4 in malloc_printerr_tail () at /lib64/libc.so.6
+#4  0x00007fffd88e0d0f in delete_renderbuffer () at /lib64/libgallium-26.2.5.so
+#5  0x00007fffd88e0edc in _mesa_reference_renderbuffer_ () at /lib64/libgallium-26.2.5.so
+#6  0x00007fffd88d3972 in _mesa_free_framebuffer_data () at /lib64/libgallium-26.2.5.so
+#7  0x00007fffd88d3ab0 in _mesa_reference_framebuffer_ () at /lib64/libgallium-26.2.5.so
+#8  0x00007fffd88cd5c2 in _mesa_DeleteFramebuffers () at /lib64/libgallium-26.2.5.so
+#9  0x00007fffd8a1b6c1 in _mesa_unmarshal_DeleteFramebuffers () at /lib64/libgallium-26.2.5.so
+#10 0x00007fffd88dc111 in glthread_unmarshal_batch () at /lib64/libgallium-26.2.5.so
+#11 0x00007fffd8daf8fe in util_queue_thread_func () at /lib64/libgallium-26.2.5.so
+#12 0x00007fffd8dfa14c in impl_thrd_routine () at /lib64/libgallium-26.2.5.so
+#13 0x00007ffff4c79c42 in start_thread () at /lib64/libc.so.6
+#14 0x00007ffff4cfd5ac in __clone3 () at /lib64/libc.so.6
+
+Thread 12 (Thread 0x7fffcdbfb6c0 (LWP 52427) "tst_valo:gdrv0"):
+#0  0x00007ffff4c82352 in __syscall_cancel_arch () at /lib64/libc.so.6
+#1  0x00007ffff4c7654c in __internal_syscall_cancel () at /lib64/libc.so.6
+#2  0x00007ffff4c76897 in __futex_abstimed_wait_cancelable64 () at /lib64/libc.so.6
+#3  0x00007ffff4c790ec in pthread_cond_wait@@GLIBC_2.3.2 () at /lib64/libc.so.6
+#4  0x00007fffd8dfa20d in cnd_wait () at /lib64/libgallium-26.2.5.so
+#5  0x00007fffd8daf82c in util_queue_thread_func () at /lib64/libgallium-26.2.5.so
+#6  0x00007fffd8dfa14c in impl_thrd_routine () at /lib64/libgallium-26.2.5.so
+#7  0x00007ffff4c79c42 in start_thread () at /lib64/libc.so.6
+#8  0x00007ffff4cfd5ac in __clone3 () at /lib64/libc.so.6
+
+Thread 11 (Thread 0x7fffce3fc6c0 (LWP 52426) "tst_va:traceq0"):
+#0  0x00007ffff4c82352 in __syscall_cancel_arch () at /lib64/libc.so.6
+#1  0x00007ffff4c7654c in __internal_syscall_cancel () at /lib64/libc.so.6
+#2  0x00007ffff4c76897 in __futex_abstimed_wait_cancelable64 () at /lib64/libc.so.6
+#3  0x00007ffff4c790ec in pthread_cond_wait@@GLIBC_2.3.2 () at /lib64/libc.so.6
+#4  0x00007fffd8dfa20d in cnd_wait () at /lib64/libgallium-26.2.5.so
+#5  0x00007fffd8daf82c in util_queue_thread_func () at /lib64/libgallium-26.2.5.so
+#6  0x00007fffd8dfa14c in impl_thrd_routine () at /lib64/libgallium-26.2.5.so
+#7  0x00007ffff4c79c42 in start_thread () at /lib64/libc.so.6
+#8  0x00007ffff4cfd5ac in __clone3 () at /lib64/libc.so.6
+
+Thread 10 (Thread 0x7fffcebfd6c0 (LWP 52425) "QSGRenderThread"):
+#0  0x00007ffff4c82352 in __syscall_cancel_arch () at /lib64/libc.so.6
+#1  0x00007ffff4c7654c in __internal_syscall_cancel () at /lib64/libc.so.6
+#2  0x00007ffff4c76897 in __futex_abstimed_wait_cancelable64 () at /lib64/libc.so.6
+#3  0x00007ffff4c790ec in pthread_cond_wait@@GLIBC_2.3.2 () at /lib64/libc.so.6
+#4  0x00007ffff551032b in QWaitCondition::wait(QMutex*, QDeadlineTimer) () at /lib64/libQt6Core.so.6
+#5  0x00007ffff75f24a0 in QSGRenderThread::processEventsAndWaitForMore() () at /lib64/libQt6Quick.so.6
+#6  0x00007ffff75f271e in QSGRenderThread::run() () at /lib64/libQt6Quick.so.6
+#7  0x00007ffff550788f in QThreadPrivate::start(void*) () at /lib64/libQt6Core.so.6
+#8  0x00007ffff4c79c42 in start_thread () at /lib64/libc.so.6
+#9  0x00007ffff4cfd5ac in __clone3 () at /lib64/libc.so.6
+
+Thread 6 (Thread 0x7fffcf3fe6c0 (LWP 52421) "tst_va:sh_opt0"):
+#0  0x00007ffff4c82352 in __syscall_cancel_arch () at /lib64/libc.so.6
+#1  0x00007ffff4c7654c in __internal_syscall_cancel () at /lib64/libc.so.6
+#2  0x00007ffff4c76897 in __futex_abstimed_wait_cancelable64 () at /lib64/libc.so.6
+#3  0x00007ffff4c790ec in pthread_cond_wait@@GLIBC_2.3.2 () at /lib64/libc.so.6
+#4  0x00007fffd8dfa20d in cnd_wait () at /lib64/libgallium-26.2.5.so
+#5  0x00007fffd8daf82c in util_queue_thread_func () at /lib64/libgallium-26.2.5.so
+#6  0x00007fffd8dfa14c in impl_thrd_routine () at /lib64/libgallium-26.2.5.so
+#7  0x00007ffff4c79c42 in start_thread () at /lib64/libc.so.6
+#8  0x00007ffff4cfd5ac in __clone3 () at /lib64/libc.so.6
+
+Thread 5 (Thread 0x7fffcfbff6c0 (LWP 52420) "tst_valo_o:sh0"):
+#0  0x00007ffff4c82352 in __syscall_cancel_arch () at /lib64/libc.so.6
+#1  0x00007ffff4c7654c in __internal_syscall_cancel () at /lib64/libc.so.6
+#2  0x00007ffff4c76897 in __futex_abstimed_wait_cancelable64 () at /lib64/libc.so.6
+#3  0x00007ffff4c790ec in pthread_cond_wait@@GLIBC_2.3.2 () at /lib64/libc.so.6
+#4  0x00007fffd8dfa20d in cnd_wait () at /lib64/libgallium-26.2.5.so
+#5  0x00007fffd8daf82c in util_queue_thread_func () at /lib64/libgallium-26.2.5.so
+#6  0x00007fffd8dfa14c in impl_thrd_routine () at /lib64/libgallium-26.2.5.so
+#7  0x00007ffff4c79c42 in start_thread () at /lib64/libc.so.6
+#8  0x00007ffff4cfd5ac in __clone3 () at /lib64/libc.so.6
+
+Thread 4 (Thread 0x7fffe0df16c0 (LWP 52419) "tst_val:disk$0"):
+#0  0x00007ffff4c82352 in __syscall_cancel_arch () at /lib64/libc.so.6
+#1  0x00007ffff4c7654c in __internal_syscall_cancel () at /lib64/libc.so.6
+#2  0x00007ffff4c76897 in __futex_abstimed_wait_cancelable64 () at /lib64/libc.so.6
+#3  0x00007ffff4c790ec in pthread_cond_wait@@GLIBC_2.3.2 () at /lib64/libc.so.6
+#4  0x00007fffd8dfa20d in cnd_wait () at /lib64/libgallium-26.2.5.so
+#5  0x00007fffd8daf82c in util_queue_thread_func () at /lib64/libgallium-26.2.5.so
+#6  0x00007fffd8dfa14c in impl_thrd_routine () at /lib64/libgallium-26.2.5.so
+#7  0x00007ffff4c79c42 in start_thread () at /lib64/libc.so.6
+#8  0x00007ffff4cfd5ac in __clone3 () at /lib64/libc.so.6
+
+Thread 3 (Thread 0x7fffe17f56c0 (LWP 52418) "tst_valo_o:cs0"):
+#0  0x00007ffff4c82352 in __syscall_cancel_arch () at /lib64/libc.so.6
+#1  0x00007ffff4c7654c in __internal_syscall_cancel () at /lib64/libc.so.6
+#2  0x00007ffff4c76897 in __futex_abstimed_wait_cancelable64 () at /lib64/libc.so.6
+#3  0x00007ffff4c790ec in pthread_cond_wait@@GLIBC_2.3.2 () at /lib64/libc.so.6
+#4  0x00007fffd8dfa20d in cnd_wait () at /lib64/libgallium-26.2.5.so
+#5  0x00007fffd8daf82c in util_queue_thread_func () at /lib64/libgallium-26.2.5.so
+#6  0x00007fffd8dfa14c in impl_thrd_routine () at /lib64/libgallium-26.2.5.so
+#7  0x00007ffff4c79c42 in start_thread () at /lib64/libc.so.6
+#8  0x00007ffff4cfd5ac in __clone3 () at /lib64/libc.so.6
+
+Thread 2 (Thread 0x7fffe23606c0 (LWP 52417) "QQmlThread"):
+#0  0x00007ffff4c82352 in __syscall_cancel_arch () at /lib64/libc.so.6
+#1  0x00007ffff4c7654c in __internal_syscall_cancel () at /lib64/libc.so.6
+#2  0x00007ffff4c76594 in __syscall_cancel () at /lib64/libc.so.6
+#3  0x00007ffff4cf0466 in ppoll () at /lib64/libc.so.6
+#4  0x00007ffff4391165 in g_main_context_iterate_unlocked.isra () at /lib64/libglib-2.0.so.0
+#5  0x00007ffff4391223 in g_main_context_iteration () at /lib64/libglib-2.0.so.0
+#6  0x00007ffff565defd in QEventDispatcherGlib::processEvents(QFlags<QEventLoop::ProcessEventsFlag>) () at /lib64/libQt6Core.so.6
+#7  0x00007ffff531a78b in QEventLoop::exec(QFlags<QEventLoop::ProcessEventsFlag>) () at /lib64/libQt6Core.so.6
+#8  0x00007ffff544b34a in QThread::exec() () at /lib64/libQt6Core.so.6
+#9  0x00007ffff550788f in QThreadPrivate::start(void*) () at /lib64/libQt6Core.so.6
+#10 0x00007ffff4c79c42 in start_thread () at /lib64/libc.so.6
+#11 0x00007ffff4cfd5ac in __clone3 () at /lib64/libc.so.6
+
+Thread 1 (Thread 0x7ffff0cede80 (LWP 52414) "tst_valo_optica"):
+#0  0x00007ffff4c82352 in __syscall_cancel_arch () at /lib64/libc.so.6
+#1  0x00007ffff4c7654c in __internal_syscall_cancel () at /lib64/libc.so.6
+#2  0x00007ffff4cc5c82 in clock_nanosleep@GLIBC_2.2.5 () at /lib64/libc.so.6
+#3  0x00007ffff4cd1f37 in nanosleep () at /lib64/libc.so.6
+#4  0x00007ffff5391b2d in QTest::qSleep(std::chrono::duration<long, std::ratio<1l, 1000l> >) () at /lib64/libQt6Core.so.6
+#5  0x00007ffff5391c0c in QTest::qWait(std::chrono::duration<long, std::ratio<1l, 1000l> >) () at /lib64/libQt6Core.so.6
+#6  0x000000000040ea69 in OpticalContract::internalWindowBackdropPixels()::{lambda()#1}::operator()() const ()
+#7  0x000000000040f9e4 in OpticalContract::internalWindowBackdropPixels() ()
+#8  0x000000000040591e in OpticalContract::qt_static_metacall(QObject*, QMetaObject::Call, int, void**) ()
+#9  0x00007ffff5322480 in QMetaMethodInvoker::invokeImpl(QMetaMethod, void*, Qt::ConnectionType, long long, void const* const*, char const* const*, QtPrivate::QMetaTypeInterface const* const*) () at /lib64/libQt6Core.so.6
+#10 0x00007ffff5323117 in QMetaMethod::invokeImpl(QMetaMethod, void*, Qt::ConnectionType, long long, void const* const*, char const* const*, QtPrivate::QMetaTypeInterface const* const*) () at /lib64/libQt6Core.so.6
+#11 0x00007ffff7f3229a in QTest::invokeTestMethodIfValid(QMetaMethod, QObject*) () at /lib64/libQt6Test.so.6
+#12 0x00007ffff7f3ac3a in QTest::TestMethods::invokeTestOnData(int) const () at /lib64/libQt6Test.so.6
+#13 0x00007ffff7f3bb27 in QTest::TestMethods::invokeTest(int, QLatin1String, std::optional<QTest::WatchDog>&) const () at /lib64/libQt6Test.so.6
+#14 0x00007ffff7f3c584 in QTest::TestMethods::invokeTests(QObject*) const () at /lib64/libQt6Test.so.6
+#15 0x00007ffff7f3d1ec in QTest::qRun() () at /lib64/libQt6Test.so.6
+#16 0x00007ffff7f3d6d6 in QTest::qExec(QObject*, int, char**) () at /lib64/libQt6Test.so.6
+#17 0x00000000004056e9 in main ()

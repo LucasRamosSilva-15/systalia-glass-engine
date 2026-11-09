@@ -31,11 +31,15 @@ class ValoBackdropProviderV2 : public QObject {
     Q_PROPERTY(QQuickItem* source READ source WRITE setSource NOTIFY sourceChanged)
     Q_PROPERTY(bool hasTexture READ hasTexture NOTIFY textureChanged)
     Q_PROPERTY(bool isDirty READ isDirty WRITE setDirty NOTIFY dirtyChanged)
+    Q_PROPERTY(Systalia::Gfx::V2::ValoBackdropProviderV2* upstreamBlurProvider READ upstreamBlurProvider WRITE setUpstreamBlurProvider NOTIFY upstreamBlurProviderChanged)
     Q_PROPERTY(int blurProfile READ blurProfileInt WRITE setBlurProfileInt NOTIFY blurProfileChanged)
 
 public:
     explicit ValoBackdropProviderV2(QObject *parent = nullptr);
     ~ValoBackdropProviderV2() override;
+
+    ValoBackdropProviderV2 *upstreamBlurProvider() const noexcept { return m_upstreamBlurProvider; }
+    void setUpstreamBlurProvider(ValoBackdropProviderV2 *provider);
 
     BlurProfile blurProfile() const noexcept { return m_blurProfile; }
     int blurProfileInt() const noexcept { return static_cast<int>(m_blurProfile); }
@@ -84,6 +88,7 @@ public:
     void attachToWindow(QQuickWindow *window);
 
 signals:
+    void upstreamBlurProviderChanged();
     void sourceChanged();
     void textureChanged();
     void dirtyChanged();
@@ -94,6 +99,9 @@ private slots:
     void onBeforeRendering();
 
 private:
+    QPointer<ValoBackdropProviderV2> m_upstreamBlurProvider;
+    QPointer<ValoBackdropProviderV2> m_renderUpstream;
+    bool m_preparing = false; // Render-thread dependency/cycle guard.
     QPointer<QQuickItem> m_source;
     QPointer<QQuickItem> m_consumerItem;
     QPointer<QSGTextureProvider> m_connectedProvider;

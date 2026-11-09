@@ -13,14 +13,15 @@ ValoGlassItemV2::ValoGlassItemV2(QQuickItem *parent) : QQuickItem(parent) {
 
   connect(&m_animTimer, &QTimer::timeout, this, &ValoGlassItemV2::onAnimationFrame);
   connect(this, &QQuickItem::visibleChanged, this, &ValoGlassItemV2::resetActivity);
-  connect(this, &QQuickItem::windowChanged, this, [this](QQuickWindow *window) {
+  const auto observeWindow = [this](QQuickWindow *window) {
     disconnect(m_windowVisibilityConnection);
     if (window)
       m_windowVisibilityConnection = connect(window, &QWindow::visibilityChanged,
           this, [this] { resetActivity(); });
     resetActivity();
-  });
-  updateAnimationPolicy();
+  };
+  connect(this, &QQuickItem::windowChanged, this, observeWindow);
+  observeWindow(window()); // A C++ parent may already supply a window during construction.
 }
 
 void ValoGlassItemV2::updateAnimationPolicy() {
@@ -28,7 +29,7 @@ void ValoGlassItemV2::updateAnimationPolicy() {
   const bool visible = isVisible() && window() && window()->isVisible()
                        && window()->visibility() != QWindow::Minimized;
   const bool animate = visible && m_active && m_blurProfile != Performance
-                       && m_causticIntensity > 0.001f && permitted;
+                       && (m_causticIntensity > 0.001f || m_particleIntensity > 0.001f) && permitted;
   m_causticFrozen = !animate;
   if (!animate) {
     m_animTimer.stop();
@@ -61,6 +62,7 @@ void ValoGlassItemV2::onAnimationFrame() {
   if (m_causticFrozen) return;
   const float dt = std::min(static_cast<float>(m_elapsedTimer.restart()) / 1000.0f, 0.1f);
   m_accumulatedTime += dt;
+  emit animationTimeChanged();
   update();
 }
 
@@ -166,6 +168,14 @@ void ValoGlassItemV2::setCausticIntensity(float intensity) {
     emit causticIntensityChanged();
     update();
   }
+}
+
+void ValoGlassItemV2::setParticleIntensity(float intensity) {
+  const float clamped = std::clamp(intensity, 0.0f, 1.0f);
+  if (qFuzzyCompare(m_particleIntensity, clamped)) return;
+  m_particleIntensity = clamped;
+  resetActivity();
+  emit particleIntensityChanged();
 }
 
 void ValoGlassItemV2::setBlurProfile(int profile) {

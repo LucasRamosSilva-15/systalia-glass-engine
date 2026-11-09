@@ -106,6 +106,7 @@ private slots:
         QCOMPARE(surface->findChildren<SystaliaGlassItem *>().size(), 0);
         QCOMPARE(evaluate("materialWindow.opticalSurface.geometryMode").toInt(), 1);
         QCOMPARE(evaluate("materialWindow.blurProfile").toInt(), 1);
+        QCOMPARE(evaluate("materialWindow.surfaceOpacity").toDouble(), .50);
         QVERIFY(evaluate("filesOpticalItem !== null && dockOpticalItem !== null").toBool());
         auto change = [&](const char *name, double value) {
             auto *row = m_root->findChild<QObject *>(QString::fromLatin1(name));
@@ -144,8 +145,27 @@ private slots:
         QCOMPARE(evaluate("dockOpticalItem.causticIntensity").toDouble(), 0.0);
         QCOMPARE(evaluate("materialWindow.opticalSurface.causticIntensity").toDouble(), 0.0);
         evaluate("materialWindow.materialActive = true; materialWindow.refractiveIndex = 1.25;"
-                 "materialWindow.surfaceOpacity = .85; materialWindow.dispersion = .04;"
+                 "materialWindow.surfaceOpacity = .50; materialWindow.dispersion = .04;"
                  "materialWindow.dispersionStrength = 1; materialWindow.caustics = .85");
+    }
+
+    void internalBackdropOrderingAndFallback() {
+        evaluate("glassChassis.x = 80; glassChassis.y = 80; materialWindow.x = 300; materialWindow.y = 100; raiseMaterialWindow()");
+        QVERIFY(evaluate("internalWindowBackdrop.compositeAvailable").toBool());
+        QVERIFY(evaluate("materialWindow.backdropSource === internalWindowBackdrop.compositeSource && glassChassis.backdropSource === backdropGrab").toBool());
+        QVERIFY(evaluate("materialWindow.opticalSurface.effectiveBackdropProvider.upstreamBlurProvider === filesOpticalItem.backdropProvider").toBool());
+        evaluate("internalWindowBackdrop.externalClientsPresent = true");
+        QVERIFY(!evaluate("internalWindowBackdrop.compositeAvailable").toBool());
+        evaluate("internalWindowBackdrop.externalClientsPresent = false; raiseFileWindow()");
+        QVERIFY(evaluate("glassChassis.backdropSource === internalWindowBackdrop.compositeSource && materialWindow.backdropSource === backdropGrab").toBool());
+        QVERIFY(evaluate("filesOpticalItem.backdropProvider.upstreamBlurProvider === materialWindow.opticalSurface.effectiveBackdropProvider").toBool());
+        evaluate("WorkspaceManager.setWindowWorkspace(materialWindow, 1)");
+        QVERIFY(!evaluate("internalWindowBackdrop.compositeAvailable").toBool());
+        QVERIFY(evaluate("glassChassis.backdropSource === backdropGrab && materialWindow.backdropSource === backdropGrab").toBool());
+        evaluate("WorkspaceManager.setWindowWorkspace(materialWindow, 0); materialWindow.visible = false");
+        QVERIFY(!evaluate("internalWindowBackdrop.compositeAvailable").toBool());
+        evaluate("raiseMaterialWindow(); materialWindow.x = 810; materialWindow.y = 80");
+        QVERIFY(!evaluate("internalWindowBackdrop.compositeAvailable").toBool());
     }
 
     void materialWindowSliderInputAndWindowActions() {
@@ -178,7 +198,7 @@ private slots:
         evaluate("closeMaterialWindow()");
         QVERIFY(!evaluate("materialWindow.visible || materialWindow.windowOpen").toBool());
         evaluate("raiseMaterialWindow(); materialWindow.refractiveIndex = 1.25;"
-                 "materialWindow.surfaceOpacity = .85; materialWindow.blurProfile = 1;"
+                 "materialWindow.surfaceOpacity = .50; materialWindow.blurProfile = 1;"
                  "materialWindow.dispersion = .04; materialWindow.dispersionStrength = 1; materialWindow.caustics = .85");
     }
 

@@ -1,0 +1,34 @@
+********* Start testing of OpticalContract *********
+Config: Using QtTest library 6.11.2, Qt 6.11.2 (x86_64-little_endian-lp64 shared (dynamic) release build; by GCC 16.2.1 20260819 (Red Hat 16.2.1-2)), fedora 44
+PASS   : OpticalContract::initTestCase()
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] REAL TEXTURE ATIVA: size=-1x-1, rhiTex=0x0, rhi=0x7f7afc003d40
+QWARN  : OpticalContract::internalWindowBackdropPixels() UVTRACE OpenGL true true 0.0104167 0.0104167 0 QRect(0,0 256x192) QRect(0,0 256x192)
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] onBeforeRendering frame=1: srcTex=0x7f7afc4a7a80, rhiSrc=0x7f7afc4b1c80, srcSize=256x192
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] onBeforeRendering frame=2: srcTex=0x7f7afc4a0780, rhiSrc=0x7f7afc4e6a00, srcSize=256x192
+QWARN  : OpticalContract::internalWindowBackdropPixels() UVTRACE OpenGL true true -0.0104167 -0.0104167 20 QRect(0,0 256x192) QRect(0,0 256x192)
+QWARN  : OpticalContract::internalWindowBackdropPixels() UVTRACE OpenGL true true -0.0104167 -0.0104167 40 QRect(0,0 256x192) QRect(0,0 256x192)
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] onBeforeRendering frame=3: srcTex=0x7f7afc4a7a80, rhiSrc=0x7f7afc4b1c80, srcSize=256x192
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] onBeforeRendering frame=4: srcTex=0x7f7afc4a0780, rhiSrc=0x7f7afc4e6a00, srcSize=256x192
+QWARN  : OpticalContract::internalWindowBackdropPixels() UVTRACE OpenGL true true -0.0104167 -0.0104167 20 QRect(0,0 256x192) QRect(0,0 256x192)
+QWARN  : OpticalContract::internalWindowBackdropPixels() UVTRACE OpenGL true true -0.0104167 -0.0104167 40 QRect(0,0 256x192) QRect(0,0 256x192)
+QWARN  : OpticalContract::internalWindowBackdropPixels() UVTRACE OpenGL true true 0.0104167 0.0104167 0 QRect(0,0 256x192) QRect(0,0 256x192)
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] onBeforeRendering frame=5: srcTex=0x7f7afc4a7a80, rhiSrc=0x7f7afc4b1c80, srcSize=256x192
+QWARN  : OpticalContract::internalWindowBackdropPixels() UVTRACE OpenGL true true -0.0104167 -0.0104167 20 QRect(0,0 256x192) QRect(0,0 256x192)
+QWARN  : OpticalContract::internalWindowBackdropPixels() UVTRACE OpenGL true true -0.0104167 -0.0104167 40 QRect(0,0 256x192) QRect(0,0 256x192)
+QWARN  : OpticalContract::internalWindowBackdropPixels() UVTRACE OpenGL true true -0.0104167 -0.0104167 20 QRect(0,0 256x192) QRect(0,0 256x192)
+QWARN  : OpticalContract::internalWindowBackdropPixels() UVTRACE OpenGL true true -0.0104167 -0.0104167 40 QRect(0,0 256x192) QRect(0,0 256x192)
+QWARN  : OpticalContract::internalWindowBackdropPixels() UVTRACE OpenGL true true -0.0104167 -0.0104167 20 QRect(0,0 256x192) QRect(0,0 256x192)
+QWARN  : OpticalContract::internalWindowBackdropPixels() UVTRACE OpenGL true true -0.0104167 -0.0104167 40 QRect(0,0 256x192) QRect(0,0 256x192)
+QWARN  : OpticalContract::internalWindowBackdropPixels() UVTRACE OpenGL true true -0.0104167 -0.0104167 20 QRect(0,0 256x192) QRect(0,0 256x192)
+QWARN  : OpticalContract::internalWindowBackdropPixels() UVTRACE OpenGL true true -0.0104167 -0.0104167 40 QRect(0,0 256x192) QRect(0,0 256x192)
+QWARN  : OpticalContract::internalWindowBackdropPixels() UVTRACE OpenGL true true -0.0104167 -0.0104167 20 QRect(0,0 256x192) QRect(0,0 256x192)
+QWARN  : OpticalContract::internalWindowBackdropPixels() UVTRACE OpenGL true true -0.0104167 -0.0104167 40 QRect(0,0 256x192) QRect(0,0 256x192)
+QWARN  : OpticalContract::internalWindowBackdropPixels() UVTRACE OpenGL true true 0.0104167 0.0104167 0 QRect(0,0 256x192) QRect(0,0 256x192)
+QWARN  : OpticalContract::internalWindowBackdropPixels() UVTRACE OpenGL true true -0.0104167 -0.0104167 20 QRect(0,0 256x192) QRect(0,0 256x192)
+QWARN  : OpticalContract::internalWindowBackdropPixels() UVTRACE OpenGL true true -0.0104167 -0.0104167 40 QRect(0,0 256x192) QRect(0,0 256x192)
+QWARN  : OpticalContract::internalWindowBackdropPixels() UVTRACE OpenGL true true -0.0104167 -0.0104167 20 QRect(0,0 256x192) QRect(0,0 256x192)
+FAIL!  : OpticalContract::internalWindowBackdropPixels() 'uv.red()>100 && uv.green()>100 && uv.blue()<100' returned FALSE. (Rear optical body in capture must retain viewport UV, not local render-target UV)
+   Loc: [/home/lucasramos/Documentos/systalia-glass-engine/tests/unit/tst_ValoOpticalContractV2.cpp(416)]
+PASS   : OpticalContract::cleanupTestCase()
+Totals: 2 passed, 1 failed, 0 skipped, 0 blacklisted, 313ms
+********* Finished testing of OpticalContract *********

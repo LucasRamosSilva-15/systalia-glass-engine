@@ -3,6 +3,7 @@
 #include <QQmlApplicationEngine>
 #include <QQmlEngine>
 #include <QQuickWindow>
+#include <QQuickGraphicsConfiguration>
 #include <QUrl>
 #include <QDebug>
 #include "SystaliaGlassItem.hpp"
@@ -103,6 +104,11 @@ int main(int argc, char *argv[]) {
 
     if (auto *window = engine.rootObjects().isEmpty() ? nullptr
                      : qobject_cast<QQuickWindow *>(engine.rootObjects().first())) {
+        if (qEnvironmentVariableIsSet("SGE_VALO_BACKDROP_BENCHMARK")) {
+            auto configuration = window->graphicsConfiguration();
+            configuration.setTimestamps(true);
+            window->setGraphicsConfiguration(configuration);
+        }
         installValoStabilityProbe(window);
         QObject::connect(&logindSessionService, &LogindSessionService::gpuSubmissionSuspendedChanged,
                          window, [window, wasVisible = false](bool suspended) mutable {

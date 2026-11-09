@@ -1,0 +1,57 @@
+
+This GDB supports auto-downloading debuginfo from the following URLs:
+  <ima:enforcing>
+  <https://debuginfod.fedoraproject.org/>
+  <ima:ignore>
+Enable debuginfod for this session? (y or [n]) [answered N; input not from terminal]
+Debuginfod has been disabled.
+To make this setting permanent, add 'set debuginfod enabled off' to .gdbinit.
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib64/libthread_db.so.1".
+********* Start testing of OpticalContract *********
+Config: Using QtTest library 6.11.2, Qt 6.11.2 (x86_64-little_endian-lp64 shared (dynamic) release build; by GCC 16.2.1 20260819 (Red Hat 16.2.1-2)), fedora 44
+PASS   : OpticalContract::initTestCase()
+[New Thread 0x7fffe23606c0 (LWP 74960) (id 2)]
+[New Thread 0x7fffe17f56c0 (LWP 74961) (id 3)]
+[New Thread 0x7fffe0df16c0 (LWP 74962) (id 4)]
+[New Thread 0x7fffcfbff6c0 (LWP 74963) (id 5)]
+[New Thread 0x7fffcf3fe6c0 (LWP 74964) (id 6)]
+[New Thread 0x7fffcebfd6c0 (LWP 74965) (id 7)]
+[New Thread 0x7fffce3fc6c0 (LWP 74966) (id 8)]
+[New Thread 0x7fffcdbfb6c0 (LWP 74967) (id 9)]
+[Thread 0x7fffcdbfb6c0 (LWP 74967) (id 9) exited]
+[Thread 0x7fffce3fc6c0 (LWP 74966) (id 8) exited]
+[Thread 0x7fffcebfd6c0 (LWP 74965) (id 7) exited]
+[New Thread 0x7fffcebfd6c0 (LWP 74968) (id 10)]
+[New Thread 0x7fffce3fc6c0 (LWP 74969) (id 11)]
+[New Thread 0x7fffcdbfb6c0 (LWP 74970) (id 12)]
+[New Thread 0x7fffcd3fa6c0 (LWP 74971) (id 13)]
+[New Thread 0x7fffccbf96c0 (LWP 74972) (id 14)]
+[New Thread 0x7fffa7fff6c0 (LWP 74973) (id 15)]
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] REAL TEXTURE ATIVA: size=-1x-1, rhiTex=0x0, rhi=0x7fffbc003d40
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] onBeforeRendering frame=1: srcTex=0x7fffbc367a50, rhiSrc=0x7fffbc372620, srcSize=256x192
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] onBeforeRendering frame=2: srcTex=0x7fffbc360450, rhiSrc=0x7fffbca5d370, srcSize=256x192
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] onBeforeRendering frame=3: srcTex=0x7fffbc367a50, rhiSrc=0x7fffbc372620, srcSize=256x192
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] onBeforeRendering frame=4: srcTex=0x7fffbc360450, rhiSrc=0x7fffbca5d370, srcSize=256x192
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] onBeforeRendering frame=5: srcTex=0x7fffbc367a50, rhiSrc=0x7fffbc372620, srcSize=256x192
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7fffbcb24070, format=1, size=256x192
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7fffbcbee640, format=1, size=256x192
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7fffbcbee640, format=1, size=256x192
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7fffbcb5eeb0, format=1, size=256x192
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7fffbcc5d060, format=1, size=256x192
+[Thread 0x7fffcd3fa6c0 (LWP 74971) (id 13) exited]
+[Thread 0x7fffcdbfb6c0 (LWP 74970) (id 12) exited]
+[Thread 0x7fffce3fc6c0 (LWP 74969) (id 11) exited]
+[Thread 0x7fffcebfd6c0 (LWP 74968) (id 10) exited]
+[Thread 0x7fffe23606c0 (LWP 74960) (id 2) exited]
+PASS   : OpticalContract::internalWindowBackdropPixels()
+PASS   : OpticalContract::cleanupTestCase()
+Totals: 3 passed, 0 failed, 0 skipped, 0 blacklisted, 5603ms
+********* Finished testing of OpticalContract *********
+[Thread 0x7fffa7fff6c0 (LWP 74973) (id 15) exited]
+[Thread 0x7fffccbf96c0 (LWP 74972) (id 14) exited]
+[Thread 0x7fffcfbff6c0 (LWP 74963) (id 5) exited]
+[Thread 0x7fffcf3fe6c0 (LWP 74964) (id 6) exited]
+[Thread 0x7fffe0df16c0 (LWP 74962) (id 4) exited]
+[Thread 0x7fffe17f56c0 (LWP 74961) (id 3) exited]
+[Inferior 1 (process 74941) exited normally]

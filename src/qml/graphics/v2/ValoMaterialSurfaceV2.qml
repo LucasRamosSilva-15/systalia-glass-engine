@@ -38,6 +38,9 @@ Item {
     property real chromaticDispersion: (blurProfile === 2) ? 0.040 : 0.020
     property real causticIntensity: (blurProfile === 2) ? 0.18 : 0.05
     property bool active: true
+    // Independent suspended-light overlay; never changes caustic intensity or UBO ABI.
+    property real particleIntensity: 0.35
+    readonly property real particleSeed: Math.random() * 1000
 
     // =========================================================================
     // 2. SOMBRA ANALÍTICA EXTERNA
@@ -118,7 +121,7 @@ Item {
         id: glassItem
         anchors.fill: parent
         z: 5
-        visible: root.debugPass !== "G" // Oculta o chassi no passe G (sombra isolada)
+        visible: root.debugPass !== "G" && root.debugPass !== "L" // Oculta o chassi no passe G (sombra isolada)
 
         cornerRadii: root.cornerRadii
         geometryMode: root.geometryMode
@@ -135,9 +138,25 @@ Item {
         ior: root.ior
         chromaticDispersion: root.chromaticDispersion
         causticIntensity: root.causticIntensity
+        particleIntensity: root.particleIntensity
         blurProfile: root.blurProfile
         backdropProvider: root.effectiveBackdropProvider
         opticalContext: root.effectiveOpticalContext
+    }
+
+    ValoOpticalParticlesV2 {
+        objectName: "valoSuspendedParticlesV2"
+        anchors.fill: parent
+        z: 6
+        visible: root.active && root.blurProfile !== 0
+                 && root.particleIntensity > 0 && (root.debugPass === "H" || root.debugPass === "L")
+        animationTime: glassItem.animationTime
+        intensity: root.particleIntensity
+        quality: root.blurProfile
+        seedOffset: root.particleSeed
+        radii: root.cornerRadii
+        geometryMode: root.geometryMode
+        slant: root.slant
     }
 
     // =========================================================================

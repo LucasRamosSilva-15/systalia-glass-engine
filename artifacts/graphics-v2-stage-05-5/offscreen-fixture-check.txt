@@ -1,0 +1,19 @@
+********* Start testing of OpticalContract *********
+Config: Using QtTest library 6.11.2, Qt 6.11.2 (x86_64-little_endian-lp64 shared (dynamic) release build; by GCC 16.2.1 20260819 (Red Hat 16.2.1-2)), fedora 44
+PASS   : OpticalContract::initTestCase()
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] REAL TEXTURE ATIVA: size=-1x-1, rhiTex=0x0, rhi=0x7f3afc003d40
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] onBeforeRendering frame=1: srcTex=0x7f3afc3681f0, rhiSrc=0x7f3afc3723c0, srcSize=256x192
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] onBeforeRendering frame=2: srcTex=0x7f3afc3606d0, rhiSrc=0x7f3afca6c620, srcSize=256x192
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] onBeforeRendering frame=3: srcTex=0x7f3afc3681f0, rhiSrc=0x7f3afc3723c0, srcSize=256x192
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] onBeforeRendering frame=4: srcTex=0x7f3afc3606d0, rhiSrc=0x7f3afca6c620, srcSize=256x192
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] onBeforeRendering frame=5: srcTex=0x7f3afc3681f0, rhiSrc=0x7f3afc3723c0, srcSize=256x192
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7f3afcb08280, format=1, size=256x192
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7f3afcb21960, format=1, size=256x192
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7f3afcb21960, format=1, size=256x192
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7f3afcb5f1f0, format=1, size=256x192
+QWARN  : OpticalContract::internalWindowBackdropPixels() [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7f3afcc56510, format=1, size=256x192
+PASS   : OpticalContract::internalWindowBackdropPixels()
+PASS   : OpticalContract::particleSchedulingWithoutCaustics()
+PASS   : OpticalContract::cleanupTestCase()
+Totals: 4 passed, 0 failed, 0 skipped, 0 blacklisted, 2471ms
+********* Finished testing of OpticalContract *********

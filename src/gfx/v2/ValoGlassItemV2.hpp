@@ -39,6 +39,8 @@ class ValoGlassItemV2 : public QQuickItem {
   Q_PROPERTY(float ior READ ior WRITE setIor NOTIFY iorChanged)
   Q_PROPERTY(float chromaticDispersion READ chromaticDispersion WRITE setChromaticDispersion NOTIFY chromaticDispersionChanged)
   Q_PROPERTY(float causticIntensity READ causticIntensity WRITE setCausticIntensity NOTIFY causticIntensityChanged)
+  Q_PROPERTY(float animationTime READ causticTime NOTIFY animationTimeChanged)
+  Q_PROPERTY(float particleIntensity READ particleIntensity WRITE setParticleIntensity NOTIFY particleIntensityChanged)
   Q_PROPERTY(int blurProfile READ blurProfile WRITE setBlurProfile NOTIFY blurProfileChanged)
   Q_PROPERTY(Systalia::Gfx::V2::ValoBackdropProviderV2 *backdropProvider READ backdropProvider WRITE setBackdropProvider NOTIFY backdropProviderChanged)
   Q_PROPERTY(Systalia::Gfx::V2::ValoOpticalContext *opticalContext READ opticalContext WRITE setOpticalContext NOTIFY opticalContextChanged)
@@ -90,6 +92,9 @@ public:
   float causticIntensity() const noexcept { return m_causticIntensity; }
   void setCausticIntensity(float intensity);
 
+  float particleIntensity() const noexcept { return m_particleIntensity; }
+  void setParticleIntensity(float intensity);
+
   int blurProfile() const noexcept { return m_blurProfile; }
   void setBlurProfile(int profile);
 
@@ -117,6 +122,8 @@ signals:
   void iorChanged();
   void chromaticDispersionChanged();
   void causticIntensityChanged();
+  void animationTimeChanged();
+  void particleIntensityChanged();
   void blurProfileChanged();
   void backdropProviderChanged();
   void opticalContextChanged();
@@ -147,6 +154,7 @@ private:
   QPointer<ValoBackdropProviderV2> m_backdropProvider;
   QPointer<ValoOpticalContext> m_opticalContext;
 
+  float m_particleIntensity = 0.0f; // Scheduling only; never appended to the optical UBO.
   QTimer m_animTimer;
   QElapsedTimer m_elapsedTimer;
   float m_accumulatedTime = 0.0f;

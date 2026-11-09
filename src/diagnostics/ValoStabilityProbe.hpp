@@ -6,6 +6,12 @@
 #include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QJsonArray>
+#include <QMutex>
+#include <QMutexLocker>
+#include <memory>
+#include <algorithm>
+#include <rhi/qrhi.h>
 #include <QQmlContext>
 #include <QQmlExpression>
 #include <QJSValue>
@@ -64,8 +70,53 @@ inline void installValoStabilityProbe(QQuickWindow *window) {
         if (e.hasError()) qWarning() << e.error();
         return value;
     };
+    if (qEnvironmentVariableIsSet("SGE_VALO_INTERNAL_OVERLAP")) {
+        evaluate("glassChassis.x=80; glassChassis.y=80; materialWindow.x=380; materialWindow.y=150; raiseMaterialWindow()");
+    }
+    if (qEnvironmentVariableIsSet("SGE_VALO_WALLPAPER_ONLY"))
+        evaluate("internalWindowBackdrop.enabledForWorkspace=false");
+    if (qEnvironmentVariableIsSet("SGE_VALO_PARTICLES_ONLY")) {
+        for(auto *item : window->findChildren<Systalia::Gfx::V2::ValoGlassItemV2 *>()) {
+            item->setCausticIntensity(0);
+            item->setOpacity(0); // Isolate sibling particles; keep visibility/phase policy active.
+        }
+    }
+    if (qEnvironmentVariableIsSet("SGE_VALO_BACKDROP_BENCHMARK")) {
+        struct Timing { QMutex mutex; QElapsedTimer cpu; QElapsedTimer settle; QList<double> cpuMs, gpuMs; };
+        auto timing = std::make_shared<Timing>(); timing->settle.start();
+        QObject::connect(window,&QQuickWindow::beforeFrameBegin,window,[timing] {
+            timing->cpu.start();
+        },Qt::DirectConnection);
+        QObject::connect(window,&QQuickWindow::afterRendering,window,[timing,window] {
+            if(timing->settle.elapsed()<2000) return;
+            auto *swapchain=window->swapChain();
+            auto *cb=swapchain ? swapchain->currentFrameCommandBuffer() : nullptr;
+            const double gpu=cb ? cb->lastCompletedGpuTime()*1000.0 : 0.0;
+            QMutexLocker lock(&timing->mutex);
+            if(gpu>0) timing->gpuMs.append(gpu);
+        },Qt::DirectConnection);
+        QObject::connect(window,&QQuickWindow::afterFrameEnd,window,[timing] {
+            if(timing->settle.elapsed()<2000 || !timing->cpu.isValid()) return;
+            QMutexLocker lock(&timing->mutex);
+            timing->cpuMs.append(timing->cpu.nsecsElapsed()/1000000.0);
+        },Qt::DirectConnection);
+        QObject::connect(qApp,&QCoreApplication::aboutToQuit,window,[timing,directory] {
+            QMutexLocker lock(&timing->mutex);
+            auto stats=[](QList<double> values) {
+                std::sort(values.begin(),values.end()); double sum=0; for(double v:values) sum+=v;
+                return QJsonObject{{"samples",values.size()},{"meanMs",values.isEmpty()?0:sum/values.size()},
+                    {"p95Ms",values.isEmpty()?0:values[qMin(values.size()-1,qsizetype(values.size()*.95))]}};
+            };
+            QFile file(directory+"/frame-timings.json");
+            if(file.open(QIODevice::WriteOnly)) file.write(QJsonDocument(QJsonObject{
+                {"cpuFrame",stats(timing->cpuMs)},{"gpuCompletedFrame",stats(timing->gpuMs)},
+                {"gpuTimingAvailable",!timing->gpuMs.isEmpty()}, {"warmupMs",2000}}).toJson());
+        });
+        if(!qEnvironmentVariableIsSet("SGE_VALO_OPTICAL_TIMELINE"))
+            QTimer::singleShot(8000,window,[]{QCoreApplication::quit();});
+    }
     const bool opticalTimeline = qEnvironmentVariableIsSet("SGE_VALO_OPTICAL_TIMELINE");
-    if (opticalTimeline) {
+    if (opticalTimeline || qEnvironmentVariableIsSet("SGE_VALO_OPTICAL_PROFILE")) {
         const int profile = qBound(0,qEnvironmentVariableIntValue("SGE_VALO_OPTICAL_PROFILE"),2);
         evaluate(QString("materialWindow.blurProfile = %1").arg(profile));
         for(auto *item : window->findChildren<Systalia::Gfx::V2::ValoGlassItemV2 *>()) item->setBlurProfile(profile);
@@ -120,8 +171,9 @@ inline void installValoStabilityProbe(QQuickWindow *window) {
                 }
                 const int profiles[] = {0, 1, 2, 1, 0, 2};
                 const int profile = profiles[step++ % 6];
-                evaluate(QString("materialWindow.blurProfile = %1; raiseMaterialWindow(); raiseFileWindow()")
-                         .arg(profile));
+                evaluate(QString("materialWindow.blurProfile = %1; %2").arg(profile).arg(
+                    step % 2 ? "raiseFileWindow(); raiseMaterialWindow()"
+                             : "raiseMaterialWindow(); raiseFileWindow()"));
                 QTimer::singleShot(100,window,[window,directory,profile] {
                 const QImage rendered = window->grabWindow();
                 if (rendered.isNull()) {
@@ -136,7 +188,7 @@ inline void installValoStabilityProbe(QQuickWindow *window) {
         return;
     }
     window->installEventFilter(new ValoProbeInputBlocker(window));
-    auto measure = [window, directory](int seconds) {
+    auto measure = [window, directory, evaluate](int seconds) {
         QJsonObject textures;
         const auto observation = QObject::connect(window, &QQuickWindow::beforeSynchronizing,
             window, [window, &textures] {
@@ -158,6 +210,9 @@ inline void installValoStabilityProbe(QQuickWindow *window) {
         if (frame.isNull()) { qCritical() << "VALO empty capture" << seconds; return; }
         frame.save(directory + QString("/sde-%1.png").arg(seconds));
         QJsonObject result{{"seconds", seconds}, {"exposed", window->isExposed()}, {"width", frame.width()}, {"height", frame.height()}, {"backdropTextures", textures}};
+        result["backdropCoverage"] = evaluate("internalWindowBackdrop.coverageMode").toString();
+        result["filesZ"] = evaluate("glassChassis.z").toDouble();
+        result["materialZ"] = evaluate("materialWindow.z").toDouble();
         int index = 0;
         for (auto *item : window->findChildren<Systalia::Gfx::V2::ValoGlassItemV2 *>()) {
             auto *context = item->opticalContext();
@@ -180,7 +235,7 @@ inline void installValoStabilityProbe(QQuickWindow *window) {
             QJsonObject row{{"sceneX", scene.x()}, {"sceneY", scene.y()},
                 {"luminance", luminance}, {"opacity", item->surfaceOpacity()},
                 {"itemOpacity", item->opacity()}, {"caustics", item->causticIntensity()},
-                {"frozen", item->isCausticFrozen()}, {"causticTime", item->causticTime()},
+                {"particleIntensity", item->particleIntensity()}, {"frozen", item->isCausticFrozen()}, {"causticTime", item->causticTime()},
                 {"active", item->isActive()}, {"ior", item->ior()},
                 {"dispersion", item->chromaticDispersion()},
                 {"tint", item->volumetricTint().name(QColor::HexArgb)},
@@ -205,7 +260,7 @@ inline void installValoStabilityProbe(QQuickWindow *window) {
         if (seconds == 60) QCoreApplication::quit();
     };
     // Settle the actual SDE before observation; no input in timeline mode.
-    QTimer::singleShot(1000, window, [window, measure, opticalTimeline] {
+    QTimer::singleShot(1000, window, [window, measure, opticalTimeline, evaluate] {
         measure(0);
         if (qEnvironmentVariableIsSet("SGE_VALO_POLICY_PROBE")) {
             QTimer::singleShot(2000,window,[window,measure] {
@@ -226,6 +281,11 @@ inline void installValoStabilityProbe(QQuickWindow *window) {
             });
             QTimer::singleShot(8000,window,[measure] { measure(8); QCoreApplication::quit(); });
             return;
+        }
+        if (qEnvironmentVariableIsSet("SGE_VALO_INTERNAL_OVERLAP")) {
+            QTimer::singleShot(7000,window,[evaluate] { evaluate("raiseFileWindow()"); });
+            QTimer::singleShot(22000,window,[evaluate] { evaluate("raiseMaterialWindow()"); });
+            QTimer::singleShot(45000,window,[evaluate] { evaluate("raiseFileWindow()"); });
         }
         const QList<int> samples = opticalTimeline ? QList<int>{5,15,30,60} : QList<int>{10,30,60};
         for (int seconds : samples)

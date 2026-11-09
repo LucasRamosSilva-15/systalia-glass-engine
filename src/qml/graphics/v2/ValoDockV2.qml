@@ -28,6 +28,7 @@ Item {
     property alias opticalContext: glassItem.opticalContext
 
     // Perfis gráficos: 0 = Performance, 1 = Balanced, 2 = Quality
+    property real particleIntensity: 0.25
     property int blurProfile: 2
 
     // Modo de Diagnóstico:
@@ -163,10 +164,23 @@ Item {
         slant: 0.0
         ior: (root.blurProfile === 2) ? 1.25 : 1.15
         chromaticDispersion: (root.blurProfile === 2) ? 0.040 : 0.020
+        particleIntensity: root.particleIntensity
         causticIntensity: (root.blurProfile === 2) ? 0.18 : 0.05
         blurProfile: root.blurProfile
         backdropProvider: backdropProvider
         opticalContext: defaultOpticalContext
+    }
+
+    ValoOpticalParticlesV2 {
+        objectName: "valoSuspendedParticlesV2"
+        anchors.fill: parent
+        z: 6
+        visible: root.blurProfile !== 0 && root.debugPass === "H" && root.particleIntensity > 0
+        animationTime: glassItem.animationTime
+        intensity: root.particleIntensity
+        quality: root.blurProfile
+        seedOffset: 37
+        radii: glassItem.cornerRadii
     }
 
     // 3. Fila dos Cinco Lançadores Vetoriais Oficiais do Figma

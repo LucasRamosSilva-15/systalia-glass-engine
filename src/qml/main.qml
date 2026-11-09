@@ -6,6 +6,7 @@ import Systalia.Engine
 import Systalia.Compositor 1.0
 import Systalia.System 1.0
 import "shell" as Shell
+import "graphics/v2" as GfxV2
 
 ApplicationWindow {
     id: rootWindow
@@ -374,13 +375,41 @@ ApplicationWindow {
         parallaxFactor: 0.35
     }
 
+    GfxV2.ValoInternalWindowBackdropV2 {
+        id: internalWindowBackdrop
+        objectName: "internalWindowBackdropV2"
+        anchors.fill: parent
+        firstWindow: glassChassis
+        secondWindow: materialWindow
+        wallpaperSource: backdropGrab
+        // External buffers are deliberately outside this internal-pair pilot.
+        externalClientsPresent: waylandServer.windowCount > 0
+        enabledForWorkspace: !WorkspaceManager.isTransitioning
+            && glassChassis.parent === clientWindowsLayer.workspacePageAt(WorkspaceManager.currentWorkspace)
+        mappingRevision: clientWindowsLayer.viewportOffset
+    }
+
+    Binding {
+        target: rootWindow.filesOpticalItem ? rootWindow.filesOpticalItem.backdropProvider : null
+        property: "upstreamBlurProvider"
+        value: internalWindowBackdrop.compositeAvailable && internalWindowBackdrop.frontWindow === glassChassis
+            ? materialWindow.opticalSurface.effectiveBackdropProvider : null
+        when: rootWindow.filesOpticalItem !== null
+    }
+    Binding {
+        target: materialWindow.opticalSurface.effectiveBackdropProvider
+        property: "upstreamBlurProvider"
+        value: internalWindowBackdrop.compositeAvailable && internalWindowBackdrop.frontWindow === materialWindow
+            ? (rootWindow.filesOpticalItem ? rootWindow.filesOpticalItem.backdropProvider : null) : null
+    }
+
     Shell.SystaliaFilesWindowV2 {
         id: glassChassis
         parent: clientWindowsLayer.workspacePageAt(0)
         x: 80
         y: 80
         z: 10
-        backdropSource: backdropGrab
+        backdropSource: internalWindowBackdrop.sourceFor(glassChassis)
         screenResolution: Qt.vector2d(rootWindow.width * rootWindow.devicePixelRatio,
                                       rootWindow.height * rootWindow.devicePixelRatio)
         animationTime: animTimer.tick
@@ -402,7 +431,7 @@ ApplicationWindow {
         x: 810
         y: 80
         z: 11
-        backdropSource: backdropGrab
+        backdropSource: internalWindowBackdrop.sourceFor(materialWindow)
         screenResolution: Qt.vector2d(rootWindow.width * rootWindow.devicePixelRatio,
                                       rootWindow.height * rootWindow.devicePixelRatio)
         animationTime: animTimer.tick

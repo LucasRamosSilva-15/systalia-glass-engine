@@ -1,0 +1,98 @@
+[
+  {
+    "profile": 0,
+    "wallpaperOnly": {
+      "cpuFrame": {
+        "meanMs": 1.9869329999999998,
+        "p95Ms": 2.406348,
+        "samples": 6
+      },
+      "gpuCompletedFrame": {
+        "meanMs": 1.3466966549555461,
+        "p95Ms": 1.5056999921798706,
+        "samples": 6
+      },
+      "gpuTimingAvailable": true,
+      "warmupMs": 2000
+    },
+    "internalPair": {
+      "cpuFrame": {
+        "meanMs": 2.1464025999999996,
+        "p95Ms": 2.474989,
+        "samples": 5
+      },
+      "gpuCompletedFrame": {
+        "meanMs": 1.518336009979248,
+        "p95Ms": 1.8712799549102783,
+        "samples": 5
+      },
+      "gpuTimingAvailable": true,
+      "warmupMs": 2000
+    },
+    "gpuMeanDeltaMs": 0.17163935502370187
+  },
+  {
+    "profile": 1,
+    "wallpaperOnly": {
+      "cpuFrame": {
+        "meanMs": 0.8620577624309388,
+        "p95Ms": 1.142128,
+        "samples": 181
+      },
+      "gpuCompletedFrame": {
+        "meanMs": 1.8208837028366427,
+        "p95Ms": 2.260119915008545,
+        "samples": 181
+      },
+      "gpuTimingAvailable": true,
+      "warmupMs": 2000
+    },
+    "internalPair": {
+      "cpuFrame": {
+        "meanMs": 6.547135821229053,
+        "p95Ms": 16.943151,
+        "samples": 358
+      },
+      "gpuCompletedFrame": {
+        "meanMs": 2.559947709131507,
+        "p95Ms": 3.9118800163269047,
+        "samples": 358
+      },
+      "gpuTimingAvailable": true,
+      "warmupMs": 2000
+    },
+    "gpuMeanDeltaMs": 0.7390640062948644
+  },
+  {
+    "profile": 2,
+    "wallpaperOnly": {
+      "cpuFrame": {
+        "meanMs": 0.7991015393258433,
+        "p95Ms": 1.062676,
+        "samples": 356
+      },
+      "gpuCompletedFrame": {
+        "meanMs": 2.170246038544044,
+        "p95Ms": 2.617840051651001,
+        "samples": 356
+      },
+      "gpuTimingAvailable": true,
+      "warmupMs": 2000
+    },
+    "internalPair": {
+      "cpuFrame": {
+        "meanMs": 10.008434104982205,
+        "p95Ms": 10.191099,
+        "samples": 562
+      },
+      "gpuCompletedFrame": {
+        "meanMs": 3.1839629936558254,
+        "p95Ms": 3.9459199905395503,
+        "samples": 561
+      },
+      "gpuTimingAvailable": true,
+      "warmupMs": 2000
+    },
+    "gpuMeanDeltaMs": 1.0137169551117813
+  }
+]

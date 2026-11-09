@@ -1,0 +1,105 @@
+{
+  "note": "Actual SDE window, optical glass item opacity zero in diagnostic probe; sibling particle pass and real UI remain. ROI excludes clock. Byte deltas include any other UI changes.",
+  "regions": {
+    "Files": [
+      80,
+      140,
+      781,
+      674
+    ],
+    "Material": [
+      810,
+      140,
+      1510,
+      674
+    ],
+    "Dock": [
+      553,
+      817,
+      1109,
+      942
+    ]
+  },
+  "samples": [
+    {
+      "seconds": 0,
+      "surfaces": {
+        "Files": {
+          "changedPixelsAbove2": 0,
+          "maxRgbByteDelta": 0,
+          "meanAbsoluteRgbByteDelta": 0.0
+        },
+        "Material": {
+          "changedPixelsAbove2": 0,
+          "maxRgbByteDelta": 0,
+          "meanAbsoluteRgbByteDelta": 0.0
+        },
+        "Dock": {
+          "changedPixelsAbove2": 0,
+          "maxRgbByteDelta": 0,
+          "meanAbsoluteRgbByteDelta": 0.0
+        }
+      }
+    },
+    {
+      "seconds": 15,
+      "surfaces": {
+        "Files": {
+          "changedPixelsAbove2": 375,
+          "maxRgbByteDelta": 49,
+          "meanAbsoluteRgbByteDelta": 0.006671403969004507
+        },
+        "Material": {
+          "changedPixelsAbove2": 211,
+          "maxRgbByteDelta": 41,
+          "meanAbsoluteRgbByteDelta": 0.004031567683253076
+        },
+        "Dock": {
+          "changedPixelsAbove2": 353,
+          "maxRgbByteDelta": 44,
+          "meanAbsoluteRgbByteDelta": 0.03704556354916067
+        }
+      }
+    },
+    {
+      "seconds": 30,
+      "surfaces": {
+        "Files": {
+          "changedPixelsAbove2": 339,
+          "maxRgbByteDelta": 49,
+          "meanAbsoluteRgbByteDelta": 0.005942108740679001
+        },
+        "Material": {
+          "changedPixelsAbove2": 205,
+          "maxRgbByteDelta": 42,
+          "meanAbsoluteRgbByteDelta": 0.0037595862314963435
+        },
+        "Dock": {
+          "changedPixelsAbove2": 406,
+          "maxRgbByteDelta": 44,
+          "meanAbsoluteRgbByteDelta": 0.043323741007194244
+        }
+      }
+    },
+    {
+      "seconds": 60,
+      "surfaces": {
+        "Files": {
+          "changedPixelsAbove2": 386,
+          "maxRgbByteDelta": 49,
+          "meanAbsoluteRgbByteDelta": 0.00678538417562925
+        },
+        "Material": {
+          "changedPixelsAbove2": 144,
+          "maxRgbByteDelta": 40,
+          "meanAbsoluteRgbByteDelta": 0.0027644016408061352
+        },
+        "Dock": {
+          "changedPixelsAbove2": 409,
+          "maxRgbByteDelta": 44,
+          "meanAbsoluteRgbByteDelta": 0.04309832134292566
+        }
+      }
+    }
+  ]
+}

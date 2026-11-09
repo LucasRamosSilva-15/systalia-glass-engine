@@ -59,6 +59,8 @@ qt6_add_shaders(sge_shaders "sge_shaders_v2_resource"
     FILES
         shaders/v2/valo_optical_v2.vert
         shaders/v2/valo_optical_v2.frag
+        shaders/v2/valo_backdrop_copy.frag
+        shaders/v2/valo_particles.frag
         shaders/v2/valo_kawase_down.vert
         shaders/v2/valo_kawase_down.frag
         shaders/v2/valo_kawase_up.vert
@@ -237,6 +239,8 @@ qt_add_qml_module(sge_core
         src/qml/shell/SystaliaFilesWindowV2.qml
         src/qml/shell/SystaliaControlCenterV2.qml
         src/qml/graphics/v2/ValoMaterialSurfaceV2.qml
+        src/qml/graphics/v2/ValoInternalWindowBackdropV2.qml
+        src/qml/graphics/v2/ValoOpticalParticlesV2.qml
         src/qml/graphics/v2/ValoSurfaceV2.qml
         src/qml/graphics/v2/ValoDockItemV2.qml
         src/qml/graphics/v2/ValoDockV2.qml

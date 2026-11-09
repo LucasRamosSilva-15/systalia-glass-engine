@@ -6,6 +6,7 @@
 #include <utility>
 #include <QThread>
 #include <QRunnable>
+#include <QScopedValueRollback>
 
 namespace Systalia::Gfx::V2 {
 
@@ -34,6 +35,18 @@ ValoBackdropProviderV2::ValoBackdropProviderV2(QObject *parent)
 
 ValoBackdropProviderV2::~ValoBackdropProviderV2() {
     releaseResources();
+}
+
+void ValoBackdropProviderV2::setUpstreamBlurProvider(ValoBackdropProviderV2 *provider) {
+    if (provider == this) {
+        qWarning("[SGE-BACKDROP-V2] Self dependency rejected.");
+        return;
+    }
+    if (m_upstreamBlurProvider == provider) return;
+    m_upstreamBlurProvider = provider;
+    setDirty(true);
+    emit upstreamBlurProviderChanged();
+    emit textureChanged();
 }
 
 void ValoBackdropProviderV2::setSource(QQuickItem *source) {
@@ -214,6 +227,23 @@ void ValoBackdropProviderV2::onBeforeRendering() {
     if (!m_resourceWindow) return;
     QRhi *rhi = m_resourceWindow->rhi();
     if (!rhi) return;
+    if (m_preparing) {
+        qWarning("[SGE-BACKDROP-V2] Recursive blur dependency rejected.");
+        m_status = 3;
+        return;
+    }
+    QScopedValueRollback preparing(m_preparing, true);
+    if (m_renderUpstream) {
+        if (m_renderUpstream->m_preparing || m_renderUpstream->m_resourceWindow != m_resourceWindow) {
+            qWarning("[SGE-BACKDROP-V2] Invalid blur dependency rejected (cycle or different window).");
+            m_status = 3;
+            return;
+        }
+        // A captured rear material must rebuild its profile BEFORE its old output
+        // is referenced by this frame's layer commands. Signal connection order
+        // alone is not a dependency order after windows exchange Z.
+        m_renderUpstream->onBeforeRendering();
+    }
 
     // Resolve only the synchronized provider here. texture() may retire a fallback
     // handed to this frame's material, so ownership transitions belong to sync.
@@ -317,6 +347,7 @@ QSGTexture *ValoBackdropProviderV2::blurredTexture(QQuickWindow *window) {
     if (!window) return nullptr;
     attachToWindow(window);
     // Synchronization blocks the GUI thread: snapshot configuration for this frame.
+    m_renderUpstream = m_upstreamBlurProvider;
     if (m_renderProfile != m_blurProfile) {
         m_renderProfile = m_blurProfile;
         m_status = m_renderProfile == BlurProfile::Performance ? 0 : 1;
@@ -370,6 +401,7 @@ void ValoBackdropProviderV2::releaseResources() {
         pipeline.reset();
     }
     m_renderThread = nullptr;
+    m_renderUpstream = nullptr;
     m_lastSourceTexture = nullptr;
     m_lastSourceSize = {};
     m_status = 1;
