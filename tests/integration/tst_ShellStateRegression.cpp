@@ -1,6 +1,7 @@
 #include <QTest>
 #include <QScopeGuard>
 #include <QFile>
+#include <QFont>
 #include <QJSEngine>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
@@ -326,6 +327,52 @@ private slots:
         QVERIFY(!evaluate("notificationHost.visible").toBool());
         m_notifications.CloseNotification(id);
         m_control.setDoNotDisturb(false);
+    }
+
+    void clientHeaderMatchesFilesGeometryAndTypography() {
+        auto *window=qobject_cast<QQuickWindow *>(m_root);
+        auto *files=visualItem(window->contentItem(),"filesWindowHeader");
+        QVERIFY(files);
+        QQmlComponent component(m_engine.get(),QUrl("qrc:/qt/qml/Systalia/Engine/src/qml/WaylandWindowContainer.qml"));
+        std::unique_ptr<QObject> object(component.createWithInitialProperties({{"width",701}}));
+        QVERIFY2(object,qPrintable(component.errorString()));
+        auto *container=qobject_cast<QQuickItem *>(object.get());
+        auto *header=container->findChild<QQuickItem *>("sgeTitleBar");
+        QVERIFY(header);
+        QCOMPARE(container->property("titleBarHeight").toInt(),50);
+        QCOMPARE(header->height(),files->height());
+        QCOMPARE(header->property("badgeWidth"),files->property("badgeWidth"));
+        for(const auto &text:QStringList{"Alacritty",QString(200,'W')}) {
+            header->setProperty("title",text);
+            for(const auto &name:{"windowHeaderTitle","windowHeaderIcon","windowHeaderBadge"}) {
+                auto *actual=header->findChild<QQuickItem *>(name);
+                auto *reference=files->findChild<QQuickItem *>(name);
+                QVERIFY(actual && reference);
+                QCOMPARE(actual->mapToItem(header,QPointF()).y(),reference->mapToItem(files,QPointF()).y());
+                QCOMPARE(actual->height(),reference->height());
+                if (QString::fromLatin1(name)=="windowHeaderTitle") {
+                    QCOMPARE(actual->property("font").value<QFont>(),reference->property("font").value<QFont>());
+                    QCOMPARE(actual->property("baselineOffset"),reference->property("baselineOffset"));
+                    QCOMPARE(actual->mapToItem(header,QPointF()).x(),50.0);
+                }
+            }
+            auto *previous=header->findChild<QQuickItem *>("minimizeToplevelButton");
+            for(const auto &name:{"minimizeToplevelButton","maximizeToplevelButton","closeToplevelButton"}) {
+                auto *button=header->findChild<QQuickItem *>(name);
+                QVERIFY(button);
+                QCOMPARE(button->size(),QSizeF(28,28));
+                QCOMPARE(button->mapToItem(header,QPointF()).y(),11.0);
+                if(button!=previous) QCOMPARE(button->x()-previous->x()-previous->width(),10.0);
+                previous=button;
+            }
+            QCOMPARE(header->width()-previous->mapToItem(header,QPointF()).x()-previous->width(),18.5);
+        }
+        for(int width:{320,701}) {
+            container->setWidth(width);
+            auto *label=header->findChild<QQuickItem *>("windowHeaderTitle");
+            auto *button=header->findChild<QQuickItem *>("minimizeToplevelButton");
+            QVERIFY(label->mapToItem(header,QPointF(label->width(),0)).x()<=button->mapToItem(header,QPointF()).x());
+        }
     }
 
     void longWindowTitlesStayClearOfActions() {

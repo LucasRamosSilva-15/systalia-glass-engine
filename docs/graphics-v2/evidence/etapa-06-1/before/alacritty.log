@@ -1,0 +1,7 @@
+MESA-EGL: warning: failed to get driver name for fd -1
+MESA-EGL: warning: MESA-LOADER: failed to retrieve device information
+MESA-EGL: warning: failed to get driver name for fd -1
+Io error: Broken pipe (os error 32)
+Io error: Broken pipe (os error 32)
+Io error: Broken pipe (os error 32)
+Error: ExitFailure(1)

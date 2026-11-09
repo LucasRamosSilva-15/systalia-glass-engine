@@ -153,7 +153,7 @@ void TestXdgShellDecoration::resizeContainerKeepsItsWorkspaceParentAndFrameMinim
     QVERIFY(QMetaObject::invokeMethod(container.get(), "finishResize"));
     QTRY_COMPARE_WITH_TIMEOUT(m_toplevel->xdgSurface()->windowGeometry().size(),
                               QSize(304, 168), 3000);
-    QTRY_COMPARE_WITH_TIMEOUT(container->size(), QSizeF(320.0, 220.0), 3000);
+    QTRY_COMPARE_WITH_TIMEOUT(container->size(), QSizeF(320.0, 234.0), 3000);
     QCOMPARE(container->parentItem(), &workspace);
     QCOMPARE(workspace.childItems().size(), 1);
 }

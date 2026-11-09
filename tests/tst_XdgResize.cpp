@@ -313,7 +313,7 @@ void TestXdgResize::maximizeRequestUsesCompositorSlot() {
     QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, maximizePosition);
     QTRY_VERIFY(m_toplevel->maximized());
     QTRY_VERIFY(item->property("maximizedBySge").toBool());
-    QTRY_COMPARE(m_toplevel->xdgSurface()->windowGeometry().size(), QSize(1384, 948));
+    QTRY_COMPARE(m_toplevel->xdgSurface()->windowGeometry().size(), QSize(1384, 934));
     QTRY_COMPARE(item->size(), QSizeF(1400, 1000));
     QCOMPARE(item->position(), QPointF(0, 0));
     QCOMPARE(item->property("restorePosition").toPointF(), QPointF(250, 180));
@@ -325,7 +325,7 @@ void TestXdgResize::maximizeRequestUsesCompositorSlot() {
     QTRY_VERIFY(!m_toplevel->maximized());
     QTRY_VERIFY(!item->property("maximizedBySge").toBool());
     QTRY_COMPARE(m_toplevel->xdgSurface()->windowGeometry().size(), QSize(800, 500));
-    QTRY_COMPARE(item->size(), QSizeF(816, 552));
+    QTRY_COMPARE(item->size(), QSizeF(816, 566));
     QCOMPARE(item->property("restorePosition").toPointF(), QPointF(250, 180));
     QTRY_COMPARE(item->position(), QPointF(250, 180));
 }
@@ -382,6 +382,7 @@ void TestXdgResize::clientBufferIsBoundAndPainted() {
     auto *viewport = item->findChild<QQuickItem *>("clientViewport");
     QVERIFY(viewport);
     QVERIFY(viewport->clip());
+    QCOMPARE(viewport->position(),QPointF(8,58));
     QCOMPARE(viewport->z(), 1.0);
 
     auto *glass = item->findChild<Systalia::Gfx::V2::ValoGlassItemV2 *>();
@@ -392,6 +393,8 @@ void TestXdgResize::clientBufferIsBoundAndPainted() {
     QTRY_VERIFY(surface->hasContent());
     QTRY_VERIFY(item->property("clientMapped").toBool());
     QTRY_COMPARE(surfaceItem->size(), viewport->size());
+    QCOMPARE(surfaceItem->size(),QSizeF(800,500));
+    QCOMPARE(item->size(),QSizeF(816,566));
 }
 
 void TestXdgResize::unmappedClientDoesNotLeaveAnEmptyFrame() {
@@ -499,7 +502,7 @@ void TestXdgResize::dragEdges() {
     window.show();
     QVERIFY(QTest::qWaitForWindowExposed(&window));
     QTRY_COMPARE(item->width(), 816.0);
-    QTRY_COMPARE(item->height(), 552.0);
+    QTRY_COMPARE(item->height(), 566.0);
     QQuickItem *zone = nullptr;
     for (auto *child : item->childItems()) {
         if (child->objectName() == "resize_" + handle) zone = child;
@@ -514,11 +517,11 @@ void TestXdgResize::dragEdges() {
     QTRY_VERIFY(item->property("resizing").toBool());
     QTest::mouseMove(&window, press + delta);
     // No event processing: requests alone must not resize the glass.
-    QCOMPARE(item->size(), QSizeF(816, 552));
+    QCOMPARE(item->size(), QSizeF(816, 566));
     QTRY_COMPARE(m_toplevel->xdgSurface()->windowGeometry().size(), expected);
-    QTRY_COMPARE(item->size(), QSizeF(expected.width() + 16, expected.height() + 52));
+    QTRY_COMPARE(item->size(), QSizeF(expected.width() + 16, expected.height() + 66));
     QCOMPARE(item->x() + item->width(), (edges & Qt::LeftEdge) ? 1066.0 : 250.0 + item->width());
-    QCOMPARE(item->y() + item->height(), (edges & Qt::TopEdge) ? 732.0 : 180.0 + item->height());
+    QCOMPARE(item->y() + item->height(), (edges & Qt::TopEdge) ? 746.0 : 180.0 + item->height());
     auto *glass = item->findChild<Systalia::Gfx::V2::ValoGlassItemV2 *>();
     QVERIFY(glass);
     QCOMPARE(glass->size(), item->size());
@@ -545,7 +548,7 @@ void TestXdgResize::resizeHonorsMinimumFrameGeometry() {
     QVERIFY(QMetaObject::invokeMethod(item.get(), "updateResize", Q_ARG(QVariant, QPointF(2000, 2000))));
     QVERIFY(QMetaObject::invokeMethod(item.get(), "finishResize"));
     QTRY_COMPARE(m_toplevel->xdgSurface()->windowGeometry().size(), QSize(304, 168));
-    QTRY_COMPARE(item->size(), QSizeF(320, 220));
+    QTRY_COMPARE(item->size(), QSizeF(320, 234));
     QCOMPARE(item->position(), QPointF(746, 512));
     QTRY_VERIFY(!m_toplevel->resizing());
     QVERIFY(m_toplevel->activated());
@@ -561,7 +564,7 @@ void TestXdgResize::lostMouseGrabCancelsResize() {
     QVERIFY(item);
     window.show();
     QVERIFY(QTest::qWaitForWindowExposed(&window));
-    QTRY_COMPARE(item->size(), QSizeF(816, 552));
+    QTRY_COMPARE(item->size(), QSizeF(816, 566));
 
     // Exercise MouseArea.onCanceled through a real lost mouse grab.
     QQuickItem *zone = nullptr;

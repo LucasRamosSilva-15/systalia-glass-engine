@@ -1,0 +1,289 @@
+{
+  "before": {
+    "Systalia Files": {
+      "closeToplevelButton": {
+        "baseline": 17,
+        "centerY": 25,
+        "height": 28,
+        "visible": true,
+        "width": 28,
+        "x": 654.5,
+        "y": 11
+      },
+      "fontAscent": 20.34375,
+      "headerHeight": 50,
+      "headerWidth": 701,
+      "headerX": 50,
+      "headerY": 140,
+      "hinting": 0,
+      "maximizeToplevelButton": {
+        "baseline": 17,
+        "centerY": 25,
+        "height": 28,
+        "visible": true,
+        "width": 28,
+        "x": 616.5,
+        "y": 11
+      },
+      "minimizeToplevelButton": {
+        "baseline": 17,
+        "centerY": 25,
+        "height": 28,
+        "visible": true,
+        "width": 28,
+        "x": 578.5,
+        "y": 11
+      },
+      "pixelSize": 21,
+      "requestedFamily": "Inter",
+      "resolvedFamily": "Inter",
+      "resolvedStyle": "Medium",
+      "title": "Systalia Files",
+      "weight": 500,
+      "windowHeaderBadge": {
+        "baseline": 12,
+        "centerY": 24.5,
+        "height": 25,
+        "visible": true,
+        "width": 138.484375,
+        "x": 428.015625,
+        "y": 12
+      },
+      "windowHeaderIcon": {
+        "baseline": 33.25,
+        "centerY": 25,
+        "height": 28,
+        "visible": true,
+        "width": 28,
+        "x": 18,
+        "y": 11
+      },
+      "windowHeaderTitle": {
+        "baseline": 32.34375,
+        "centerY": 25,
+        "height": 26,
+        "visible": true,
+        "width": 364.015625,
+        "x": 50,
+        "y": 12
+      }
+    },
+    "Alacritty": {
+      "closeToplevelButton": {
+        "baseline": 10,
+        "centerY": 18,
+        "height": 28,
+        "visible": true,
+        "width": 28,
+        "x": 654.5,
+        "y": 4
+      },
+      "fontAscent": 20.34375,
+      "headerHeight": 36,
+      "headerWidth": 701,
+      "headerX": 810,
+      "headerY": 140,
+      "hinting": 0,
+      "maximizeToplevelButton": {
+        "baseline": 10,
+        "centerY": 18,
+        "height": 28,
+        "visible": true,
+        "width": 28,
+        "x": 616.5,
+        "y": 4
+      },
+      "minimizeToplevelButton": {
+        "baseline": 10,
+        "centerY": 18,
+        "height": 28,
+        "visible": true,
+        "width": 28,
+        "x": 578.5,
+        "y": 4
+      },
+      "pixelSize": 21,
+      "requestedFamily": "Inter",
+      "resolvedFamily": "Inter",
+      "resolvedStyle": "Medium",
+      "title": "Alacritty",
+      "weight": 500,
+      "windowHeaderBadge": {
+        "baseline": 5,
+        "centerY": 17.5,
+        "height": 25,
+        "visible": true,
+        "width": 138.484375,
+        "x": 428.015625,
+        "y": 5
+      },
+      "windowHeaderIcon": {
+        "baseline": 26.25,
+        "centerY": 18,
+        "height": 28,
+        "visible": true,
+        "width": 28,
+        "x": 18,
+        "y": 4
+      },
+      "windowHeaderTitle": {
+        "baseline": 25.34375,
+        "centerY": 18,
+        "height": 26,
+        "visible": true,
+        "width": 364.015625,
+        "x": 50,
+        "y": 5
+      }
+    }
+  },
+  "after": {
+    "Systalia Files": {
+      "closeToplevelButton": {
+        "baseline": 17,
+        "centerY": 25,
+        "height": 28,
+        "visible": true,
+        "width": 28,
+        "x": 654.5,
+        "y": 11
+      },
+      "fontAscent": 20.34375,
+      "headerHeight": 50,
+      "headerWidth": 701,
+      "headerX": 50,
+      "headerY": 140,
+      "hinting": 0,
+      "maximizeToplevelButton": {
+        "baseline": 17,
+        "centerY": 25,
+        "height": 28,
+        "visible": true,
+        "width": 28,
+        "x": 616.5,
+        "y": 11
+      },
+      "minimizeToplevelButton": {
+        "baseline": 17,
+        "centerY": 25,
+        "height": 28,
+        "visible": true,
+        "width": 28,
+        "x": 578.5,
+        "y": 11
+      },
+      "pixelSize": 21,
+      "renderType": 0,
+      "requestedFamily": "Inter",
+      "resolvedFamily": "Inter",
+      "resolvedStyle": "Medium",
+      "title": "Systalia Files",
+      "weight": 500,
+      "windowHeaderBadge": {
+        "baseline": 12,
+        "centerY": 24.5,
+        "height": 25,
+        "visible": true,
+        "width": 138.484375,
+        "x": 428.015625,
+        "y": 12
+      },
+      "windowHeaderIcon": {
+        "baseline": 33.25,
+        "centerY": 25,
+        "height": 28,
+        "visible": true,
+        "width": 28,
+        "x": 18,
+        "y": 11
+      },
+      "windowHeaderTitle": {
+        "baseline": 32.34375,
+        "centerY": 25,
+        "height": 26,
+        "visible": true,
+        "width": 364.015625,
+        "x": 50,
+        "y": 12
+      }
+    },
+    "Alacritty": {
+      "clientHeight": 400,
+      "clientWidth": 685,
+      "closeToplevelButton": {
+        "baseline": 17,
+        "centerY": 25,
+        "height": 28,
+        "visible": true,
+        "width": 28,
+        "x": 654.5,
+        "y": 11
+      },
+      "fontAscent": 20.34375,
+      "frameHeight": 466,
+      "headerHeight": 50,
+      "headerWidth": 701,
+      "headerX": 810,
+      "headerY": 140,
+      "hinting": 0,
+      "maximizeToplevelButton": {
+        "baseline": 17,
+        "centerY": 25,
+        "height": 28,
+        "visible": true,
+        "width": 28,
+        "x": 616.5,
+        "y": 11
+      },
+      "minimizeToplevelButton": {
+        "baseline": 17,
+        "centerY": 25,
+        "height": 28,
+        "visible": true,
+        "width": 28,
+        "x": 578.5,
+        "y": 11
+      },
+      "pixelSize": 21,
+      "renderType": 0,
+      "requestedFamily": "Inter",
+      "resolvedFamily": "Inter",
+      "resolvedStyle": "Medium",
+      "title": "Alacritty",
+      "viewport": {
+        "height": 400,
+        "width": 685,
+        "x": 8,
+        "y": 58
+      },
+      "weight": 500,
+      "windowHeaderBadge": {
+        "baseline": 12,
+        "centerY": 24.5,
+        "height": 25,
+        "visible": true,
+        "width": 138.484375,
+        "x": 428.015625,
+        "y": 12
+      },
+      "windowHeaderIcon": {
+        "baseline": 33.25,
+        "centerY": 25,
+        "height": 28,
+        "visible": true,
+        "width": 28,
+        "x": 18,
+        "y": 11
+      },
+      "windowHeaderTitle": {
+        "baseline": 32.34375,
+        "centerY": 25,
+        "height": 26,
+        "visible": true,
+        "width": 364.015625,
+        "x": 50,
+        "y": 12
+      }
+    }
+  }
+}

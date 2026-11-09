@@ -62,10 +62,11 @@ Item {
     }
 
     property int minWindowWidth: 320
-    property int minWindowHeight: 220
+    // Preserve the previous minimum usable client height (220 - 36 - 16).
+    property int minWindowHeight: 168 + titleBarHeight + 2 * frameMargin
     readonly property int borderMargin: 8
     readonly property int frameMargin: 8
-    readonly property int titleBarHeight: 36
+    readonly property int titleBarHeight: sgeTitleBar.implicitHeight
     readonly property bool isXWaylandWindow: toplevel !== null && toplevel !== undefined
                                              && toplevel.isXWayland === true
     readonly property var xdgSurface: (toplevel && !isXWaylandWindow && toplevel.xdgSurface !== undefined)
@@ -336,7 +337,7 @@ Item {
 
         if (wasMaximized) {
             const frameWidth = restoreFrameSize.width > 0 ? restoreFrameSize.width : 816
-            const frameHeight = restoreFrameSize.height > 0 ? restoreFrameSize.height : 552
+            const frameHeight = restoreFrameSize.height > 0 ? restoreFrameSize.height : 500 + titleBarHeight + 2 * frameMargin
             clientWidth = Math.round(frameWidth - 2 * frameMargin)
             clientHeight = Math.round(frameHeight - titleBarHeight - 2 * frameMargin)
             restoreClientSize = Qt.size(clientWidth, clientHeight)
@@ -574,7 +575,6 @@ Item {
                       ? windowContainer.toplevel.appId
                       : "Aplicação Wayland")
             badgeText: "SDE-KWIN | VALO"
-            badgeWidth: 0
             maximized: windowContainer.maximizedBySge
             glassSurface: false
             radii: windowContainer.frameRadii

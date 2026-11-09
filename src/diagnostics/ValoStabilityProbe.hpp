@@ -1,4 +1,5 @@
 #pragma once
+#include "ValoHeaderAlignmentProbe.hpp"
 
 // Opt-in measurement on the actual SDE executable. Inert unless the diagnostic
 // environment variable is set; never a replacement desktop or software renderer.
@@ -71,6 +72,7 @@ inline void installValoStabilityProbe(QQuickWindow *window) {
         if (e.hasError()) qWarning() << e.error();
         return value;
     };
+    if (installValoHeaderAlignmentProbe(window,directory,evaluate)) return;
     if (qEnvironmentVariableIsSet("SGE_VALO_INTERNAL_OVERLAP")) {
         evaluate("glassChassis.x=80; glassChassis.y=80; materialWindow.x=380; materialWindow.y=150; raiseMaterialWindow()");
     }

@@ -6,6 +6,7 @@ import Systalia.Engine
 
 Item {
     id: header
+    implicitHeight: 50
 
     property string iconGlyph: "▰"
     property string title: ""
@@ -89,6 +90,7 @@ Item {
     }
 
     Text {
+        objectName: "windowHeaderIcon"
         x: 18
         anchors.verticalCenter: parent.verticalCenter
         width: 28
@@ -105,6 +107,7 @@ Item {
 
     Item {
         id: titleContent
+        objectName: "windowHeaderTitleContent"
         anchors.left: parent.left
         anchors.leftMargin: 50
         anchors.right: actions.left
@@ -115,6 +118,7 @@ Item {
 
         Text {
             id: titleLabel
+            objectName: "windowHeaderTitle"
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
             width: Math.max(0, parent.width - (badge.visible ? badge.width + 14 : 0))
@@ -130,6 +134,7 @@ Item {
 
         Rectangle {
             id: badge
+            objectName: "windowHeaderBadge"
             visible: header.badgeText.length > 0 && titleContent.width >= 300
             anchors.left: titleLabel.right
             anchors.leftMargin: 14
@@ -142,6 +147,7 @@ Item {
 
             Text {
                 id: badgeLabel
+                objectName: "windowHeaderBadgeLabel"
                 anchors.fill: parent
                 anchors.leftMargin: 8
                 anchors.rightMargin: 8
@@ -159,6 +165,7 @@ Item {
 
     Row {
         id: actions
+        objectName: "windowHeaderActions"
         anchors.right: parent.right
         anchors.rightMargin: header.actionsRightMargin
         anchors.verticalCenter: parent.verticalCenter

@@ -86,8 +86,9 @@ Item {
         // =====================================================================
         SystaliaWindowHeader {
             id: windowHeader
+            objectName: "filesWindowHeader"
             width: parent.width
-            height: 50
+            height: implicitHeight
             iconGlyph: "▰"
             title: "Systalia Files"
             badgeText: "SDE-KWIN | VALO"
