@@ -65,15 +65,11 @@ Item {
         height: 50
         iconGlyph: "ϟ"
         title: "Systalia Control Center"
-        badgeText: "VALO & SOAR Engine"
-        badgeWidth: 172
-        titlePixelSize: 20
         iconColor: "#48c4ff"
         titleColor: "#f3fbff"
-        badgeTextColor: "#87bada"
         maximized: materialWindow.controller ? materialWindow.controller.materialWindowMaximized : false
         glassSurface: false
-        actionsRightMargin: 21.5
+        actionsRightMargin: 18.5
 
         onMinimizeRequested: {
             materialWindow.windowOpen = false
@@ -363,9 +359,10 @@ Item {
     }
 
     Rectangle {
+        objectName: "materialOptionsPanel"
         x: 222.5
         y: 57.5
-        width: Math.max(454, parent.width - 245)
+        width: Math.max(0, parent.width - 245)
         height: Math.max(452, parent.height - 75)
         radius: 13
         color: "#c2071d32"

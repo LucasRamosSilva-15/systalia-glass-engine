@@ -240,6 +240,7 @@ qt_add_qml_module(sge_core
         src/qml/shell/SystaliaControlCenterV2.qml
         src/qml/graphics/v2/ValoMaterialSurfaceV2.qml
         src/qml/graphics/v2/ValoInternalWindowBackdropV2.qml
+        src/qml/graphics/v2/ValoSingleWindowBackdropV2.qml
         src/qml/graphics/v2/ValoOpticalParticlesV2.qml
         src/qml/graphics/v2/ValoSurfaceV2.qml
         src/qml/graphics/v2/ValoDockItemV2.qml

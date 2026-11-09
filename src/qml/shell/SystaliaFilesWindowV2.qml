@@ -91,8 +91,6 @@ Item {
             height: implicitHeight
             iconGlyph: "▰"
             title: "Systalia Files"
-            badgeText: "SDE-KWIN | VALO"
-            badgeWidth: 120
             maximized: fileWindow.controller ? fileWindow.controller.filesWindowMaximized : false
             glassSurface: false
             actionsRightMargin: 18.5
@@ -288,6 +286,7 @@ Item {
 
         // Indicador de pasta atual no breadcrumb
         Rectangle {
+            objectName: "filesBreadcrumb"
             x: 275
             y: 59
             width: Math.max(90, breadcrumbRow.implicitWidth + 24)
@@ -330,6 +329,7 @@ Item {
         // Campo de busca
         TextField {
             id: searchField
+            objectName: "filesSearch"
             anchors.right: parent.right
             anchors.rightMargin: 18
             y: 61
@@ -358,6 +358,7 @@ Item {
         // Alternador de visualização grade/lista
         Image {
             id: filesMenuButton
+            objectName: "filesMenuButton"
             anchors.right: searchField.left
             anchors.rightMargin: 10
             y: 61
@@ -375,7 +376,7 @@ Item {
         Rectangle {
             x: 208
             y: 97
-            width: Math.max(476, parent.width - 226)
+            width: Math.max(0, parent.width - 226)
             height: 1
             color: "#4db2f3fd"
             antialiasing: true
@@ -387,9 +388,10 @@ Item {
         // =====================================================================
         GridView {
             id: filesGrid
+            objectName: "filesGrid"
             x: 216
             y: 115
-            width: Math.max(460, parent.width - 235)
+            width: Math.max(0, parent.width - 235)
             height: Math.max(400, parent.height - 130)
             cellWidth: 118
             cellHeight: 120

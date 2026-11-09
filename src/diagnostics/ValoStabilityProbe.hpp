@@ -1,5 +1,6 @@
 #pragma once
 #include "ValoHeaderAlignmentProbe.hpp"
+#include "ValoInternalResizeProbe.hpp"
 
 // Opt-in measurement on the actual SDE executable. Inert unless the diagnostic
 // environment variable is set; never a replacement desktop or software renderer.
@@ -73,11 +74,16 @@ inline void installValoStabilityProbe(QQuickWindow *window) {
         return value;
     };
     if (installValoHeaderAlignmentProbe(window,directory,evaluate)) return;
+    if (installValoInternalResizeProbe(window,directory,evaluate)) return;
     if (qEnvironmentVariableIsSet("SGE_VALO_INTERNAL_OVERLAP")) {
         evaluate("glassChassis.x=80; glassChassis.y=80; materialWindow.x=380; materialWindow.y=150; raiseMaterialWindow()");
     }
     if (qEnvironmentVariableIsSet("SGE_VALO_WALLPAPER_ONLY"))
-        evaluate("internalWindowBackdrop.enabledForWorkspace=false");
+        evaluate("internalWindowBackdrop.enabledForWorkspace=false; overlayBackdrop.enabledForWorkspace=false");
+    if (qEnvironmentVariableIsSet("SGE_VALO_OVERLAY_DOCK_SCENARIO"))
+        evaluate("materialWindow.visible=false; glassChassis.visible=true; glassChassis.x=500; glassChassis.y=450; raiseFileWindow()");
+    if (qEnvironmentVariableIsSet("SGE_VALO_OVERLAY_TOPBAR_SCENARIO"))
+        evaluate("materialWindow.visible=false; glassChassis.visible=true; glassChassis.x=500; glassChassis.y=-45; raiseFileWindow()");
     if (qEnvironmentVariableIsSet("SGE_VALO_PARTICLES_ONLY")) {
         for(auto *item : window->findChildren<Systalia::Gfx::V2::ValoGlassItemV2 *>()) {
             item->setCausticIntensity(0);
@@ -145,7 +151,9 @@ inline void installValoStabilityProbe(QQuickWindow *window) {
                 JSON.stringify({xRunning:waylandServer.xwaylandManager.running,
                     xReady:waylandServer.xwaylandManager.ready,
                     xManaged:waylandServer.xwaylandManager.managedWindowCount,
-                    windows:waylandServer.windowCount,backdrop:internalWindowBackdrop.coverageMode})
+                    windows:waylandServer.windowCount,backdrop:internalWindowBackdrop.coverageMode,
+                    overlayBackdrop:overlayBackdrop.coverageMode, dockComposite:overlayBackdrop.dockAvailable,
+                    topBarComposite:overlayBackdrop.topBarAvailable})
             )").toString().toUtf8());
             QJsonArray providers;
             for (auto *item : window->findChildren<Systalia::Gfx::V2::ValoGlassItemV2 *>()) {
@@ -291,6 +299,9 @@ inline void installValoStabilityProbe(QQuickWindow *window) {
         frame.save(directory + QString("/sde-%1.png").arg(seconds));
         QJsonObject result{{"seconds", seconds}, {"exposed", window->isExposed()}, {"width", frame.width()}, {"height", frame.height()}, {"backdropTextures", textures}};
         result["backdropCoverage"] = evaluate("internalWindowBackdrop.coverageMode").toString();
+        result["overlayCoverage"] = evaluate("overlayBackdrop.coverageMode").toString();
+        result["dockComposite"] = evaluate("overlayBackdrop.dockAvailable").toBool();
+        result["topBarComposite"] = evaluate("overlayBackdrop.topBarAvailable").toBool();
         result["filesZ"] = evaluate("glassChassis.z").toDouble();
         result["materialZ"] = evaluate("materialWindow.z").toDouble();
         int index = 0;

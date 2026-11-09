@@ -442,6 +442,7 @@ Item {
                 QCOMPARE((rearIsFirst?b:a)->upstreamBlurProvider(),rearIsFirst?a:b);
                 QCOMPARE((rearIsFirst?a:b)->upstreamBlurProvider(),nullptr);
             }
+            first->setWidth(150+(i%3)*8); // resizing must not break the existing two-window graph
             const auto image=grab(); const auto c=pixel(image,120,100);
             QVERIFY2(rearIsFirst ? c.red()>80 && c.red()>c.blue()*2 && c.red()>c.green()*2
                                 : c.green()>80 && c.green()>c.blue()*2 && c.green()>c.red()*2,
@@ -451,6 +452,100 @@ Item {
         auto a=grab(); auto b=grab(); QCOMPARE(pixel(a,120,100),pixel(b,120,100)); // No recursive accumulation.
         first->setVisible(false); QVERIFY(!stack->property("compositeAvailable").toBool());
         QVERIFY(pixel(grab(),120,70).blue()>180);
+    }
+
+    void singleWindowOverlayBackdropPixels() {
+        QQmlEngine engine;
+        QQmlComponent component(&engine);
+        component.setData(R"(
+import QtQuick
+import Systalia.Engine
+import Systalia.Engine as V2
+Item {
+    id: root; width: 256; height: 192
+    property bool external: false
+    property int profile: 0
+    property bool pattern: false
+    Rectangle { id: wall; anchors.fill: parent; color: "blue" }
+    ShaderEffectSource { id: wallpaper; sourceItem: wall; visible: false; live: true }
+    V2.ValoSingleWindowBackdropV2 {
+        id: stack; objectName: "overlayStack"; anchors.fill: parent
+        firstWindow: first; secondWindow: second; wallpaperSource: wallpaper
+        workspacePage: root; topBar: front; dock: unusedDock
+        externalClientsPresent: root.external
+    }
+    V2.ValoMaterialSurfaceV2 {
+        id: first; objectName: "producer"; x: 16; y: 20; width: 150; height: 140; z: 1
+        surfaceOpacity: 0; ior: 1; chromaticDispersion: 0; causticIntensity: 0
+        particleIntensity: 0; showShadow: false; cornerRadius: 0; blurProfile: root.profile
+        backdropSource: wallpaper
+        Rectangle { anchors.fill: parent; color: "red" }
+        Repeater {
+            model: root.pattern ? 12 : 0
+            Rectangle { required property int index; x: index*16; width: 8; height: parent.height; color: "white" }
+        }
+    }
+    Rectangle { id: second; objectName: "otherWindow"; visible: false; color: "lime" }
+    Item { id: unusedDock; visible: false }
+    V2.ValoMaterialSurfaceV2 {
+        id: front; objectName: "overlayConsumer"; x: 80; y: 40; width: 130; height: 50; z: 10
+        surfaceOpacity: 0; ior: 1; chromaticDispersion: 0; causticIntensity: 0
+        particleIntensity: 0; showShadow: false; cornerRadius: 0; blurProfile: root.profile
+        backdropSource: stack.sourceFor(front)
+        effectiveBackdropProvider.upstreamBlurProvider: stack.topBarAvailable ? first.effectiveBackdropProvider : null
+    }
+})",QUrl());
+        QScopedPointer<QObject> object(component.create());
+        QVERIFY2(object,qPrintable(component.errorString()));
+        QQuickWindow window; window.resize(256,192);
+        auto *root=qobject_cast<QQuickItem *>(object.data()); QVERIFY(root);
+        root->setParentItem(window.contentItem());
+        auto *stack=object->findChild<QObject *>("overlayStack"); QVERIFY(stack);
+        auto *producer=object->findChild<QQuickItem *>("producer"); QVERIFY(producer);
+        auto *other=object->findChild<QQuickItem *>("otherWindow"); QVERIFY(other);
+        auto *consumer=object->findChild<QQuickItem *>("overlayConsumer"); QVERIFY(consumer);
+        window.show(); QVERIFY(QTest::qWaitForWindowExposed(&window));
+        auto grab=[&] {window.update();QTest::qWait(100);return window.grabWindow();};
+        QVERIFY(stack->property("topBarAvailable").toBool());
+        QVERIFY2(pixel(grab(),120,60).red()>180,"Overlay must sample the rear window");
+        for(int i=0;i<18;++i) {
+            root->setProperty("profile",i%3);
+            producer->setWidth(150+(i%3)*8);
+            auto image=grab(); QVERIFY(!image.isNull());
+            QVERIFY2(pixel(image,120,60).red()>80,"Profile/resize must retain the producer");
+        }
+        root->setProperty("pattern",true);
+        auto sharpness=[&](int profile) {
+            root->setProperty("profile",profile); const auto image=grab();
+            double sum=0; int n=0;
+            for(int y=48;y<85;y+=2) for(int x=90;x<140;++x) {
+                sum+=qAbs(pixel(image,x,y).greenF()-pixel(image,x+1,y).greenF()); ++n;
+            }
+            return sum/n;
+        };
+        const double raw=sharpness(0),balanced=sharpness(1),quality=sharpness(2);
+        qInfo() << "overlay GPU edge contrast" << raw << balanced << quality;
+        QVERIFY2(balanced<raw*.9,"Balanced must actually blur the captured window");
+        QVERIFY2(quality<balanced*.95,"Quality must blur more than Balanced");
+        root->setProperty("pattern",false);
+        root->setProperty("external",true);
+        QVERIFY(!stack->property("compositeAvailable").toBool());
+        QVERIFY(pixel(grab(),120,60).blue()>180);
+        root->setProperty("external",false);
+        other->setVisible(true);
+        QVERIFY(!stack->property("compositeAvailable").toBool());
+        QVERIFY(pixel(grab(),120,60).blue()>180);
+        other->setVisible(false); producer->setX(-200);
+        QVERIFY(!stack->property("compositeAvailable").toBool());
+        QVERIFY(pixel(grab(),120,60).blue()>180);
+        producer->setX(16); QVERIFY(stack->property("compositeAvailable").toBool());
+        const auto first=grab(),second=grab();
+        QCOMPARE(pixel(first,120,60),pixel(second,120,60));
+        other->deleteLater();
+        QCoreApplication::sendPostedEvents(nullptr,QEvent::DeferredDelete);
+        QCoreApplication::processEvents();
+        QVERIFY(!stack->property("compositeAvailable").toBool());
+        QVERIFY(pixel(grab(),120,60).blue()>180);
     }
 
     void particleSchedulingWithoutCaustics() {

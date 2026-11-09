@@ -53,8 +53,6 @@ Item {
         height: 50
         iconGlyph: "▰"
         title: "Systalia Files"
-        badgeText: "SDE-KWIN | VALO"
-        badgeWidth: 120
         maximized: fileWindow.controller ? fileWindow.controller.filesWindowMaximized : false
         glassSurface: false
         actionsRightMargin: 18.5

@@ -1,0 +1,114 @@
+[
+    {
+        "edge": "top",
+        "height": 625,
+        "passed": true,
+        "width": 750,
+        "window": "Files"
+    },
+    {
+        "edge": "bottom",
+        "height": 625,
+        "passed": true,
+        "width": 750,
+        "window": "Files"
+    },
+    {
+        "edge": "left",
+        "height": 600,
+        "passed": true,
+        "width": 780,
+        "window": "Files"
+    },
+    {
+        "edge": "right",
+        "height": 600,
+        "passed": true,
+        "width": 780,
+        "window": "Files"
+    },
+    {
+        "edge": "topLeft",
+        "height": 625,
+        "passed": true,
+        "width": 780,
+        "window": "Files"
+    },
+    {
+        "edge": "bottomRight",
+        "height": 625,
+        "passed": true,
+        "width": 780,
+        "window": "Files"
+    },
+    {
+        "edge": "topRight",
+        "height": 625,
+        "passed": true,
+        "width": 780,
+        "window": "Files"
+    },
+    {
+        "edge": "bottomLeft",
+        "height": 625,
+        "passed": true,
+        "width": 780,
+        "window": "Files"
+    },
+    {
+        "edge": "top",
+        "height": 625,
+        "passed": true,
+        "width": 750,
+        "window": "Material"
+    },
+    {
+        "edge": "bottom",
+        "height": 625,
+        "passed": true,
+        "width": 750,
+        "window": "Material"
+    },
+    {
+        "edge": "left",
+        "height": 600,
+        "passed": true,
+        "width": 780,
+        "window": "Material"
+    },
+    {
+        "edge": "right",
+        "height": 600,
+        "passed": true,
+        "width": 780,
+        "window": "Material"
+    },
+    {
+        "edge": "topLeft",
+        "height": 625,
+        "passed": true,
+        "width": 780,
+        "window": "Material"
+    },
+    {
+        "edge": "bottomRight",
+        "height": 625,
+        "passed": true,
+        "width": 780,
+        "window": "Material"
+    },
+    {
+        "edge": "topRight",
+        "height": 625,
+        "passed": true,
+        "width": 780,
+        "window": "Material"
+    },
+    {
+        "edge": "bottomLeft",
+        "height": 625,
+        "passed": true,
+        "width": 780,
+        "window": "Material"
+    }
+]

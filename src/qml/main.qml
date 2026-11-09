@@ -35,6 +35,7 @@ ApplicationWindow {
     }
     readonly property var filesOpticalItem: opticalItemIn(glassChassis)
     readonly property var dockOpticalItem: opticalItemIn(systemDock)
+    readonly property var topBarOpticalItem: opticalItemIn(topBar)
 
     component MaterialOpticalBindings: Item {
         required property var opticalItem
@@ -142,6 +143,75 @@ ApplicationWindow {
         bringWindowToFront(windowContainer)
         if (windowContainer.waylandServer && windowContainer.toplevel) {
             windowContainer.waylandServer.activateToplevel(windowContainer.toplevel)
+        }
+    }
+
+    // Shared handles change only internal window geometry; client resize is separate.
+    component ShellResizeHandles: Item {
+        id: handles
+        required property Item targetWindow
+        property real minimumWidth: 610
+        property real minimumHeight: 530
+        property point startPointer
+        property rect startGeometry
+        anchors.fill: parent
+        z: 1000
+        visible: enabled
+        function begin(point) {
+            rootWindow.bringWindowToFront(targetWindow)
+            startPointer = point
+            startGeometry = Qt.rect(targetWindow.x, targetWindow.y, targetWindow.width, targetWindow.height)
+        }
+        function move(edges, point) {
+            const dx = point.x - startPointer.x
+            const dy = point.y - startPointer.y
+            let width = startGeometry.width
+            let height = startGeometry.height
+            if (edges & Qt.LeftEdge) width = Math.max(minimumWidth, startGeometry.width - dx)
+            if (edges & Qt.RightEdge) width = Math.max(minimumWidth, startGeometry.width + dx)
+            if (edges & Qt.TopEdge) height = Math.max(minimumHeight, startGeometry.height - dy)
+            if (edges & Qt.BottomEdge) height = Math.max(minimumHeight, startGeometry.height + dy)
+            if (edges & Qt.LeftEdge) targetWindow.x = startGeometry.x + startGeometry.width - width
+            if (edges & Qt.TopEdge) targetWindow.y = startGeometry.y + startGeometry.height - height
+            targetWindow.width = width
+            targetWindow.height = height
+        }
+        function finish() {
+            targetWindow.restoreGeometry = Qt.rect(targetWindow.x, targetWindow.y,
+                                                    targetWindow.width, targetWindow.height)
+        }
+        Repeater {
+            model: [
+                { name: "top", edges: Qt.TopEdge, cursor: Qt.SizeVerCursor },
+                { name: "bottom", edges: Qt.BottomEdge, cursor: Qt.SizeVerCursor },
+                { name: "left", edges: Qt.LeftEdge, cursor: Qt.SizeHorCursor },
+                { name: "right", edges: Qt.RightEdge, cursor: Qt.SizeHorCursor },
+                { name: "topLeft", edges: Qt.TopEdge | Qt.LeftEdge, cursor: Qt.SizeFDiagCursor },
+                { name: "bottomRight", edges: Qt.BottomEdge | Qt.RightEdge, cursor: Qt.SizeFDiagCursor },
+                { name: "topRight", edges: Qt.TopEdge | Qt.RightEdge, cursor: Qt.SizeBDiagCursor },
+                { name: "bottomLeft", edges: Qt.BottomEdge | Qt.LeftEdge, cursor: Qt.SizeBDiagCursor }
+            ]
+            MouseArea {
+                required property var modelData
+                readonly property bool horizontal: (modelData.edges & (Qt.LeftEdge | Qt.RightEdge)) !== 0
+                readonly property bool vertical: (modelData.edges & (Qt.TopEdge | Qt.BottomEdge)) !== 0
+                objectName: "internalResize_" + modelData.name
+                z: horizontal && vertical ? 1 : 0
+                x: (modelData.edges & Qt.RightEdge) ? handles.width - width : (horizontal ? 0 : 8)
+                y: (modelData.edges & Qt.BottomEdge) ? handles.height - height : (vertical ? 0 : 8)
+                width: horizontal ? 8 : Math.max(0, handles.width - 16)
+                height: vertical ? 8 : Math.max(0, handles.height - 16)
+                hoverEnabled: true
+                cursorShape: modelData.cursor
+                acceptedButtons: Qt.LeftButton
+                preventStealing: true
+                onPressed: mouse => handles.begin(mapToItem(handles.targetWindow.parent, mouse.x, mouse.y))
+                onPositionChanged: mouse => {
+                    if (pressed) handles.move(modelData.edges, mapToItem(handles.targetWindow.parent, mouse.x, mouse.y))
+                }
+                onReleased: handles.finish()
+                onCanceled: handles.finish()
+            }
         }
     }
 
@@ -392,6 +462,39 @@ ApplicationWindow {
         mappingRevision: clientWindowsLayer.viewportOffset
     }
 
+    GfxV2.ValoSingleWindowBackdropV2 {
+        id: overlayBackdrop
+        objectName: "singleWindowOverlayBackdrop"
+        anchors.fill: parent
+        firstWindow: glassChassis
+        secondWindow: materialWindow
+        wallpaperSource: backdropGrab
+        workspacePage: clientWindowsLayer.workspacePageAt(WorkspaceManager.currentWorkspace)
+        topBar: topBar
+        dock: systemDock
+        mappingRevision: clientWindowsLayer.viewportOffset
+        externalClientsPresent: waylandServer.windowCount > 0
+        enabledForWorkspace: !WorkspaceManager.isTransitioning && !LiquidTiling.previewVisible
+            && !LiquidTiling.hasActiveSplitInWorkspace(WorkspaceManager.currentWorkspace)
+            && OutputManager.screenCount <= 1
+    }
+    Binding {
+        target: rootWindow.topBarOpticalItem ? rootWindow.topBarOpticalItem.backdropProvider : null
+        property: "upstreamBlurProvider"
+        value: overlayBackdrop.topBarAvailable && overlayBackdrop.producer
+               && rootWindow.opticalItemIn(overlayBackdrop.producer)
+            ? rootWindow.opticalItemIn(overlayBackdrop.producer).backdropProvider : null
+        when: rootWindow.topBarOpticalItem !== null
+    }
+    Binding {
+        target: rootWindow.dockOpticalItem ? rootWindow.dockOpticalItem.backdropProvider : null
+        property: "upstreamBlurProvider"
+        value: overlayBackdrop.dockAvailable && overlayBackdrop.producer
+               && rootWindow.opticalItemIn(overlayBackdrop.producer)
+            ? rootWindow.opticalItemIn(overlayBackdrop.producer).backdropProvider : null
+        when: rootWindow.dockOpticalItem !== null
+    }
+
     Binding {
         target: rootWindow.filesOpticalItem ? rootWindow.filesOpticalItem.backdropProvider : null
         property: "upstreamBlurProvider"
@@ -439,6 +542,23 @@ ApplicationWindow {
                                       rootWindow.height * rootWindow.devicePixelRatio)
         animationTime: animTimer.tick
         controller: rootWindow
+    }
+
+    ShellResizeHandles {
+        objectName: "filesResizeHandles"
+        parent: glassChassis
+        targetWindow: glassChassis
+        minimumWidth: 610
+        minimumHeight: 530
+        enabled: glassChassis.visible && !rootWindow.filesWindowMaximized && glassChassis.snapState === 0
+    }
+    ShellResizeHandles {
+        objectName: "materialResizeHandles"
+        parent: materialWindow
+        targetWindow: materialWindow
+        minimumWidth: 610
+        minimumHeight: 525
+        enabled: materialWindow.visible && !rootWindow.materialWindowMaximized && materialWindow.snapState === 0
     }
 
     Item {
@@ -489,7 +609,7 @@ ApplicationWindow {
         telemetry: SystemTelemetry
         workspaceManager: WorkspaceManager
         blurProfile: materialWindow.materialActive ? materialWindow.blurProfile : 0
-        backdropSource: backdropGrab
+        backdropSource: overlayBackdrop.sourceFor(topBar)
         screenResolution: Qt.vector2d(rootWindow.width * rootWindow.devicePixelRatio,
                                       rootWindow.height * rootWindow.devicePixelRatio)
         animationTime: animTimer.tick
@@ -563,7 +683,7 @@ ApplicationWindow {
             id: systemDock
             anchors.fill: parent
             visible: !waylandServer.hasMaximizedToplevel
-            backdropSource: backdropGrab
+            backdropSource: overlayBackdrop.sourceFor(systemDock)
             screenResolution: Qt.vector2d(rootWindow.width * rootWindow.devicePixelRatio,
                                           rootWindow.height * rootWindow.devicePixelRatio)
             activeAppIds: waylandServer.activeAppIds

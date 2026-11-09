@@ -375,6 +375,120 @@ private slots:
         }
     }
 
+    void overlayBackdropUsesOneInternalProducerOrFallsBack() {
+        evaluate("glassChassis.visible=true; materialWindow.visible=false; glassChassis.x=500; glassChassis.y=450; glassChassis.width=701; glassChassis.height=534");
+        QTRY_VERIFY(evaluate("overlayBackdrop.dockAvailable").toBool());
+        QVERIFY(!evaluate("overlayBackdrop.topBarAvailable").toBool());
+        QVERIFY(evaluate("overlayBackdrop.producer === glassChassis").toBool());
+        QVERIFY(evaluate("dockOpticalItem.backdropProvider.upstreamBlurProvider === filesOpticalItem.backdropProvider").toBool());
+        evaluate("glassChassis.y=-45");
+        QTRY_VERIFY(evaluate("overlayBackdrop.topBarAvailable").toBool());
+        QVERIFY(!evaluate("overlayBackdrop.dockAvailable").toBool());
+        QVERIFY(evaluate("topBarOpticalItem.backdropProvider.upstreamBlurProvider === filesOpticalItem.backdropProvider").toBool());
+        evaluate("materialWindow.visible=true");
+        QTRY_COMPARE(evaluate("overlayBackdrop.coverageMode").toString(),QString("wallpaper-only"));
+        QVERIFY(evaluate("dockOpticalItem.backdropProvider.upstreamBlurProvider === null && topBarOpticalItem.backdropProvider.upstreamBlurProvider === null").toBool());
+        evaluate("glassChassis.x=80; glassChassis.y=80; materialWindow.visible=true");
+    }
+
+    void windowHeadersReleaseBadgeSpace() {
+        auto *window=qobject_cast<QQuickWindow *>(m_root);
+        auto *files=visualItem(window->contentItem(),"filesWindowHeader");
+        QVERIFY(files);
+        auto *filesTitle=files->findChild<QQuickItem *>("windowHeaderTitle");
+        auto *content=files->findChild<QQuickItem *>("windowHeaderTitleContent");
+        auto *badge=files->findChild<QQuickItem *>("windowHeaderBadge");
+        QVERIFY(filesTitle && content && badge);
+        QVERIFY(files->property("badgeText").toString().isEmpty());
+        QVERIFY(!badge->isVisible());
+        QCOMPARE(filesTitle->width(),content->width());
+        QCOMPARE(files->height(),50.0);
+        QCOMPARE(filesTitle->property("font").value<QFont>().pixelSize(),21);
+        QQmlComponent component(m_engine.get(),QUrl("qrc:/qt/qml/Systalia/Engine/src/qml/WaylandWindowContainer.qml"));
+        std::unique_ptr<QObject> obj(component.create());
+        QVERIFY2(obj,qPrintable(component.errorString()));
+        auto *header=obj->findChild<QQuickItem *>("sgeTitleBar");
+        QVERIFY(header);
+        QVERIFY(header->property("badgeText").toString().isEmpty());
+        QVERIFY(evaluate("materialWindow.children.some(c => c.title === 'Systalia Control Center' && c.badgeText === '' && c.titlePixelSize === 21)").toBool());
+    }
+
+    void internalWindowsResizeAtEveryEdge() {
+        auto *window=qobject_cast<QQuickWindow *>(m_root);
+        window->show();
+        QVERIFY(QTest::qWaitForWindowExposed(window));
+        struct Direction { const char *name; int x; int y; Qt::CursorShape cursor; };
+        const Direction directions[]={{"top",0,-1,Qt::SizeVerCursor},{"bottom",0,1,Qt::SizeVerCursor},
+            {"left",-1,0,Qt::SizeHorCursor},{"right",1,0,Qt::SizeHorCursor},
+            {"topLeft",-1,-1,Qt::SizeFDiagCursor},{"bottomRight",1,1,Qt::SizeFDiagCursor},
+            {"topRight",1,-1,Qt::SizeBDiagCursor},{"bottomLeft",-1,1,Qt::SizeBDiagCursor}};
+        for(const auto &name: {QStringLiteral("files"),QStringLiteral("material")}) {
+            const auto source=name=="files" ? QStringLiteral("glassChassis") : QStringLiteral("materialWindow");
+            evaluate("glassChassis.visible=false; materialWindow.visible=false; " + source + ".visible=true");
+            auto *handles=visualItem(window->contentItem(),name+"ResizeHandles");
+            QVERIFY(handles);
+            auto *target=handles->parentItem();
+            QVERIFY(target);
+            for(const auto &d:directions) {
+                target->setPosition(QPointF(200,100)); target->setSize(QSizeF(750,600));
+                auto *area=visualItem(handles,QString("internalResize_")+d.name);
+                QVERIFY(area);
+                QCOMPARE(area->property("cursorShape").toInt(),int(d.cursor));
+                const auto pos=area->mapToScene(QPointF(area->width()/2,area->height()/2)).toPoint();
+                QTest::mousePress(window,Qt::LeftButton,Qt::NoModifier,pos);
+                QTest::mouseMove(window,pos+QPoint(d.x*30,d.y*25),20);
+                QTest::mouseRelease(window,Qt::LeftButton,Qt::NoModifier,pos+QPoint(d.x*30,d.y*25));
+                QCOMPARE(target->width(),750.0+(d.x ? 30:0));
+                QCOMPARE(target->height(),600.0+(d.y ? 25:0));
+                QCOMPARE(target->x(),200.0+(d.x<0 ? -30:0));
+                QCOMPARE(target->y(),100.0+(d.y<0 ? -25:0));
+                QCOMPARE(target->property("restoreGeometry").toRectF(),QRectF(target->position(),target->size()));
+            }
+            target->setPosition(QPointF(200,100)); target->setSize(QSizeF(750,600));
+            auto *right=visualItem(handles,"internalResize_right");
+            const auto rightPos=right->mapToScene(QPointF(right->width()/2,right->height()/2)).toPoint();
+            QTest::mousePress(window,Qt::LeftButton,Qt::NoModifier,rightPos);
+            QTest::mouseMove(window,rightPos-QPoint(200,0),20);
+            QTest::mouseRelease(window,Qt::LeftButton,Qt::NoModifier,rightPos-QPoint(200,0));
+            QCOMPARE(target->width(),610.0);
+            auto *bottom=visualItem(handles,"internalResize_bottom");
+            const auto bottomPos=bottom->mapToScene(QPointF(bottom->width()/2,bottom->height()/2)).toPoint();
+            QTest::mousePress(window,Qt::LeftButton,Qt::NoModifier,bottomPos);
+            QTest::mouseMove(window,bottomPos-QPoint(0,200),20);
+            QTest::mouseRelease(window,Qt::LeftButton,Qt::NoModifier,bottomPos-QPoint(0,200));
+            QCOMPARE(target->height(),name=="files" ? 530.0 : 525.0);
+            if(name=="files") {
+                auto *breadcrumb=visualItem(target,"filesBreadcrumb");
+                auto *menu=visualItem(target,"filesMenuButton");
+                auto *grid=visualItem(target,"filesGrid");
+                QVERIFY(breadcrumb && menu && grid);
+                QVERIFY(breadcrumb->mapToItem(target,QPointF(breadcrumb->width(),0)).x() <= menu->mapToItem(target,QPointF()).x());
+                QVERIFY(grid->mapToItem(target,QPointF(grid->width(),grid->height())).x() <= target->width());
+                QVERIFY(grid->mapToItem(target,QPointF(grid->width(),grid->height())).y() <= target->height());
+            } else {
+                auto *panel=visualItem(target,"materialOptionsPanel");
+                QVERIFY(panel && panel->x()+panel->width()<=target->width());
+                QVERIFY(panel->y()+panel->height()<=target->height());
+                auto *slider=visualItem(panel,"dispersionStrengthSetting");
+                QVERIFY(slider && slider->x()+slider->width()<=panel->width());
+                QVERIFY(slider->y()+slider->height()<=panel->height());
+            }
+            const QRectF beforeMax(target->position(),target->size());
+            evaluate(name=="files" ? "toggleFileWindowMaximized()" : "toggleMaterialWindowMaximized()");
+            QVERIFY(!handles->isEnabled());
+            evaluate(name=="files" ? "toggleFileWindowMaximized()" : "toggleMaterialWindowMaximized()");
+            QCOMPARE(QRectF(target->position(),target->size()),beforeMax);
+            target->setProperty("snapState",1);
+            QVERIFY(!handles->isEnabled());
+            target->setProperty("snapState",0);
+            const QString maximized=name=="files" ? "filesWindowMaximized" : "materialWindowMaximized";
+            m_root->setProperty(maximized.toUtf8().constData(),true);
+            QVERIFY(!handles->isEnabled());
+            m_root->setProperty(maximized.toUtf8().constData(),false);
+        }
+        evaluate("glassChassis.visible=true; materialWindow.visible=true");
+    }
+
     void longWindowTitlesStayClearOfActions() {
         const QString title(200, QChar('W'));
         for (int width : {320, 700}) {

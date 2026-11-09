@@ -574,7 +574,6 @@ Item {
                    : ((windowContainer.toplevel && windowContainer.toplevel.appId.length > 0)
                       ? windowContainer.toplevel.appId
                       : "Aplicação Wayland")
-            badgeText: "SDE-KWIN | VALO"
             maximized: windowContainer.maximizedBySge
             glassSurface: false
             radii: windowContainer.frameRadii
