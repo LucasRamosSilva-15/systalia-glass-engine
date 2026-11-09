@@ -120,11 +120,14 @@ private slots:
         QCOMPARE(evaluate("materialWindow.blurProfile").toInt(), 0);
         QCOMPARE(evaluate("glassChassis.blurProfile").toInt(), 0);
         QCOMPARE(evaluate("systemDock.blurProfile").toInt(), 0);
+        QCOMPARE(evaluate("topBar.blurProfile").toInt(), 0);
         QCOMPARE(evaluate("materialWindow.refractiveIndex").toDouble(), 1.4);
         evaluate("materialWindow.blurProfile = 1");
         QCOMPARE(evaluate("glassChassis.blurProfile").toInt(), 1);
+        QCOMPARE(evaluate("topBar.blurProfile").toInt(), 1);
         evaluate("materialWindow.blurProfile = 2");
         QCOMPARE(evaluate("glassChassis.blurProfile").toInt(), 2);
+        QCOMPARE(evaluate("topBar.blurProfile").toInt(), 2);
         QVERIFY(change("opacitySetting", .4));
         QCOMPARE(evaluate("glassChassis.surfaceOpacity").toDouble(), .4);
         QVERIFY(qAbs(evaluate("materialWindow.opticalSurface.surfaceOpacity").toDouble()-.4)<.0001);

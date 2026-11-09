@@ -1,0 +1,5 @@
+[1/6] Automatic MOC and UIC for target tst_valo_optical_contract_v2
+[2/5] Building CXX object CMakeFiles/systalia_glass_engine.dir/src/main.cpp.o
+[3/5] Building CXX object tests/CMakeFiles/tst_valo_optical_contract_v2.dir/unit/tst_ValoOpticalContractV2.cpp.o
+[4/5] Linking CXX executable systalia_glass_engine
+[5/5] Linking CXX executable tests/tst_valo_optical_contract_v2

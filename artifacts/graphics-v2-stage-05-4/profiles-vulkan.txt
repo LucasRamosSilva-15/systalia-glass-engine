@@ -1,0 +1,31 @@
+********* Start testing of TestShellStateRegression *********
+Config: Using QtTest library 6.11.2, Qt 6.11.2 (x86_64-little_endian-lp64 shared (dynamic) release build; by GCC 16.2.1 20260819 (Red Hat 16.2.1-2)), fedora 44
+QWARN  : TestShellStateRegression::initTestCase() qt.waylandcompositor.hardwareintegration: Failed to initialize EGL display. There is no EGL_WL_bind_wayland_display extension.
+QINFO  : TestShellStateRegression::initTestCase() [SGE-WAYLAND] Servidor ativo em: wayland-systalia-0
+QINFO  : TestShellStateRegression::initTestCase() [SGE-WAYLAND] XDG Shell registrado: true
+QINFO  : TestShellStateRegression::initTestCase() [SGE-WAYLAND] XDG Decoration Manager registrado (SSD forçado): true
+QINFO  : TestShellStateRegression::initTestCase() [SGE-WAYLAND] Viewporter (wp_viewporter) registrado: true
+QINFO  : TestShellStateRegression::initTestCase() [SGE-WAYLAND] Assento padrão inicializado com teclado e ponteiro.
+QINFO  : TestShellStateRegression::initTestCase() [SGE-XWAYLAND] Iniciando processo: /usr/bin/Xwayland :1 -rootless -terminate -core -listenfd 61 -wm 58 -displayfd 60
+QINFO  : TestShellStateRegression::initTestCase() [SGE-XWAYLAND] Processo Xwayland finalizado. Código: 15 | Status: CrashExit
+PASS   : TestShellStateRegression::initTestCase()
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() qt.svg.draw: The requested buffer size is too big, ignoring
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() qt.svg.draw: The requested buffer size is too big, ignoring
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() qt.svg.draw: The requested buffer size is too big, ignoring
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() qt.svg.draw: The requested buffer size is too big, ignoring
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() qt.svg.draw: The requested buffer size is too big, ignoring
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-BACKDROP-V2] REAL TEXTURE ATIVA: size=1662x975, rhiTex=0x0, rhi=0x7f75bc002d90
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-BACKDROP-V2] onBeforeRendering frame=1: srcTex=0x7f75bc1f2040, rhiSrc=0x7f75bc855e30, srcSize=1662x975
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-BACKDROP-V2] onBeforeRendering frame=2: srcTex=0x7f75bc1f2040, rhiSrc=0x7f75bc855e30, srcSize=1662x975
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-BACKDROP-V2] onBeforeRendering frame=3: srcTex=0x7f75bc1f2040, rhiSrc=0x7f75bc855e30, srcSize=1662x975
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-BACKDROP-V2] onBeforeRendering frame=4: srcTex=0x7f75bc1f2040, rhiSrc=0x7f75bc855e30, srcSize=1662x975
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-BACKDROP-V2] onBeforeRendering frame=5: srcTex=0x7f75bc1f2040, rhiSrc=0x7f75bc855e30, srcSize=1662x975
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7f75bd00f130, format=1, size=1662x975
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7f75bc60a370, format=1, size=1662x975
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7f75bc38fb80, format=1, size=1662x975
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7f75bc1d7930, format=1, size=1662x975
+QWARN  : TestShellStateRegression::repeatedGraphicsProfiles() [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7f75bcb78910, format=1, size=1662x975
+PASS   : TestShellStateRegression::repeatedGraphicsProfiles()
+PASS   : TestShellStateRegression::cleanupTestCase()
+Totals: 3 passed, 0 failed, 0 skipped, 0 blacklisted, 4755ms
+********* Finished testing of TestShellStateRegression *********

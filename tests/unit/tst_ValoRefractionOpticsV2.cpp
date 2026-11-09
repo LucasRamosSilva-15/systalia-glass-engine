@@ -84,11 +84,10 @@ void tst_ValoRefractionOpticsV2::testEnergySavingCausticsSuppression() {
 
 void tst_ValoRefractionOpticsV2::testIdleFreezeLogic() {
     ValoGlassItemV2 item;
-    QVERIFY(!item.isCausticFrozen());
-
-    // Reinicia atividade
+    // An unattached/hidden item must not spend CPU on optical animation.
+    QVERIFY(item.isCausticFrozen());
     item.resetActivity();
-    QVERIFY(!item.isCausticFrozen());
+    QVERIFY(item.isCausticFrozen());
 }
 
 void tst_ValoRefractionOpticsV2::testDiagnosticModesRange() {

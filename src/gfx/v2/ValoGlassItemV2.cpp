@@ -11,43 +11,55 @@ namespace Systalia::Gfx::V2 {
 ValoGlassItemV2::ValoGlassItemV2(QQuickItem *parent) : QQuickItem(parent) {
   setFlag(ItemHasContents, true);
 
-  m_idleTimer.setSingleShot(true);
-  m_idleTimer.setInterval(5000); // 5 segundos de inatividade para congelamento de cáusticas
-  connect(&m_idleTimer, &QTimer::timeout, this, &ValoGlassItemV2::onIdleTimeout);
-
   connect(&m_animTimer, &QTimer::timeout, this, &ValoGlassItemV2::onAnimationFrame);
-  m_animTimer.setInterval(16); // ~60fps para ondulação fluida
+  connect(this, &QQuickItem::visibleChanged, this, &ValoGlassItemV2::resetActivity);
+  connect(this, &QQuickItem::windowChanged, this, [this](QQuickWindow *window) {
+    disconnect(m_windowVisibilityConnection);
+    if (window)
+      m_windowVisibilityConnection = connect(window, &QWindow::visibilityChanged,
+          this, [this] { resetActivity(); });
+    resetActivity();
+  });
+  updateAnimationPolicy();
+}
 
-  m_elapsedTimer.start();
-  m_idleTimer.start();
-
-  if (m_causticIntensity > 0.001f && m_active) {
-    m_animTimer.start();
+void ValoGlassItemV2::updateAnimationPolicy() {
+  const bool permitted = !m_opticalContext || m_opticalContext->shouldAnimateCaustics();
+  const bool visible = isVisible() && window() && window()->isVisible()
+                       && window()->visibility() != QWindow::Minimized;
+  const bool animate = visible && m_active && m_blurProfile != Performance
+                       && m_causticIntensity > 0.001f && permitted;
+  m_causticFrozen = !animate;
+  if (!animate) {
+    m_animTimer.stop();
+    return;
+  }
+  const bool economical = m_opticalContext && m_opticalContext->energySavingFactor() < 0.75f;
+  const int interval = m_blurProfile == Quality ? (economical ? 33 : 16)
+                                               : (economical ? 50 : 33);
+  if (!m_animTimer.isActive()) {
+    m_elapsedTimer.restart(); // Resume at the last phase, never integrate hidden time.
+    m_animTimer.start(interval);
+  } else if (m_animTimer.interval() != interval) {
+    m_animTimer.setInterval(interval);
   }
 }
 
 void ValoGlassItemV2::resetActivity() {
-  m_causticFrozen = false;
-  m_idleTimer.start();
-  m_elapsedTimer.restart();
-  if (m_causticIntensity > 0.001f && m_active && !m_animTimer.isActive()) {
-    m_animTimer.start();
-  }
+  updateAnimationPolicy();
   update();
 }
 
 void ValoGlassItemV2::onIdleTimeout() {
-  m_causticFrozen = true;
-  m_animTimer.stop();
+  // Retained as a diagnostic hook: inactivity alone no longer freezes B/Q.
+  updateAnimationPolicy();
   update();
 }
 
 void ValoGlassItemV2::onAnimationFrame() {
-  if (m_causticFrozen) {
-    m_animTimer.stop();
-    return;
-  }
-  const float dt = static_cast<float>(m_elapsedTimer.restart()) / 1000.0f;
+  updateAnimationPolicy();
+  if (m_causticFrozen) return;
+  const float dt = std::min(static_cast<float>(m_elapsedTimer.restart()) / 1000.0f, 0.1f);
   m_accumulatedTime += dt;
   update();
 }
@@ -102,12 +114,7 @@ void ValoGlassItemV2::setVolumetricTint(const QColor &tint) {
 void ValoGlassItemV2::setActive(bool active) {
   if (m_active != active) {
     m_active = active;
-    if (m_active) {
-      resetActivity();
-    } else {
-      m_animTimer.stop();
-      m_idleTimer.stop();
-    }
+    resetActivity();
     emit activeChanged();
     update();
   }
@@ -162,6 +169,7 @@ void ValoGlassItemV2::setCausticIntensity(float intensity) {
 }
 
 void ValoGlassItemV2::setBlurProfile(int profile) {
+  if (profile < Performance || profile > Quality) return;
   if (m_blurProfile != profile) {
     m_blurProfile = profile;
     if (m_backdropProvider) {
@@ -196,16 +204,18 @@ void ValoGlassItemV2::setOpticalContext(ValoOpticalContext *context) {
     }
     m_opticalContext = context;
     if (m_opticalContext) {
+      connect(m_opticalContext, &QObject::destroyed, this, [this] { resetActivity(); });
       connect(m_opticalContext,
               &ValoOpticalContext::adaptiveOpacityOffsetChanged, this,
               &QQuickItem::update);
       connect(m_opticalContext, &ValoOpticalContext::highContrastEnabledChanged,
               this, &QQuickItem::update);
       connect(m_opticalContext, &ValoOpticalContext::prefersReducedMotionChanged,
-              this, &QQuickItem::update);
+              this, &ValoGlassItemV2::resetActivity);
       connect(m_opticalContext, &ValoOpticalContext::energySavingFactorChanged,
-              this, &QQuickItem::update);
+              this, &ValoGlassItemV2::resetActivity);
     }
+    resetActivity();
     emit opticalContextChanged();
     update();
   }
@@ -213,8 +223,6 @@ void ValoGlassItemV2::setOpticalContext(ValoOpticalContext *context) {
 
 QSGNode *ValoGlassItemV2::updatePaintNode(QSGNode *oldNode,
                                           UpdatePaintNodeData *) {
-  qWarning("[SGE-GLASS-V2-DEBUG] updatePaintNode called for item %p, w=%.1f, h=%.1f, active=%d, window=%p",
-           static_cast<void*>(this), width(), height(), m_active, static_cast<void*>(window()));
   const qreal w = width();
   const qreal h = height();
 
@@ -290,15 +298,8 @@ QSGNode *ValoGlassItemV2::updatePaintNode(QSGNode *oldNode,
   props.ior = m_ior;
   props.chromaticDispersion = m_chromaticDispersion;
 
-  // Cáusticas: desligadas se houver restrição de movimento ou economia de energia
-  float effectiveCaustics = m_causticIntensity;
-  if (m_opticalContext && (m_opticalContext->prefersReducedMotion() ||
-                           !m_opticalContext->shouldAnimateCaustics())) {
-    effectiveCaustics = 0.0f;
-  }
-  // Idle freezes accumulated time, not optical energy. Accessibility/energy
-  // policy above can still suppress caustics explicitly.
-  props.causticIntensity = effectiveCaustics;
+  // Animation policy freezes time independently of illumination intensity.
+  props.causticIntensity = m_causticIntensity;
   props.time = m_accumulatedTime;
 
   // Opacidade com suporte ao contexto adaptativo

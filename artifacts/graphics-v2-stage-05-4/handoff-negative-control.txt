@@ -1,0 +1,20 @@
+********* Start testing of OpticalContract *********
+Config: Using QtTest library 6.11.2, Qt 6.11.2 (x86_64-little_endian-lp64 shared (dynamic) release build; by GCC 16.2.1 20260819 (Red Hat 16.2.1-2)), fedora 44
+PASS   : OpticalContract::initTestCase()
+QWARN  : OpticalContract::gpuBackdropProfileSharpness() [SGE-BACKDROP-V2] Provedor de textura conectado mas provider->texture() é nulo.
+QWARN  : OpticalContract::gpuBackdropProfileSharpness() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0xbfdb420)
+QWARN  : OpticalContract::gpuBackdropProfileSharpness() [SGE-BACKDROP-V2] REAL TEXTURE ATIVA: size=256x192, rhiTex=0x7f34040b0f70, rhi=0x7f3404062170
+QWARN  : OpticalContract::gpuBackdropProfileSharpness() [SGE-BACKDROP-V2] Transição: textura real do provedor obtida (256x192), descartando fallback sintético.
+QINFO  : OpticalContract::gpuBackdropProfileSharpness() GPU profile 0 gradient energy 0.134206 filtered material false
+QWARN  : OpticalContract::gpuBackdropProfileSharpness() [SGE-BACKDROP-V2] onBeforeRendering frame=1: srcTex=0x7f3404065be0, rhiSrc=0x7f34040b0f70, srcSize=256x192
+QWARN  : OpticalContract::gpuBackdropProfileSharpness() [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7f34041c49e0, format=1, size=256x192
+QWARN  : OpticalContract::gpuBackdropProfileSharpness() [SGE-BACKDROP-V2] onBeforeRendering frame=2: srcTex=0x7f3404065be0, rhiSrc=0x7f34040b0f70, srcSize=256x192
+QWARN  : OpticalContract::gpuBackdropProfileSharpness() [SGE-BACKDROP-V2] onBeforeRendering frame=3: srcTex=0x7f3404065be0, rhiSrc=0x7f34040b0f70, srcSize=256x192
+QINFO  : OpticalContract::gpuBackdropProfileSharpness() GPU profile 1 gradient energy 0.134206 filtered material false
+FAIL!  : OpticalContract::gpuBackdropProfileSharpness() Compared values are not the same
+   Actual   (filtered.load()): 0
+   Expected (profile!=0)     : 1
+   Loc: [/home/lucasramos/Documentos/systalia-glass-engine/tests/unit/tst_ValoOpticalContractV2.cpp(338)]
+PASS   : OpticalContract::cleanupTestCase()
+Totals: 2 passed, 1 failed, 0 skipped, 0 blacklisted, 641ms
+********* Finished testing of OpticalContract *********

@@ -52,6 +52,16 @@ public:
 
     bool hasTexture() const noexcept;
     bool isDirty() const noexcept { return m_isDirty; }
+    // Diagnostic state; no texture readback or GUI-thread QRhi access.
+    int executedPasses() const noexcept { return m_executedPasses; }
+    QString blurStatus() const {
+        switch (m_status.load()) {
+        case 0: return QStringLiteral("bypass");
+        case 1: return QStringLiteral("pending");
+        case 2: return QStringLiteral("filtered");
+        default: return QStringLiteral("unavailable");
+        }
+    }
     void setDirty(bool dirty) noexcept;
 
     /**
@@ -87,6 +97,8 @@ private:
     QPointer<QQuickItem> m_source;
     QPointer<QQuickItem> m_consumerItem;
     QPointer<QSGTextureProvider> m_connectedProvider;
+    QRhiTexture *m_lastSourceTexture = nullptr;
+    QSize m_lastSourceSize;
     QSGTexture *m_fallbackTexture = nullptr;
     QSGTexture *m_qsgBlurredTexture = nullptr;
     std::unique_ptr<ValoGpuBlurPipelineV2> m_gpuBlurPipeline;
@@ -94,6 +106,8 @@ private:
     QThread *m_renderThread = nullptr;
     BlurProfile m_blurProfile = BlurProfile::Performance;
     std::atomic_bool m_isDirty{true};
+    std::atomic_int m_status{1};
+    std::atomic_int m_executedPasses{0};
     BlurProfile m_renderProfile = BlurProfile::Performance;
 };
 

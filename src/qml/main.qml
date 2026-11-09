@@ -453,6 +453,7 @@ ApplicationWindow {
         z: 100
         telemetry: SystemTelemetry
         workspaceManager: WorkspaceManager
+        blurProfile: materialWindow.materialActive ? materialWindow.blurProfile : 0
         backdropSource: backdropGrab
         screenResolution: Qt.vector2d(rootWindow.width * rootWindow.devicePixelRatio,
                                       rootWindow.height * rootWindow.devicePixelRatio)
@@ -476,6 +477,7 @@ ApplicationWindow {
             z: 100
             telemetry: SystemTelemetry
             workspaceManager: WorkspaceManager
+            blurProfile: materialWindow.materialActive ? materialWindow.blurProfile : 0
             backdropSource: backdropGrab
             screenResolution: OutputManager.physicalResolutionAt(index)
             animationTime: animTimer.tick

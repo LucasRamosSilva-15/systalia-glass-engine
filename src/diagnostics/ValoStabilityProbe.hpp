@@ -8,9 +8,12 @@
 #include <QJsonObject>
 #include <QQmlContext>
 #include <QQmlExpression>
+#include <QJSValue>
 #include <QQuickWindow>
 #include <QTimer>
 #include <QElapsedTimer>
+#include <QQuickPaintedItem>
+#include <QPainter>
 #include "gfx/v2/ValoGlassItemV2.hpp"
 #include "gfx/v2/ValoBackdropProviderV2.hpp"
 #include "gfx/v2/ValoOpticalContext.hpp"
@@ -35,6 +38,22 @@ public:
     }
 };
 
+// Contrast stimulus only: the blur remains the production QRhi pipeline.
+class ValoProbeBackdropPattern final : public QQuickPaintedItem {
+public:
+    using QQuickPaintedItem::QQuickPaintedItem;
+    void paint(QPainter *painter) override {
+        painter->fillRect(boundingRect(),Qt::white);
+        for(int y=0;y<height();y+=48) for(int x=0;x<width();x+=48)
+            if((x/48+y/48)%2==0) painter->fillRect(x,y,48,48,Qt::black);
+        painter->setPen(QColor(255,0,0));
+        for(int x=0;x<width();x+=8) painter->drawLine(x,0,x,int(height()));
+        painter->setPen(Qt::green); painter->setFont(QFont("Sans",20,QFont::Bold));
+        for(int y=30;y<height();y+=96)
+            for(int x=20;x<width();x+=260) painter->drawText(x,y,"VALO GPU · Aa 0123");
+    }
+};
+
 inline void installValoStabilityProbe(QQuickWindow *window) {
     const QString directory = qEnvironmentVariable("SGE_VALO_STABILITY_PROBE_DIR");
     if (directory.isEmpty()) return;
@@ -45,10 +64,44 @@ inline void installValoStabilityProbe(QQuickWindow *window) {
         if (e.hasError()) qWarning() << e.error();
         return value;
     };
+    const bool opticalTimeline = qEnvironmentVariableIsSet("SGE_VALO_OPTICAL_TIMELINE");
+    if (opticalTimeline) {
+        const int profile = qBound(0,qEnvironmentVariableIntValue("SGE_VALO_OPTICAL_PROFILE"),2);
+        evaluate(QString("materialWindow.blurProfile = %1").arg(profile));
+        for(auto *item : window->findChildren<Systalia::Gfx::V2::ValoGlassItemV2 *>()) item->setBlurProfile(profile);
+    }
+    const QString pass = qEnvironmentVariable("SGE_VALO_OPTICAL_PASS");
+    if (!pass.isEmpty()) {
+        const int mode = pass == "E" ? 5 : pass == "I" ? 7 : pass == "J" ? 8 : pass == "K" ? 9 : 0;
+        for(auto *item : window->findChildren<Systalia::Gfx::V2::ValoGlassItemV2 *>()) {
+            item->setDebugMode(mode);
+            if(mode == 5) item->setCausticIntensity(0); // Isolate blur without animation-driven repair.
+        }
+    }
+    if (qEnvironmentVariableIsSet("SGE_VALO_BLUR_PATTERN")) {
+        const auto result = evaluate("backdropGrab");
+        QObject *grab = result.metaType().id() == qMetaTypeId<QJSValue>()
+            ? result.value<QJSValue>().toQObject() : result.value<QObject *>();
+        auto *original = grab ? grab->property("sourceItem").value<QQuickItem *>() : nullptr;
+        if (!original) {
+            QTimer::singleShot(0,window,[] { QCoreApplication::exit(3); });
+            return;
+        }
+        auto *pattern = new ValoProbeBackdropPattern(original->parentItem());
+        pattern->setObjectName("valoDiagnosticContrastPattern");
+        pattern->setSize(QSizeF(window->width(),window->height())); pattern->setZ(original->z()+1);
+        const bool assigned = grab->setProperty("sourceItem",QVariant::fromValue<QQuickItem *>(pattern))
+                              && grab->property("sourceItem").value<QQuickItem *>() == pattern;
+        QFile config(directory + "/pattern-config.json");
+        if(config.open(QIODevice::WriteOnly))
+            config.write(QJsonDocument(QJsonObject{{"assigned",assigned},
+                {"sourceName",grab->property("sourceItem").value<QQuickItem *>()->objectName()}}).toJson());
+        if (!assigned) QTimer::singleShot(0,window,[] { QCoreApplication::exit(3); });
+    }
     const int cycles = qEnvironmentVariableIntValue("SGE_VALO_PROFILE_STRESS");
     if (cycles > 0) {
         auto *timer = new QTimer(window);
-        timer->setInterval(120);
+        timer->setInterval(300);
         QObject::connect(timer, &QTimer::timeout, window,
             [timer, window, evaluate, cycles, directory, step = 0]() mutable {
                 if (step >= cycles * 6) {
@@ -69,13 +122,15 @@ inline void installValoStabilityProbe(QQuickWindow *window) {
                 const int profile = profiles[step++ % 6];
                 evaluate(QString("materialWindow.blurProfile = %1; raiseMaterialWindow(); raiseFileWindow()")
                          .arg(profile));
+                QTimer::singleShot(100,window,[window,directory,profile] {
                 const QImage rendered = window->grabWindow();
                 if (rendered.isNull()) {
-                    qCritical() << "VALO missing frame at profile transition" << step;
+                    qCritical() << "VALO missing frame at profile" << profile;
                     QCoreApplication::exit(2);
                     return;
                 }
                 rendered.save(directory + QString("/profile-%1.png").arg(profile));
+                });
             });
         QTimer::singleShot(1000, timer, [timer] { timer->start(); });
         return;
@@ -129,7 +184,10 @@ inline void installValoStabilityProbe(QQuickWindow *window) {
                 {"active", item->isActive()}, {"ior", item->ior()},
                 {"dispersion", item->chromaticDispersion()},
                 {"tint", item->volumetricTint().name(QColor::HexArgb)},
-                {"profile", item->blurProfile()},
+                {"profile", item->blurProfile()}, {"animationRunning", item->animationRunning()},
+                {"animationIntervalMs", item->animationIntervalMs()},
+                {"blurStatus", provider ? provider->blurStatus() : QStringLiteral("no-provider")},
+                {"executedPasses", provider ? provider->executedPasses() : 0},
                 {"dirty", provider ? provider->isDirty() : false}};
             if (context) {
                 row["effectiveOpacity"] = context->effectiveOpacity(item->surfaceOpacity());
@@ -137,6 +195,7 @@ inline void installValoStabilityProbe(QQuickWindow *window) {
                 row["adaptiveOffset"] = context->adaptiveOpacityOffset();
                 row["energy"] = context->energySavingFactor();
                 row["animateAllowed"] = context->shouldAnimateCaustics();
+                row["reducedMotion"] = context->prefersReducedMotion();
             }
             result[QString("surface%1").arg(index++)] = row;
         }
@@ -145,10 +204,31 @@ inline void installValoStabilityProbe(QQuickWindow *window) {
         qInfo() << "VALO stability sample" << seconds;
         if (seconds == 60) QCoreApplication::quit();
     };
-    // Settle initial layer allocation before t=0; no subsequent input/property changes.
-    QTimer::singleShot(1000, window, [window, measure] {
+    // Settle the actual SDE before observation; no input in timeline mode.
+    QTimer::singleShot(1000, window, [window, measure, opticalTimeline] {
         measure(0);
-        for (int seconds : {10,30,60})
+        if (qEnvironmentVariableIsSet("SGE_VALO_POLICY_PROBE")) {
+            QTimer::singleShot(2000,window,[window,measure] {
+                for(auto *item : window->findChildren<Systalia::Gfx::V2::ValoGlassItemV2 *>())
+                    if(item->opticalContext()) item->opticalContext()->setPrefersReducedMotion(true);
+                measure(2);
+            });
+            QTimer::singleShot(4000,window,[window,measure] {
+                measure(4);
+                for(auto *item : window->findChildren<Systalia::Gfx::V2::ValoGlassItemV2 *>()) {
+                    if(item->opticalContext()) item->opticalContext()->setPrefersReducedMotion(false);
+                    item->setVisible(false);
+                }
+            });
+            QTimer::singleShot(6000,window,[window,measure] {
+                measure(6);
+                for(auto *item : window->findChildren<Systalia::Gfx::V2::ValoGlassItemV2 *>()) item->setVisible(true);
+            });
+            QTimer::singleShot(8000,window,[measure] { measure(8); QCoreApplication::quit(); });
+            return;
+        }
+        const QList<int> samples = opticalTimeline ? QList<int>{5,15,30,60} : QList<int>{10,30,60};
+        for (int seconds : samples)
             QTimer::singleShot(seconds*1000, window, [measure, seconds] { measure(seconds); });
     });
 }

@@ -1,5 +1,12 @@
 #include <QQuickItem>
 #include <cmath>
+#include <QPainter>
+#include <QSGSimpleTextureNode>
+#include <QTemporaryDir>
+#include <QJsonArray>
+#include <QJsonObject>
+#include <QJsonDocument>
+#include <QFile>
 #include <QQmlEngine>
 #include <QQmlComponent>
 #include "ValoBackdropProviderV2.hpp"
@@ -55,6 +62,43 @@ public:
         return node;
     }
 };
+class StaticBackdrop : public QQuickItem {
+    class Provider : public QSGTextureProvider {
+    public:
+        QSGTexture *value = nullptr;
+        QSGTexture *texture() const override { return value; }
+    };
+    mutable Provider provider;
+    QImage image;
+public:
+    StaticBackdrop(const QImage &pattern, QQuickItem *parent) : QQuickItem(parent), image(pattern) {
+        setFlag(ItemHasContents); setSize(QSizeF(256,192));
+    }
+    bool isTextureProvider() const override { return true; }
+    QSGTextureProvider *textureProvider() const override { return &provider; }
+    QSGNode *updatePaintNode(QSGNode *old, UpdatePaintNodeData *) override {
+        auto *node=static_cast<QSGSimpleTextureNode *>(old);
+        if(!node) {
+            node=new QSGSimpleTextureNode;
+            auto *texture=window()->createTextureFromImage(image);
+            node->setTexture(texture); node->setOwnsTexture(true);
+            provider.value=texture; // Deliberately no textureChanged on unchanged source.
+        }
+        node->setRect(boundingRect()); return node;
+    }
+};
+
+class ObservedGlass : public ValoGlassItemV2 {
+public:
+    using ValoGlassItemV2::ValoGlassItemV2;
+    ValoGlassMaterialV2 *observedMaterial = nullptr; // render-thread observation only
+    QSGNode *updatePaintNode(QSGNode *old, UpdatePaintNodeData *data) override {
+        auto *node = ValoGlassItemV2::updatePaintNode(old, data);
+        observedMaterial = node ? static_cast<ValoGlassMaterialV2 *>(static_cast<QSGGeometryNode *>(node)->material()) : nullptr;
+        return node;
+    }
+};
+
 class OpticalContract : public QObject {
     Q_OBJECT
     static QImage frame(QQuickWindow &w, ProbeItem &item) {
@@ -197,6 +241,7 @@ Item {
         auto *glass=new ValoGlassItemV2(w.contentItem());
         glass->setSize(QSizeF(100,140)); glass->setPosition(QPointF(80,24));
         glass->setDebugMode(9); glass->setSurfaceOpacity(0); glass->setIor(1);
+        glass->setBlurProfile(profile);
         glass->setBackdropProvider(&provider);
         w.show(); QVERIFY(QTest::qWaitForWindowExposed(&w));
         QTest::qWait(200); auto first=w.grabWindow(); QVERIFY(!first.isNull());
@@ -215,25 +260,97 @@ Item {
         delete glass;
         root->setParentItem(nullptr);
     }
-    void idleFreezePreservesCausticEnergy() {
+    void profileAnimationAndStaticEnergy() {
         QQuickWindow w; w.resize(256,192); w.setColor(Qt::transparent);
-        auto *glass = new ValoGlassItemV2(w.contentItem());
+        auto *glass = new ObservedGlass(w.contentItem());
         glass->setSize(QSizeF(256,192)); glass->setCausticIntensity(1); glass->setDebugMode(7);
         w.show(); QVERIFY(QTest::qWaitForWindowExposed(&w));
         QVERIFY(QMetaObject::invokeMethod(glass, "onIdleTimeout"));
-        QVERIFY(glass->isCausticFrozen());
-        QTest::qWait(50);
+        QVERIFY(!glass->isCausticFrozen());
+        QCOMPARE(glass->animationIntervalMs(),16);
+        QTest::qWait(5200); // Regress the old five-second unconditional freeze.
+        const float t=glass->causticTime();
+        QVERIFY(t>0); QVERIFY(glass->animationRunning());
+        const auto a=w.grabWindow(); QVERIFY(!a.isNull());
+        QTest::qWait(500); const auto b=w.grabWindow(); QVERIFY(!b.isNull());
+        QVERIFY(glass->causticTime()>t+.1f); QVERIFY(a!=b); // Actual production pass I changes.
+        glass->setBlurProfile(1); QCOMPARE(glass->animationIntervalMs(),33);
+        glass->setBlurProfile(0); const float paused=glass->causticTime();
+        QTest::qWait(100); QCOMPARE(glass->causticTime(),paused);
         const auto frozen=w.grabWindow(); QVERIFY(!frozen.isNull());
         QVERIFY(pixel(frozen,128,96).alpha()>0);
-        QVERIFY(pixel(frozen,128,96).blue()>0);
-        Systalia::Gfx::V2::ValoOpticalContext context;
-        context.setPrefersReducedMotion(true);
-        glass->setOpticalContext(&context);
-        QTest::qWait(50);
-        const auto disabled=w.grabWindow(); QVERIFY(!disabled.isNull());
-        QCOMPARE(pixel(disabled,128,96).alpha(),0);
+        ValoOpticalContext context; context.setPrefersReducedMotion(true);
+        glass->setOpticalContext(&context); glass->setBlurProfile(2);
+        QTest::qWait(100); QCOMPARE(glass->causticTime(),paused);
+        QVERIFY(!glass->animationRunning());
+        QVERIFY(pixel(w.grabWindow(),128,96).alpha()>0); // Motion policy does not extinguish light.
+        context.setPrefersReducedMotion(false); QVERIFY(glass->animationRunning());
+        glass->setVisible(false); const float hidden=glass->causticTime();
+        QTest::qWait(150); QCOMPARE(glass->causticTime(),hidden);
+        glass->setVisible(true); QTest::qWait(50);
+        QVERIFY(glass->causticTime()>=hidden); QVERIFY(glass->causticTime()-hidden<.15f);
+        context.setEnergySavingFactor(.2f); const float energy=glass->causticTime();
+        QTest::qWait(100); QCOMPARE(glass->causticTime(),energy);
         glass->setOpticalContext(nullptr);
     }
+    void gpuBackdropProfileSharpness() {
+        QTemporaryDir directory; QVERIFY(directory.isValid());
+        QImage pattern(256,192,QImage::Format_RGBA8888); pattern.fill(Qt::white);
+        QPainter painter(&pattern);
+        for(int y=0;y<192;y+=24) for(int x=0;x<256;x+=24)
+            if((x/24+y/24)%2==0) painter.fillRect(x,y,24,24,Qt::black);
+        painter.setPen(Qt::red);
+        for(int x=0;x<256;x+=6) painter.drawLine(x,0,x,191);
+        painter.setPen(Qt::green); painter.setFont(QFont("Sans",18,QFont::Bold));
+        painter.drawText(QRect(16,40,224,110),Qt::AlignCenter,"VALO GPU\nDual-Kawase 2.0"); painter.end();
+        QVERIFY(pattern.save(directory.path()+"/pattern.png"));
+        QQuickWindow window; window.resize(256,192); window.setColor(Qt::black);
+        auto *source=new StaticBackdrop(pattern,window.contentItem());
+        ValoBackdropProviderV2 provider; provider.setSource(source);
+        auto *glass=new ObservedGlass(window.contentItem()); glass->setSize(QSizeF(256,192));
+        glass->setCornerRadii(QVector4D(0,0,0,0)); glass->setCausticIntensity(0);
+        glass->setDebugMode(5); glass->setBackdropProvider(&provider);
+        glass->setBlurProfile(0);
+        // No animation-driven updatePaintNode may accidentally repair the handoff.
+        QVERIFY(QMetaObject::invokeMethod(glass,"onIdleTimeout"));
+        std::atomic_bool filtered{false}; std::atomic<quintptr> wrapper{0};
+        QObject::connect(&window,&QQuickWindow::afterRendering,&window,[&] {
+            auto *material=glass->observedMaterial;
+            auto *used=material ? material->backdropTexture() : nullptr;
+            auto *sourceTexture=source->textureProvider()->texture();
+            filtered = used && sourceTexture && used->rhiTexture()!=sourceTexture->rhiTexture();
+            wrapper = reinterpret_cast<quintptr>(used);
+        },Qt::DirectConnection);
+        window.show(); QVERIFY(QTest::qWaitForWindowExposed(&window));
+        QTest::qWait(100); glass->update(); QVERIFY(!window.grabWindow().isNull());
+        QJsonArray metrics; double energies[3]{}; quintptr stable=0;
+        for(int profile : {0,1,2,0,2,1}) {
+            glass->setBlurProfile(profile); window.update(); QTest::qWait(220);
+            const auto image=window.grabWindow(); QVERIFY(!image.isNull());
+            double energy=0, mean=0; int count=0;
+            for(int y=32;y<160;++y) for(int x=32;x<224;++x) {
+                auto luma=[](QColor c) { return .2126*c.redF()+.7152*c.greenF()+.0722*c.blueF(); };
+                const double center=luma(pixel(image,x,y));
+                energy+=std::pow(center-luma(pixel(image,x+1,y)),2)+std::pow(center-luma(pixel(image,x,y+1)),2); mean+=center; ++count;
+            }
+            energies[profile]=energy/count;
+            metrics.append(QJsonObject{{"profile",profile},{"gradientEnergy",energies[profile]}, {"meanLuminance",mean/count}, {"filteredMaterial",filtered.load()}, {"executedPasses",provider.executedPasses()}, {"status",provider.blurStatus()}});
+            qInfo()<<"GPU profile"<<profile<<"gradient energy"<<energies[profile]<<"filtered material"<<filtered;
+            QVERIFY(mean/count>.2 && mean/count<.8); // A black/empty output is not successful blur.
+            QCOMPARE(filtered.load(),profile!=0);
+            QCOMPARE(provider.executedPasses(),profile==0 ? 0 : profile==1 ? 4 : 8);
+            QCOMPARE(provider.blurStatus(),profile==0 ? QString("bypass") : QString("filtered"));
+            if(profile!=0) { if(stable) QCOMPARE(wrapper.load(),stable); stable=wrapper.load(); }
+            const QString output=qEnvironmentVariable("SGE_VALO_GPU_METRICS_DIR");
+            if(!output.isEmpty()) { QDir().mkpath(output); image.save(output+QString("/gpu-profile-%1.png").arg(profile)); }
+        }
+        const QString output=qEnvironmentVariable("SGE_VALO_GPU_METRICS_DIR");
+        if(!output.isEmpty()) { QFile file(output+"/gpu-metrics.json"); QVERIFY(file.open(QIODevice::WriteOnly)); file.write(QJsonDocument(metrics).toJson()); }
+        QVERIFY(energies[1]<energies[0]*.5); QVERIFY(energies[2]<energies[1]*.7);
+        QObject::disconnect(&window,&QQuickWindow::afterRendering,&window,nullptr);
+        delete glass;
+    }
+
     void diagnosticEnergy() {
         QQuickWindow w; w.resize(256,192); w.setColor(Qt::black);
         auto *item = new ProbeItem(w.contentItem()); item->backdrop.fill(Qt::black);

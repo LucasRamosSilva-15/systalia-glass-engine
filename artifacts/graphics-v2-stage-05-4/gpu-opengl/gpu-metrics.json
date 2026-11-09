@@ -1,0 +1,50 @@
+[
+    {
+        "executedPasses": 0,
+        "filteredMaterial": false,
+        "gradientEnergy": 0.13420556973969225,
+        "meanLuminance": 0.48637672377615093,
+        "profile": 0,
+        "status": "bypass"
+    },
+    {
+        "executedPasses": 4,
+        "filteredMaterial": true,
+        "gradientEnergy": 0.0012132943853683552,
+        "meanLuminance": 0.48596177013823255,
+        "profile": 1,
+        "status": "filtered"
+    },
+    {
+        "executedPasses": 8,
+        "filteredMaterial": true,
+        "gradientEnergy": 3.276973655093036e-06,
+        "meanLuminance": 0.4805507684913559,
+        "profile": 2,
+        "status": "filtered"
+    },
+    {
+        "executedPasses": 0,
+        "filteredMaterial": false,
+        "gradientEnergy": 0.13420556973969225,
+        "meanLuminance": 0.48637672377615093,
+        "profile": 0,
+        "status": "bypass"
+    },
+    {
+        "executedPasses": 8,
+        "filteredMaterial": true,
+        "gradientEnergy": 3.276973655093036e-06,
+        "meanLuminance": 0.4805507684913559,
+        "profile": 2,
+        "status": "filtered"
+    },
+    {
+        "executedPasses": 4,
+        "filteredMaterial": true,
+        "gradientEnergy": 0.0012132943853683552,
+        "meanLuminance": 0.48596177013823255,
+        "profile": 1,
+        "status": "filtered"
+    }
+]

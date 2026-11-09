@@ -1,0 +1,573 @@
+{
+  "regions": {
+    "Files": [
+      290,
+      250,
+      770,
+      655
+    ],
+    "Material": [
+      820,
+      190,
+      1000,
+      655
+    ],
+    "Dock": [
+      560,
+      820,
+      1100,
+      940
+    ],
+    "TopBar": [
+      1050,
+      15,
+      1200,
+      40
+    ]
+  },
+  "note": "Mean absolute RGB byte difference from real frame t0; content and effects included; TopBar ROI excludes clock/CPU telemetry.",
+  "quality": [
+    {
+      "seconds": 0,
+      "exposed": true,
+      "surfaces": {
+        "Files": {
+          "causticTime": 0.9129992723464966,
+          "animationRunning": true,
+          "animationIntervalMs": 16,
+          "caustics": 0.8500000238418579,
+          "profile": 2,
+          "executedPasses": 8,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.8500000238418579,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 0.0
+        },
+        "Material": {
+          "causticTime": 0.9129992723464966,
+          "animationRunning": true,
+          "animationIntervalMs": 16,
+          "caustics": 0.8500000238418579,
+          "profile": 2,
+          "executedPasses": 8,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.8500000238418579,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 0.0
+        },
+        "TopBar": {
+          "causticTime": 0.9129992723464966,
+          "animationRunning": true,
+          "animationIntervalMs": 16,
+          "caustics": 0.18000000715255737,
+          "profile": 2,
+          "executedPasses": 8,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.41999998688697815,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 0.0
+        },
+        "Dock": {
+          "causticTime": 0.9129992723464966,
+          "animationRunning": true,
+          "animationIntervalMs": 16,
+          "caustics": 0.8500000238418579,
+          "profile": 2,
+          "executedPasses": 8,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.3400000035762787,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 0.0
+        }
+      }
+    },
+    {
+      "seconds": 5,
+      "exposed": true,
+      "surfaces": {
+        "Files": {
+          "causticTime": 5.615991115570068,
+          "animationRunning": true,
+          "animationIntervalMs": 16,
+          "caustics": 0.8500000238418579,
+          "profile": 2,
+          "executedPasses": 8,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.8500000238418579,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 4.41821159122085
+        },
+        "Material": {
+          "causticTime": 5.615991115570068,
+          "animationRunning": true,
+          "animationIntervalMs": 16,
+          "caustics": 0.8500000238418579,
+          "profile": 2,
+          "executedPasses": 8,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.8500000238418579,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 3.5869095977698127
+        },
+        "TopBar": {
+          "causticTime": 5.615991115570068,
+          "animationRunning": true,
+          "animationIntervalMs": 16,
+          "caustics": 0.18000000715255737,
+          "profile": 2,
+          "executedPasses": 8,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.41999998688697815,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 0.5077333333333334
+        },
+        "Dock": {
+          "causticTime": 5.6179914474487305,
+          "animationRunning": true,
+          "animationIntervalMs": 16,
+          "caustics": 0.8500000238418579,
+          "profile": 2,
+          "executedPasses": 8,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.3400000035762787,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 2.2014866255144034
+        }
+      }
+    },
+    {
+      "seconds": 15,
+      "exposed": true,
+      "surfaces": {
+        "Files": {
+          "causticTime": 15.129989624023438,
+          "animationRunning": true,
+          "animationIntervalMs": 16,
+          "caustics": 0.8500000238418579,
+          "profile": 2,
+          "executedPasses": 8,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.8500000238418579,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 3.6272890946502057
+        },
+        "Material": {
+          "causticTime": 15.129989624023438,
+          "animationRunning": true,
+          "animationIntervalMs": 16,
+          "caustics": 0.8500000238418579,
+          "profile": 2,
+          "executedPasses": 8,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.8500000238418579,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 3.229322978892871
+        },
+        "TopBar": {
+          "causticTime": 15.129989624023438,
+          "animationRunning": true,
+          "animationIntervalMs": 16,
+          "caustics": 0.18000000715255737,
+          "profile": 2,
+          "executedPasses": 8,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.41999998688697815,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 0.8865777777777777
+        },
+        "Dock": {
+          "causticTime": 15.132988929748535,
+          "animationRunning": true,
+          "animationIntervalMs": 16,
+          "caustics": 0.8500000238418579,
+          "profile": 2,
+          "executedPasses": 8,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.3400000035762787,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 8.344938271604939
+        }
+      }
+    },
+    {
+      "seconds": 30,
+      "exposed": true,
+      "surfaces": {
+        "Files": {
+          "causticTime": 29.6790771484375,
+          "animationRunning": true,
+          "animationIntervalMs": 16,
+          "caustics": 0.8500000238418579,
+          "profile": 2,
+          "executedPasses": 8,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.8500000238418579,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 2.84338134430727
+        },
+        "Material": {
+          "causticTime": 29.6790771484375,
+          "animationRunning": true,
+          "animationIntervalMs": 16,
+          "caustics": 0.8500000238418579,
+          "profile": 2,
+          "executedPasses": 8,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.8500000238418579,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 2.8360812425328557
+        },
+        "TopBar": {
+          "causticTime": 29.6790771484375,
+          "animationRunning": true,
+          "animationIntervalMs": 16,
+          "caustics": 0.18000000715255737,
+          "profile": 2,
+          "executedPasses": 8,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.41999998688697815,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 0.7529777777777777
+        },
+        "Dock": {
+          "causticTime": 29.68507957458496,
+          "animationRunning": true,
+          "animationIntervalMs": 16,
+          "caustics": 0.8500000238418579,
+          "profile": 2,
+          "executedPasses": 8,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.3400000035762787,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 6.613708847736626
+        }
+      }
+    },
+    {
+      "seconds": 60,
+      "exposed": true,
+      "surfaces": {
+        "Files": {
+          "causticTime": 58.73456954956055,
+          "animationRunning": true,
+          "animationIntervalMs": 16,
+          "caustics": 0.8500000238418579,
+          "profile": 2,
+          "executedPasses": 8,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.8500000238418579,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 4.0261454046639225
+        },
+        "Material": {
+          "causticTime": 58.73456954956055,
+          "animationRunning": true,
+          "animationIntervalMs": 16,
+          "caustics": 0.8500000238418579,
+          "profile": 2,
+          "executedPasses": 8,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.8500000238418579,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 2.886742333731581
+        },
+        "TopBar": {
+          "causticTime": 58.73556900024414,
+          "animationRunning": true,
+          "animationIntervalMs": 16,
+          "caustics": 0.18000000715255737,
+          "profile": 2,
+          "executedPasses": 8,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.41999998688697815,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 0.6089777777777777
+        },
+        "Dock": {
+          "causticTime": 58.74456787109375,
+          "animationRunning": true,
+          "animationIntervalMs": 16,
+          "caustics": 0.8500000238418579,
+          "profile": 2,
+          "executedPasses": 8,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.3400000035762787,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 6.301172839506172
+        }
+      }
+    }
+  ],
+  "balanced": [
+    {
+      "seconds": 0,
+      "exposed": true,
+      "surfaces": {
+        "Files": {
+          "causticTime": 0.9140000939369202,
+          "animationRunning": true,
+          "animationIntervalMs": 33,
+          "caustics": 0.8500000238418579,
+          "profile": 1,
+          "executedPasses": 4,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.8500000238418579,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 0.0
+        },
+        "Material": {
+          "causticTime": 0.9150001406669617,
+          "animationRunning": true,
+          "animationIntervalMs": 33,
+          "caustics": 0.8500000238418579,
+          "profile": 1,
+          "executedPasses": 4,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.8500000238418579,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 0.0
+        },
+        "TopBar": {
+          "causticTime": 0.9160001277923584,
+          "animationRunning": true,
+          "animationIntervalMs": 33,
+          "caustics": 0.05000000074505806,
+          "profile": 1,
+          "executedPasses": 4,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.41999998688697815,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 0.0
+        },
+        "Dock": {
+          "causticTime": 0.9150001406669617,
+          "animationRunning": true,
+          "animationIntervalMs": 33,
+          "caustics": 0.8500000238418579,
+          "profile": 1,
+          "executedPasses": 4,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.3400000035762787,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 0.0
+        }
+      }
+    },
+    {
+      "seconds": 5,
+      "exposed": true,
+      "surfaces": {
+        "Files": {
+          "causticTime": 5.682003974914551,
+          "animationRunning": true,
+          "animationIntervalMs": 33,
+          "caustics": 0.8500000238418579,
+          "profile": 1,
+          "executedPasses": 4,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.8500000238418579,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 4.457866941015089
+        },
+        "Material": {
+          "causticTime": 5.683003902435303,
+          "animationRunning": true,
+          "animationIntervalMs": 33,
+          "caustics": 0.8500000238418579,
+          "profile": 1,
+          "executedPasses": 4,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.8500000238418579,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 3.642616487455197
+        },
+        "TopBar": {
+          "causticTime": 5.685003757476807,
+          "animationRunning": true,
+          "animationIntervalMs": 33,
+          "caustics": 0.05000000074505806,
+          "profile": 1,
+          "executedPasses": 4,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.41999998688697815,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 0.14595555555555553
+        },
+        "Dock": {
+          "causticTime": 5.684003829956055,
+          "animationRunning": true,
+          "animationIntervalMs": 33,
+          "caustics": 0.8500000238418579,
+          "profile": 1,
+          "executedPasses": 4,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.3400000035762787,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 2.279861111111111
+        }
+      }
+    },
+    {
+      "seconds": 15,
+      "exposed": true,
+      "surfaces": {
+        "Files": {
+          "causticTime": 15.373971939086914,
+          "animationRunning": true,
+          "animationIntervalMs": 33,
+          "caustics": 0.8500000238418579,
+          "profile": 1,
+          "executedPasses": 4,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.8500000238418579,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 3.610658436213992
+        },
+        "Material": {
+          "causticTime": 15.374972343444824,
+          "animationRunning": true,
+          "animationIntervalMs": 33,
+          "caustics": 0.8500000238418579,
+          "profile": 1,
+          "executedPasses": 4,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.8500000238418579,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 3.1303544404619674
+        },
+        "TopBar": {
+          "causticTime": 15.377971649169922,
+          "animationRunning": true,
+          "animationIntervalMs": 33,
+          "caustics": 0.05000000074505806,
+          "profile": 1,
+          "executedPasses": 4,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.41999998688697815,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 0.25866666666666666
+        },
+        "Dock": {
+          "causticTime": 15.375971794128418,
+          "animationRunning": true,
+          "animationIntervalMs": 33,
+          "caustics": 0.8500000238418579,
+          "profile": 1,
+          "executedPasses": 4,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.3400000035762787,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 3.532340534979424
+        }
+      }
+    },
+    {
+      "seconds": 30,
+      "exposed": true,
+      "surfaces": {
+        "Files": {
+          "causticTime": 30.16090965270996,
+          "animationRunning": true,
+          "animationIntervalMs": 33,
+          "caustics": 0.8500000238418579,
+          "profile": 1,
+          "executedPasses": 4,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.8500000238418579,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 3.01627743484225
+        },
+        "Material": {
+          "causticTime": 30.16290855407715,
+          "animationRunning": true,
+          "animationIntervalMs": 33,
+          "caustics": 0.8500000238418579,
+          "profile": 1,
+          "executedPasses": 4,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.8500000238418579,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 3.1441178813221824
+        },
+        "TopBar": {
+          "causticTime": 30.16490936279297,
+          "animationRunning": true,
+          "animationIntervalMs": 33,
+          "caustics": 0.05000000074505806,
+          "profile": 1,
+          "executedPasses": 4,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.41999998688697815,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 0.2522666666666667
+        },
+        "Dock": {
+          "causticTime": 30.163908004760742,
+          "animationRunning": true,
+          "animationIntervalMs": 33,
+          "caustics": 0.8500000238418579,
+          "profile": 1,
+          "executedPasses": 4,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.3400000035762787,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 2.2895730452674896
+        }
+      }
+    },
+    {
+      "seconds": 60,
+      "exposed": true,
+      "surfaces": {
+        "Files": {
+          "causticTime": 59.672794342041016,
+          "animationRunning": true,
+          "animationIntervalMs": 33,
+          "caustics": 0.8500000238418579,
+          "profile": 1,
+          "executedPasses": 4,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.8500000238418579,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 4.791659807956104
+        },
+        "Material": {
+          "causticTime": 59.6747932434082,
+          "animationRunning": true,
+          "animationIntervalMs": 33,
+          "caustics": 0.8500000238418579,
+          "profile": 1,
+          "executedPasses": 4,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.8500000238418579,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 3.705077658303465
+        },
+        "TopBar": {
+          "causticTime": 59.67779541015625,
+          "animationRunning": true,
+          "animationIntervalMs": 33,
+          "caustics": 0.05000000074505806,
+          "profile": 1,
+          "executedPasses": 4,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.41999998688697815,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 0.21457777777777778
+        },
+        "Dock": {
+          "causticTime": 59.6757926940918,
+          "animationRunning": true,
+          "animationIntervalMs": 33,
+          "caustics": 0.8500000238418579,
+          "profile": 1,
+          "executedPasses": 4,
+          "blurStatus": "filtered",
+          "effectiveOpacity": 0.3400000035762787,
+          "adaptiveOffset": 0,
+          "meanAbsoluteRgbByteDifferenceFrom0": 2.531697530864198
+        }
+      }
+    }
+  ]
+}

@@ -102,6 +102,8 @@ public:
   void resetActivity();
   bool isCausticFrozen() const noexcept { return m_causticFrozen; }
   float causticTime() const noexcept { return m_accumulatedTime; }
+  int animationIntervalMs() const noexcept { return m_animTimer.interval(); }
+  bool animationRunning() const noexcept { return m_animTimer.isActive(); }
 
 signals:
   void cornerRadiiChanged();
@@ -127,6 +129,8 @@ private slots:
   void onAnimationFrame();
 
 private:
+  void updateAnimationPolicy();
+  QMetaObject::Connection m_windowVisibilityConnection;
   QVector4D m_cornerRadii = {32.0f, 32.0f, 32.0f, 32.0f};
   int m_geometryMode = CircularL2;
   float m_surfaceOpacity = 0.34f;
@@ -143,7 +147,6 @@ private:
   QPointer<ValoBackdropProviderV2> m_backdropProvider;
   QPointer<ValoOpticalContext> m_opticalContext;
 
-  QTimer m_idleTimer;
   QTimer m_animTimer;
   QElapsedTimer m_elapsedTimer;
   float m_accumulatedTime = 0.0f;

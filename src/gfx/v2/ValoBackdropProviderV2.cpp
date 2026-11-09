@@ -212,23 +212,17 @@ void ValoBackdropProviderV2::setBlurProfile(BlurProfile profile) {
 
 void ValoBackdropProviderV2::onBeforeRendering() {
     if (!m_resourceWindow) return;
-    if (m_renderProfile == BlurProfile::Performance) {
-        return;
-    }
-
     QRhi *rhi = m_resourceWindow->rhi();
     if (!rhi) return;
 
-    if (m_qsgBlurredTexture && !m_isDirty) {
-        return;
-    }
-
-    QSGTexture *srcTex = texture(m_resourceWindow);
+    // Resolve only the synchronized provider here. texture() may retire a fallback
+    // handed to this frame's material, so ownership transitions belong to sync.
+    QSGTexture *srcTex = m_connectedProvider ? m_connectedProvider->texture() : m_fallbackTexture;
     if (!srcTex) return;
 
-    if (auto *dynTex = qobject_cast<QSGDynamicTexture *>(srcTex)) {
-        dynTex->updateTexture();
-    }
+    bool sourceUpdated = false;
+    if (auto *dynTex = qobject_cast<QSGDynamicTexture *>(srcTex))
+        sourceUpdated = dynTex->updateTexture();
 
     const QSize srcSize = srcTex->textureSize();
     if (!srcSize.isValid() || srcSize.isEmpty()) return;
@@ -242,6 +236,19 @@ void ValoBackdropProviderV2::onBeforeRendering() {
                  srcSize.width(), srcSize.height());
     }
     if (!rhiSrc) return;
+    if (m_renderProfile == BlurProfile::Performance) {
+        const bool changed = sourceUpdated || rhiSrc != m_lastSourceTexture || srcSize != m_lastSourceSize;
+        m_lastSourceTexture = rhiSrc;
+        m_lastSourceSize = srcSize;
+        m_status = 0;
+        m_executedPasses = 0; // Producer capture is required; Dual-Kawase is bypassed.
+        m_isDirty = false;
+        if (changed) { emit textureChanged(); m_resourceWindow->update(); }
+        return;
+    }
+    if (sourceUpdated || rhiSrc != m_lastSourceTexture || srcSize != m_lastSourceSize)
+        setDirty(true);
+    if (m_qsgBlurredTexture && !m_isDirty) return;
 
     QRhiCommandBuffer *cb = nullptr;
     QRhiSwapChain *swapchain = m_resourceWindow->swapChain();
@@ -263,6 +270,9 @@ void ValoBackdropProviderV2::onBeforeRendering() {
     }
 
     if (!m_gpuBlurPipeline->prepare(rhi, srcSize, m_renderProfile)) {
+        m_status = 3;
+        m_executedPasses = 0;
+        qWarning("[SGE-BLUR-V2] GPU blur unavailable: retaining an explicitly unfiltered source fallback.");
         return;
     }
 
@@ -287,6 +297,8 @@ void ValoBackdropProviderV2::onBeforeRendering() {
             wrapper->setHorizontalWrapMode(QSGTexture::ClampToEdge);
             wrapper->setVerticalWrapMode(QSGTexture::ClampToEdge);
             m_qsgBlurredTexture = wrapper;
+            // Queue consumer updatePaintNode even when optical animation is paused.
+            emit textureChanged();
             m_resourceWindow->update();
         } else {
             // updatePaintNode already handed this wrapper to a material this frame.
@@ -294,6 +306,10 @@ void ValoBackdropProviderV2::onBeforeRendering() {
             static_cast<ValoRhiTextureWrapper *>(m_qsgBlurredTexture)->setTexture(outRhi);
         }
     }
+    m_status = outRhi ? 2 : 3;
+    m_executedPasses = outRhi ? 2 * ValoBlurPipelineV2::passCountForProfile(m_renderProfile) : 0;
+    m_lastSourceTexture = rhiSrc;
+    m_lastSourceSize = srcSize;
     m_isDirty = false;
 }
 
@@ -303,11 +319,15 @@ QSGTexture *ValoBackdropProviderV2::blurredTexture(QQuickWindow *window) {
     // Synchronization blocks the GUI thread: snapshot configuration for this frame.
     if (m_renderProfile != m_blurProfile) {
         m_renderProfile = m_blurProfile;
+        m_status = m_renderProfile == BlurProfile::Performance ? 0 : 1;
+        m_executedPasses = 0;
         setDirty(true);
     }
 
     QSGTexture *srcTex = texture(window);
     if (!srcTex || m_blurProfile == BlurProfile::Performance) {
+        m_status = m_blurProfile == BlurProfile::Performance ? 0 : 1;
+        m_executedPasses = 0;
         return srcTex;
     }
 
@@ -350,6 +370,10 @@ void ValoBackdropProviderV2::releaseResources() {
         pipeline.reset();
     }
     m_renderThread = nullptr;
+    m_lastSourceTexture = nullptr;
+    m_lastSourceSize = {};
+    m_status = 1;
+    m_executedPasses = 0;
     m_isDirty = true;
 }
 
