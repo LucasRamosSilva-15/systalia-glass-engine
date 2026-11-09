@@ -10,7 +10,10 @@
 #include <QSignalSpy>
 
 #include "gfx/SystaliaGlassItem.hpp"
+#include "ValoGlassItemV2.hpp"
 #include "tokens/ValoTokens.hpp"
+
+void qml_register_types_Systalia_Engine();
 
 class TestValoDecorations final : public QObject {
     Q_OBJECT
@@ -27,6 +30,7 @@ private slots:
 };
 
 void TestValoDecorations::initTestCase() {
+    qml_register_types_Systalia_Engine();
     qmlRegisterType<SystaliaGlassItem>("Systalia.Engine", 1, 0, "SystaliaGlassItem");
 }
 
@@ -50,8 +54,20 @@ void TestValoDecorations::windowContainerIntegratesValoGlass() {
     QVERIFY(container);
 
     // Verifica que o ValoGlass está presente e encapsula o SystaliaGlassItem
-    auto *glass = container->findChild<SystaliaGlassItem *>();
+    auto *glass = container->findChild<Systalia::Gfx::V2::ValoGlassItemV2 *>();
     QVERIFY(glass);
+    QVERIFY(!container->findChild<SystaliaGlassItem *>());
+    QVERIFY(!container->findChild<QQuickItem *>("clientTextureCapture"));
+    QCOMPARE(glass->geometryMode(), int(Systalia::Gfx::V2::ValoGlassItemV2::SquircleG2));
+    for (int i = 0; i < 30; ++i) {
+        container->setProperty("blurProfile", i % 3);
+        QCOMPARE(glass->blurProfile(), i % 3);
+    }
+    container->setProperty("useGraphicsV2", false);
+    QVERIFY(container->findChild<SystaliaGlassItem *>());
+    QTRY_VERIFY(!container->findChild<Systalia::Gfx::V2::ValoGlassItemV2 *>());
+    container->setProperty("useGraphicsV2", true);
+    QVERIFY(container->findChild<Systalia::Gfx::V2::ValoGlassItemV2 *>());
 
     auto *viewport = container->findChild<QQuickItem *>("clientViewport");
     QVERIFY(viewport);

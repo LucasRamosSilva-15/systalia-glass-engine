@@ -1,0 +1,15 @@
+
+(zenity:162140): Gdk-CRITICAL **: 16:54:59.537: gdk_monitor_set_scale: assertion 'scale > 0.' failed
+
+(zenity:162140): Gdk-CRITICAL **: 16:54:59.537: gdk_monitor_set_scale: assertion 'scale > 0.' failed
+
+(zenity:162140): Gdk-WARNING **: 16:54:59.689: vkGetPhysicalDeviceSurfaceFormatsKHR(): A surface is no longer available. (VK_ERROR_SURFACE_LOST_KHR) (-1000000000)
+
+(zenity:162140): Gdk-WARNING **: 16:54:59.689: vkGetPhysicalDeviceSurfaceFormatsKHR(): A surface is no longer available. (VK_ERROR_SURFACE_LOST_KHR) (-1000000000)
+MESA-EGL: warning: failed to get driver name for fd -1
+MESA-EGL: warning: MESA-LOADER: failed to retrieve device information
+MESA-EGL: warning: failed to get driver name for fd -1
+
+(zenity:162140): Gdk-WARNING **: 16:54:59.765: vkGetPhysicalDeviceSurfaceFormatsKHR(): A surface is no longer available. (VK_ERROR_SURFACE_LOST_KHR) (-1000000000)
+
+(zenity:162140): Gdk-WARNING **: 16:54:59.775: vkGetPhysicalDeviceSurfaceFormatsKHR(): A surface is no longer available. (VK_ERROR_SURFACE_LOST_KHR) (-1000000000)

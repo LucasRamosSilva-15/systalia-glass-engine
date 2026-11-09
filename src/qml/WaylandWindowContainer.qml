@@ -11,7 +11,12 @@ Item {
     property var workspace: null
     property var tilingService: null
     property var outputManager: null
+    // External clients deliberately use the wallpaper-only backdrop.
     property var backdropSource: null
+    property bool useGraphicsV2: true
+    property int blurProfile: 1
+    property bool userHighContrast: false
+    property bool userPrefersReducedMotion: false
     property point screenResolution: Qt.point(1280, 800)
     property int currentScreenIndex: 0
     property real currentScreenScale: 1.0
@@ -313,14 +318,6 @@ Item {
             clientSurfaceItem.surface = null
             clientSurfaceItem.shellSurface = null
         }
-        if (clientTextureCapture) {
-            clientTextureCapture.live = false
-            clientTextureCapture.sourceItem = null
-        }
-        if (glassChassis) {
-            glassChassis.clientTextureSource = null
-            glassChassis.occluded = true
-        }
         if (tilingService && typeof tilingService.unregisterWindowSnap === "function")
             tilingService.unregisterWindowSnap(windowContainer)
         finishResize()
@@ -474,29 +471,52 @@ Item {
         return true
     }
 
-    // Chassi VALO Glass Integrado (Motor Óptico SGE + Figma VALO Design System)
-    ValoGlass {
+    // Client presentation and input remain outside both optical renderers.
+    Item {
         id: glassChassis
         anchors.fill: parent
 
-        active: windowContainer.isWindowActive
-        backdropSource: windowContainer.backdropSource
-        clientTextureSource: clientTextureCapture
-        screenResolution: Qt.vector2d(windowContainer.screenResolution.x, windowContainer.screenResolution.y)
-        devicePixelRatio: windowContainer.currentScreenScale
-        titleBarHeight: windowContainer.titleBarHeight
-        cornerRadii: windowContainer.frameRadii
-        slant: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.slant : 0.0
-        refractionStrength: windowContainer.opticalMetadata
-            ? Math.max(0.0, (windowContainer.opticalMetadata.ior - 1.0) / 0.25)
-            : 1.0
-        chromaticDispersion: windowContainer.opticalMetadata
-            ? windowContainer.opticalMetadata.dispersion
-            : 0.040
-        time: windowContainer.animTime
-        occluded: !windowContainer.visible
+        Loader {
+            anchors.fill: parent
+            sourceComponent: windowContainer.useGraphicsV2 ? decorationV2 : decorationV1
+        }
+        Component {
+            id: decorationV2
+            ValoMaterialSurfaceV2 {
+                objectName: "clientDecorationV2"
+                geometryMode: ValoGlassItemV2.SquircleG2
+                backdropSource: windowContainer.backdropSource
+                blurProfile: windowContainer.blurProfile
+                cornerRadii: windowContainer.frameRadii
+                slant: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.slant : 0
+                ior: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.ior : 1.25
+                chromaticDispersion: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.dispersion : 0.04
+                surfaceOpacity: windowContainer.isWindowActive ? 0.50 : 0.42
+                // V2 active controls node lifetime, not keyboard activation.
+                active: windowContainer.visible
+                userHighContrast: windowContainer.userHighContrast
+                userPrefersReducedMotion: windowContainer.userPrefersReducedMotion
+            }
+        }
+        Component {
+            id: decorationV1
+            ValoGlass {
+                objectName: "clientDecorationV1"
+                active: windowContainer.isWindowActive
+                backdropSource: windowContainer.backdropSource
+                screenResolution: Qt.vector2d(windowContainer.screenResolution.x, windowContainer.screenResolution.y)
+                devicePixelRatio: windowContainer.currentScreenScale
+                titleBarHeight: windowContainer.titleBarHeight
+                cornerRadii: windowContainer.frameRadii
+                slant: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.slant : 0
+                refractionStrength: windowContainer.opticalMetadata ? Math.max(0, (windowContainer.opticalMetadata.ior - 1) / 0.25) : 1
+                chromaticDispersion: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.dispersion : 0.04
+                time: windowContainer.animTime
+                occluded: !windowContainer.visible
+            }
+        }
 
-        // A fonte Wayland fica atrás do passe óptico; o shader a compõe no mesmo frame.
+        // Native, unfiltered client buffers are painted above the decoration.
         Item {
             id: clientViewport
             objectName: "clientViewport"
@@ -538,16 +558,7 @@ Item {
                 }
             }
 
-            ShaderEffectSource {
-                id: clientTextureCapture
-                objectName: "clientTextureCapture"
-                sourceItem: clientSurfaceItem
-                live: windowContainer.visible
-                hideSource: false
-                recursive: false
-                visible: false
-                format: ShaderEffectSource.RGBA8
-            }
+
         }
 
         Shell.SystaliaWindowHeader {

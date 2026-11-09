@@ -1,4 +1,5 @@
 #include <QTest>
+#include <QScopeGuard>
 #include <QFile>
 #include <QJSEngine>
 #include <QQmlApplicationEngine>
@@ -147,6 +148,40 @@ private slots:
         evaluate("materialWindow.materialActive = true; materialWindow.refractiveIndex = 1.25;"
                  "materialWindow.surfaceOpacity = .50; materialWindow.dispersion = .04;"
                  "materialWindow.dispersionStrength = 1; materialWindow.caustics = .85");
+    }
+
+    void migratedOverlaysUseSingleV2ChassisAndSharedProfiles() {
+        using namespace Systalia::Gfx::V2;
+        const auto id = m_notifications.Notify("VALO",0,"","Migration","Native content",{}, {},0);
+        const auto cleanupNotification = qScopeGuard([&] { m_notifications.CloseNotification(id); });
+        auto findSurface = [this](const QString &name) {
+            auto *window = qobject_cast<QQuickWindow *>(m_root);
+            return visualItem(window->contentItem(),name);
+        };
+        qobject_cast<QQuickWindow *>(m_root)->show();
+        QTest::qWait(100);
+        const QStringList names{"SystaliaFlowMenuSurfaceV2", "SystaliaNotificationHostSurfaceV2",
+                                "SystaliaTaskSwitcherSurfaceV2", "SnapPreviewOverlaySurfaceV2"};
+        for (const auto &name : names) {
+            QTRY_VERIFY(findSurface(name));
+            auto *surface = findSurface(name);
+            QCOMPARE(surface->findChildren<ValoGlassItemV2 *>().size(),1);
+            QCOMPARE(surface->findChildren<ValoShadowItemV2 *>().size(),1);
+            QCOMPARE(surface->findChildren<SystaliaGlassItem *>().size(),0);
+            QCOMPARE(surface->property("geometryMode").toInt(),1);
+        }
+        for (int profile : {0,1,2,1}) {
+            evaluate(QString("materialWindow.blurProfile=%1").arg(profile));
+            for (const auto &name : names)
+                QCOMPARE(findSurface(name)->property("blurProfile").toInt(),profile);
+        }
+        evaluate("materialWindow.opticalSurface.userPrefersReducedMotion=true; materialWindow.opticalSurface.userHighContrast=true");
+        for (const auto &name : names) {
+            auto *surface=findSurface(name);
+            QVERIFY(surface->property("prefersReducedMotion").toBool());
+            QVERIFY(surface->property("highContrast").toBool());
+        }
+        evaluate("materialWindow.opticalSurface.userPrefersReducedMotion=false; materialWindow.opticalSurface.userHighContrast=false");
     }
 
     void internalBackdropOrderingAndFallback() {

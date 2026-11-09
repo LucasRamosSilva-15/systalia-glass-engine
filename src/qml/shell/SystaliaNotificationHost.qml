@@ -7,6 +7,9 @@ import Systalia.System 1.0
 Item {
     id: notificationHost
 
+    property int blurProfile: 1
+    property bool userHighContrast: false
+    property bool userPrefersReducedMotion: false
     property var backdropSource: null
     property var screenResolution: Qt.vector2d(width, height)
     property real animationTime: 0.0
@@ -45,26 +48,17 @@ Item {
             width: notificationList.width
             height: 126
 
-            SystaliaGlassItem {
-                anchors.fill: parent
+            ValoMaterialSurfaceV2 {
+                objectName: "SystaliaNotificationHostSurfaceV2"
+                geometryMode: ValoGlassItemV2.SquircleG2
                 backdropSource: notificationHost.backdropSource
-                screenResolution: notificationHost.screenResolution
-                radii: notificationHost.cornerRadii
-                slant: 0.0
-                ior: 1.25
-                chromaticDispersion: 0.035
-                causticIntensity: 0.52
-                surfaceOpacity: 0.90
-                opacity: 0.90
-                time: notificationHost.animationTime
-            }
-
-            SystaliaG2Frame {
+                cornerRadii: notificationHost.cornerRadii
+                blurProfile: notificationHost.blurProfile
+                userHighContrast: notificationHost.userHighContrast
+                userPrefersReducedMotion: notificationHost.userPrefersReducedMotion
                 anchors.fill: parent
-                radii: notificationHost.cornerRadii
-                fillColor: "#c20b1b2b"
-                strokeColor: "#6e9de8f5"
-                strokeWidth: 1
+                surfaceOpacity: 0.90
+                volumetricTint: "#0b1b2b"
             }
 
             RowLayout {

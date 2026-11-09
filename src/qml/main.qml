@@ -253,6 +253,9 @@ ApplicationWindow {
                         tilingService: LiquidTiling,
                         outputManager: OutputManager,
                         backdropSource: backdropGrab,
+                        blurProfile: Qt.binding(() => materialWindow.materialActive ? materialWindow.blurProfile : 0),
+                        userHighContrast: Qt.binding(() => materialWindow.opticalSurface.highContrast),
+                        userPrefersReducedMotion: Qt.binding(() => materialWindow.opticalSurface.prefersReducedMotion),
                         workspaceIndex: wsIndex,
                         screenResolution: Qt.binding(() => Qt.point(
                             rootWindow.width * rootWindow.devicePixelRatio,
@@ -444,6 +447,9 @@ ApplicationWindow {
         z: 45
 
         Shell.SnapPreviewOverlay {
+            blurProfile: materialWindow.materialActive ? materialWindow.blurProfile : 0
+            userHighContrast: materialWindow.opticalSurface.highContrast
+            userPrefersReducedMotion: materialWindow.opticalSurface.prefersReducedMotion
             id: snapPreviewOverlay
             active: LiquidTiling.previewVisible
             targetGeometry: LiquidTiling.previewGeometry
@@ -600,6 +606,9 @@ ApplicationWindow {
     }
 
     Shell.SystaliaFlowMenu {
+        blurProfile: materialWindow.materialActive ? materialWindow.blurProfile : 0
+        userHighContrast: materialWindow.opticalSurface.highContrast
+        userPrefersReducedMotion: materialWindow.opticalSurface.prefersReducedMotion
         id: flowMenu
         backdropSource: backdropGrab
         screenResolution: Qt.vector2d(rootWindow.width * rootWindow.devicePixelRatio,
@@ -695,6 +704,9 @@ ApplicationWindow {
     }
 
     Shell.SystaliaNotificationHost {
+        blurProfile: materialWindow.materialActive ? materialWindow.blurProfile : 0
+        userHighContrast: materialWindow.opticalSurface.highContrast
+        userPrefersReducedMotion: materialWindow.opticalSurface.prefersReducedMotion
         id: notificationHost
         backdropSource: backdropGrab
         screenResolution: Qt.vector2d(rootWindow.width * rootWindow.devicePixelRatio,
@@ -703,6 +715,9 @@ ApplicationWindow {
     }
 
     Shell.SystaliaTaskSwitcher {
+        blurProfile: materialWindow.materialActive ? materialWindow.blurProfile : 0
+        userHighContrast: materialWindow.opticalSurface.highContrast
+        userPrefersReducedMotion: materialWindow.opticalSurface.prefersReducedMotion
         id: taskSwitcher
         anchors.fill: parent
         z: 200

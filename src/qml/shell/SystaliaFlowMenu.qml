@@ -9,6 +9,9 @@ Item {
     id: flowMenu
 
     property bool opened: false
+    property int blurProfile: 1
+    property bool userHighContrast: false
+    property bool userPrefersReducedMotion: false
     property var backdropSource: null
     property var screenResolution: Qt.vector2d(width, height)
     property real animationTime: 0.0
@@ -63,44 +66,17 @@ Item {
             onClicked: {}
         }
 
-        SystaliaGlassItem {
-            anchors.fill: parent
+        ValoMaterialSurfaceV2 {
+            objectName: "SystaliaFlowMenuSurfaceV2"
+            geometryMode: ValoGlassItemV2.SquircleG2
             backdropSource: flowMenu.backdropSource
-            screenResolution: flowMenu.screenResolution
-            radii: flowMenu.cornerRadii
-            slant: 0.0
-            ior: 1.25
-            chromaticDispersion: 0.040
-            causticIntensity: 0.85
-            surfaceOpacity: 0.85
-            time: flowMenu.animationTime
-        }
-
-        SystaliaG2Frame {
+            cornerRadii: flowMenu.cornerRadii
+            blurProfile: flowMenu.blurProfile
+            userHighContrast: flowMenu.userHighContrast
+            userPrefersReducedMotion: flowMenu.userPrefersReducedMotion
             anchors.fill: parent
-            radii: flowMenu.cornerRadii
-            fillColor: "#e6071628"
-            strokeColor: "#c9ffffff"
-            strokeWidth: 1.25
-        }
-
-        // Camada superior de brilho / gloss perimetral VALO
-        Rectangle {
-            x: 4
-            y: 2.5
-            width: parent.width - 8
-            height: parent.height - 8
-            radius: 17
-            gradient: Gradient {
-                orientation: Gradient.Vertical
-                GradientStop { position: 0.0; color: "#40c8ffff" }
-                GradientStop { position: 0.34; color: "#1f61f0ff" }
-                GradientStop { position: 0.72; color: "#0b155279" }
-                GradientStop { position: 1.0; color: "#001b1834" }
-            }
-            border.color: "#24c8ffff"
-            border.width: 0.8
-            antialiasing: true
+            surfaceOpacity: 0.85
+            volumetricTint: "#071628"
         }
 
         ColumnLayout {

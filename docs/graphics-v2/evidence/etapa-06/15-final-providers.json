@@ -1,0 +1,66 @@
+[
+    {
+        "active": true,
+        "passes": 8,
+        "profile": 2,
+        "status": "filtered",
+        "x": 80,
+        "y": 140
+    },
+    {
+        "active": true,
+        "passes": 8,
+        "profile": 2,
+        "status": "filtered",
+        "x": 810,
+        "y": 140
+    },
+    {
+        "active": true,
+        "passes": 8,
+        "profile": 2,
+        "status": "filtered",
+        "x": 112,
+        "y": 172
+    },
+    {
+        "active": true,
+        "passes": 8,
+        "profile": 2,
+        "status": "filtered",
+        "x": 8,
+        "y": 4
+    },
+    {
+        "active": true,
+        "passes": 8,
+        "profile": 2,
+        "status": "filtered",
+        "x": 553.5,
+        "y": 817
+    },
+    {
+        "active": true,
+        "passes": 8,
+        "profile": 2,
+        "status": "filtered",
+        "x": 520.6,
+        "y": 192.135
+    },
+    {
+        "active": false,
+        "passes": 0,
+        "profile": 2,
+        "status": "pending",
+        "x": 1268,
+        "y": -586
+    },
+    {
+        "active": true,
+        "passes": 8,
+        "profile": 2,
+        "status": "filtered",
+        "x": 357.71999999999997,
+        "y": 382.38
+    }
+]

@@ -3,6 +3,7 @@
 // Opt-in measurement on the actual SDE executable. Inert unless the diagnostic
 // environment variable is set; never a replacement desktop or software renderer.
 #include <QDir>
+#include <QKeyEvent>
 #include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -112,8 +113,85 @@ inline void installValoStabilityProbe(QQuickWindow *window) {
                 {"cpuFrame",stats(timing->cpuMs)},{"gpuCompletedFrame",stats(timing->gpuMs)},
                 {"gpuTimingAvailable",!timing->gpuMs.isEmpty()}, {"warmupMs",2000}}).toJson());
         });
-        if(!qEnvironmentVariableIsSet("SGE_VALO_OPTICAL_TIMELINE"))
+        if(!qEnvironmentVariableIsSet("SGE_VALO_OPTICAL_TIMELINE") && !qEnvironmentVariableIsSet("SGE_VALO_CLIENT_MIGRATION_PROBE"))
             QTimer::singleShot(8000,window,[]{QCoreApplication::quit();});
+    }
+    if (qEnvironmentVariableIsSet("SGE_VALO_CLIENT_MIGRATION_PROBE")) {
+        // Isolate this nested test from a host X server using the same display number.
+        evaluate("waylandServer.stopXWayland(); waylandServer.startXWayland(91)");
+        QTimer::singleShot(1500,window,[directory,evaluate] {
+            QFile file(directory+"/xwayland-display.txt");
+            if(file.open(QIODevice::WriteOnly)) file.write(evaluate("waylandServer.xwaylandManager.displayName").toString().toUtf8());
+        });
+        auto snapshot = [window, directory, evaluate](const QString &name) {
+            const auto image = window->grabWindow();
+            image.save(directory + "/" + name + ".png");
+            const auto clients = evaluate(R"(
+                JSON.stringify(trackedClientContainers.map(w => ({
+                    title:w.toplevel.title, xwayland:w.isXWaylandWindow,
+                    v2:w.useGraphicsV2, visible:w.visible, profile:w.blurProfile,
+                    x:w.x,y:w.y,width:w.width,height:w.height,mapped:w.clientMapped,
+                    dpr:w.currentScreenScale,workspace:w.workspaceIndex,
+                    geometryX:w.clientGeometry.x,geometryY:w.clientGeometry.y,
+                    decorationActive:opticalItemIn(w) ? opticalItemIn(w).active : null
+                })))
+            )").toString();
+            QFile file(directory + "/" + name + ".json");
+            if (file.open(QIODevice::WriteOnly)) file.write(clients.toUtf8());
+            QFile state(directory + "/" + name + "-compositor.json");
+            if(state.open(QIODevice::WriteOnly)) state.write(evaluate(R"(
+                JSON.stringify({xRunning:waylandServer.xwaylandManager.running,
+                    xReady:waylandServer.xwaylandManager.ready,
+                    xManaged:waylandServer.xwaylandManager.managedWindowCount,
+                    windows:waylandServer.windowCount,backdrop:internalWindowBackdrop.coverageMode})
+            )").toString().toUtf8());
+            QJsonArray providers;
+            for (auto *item : window->findChildren<Systalia::Gfx::V2::ValoGlassItemV2 *>()) {
+                auto *provider=item->backdropProvider();
+                providers.append(QJsonObject{{"x",item->mapToScene(QPointF()).x()},
+                    {"y",item->mapToScene(QPointF()).y()},{"active",item->isActive()},
+                    {"profile",item->blurProfile()}, {"passes",provider ? provider->executedPasses() : 0},
+                    {"status",provider ? provider->blurStatus() : "none"}});
+            }
+            QFile gpu(directory + "/" + name + "-providers.json");
+            if(gpu.open(QIODevice::WriteOnly)) gpu.write(QJsonDocument(providers).toJson());
+            qInfo() << "VALO client migration sample" << name << clients;
+        };
+        auto step = [window, evaluate, snapshot](int ms, const QString &code, const QString &name) {
+            QTimer::singleShot(ms, window, [window, evaluate, snapshot, code, name] {
+                evaluate(code);
+                QTimer::singleShot(500, window, [snapshot,name] { snapshot(name); });
+            });
+        };
+        step(3000, "", "00-native-default");
+        step(4000, "trackedClientContainers.forEach((w,i)=>{w.x=30+i*390;w.y=100+i*80;w.dispatchClientResize(Qt.size(400,260),false);w.useGraphicsV2=false})", "01-v1-fallback");
+        step(6000, "trackedClientContainers.forEach(w=>w.useGraphicsV2=true)", "02-v2");
+        step(8000, "trackedClientContainers.forEach(w=>w.toggleMaximized())", "03-maximized");
+        step(10000, "trackedClientContainers.forEach(w=>w.toggleMaximized())", "04-restored");
+        step(12000, "trackedClientContainers.forEach((w,i)=>w.snapToZone(i%2+1))", "05-snap");
+        step(14000, "trackedClientContainers.forEach(w=>w.unsnapWindow())", "06-unsnap");
+        step(16000, "trackedClientContainers.forEach(w=>waylandServer.minimizeToplevel(w.toplevel))", "07-minimized");
+        step(18000, "trackedClientContainers.forEach(w=>waylandServer.activateToplevel(w.toplevel))", "08-reactivated");
+        step(20000, "WorkspaceManager.switchToWorkspace(1)", "09-workspace-1");
+        step(22000, "WorkspaceManager.switchToWorkspace(0)", "10-workspace-0");
+        for (int i=0; i<30; ++i)
+            QTimer::singleShot(24000+i*150, window, [evaluate,i] { evaluate(QString("materialWindow.blurProfile=%1").arg(i%3)); });
+        step(29000, "flowMenu.opened=true", "11-flow");
+        step(31000, "flowMenu.opened=false", "12-switcher");
+        QTimer::singleShot(31000,window,[window] {
+            QKeyEvent press(QEvent::KeyPress,Qt::Key_Tab,Qt::AltModifier);
+            QCoreApplication::sendEvent(window,&press);
+        });
+        QTimer::singleShot(33000,window,[window] {
+            QKeyEvent release(QEvent::KeyRelease,Qt::Key_Alt,Qt::NoModifier);
+            QCoreApplication::sendEvent(window,&release);
+        });
+        step(34000, "snapPreviewOverlay.active=true; snapPreviewOverlay.targetGeometry=Qt.rect(100,100,600,600)", "13-snap-preview");
+        step(36000, "snapPreviewOverlay.active=false; Notifications.Notify('VALO',0,'','V2 notification','Main SDE client migration',[],{},0)", "14-notification");
+        step(39000, "flowMenu.opened=false", "15-final");
+        step(40000, "trackedClientContainers.slice().forEach(w=>waylandServer.closeToplevel(w.toplevel))", "16-closed");
+        QTimer::singleShot(42000, window, [] { QCoreApplication::quit(); });
+        return;
     }
     const bool opticalTimeline = qEnvironmentVariableIsSet("SGE_VALO_OPTICAL_TIMELINE");
     if (opticalTimeline || qEnvironmentVariableIsSet("SGE_VALO_OPTICAL_PROFILE")) {

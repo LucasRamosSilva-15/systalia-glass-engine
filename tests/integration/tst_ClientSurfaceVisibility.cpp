@@ -1,6 +1,8 @@
 #include <QDir>
 #include <QGuiApplication>
 #include <QImage>
+#include <QKeyEvent>
+#include "ValoGlassItemV2.hpp"
 #include <QPainter>
 #include <QPointer>
 #include <QProcess>
@@ -15,6 +17,8 @@
 #include <QTest>
 #include <QTimer>
 #include <QtWaylandCompositor/QWaylandOutput>
+#include <QtWaylandCompositor/QWaylandSeat>
+#include <QtWaylandCompositor/QWaylandKeyboard>
 #include <QtWaylandCompositor/QWaylandSurface>
 #include <QtWaylandCompositor/QWaylandXdgToplevel>
 #include <memory>
@@ -27,15 +31,22 @@ namespace {
 constexpr auto TestSocketName = "wayland-visibility-test";
 }
 
+void qml_register_types_Systalia_Engine();
+
 class VisibilityPatternClient final : public QRasterWindow {
 protected:
+    void keyPressEvent(QKeyEvent *event) override {
+        if (event->key() == Qt::Key_G) { m_green = true; update(); }
+    }
     void paintEvent(QPaintEvent *) override {
         QPainter painter(this);
-        painter.fillRect(QRect(QPoint(0, 0), size()), QColor(255, 0, 255)); // Magenta puro
+        painter.fillRect(QRect(QPoint(0, 0), size()), m_green ? QColor(0, 255, 0) : QColor(255, 0, 255)); // Native buffer sentinel
         painter.setPen(Qt::white);
         painter.drawText(QRect(QPoint(0, 0), size()), Qt::AlignCenter,
                          QStringLiteral("VALO_CLIENT_ACTIVE_PIXELS"));
     }
+private:
+    bool m_green = false;
 };
 
 class TestClientSurfaceVisibility final : public QObject {
@@ -47,6 +58,7 @@ private slots:
     void cleanup();
     void clientBufferIsRenderedVisibleInCompositor();
     void continuousDamageUpdatesArePresented();
+    void profilesPreserveNativePixelsAndKeyboardInput();
     void alacrittyRendersVisibleTerminalCharacters();
     void xwaylandWindowPresentsClientSurface();
 
@@ -65,6 +77,7 @@ private:
 void TestClientSurfaceVisibility::initTestCase() {
     QVERIFY(m_runtime.isValid());
     qputenv("XDG_RUNTIME_DIR", m_runtime.path().toUtf8());
+    qml_register_types_Systalia_Engine();
     qmlRegisterType<SystaliaGlassItem>("Systalia.Engine", 1, 0, "SystaliaGlassItem");
 }
 
@@ -327,6 +340,54 @@ void TestClientSurfaceVisibility::alacrittyRendersVisibleTerminalCharacters() {
 
     alacrittyProc.terminate();
     alacrittyProc.waitForFinished(1000);
+}
+
+void TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() {
+    startClient();
+    QQmlEngine engine;
+    QQuickWindow window;
+    window.resize(1024, 768);
+    auto container = createContainer(engine, window);
+    QVERIFY(container);
+    auto *viewport = container->findChild<QQuickItem *>("clientViewport");
+    auto *client = container->findChild<QQuickItem *>("clientSurfaceItem");
+    auto *glass = container->findChild<Systalia::Gfx::V2::ValoGlassItemV2 *>();
+    QVERIFY(viewport && client && glass);
+    QVERIFY(!container->findChild<QQuickItem *>("clientTextureCapture"));
+    window.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    QTest::qWait(100);
+    const QRect body = viewport->mapRectToScene(viewport->boundingRect()).toAlignedRect();
+    const QImage original = window.grabWindow().copy(body);
+    QVERIFY(!original.isNull());
+    QCOMPARE(original.pixelColor(4,4), QColor(255,0,255));
+    for (int i=0; i<18; ++i) {
+        container->setProperty("blurProfile", i%3);
+        QCOMPARE(glass->blurProfile(), i%3);
+        window.update();
+        QTest::qWait(20);
+        QCOMPARE(window.grabWindow().copy(body), original);
+        QVERIFY(client->property("paintEnabled").toBool());
+    }
+    // Losing keyboard activation must not remove the V2 decoration node.
+    m_toplevel->sendConfigure(QSize(qRound(viewport->width()),qRound(viewport->height())), QList<int>{});
+    QTRY_VERIFY(!m_toplevel->activated());
+    QTRY_VERIFY(glass->isActive());
+    QCOMPARE(window.grabWindow().copy(body),original);
+    m_compositor->activateToplevel(m_toplevel);
+    m_compositor->attachTaskSwitcherWindow(&window);
+    client->forceActiveFocus();
+    QMetaObject::invokeMethod(client, "takeFocus");
+    auto *seat = m_compositor->defaultSeat();
+    QVERIFY(seat && seat->keyboard());
+    QTRY_COMPARE(seat->keyboardFocus(), m_toplevel->xdgSurface()->surface());
+    const auto scanCode = seat->keyboard()->keyToScanCode(Qt::Key_G);
+    QVERIFY(scanCode > 0);
+    QKeyEvent keyPress(QEvent::KeyPress, Qt::Key_G, Qt::NoModifier, scanCode, 0, 0, "g");
+    QCoreApplication::sendEvent(&window, &keyPress);
+    QKeyEvent keyRelease(QEvent::KeyRelease, Qt::Key_G, Qt::NoModifier, scanCode, 0, 0, "g");
+    QCoreApplication::sendEvent(&window, &keyRelease);
+    QTRY_COMPARE(window.grabWindow().pixelColor(body.topLeft()+QPoint(4,4)), QColor(0,255,0));
 }
 
 void TestClientSurfaceVisibility::xwaylandWindowPresentsClientSurface() {

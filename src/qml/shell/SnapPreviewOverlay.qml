@@ -8,6 +8,9 @@ Item {
     property bool active: false
     property rect targetGeometry: Qt.rect(0, 0, 0, 0)
     property vector4d targetRadii: Qt.vector4d(24.0, 24.0, 24.0, 24.0)
+    property int blurProfile: 1
+    property bool userHighContrast: false
+    property bool userPrefersReducedMotion: false
     property var backdropSource: null
     property vector2d screenResolution: Qt.vector2d(1662, 975)
     property real animationTime: 0.0
@@ -59,56 +62,24 @@ Item {
     }
 
     // Superfície translúcida VALO Glass com opacidade atenuada (0.35)
-    SystaliaGlassItem {
+    ValoMaterialSurfaceV2 {
+        objectName: "SnapPreviewOverlaySurfaceV2"
+        geometryMode: ValoGlassItemV2.SquircleG2
+        backdropSource: previewRoot.backdropSource
+        cornerRadii: previewRoot.targetRadii
+        blurProfile: previewRoot.blurProfile
+        userHighContrast: previewRoot.userHighContrast
+        userPrefersReducedMotion: previewRoot.userPrefersReducedMotion
         id: previewGlass
         anchors.fill: parent
-        backdropSource: previewRoot.backdropSource
-        screenResolution: previewRoot.screenResolution
-        radii: previewRoot.targetRadii
-        ior: 1.18
-        chromaticDispersion: 0.038
-        causticIntensity: 0.92
         surfaceOpacity: 0.35
-        time: previewRoot.animationTime
-
-        Behavior on radii {
-            PropertyAnimation {
-                duration: 200
-                easing.type: Easing.OutCubic
-            }
+        volumetricTint: "#00bccc"
+        specularStrokeWidth: 1.8
+        particleIntensity: 0
+        Behavior on cornerRadii {
+            PropertyAnimation { duration: 200; easing.type: Easing.OutCubic }
         }
     }
 
-    // Halo exterior eletroluminescente ciano (#00f0ff)
-    SystaliaG2Frame {
-        anchors.fill: parent
-        anchors.margins: -1.5
-        radii: previewRoot.targetRadii
-        strokeColor: "#6600f0ff"
-        strokeWidth: 4.0
-
-        Behavior on radii {
-            PropertyAnimation {
-                duration: 200
-                easing.type: Easing.OutCubic
-            }
-        }
-    }
-
-    // Menisco interno nítido G2 com glow ciano vívido (#00f0ff)
-    SystaliaG2Frame {
-        anchors.fill: parent
-        radii: previewRoot.targetRadii
-        fillColor: "#1a00f0ff"
-        strokeColor: "#00f0ff"
-        strokeWidth: 1.8
-
-        Behavior on radii {
-            PropertyAnimation {
-                duration: 200
-                easing.type: Easing.OutCubic
-            }
-        }
-    }
 }
 

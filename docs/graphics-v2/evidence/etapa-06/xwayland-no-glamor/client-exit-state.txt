@@ -1,0 +1,1 @@
+[(['alacritty', '-e', 'sh', '-c', 'printf "\\033[32mVALO NATIVE TERMINAL\\033[0m\\n"; exec sh'], 0), (['build/tests/tst_client_surface_visibility', '--visibility-client'], 0), (['zenity', '--info', '--title=VALO GTK Wayland', '--text=Native GTK client with V2 decorations'], 1), (['xmessage', '-bg', 'white', '-fg', 'black', '-buttons', 'OK:0', 'VALO REAL XWAYLAND CLIENT'], 1)]

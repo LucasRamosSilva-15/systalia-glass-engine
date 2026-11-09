@@ -17,12 +17,15 @@
 
 #include "SystaliaCompositor.hpp"
 #include "SystaliaGlassItem.hpp"
+#include "ValoGlassItemV2.hpp"
 #include "InputDeviceManager.hpp"
 #include <QtWaylandCompositor/QWaylandPointer>
 #include <QtWaylandCompositor/QWaylandQuickShellSurfaceItem>
 
 // An independent SHM Wayland client: Qt receives configure, acknowledges it,
 // updates xdg window geometry and commits the newly sized buffer.
+void qml_register_types_Systalia_Engine();
+
 class ResizeClient final : public QRasterWindow {
     void closeEvent(QCloseEvent *event) override {
         if (QCoreApplication::arguments().contains("--ignore-close"))
@@ -77,6 +80,7 @@ void TestXdgResize::initTestCase() {
     m_runtime = std::make_unique<QTemporaryDir>();
     QVERIFY(m_runtime->isValid());
     qputenv("XDG_RUNTIME_DIR", m_runtime->path().toUtf8());
+    qml_register_types_Systalia_Engine();
     qmlRegisterType<SystaliaGlassItem>("Systalia.Engine", 1, 0, "SystaliaGlassItem");
 }
 
@@ -373,20 +377,15 @@ void TestXdgResize::clientBufferIsBoundAndPainted() {
     QVERIFY(surfaceItem);
     QCOMPARE(surfaceItem->opacity(), 1.0);
     QCOMPARE(surfaceItem->property("surface").value<QWaylandSurface *>(), surface);
-    auto *clientTextureCapture = item->findChild<QQuickItem *>("clientTextureCapture");
-    QVERIFY(clientTextureCapture);
-    QCOMPARE(clientTextureCapture->property("sourceItem").value<QQuickItem *>(), surfaceItem);
-    QVERIFY(clientTextureCapture->property("live").toBool());
-    QVERIFY(!clientTextureCapture->property("hideSource").toBool());
+    QVERIFY(!item->findChild<QQuickItem *>("clientTextureCapture"));
 
     auto *viewport = item->findChild<QQuickItem *>("clientViewport");
     QVERIFY(viewport);
     QVERIFY(viewport->clip());
     QCOMPARE(viewport->z(), 1.0);
 
-    auto *glass = item->findChild<SystaliaGlassItem *>();
+    auto *glass = item->findChild<Systalia::Gfx::V2::ValoGlassItemV2 *>();
     QVERIFY(glass);
-    QCOMPARE(glass->clientTextureSource(), clientTextureCapture);
 
     window.show();
     QVERIFY(QTest::qWaitForWindowExposed(&window));
@@ -520,7 +519,7 @@ void TestXdgResize::dragEdges() {
     QTRY_COMPARE(item->size(), QSizeF(expected.width() + 16, expected.height() + 52));
     QCOMPARE(item->x() + item->width(), (edges & Qt::LeftEdge) ? 1066.0 : 250.0 + item->width());
     QCOMPARE(item->y() + item->height(), (edges & Qt::TopEdge) ? 732.0 : 180.0 + item->height());
-    auto *glass = item->findChild<SystaliaGlassItem *>();
+    auto *glass = item->findChild<Systalia::Gfx::V2::ValoGlassItemV2 *>();
     QVERIFY(glass);
     QCOMPARE(glass->size(), item->size());
     auto *surfaceItem = item->findChild<QQuickItem *>("clientSurfaceItem");

@@ -1,0 +1,135 @@
+********* Start testing of TestClientSurfaceVisibility *********
+Config: Using QtTest library 6.11.2, Qt 6.11.2 (x86_64-little_endian-lp64 shared (dynamic) release build; by GCC 16.2.1 20260819 (Red Hat 16.2.1-2)), fedora 44
+PASS   : TestClientSurfaceVisibility::initTestCase()
+QWARN  : TestClientSurfaceVisibility::clientBufferIsRenderedVisibleInCompositor() qt.waylandcompositor.hardwareintegration: Failed to initialize EGL display. There is no EGL_WL_bind_wayland_display extension.
+QINFO  : TestClientSurfaceVisibility::clientBufferIsRenderedVisibleInCompositor() [SGE-WAYLAND] Servidor ativo em: wayland-visibility-test
+QINFO  : TestClientSurfaceVisibility::clientBufferIsRenderedVisibleInCompositor() [SGE-WAYLAND] XDG Shell registrado: true
+QINFO  : TestClientSurfaceVisibility::clientBufferIsRenderedVisibleInCompositor() [SGE-WAYLAND] XDG Decoration Manager registrado (SSD forçado): true
+QINFO  : TestClientSurfaceVisibility::clientBufferIsRenderedVisibleInCompositor() [SGE-WAYLAND] Viewporter (wp_viewporter) registrado: true
+QINFO  : TestClientSurfaceVisibility::clientBufferIsRenderedVisibleInCompositor() [SGE-WAYLAND] Assento padrão inicializado com teclado e ponteiro.
+QINFO  : TestClientSurfaceVisibility::clientBufferIsRenderedVisibleInCompositor() [SGE-WAYLAND] Novo cliente XDG Toplevel:  | Título:  | Decoração atual: ClientSide
+QINFO  : TestClientSurfaceVisibility::clientBufferIsRenderedVisibleInCompositor() [SGE-WAYLAND] Configure inicial enviado; serial: 2 | tamanho: 800x500
+QWARN  : TestClientSurfaceVisibility::clientBufferIsRenderedVisibleInCompositor() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::clientBufferIsRenderedVisibleInCompositor() [SGE-BACKDROP-V2] onBeforeRendering frame=1: srcTex=0x7f5254148d60, rhiSrc=0x0, srcSize=1024x768
+QWARN  : TestClientSurfaceVisibility::clientBufferIsRenderedVisibleInCompositor() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::clientBufferIsRenderedVisibleInCompositor() [SGE-BACKDROP-V2] onBeforeRendering frame=2: srcTex=0x7f5254148d60, rhiSrc=0x7f52544a6a00, srcSize=1024x768
+QWARN  : TestClientSurfaceVisibility::clientBufferIsRenderedVisibleInCompositor() [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7f5254092d20, format=1, size=1024x768
+QWARN  : TestClientSurfaceVisibility::clientBufferIsRenderedVisibleInCompositor() [SGE-BACKDROP-V2] onBeforeRendering frame=3: srcTex=0x7f5254148d60, rhiSrc=0x7f52544a6a00, srcSize=1024x768
+QWARN  : TestClientSurfaceVisibility::clientBufferIsRenderedVisibleInCompositor() [SGE-BACKDROP-V2] onBeforeRendering frame=4: srcTex=0x7f5254148d60, rhiSrc=0x7f52544a6a00, srcSize=1024x768
+QWARN  : TestClientSurfaceVisibility::clientBufferIsRenderedVisibleInCompositor() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::clientBufferIsRenderedVisibleInCompositor() [SGE-BACKDROP-V2] onBeforeRendering frame=5: srcTex=0x7f5254148d60, rhiSrc=0x7f52544a6a00, srcSize=1024x768
+QWARN  : TestClientSurfaceVisibility::clientBufferIsRenderedVisibleInCompositor() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::clientBufferIsRenderedVisibleInCompositor() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::clientBufferIsRenderedVisibleInCompositor() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::clientBufferIsRenderedVisibleInCompositor() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QINFO  : TestClientSurfaceVisibility::clientBufferIsRenderedVisibleInCompositor() [SGE-WAYLAND] Servidor finalizado no socket: wayland-visibility-test
+PASS   : TestClientSurfaceVisibility::clientBufferIsRenderedVisibleInCompositor()
+QWARN  : TestClientSurfaceVisibility::continuousDamageUpdatesArePresented() qt.waylandcompositor.hardwareintegration: Failed to initialize EGL display. There is no EGL_WL_bind_wayland_display extension.
+QINFO  : TestClientSurfaceVisibility::continuousDamageUpdatesArePresented() [SGE-WAYLAND] Servidor ativo em: wayland-visibility-test
+QINFO  : TestClientSurfaceVisibility::continuousDamageUpdatesArePresented() [SGE-WAYLAND] XDG Shell registrado: true
+QINFO  : TestClientSurfaceVisibility::continuousDamageUpdatesArePresented() [SGE-WAYLAND] XDG Decoration Manager registrado (SSD forçado): true
+QINFO  : TestClientSurfaceVisibility::continuousDamageUpdatesArePresented() [SGE-WAYLAND] Viewporter (wp_viewporter) registrado: true
+QINFO  : TestClientSurfaceVisibility::continuousDamageUpdatesArePresented() [SGE-WAYLAND] Assento padrão inicializado com teclado e ponteiro.
+QINFO  : TestClientSurfaceVisibility::continuousDamageUpdatesArePresented() [SGE-WAYLAND] Novo cliente XDG Toplevel:  | Título:  | Decoração atual: ClientSide
+QINFO  : TestClientSurfaceVisibility::continuousDamageUpdatesArePresented() [SGE-WAYLAND] Configure inicial enviado; serial: 2 | tamanho: 800x500
+QWARN  : TestClientSurfaceVisibility::continuousDamageUpdatesArePresented() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::continuousDamageUpdatesArePresented() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::continuousDamageUpdatesArePresented() [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7f5254120a30, format=1, size=1024x768
+QWARN  : TestClientSurfaceVisibility::continuousDamageUpdatesArePresented() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::continuousDamageUpdatesArePresented() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::continuousDamageUpdatesArePresented() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::continuousDamageUpdatesArePresented() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::continuousDamageUpdatesArePresented() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QINFO  : TestClientSurfaceVisibility::continuousDamageUpdatesArePresented() [SGE-WAYLAND] Servidor finalizado no socket: wayland-visibility-test
+PASS   : TestClientSurfaceVisibility::continuousDamageUpdatesArePresented()
+QWARN  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() qt.waylandcompositor.hardwareintegration: Failed to initialize EGL display. There is no EGL_WL_bind_wayland_display extension.
+QINFO  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-WAYLAND] Servidor ativo em: wayland-visibility-test
+QINFO  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-WAYLAND] XDG Shell registrado: true
+QINFO  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-WAYLAND] XDG Decoration Manager registrado (SSD forçado): true
+QINFO  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-WAYLAND] Viewporter (wp_viewporter) registrado: true
+QINFO  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-WAYLAND] Assento padrão inicializado com teclado e ponteiro.
+QINFO  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-WAYLAND] Novo cliente XDG Toplevel:  | Título:  | Decoração atual: ClientSide
+QINFO  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-WAYLAND] Configure inicial enviado; serial: 2 | tamanho: 800x500
+QWARN  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7f5254117840, format=1, size=1024x768
+QWARN  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QINFO  : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput() [SGE-WAYLAND] Servidor finalizado no socket: wayland-visibility-test
+PASS   : TestClientSurfaceVisibility::profilesPreserveNativePixelsAndKeyboardInput()
+QWARN  : TestClientSurfaceVisibility::alacrittyRendersVisibleTerminalCharacters() qt.waylandcompositor.hardwareintegration: Failed to initialize EGL display. There is no EGL_WL_bind_wayland_display extension.
+QINFO  : TestClientSurfaceVisibility::alacrittyRendersVisibleTerminalCharacters() [SGE-WAYLAND] Servidor ativo em: wayland-visibility-test
+QINFO  : TestClientSurfaceVisibility::alacrittyRendersVisibleTerminalCharacters() [SGE-WAYLAND] XDG Shell registrado: true
+QINFO  : TestClientSurfaceVisibility::alacrittyRendersVisibleTerminalCharacters() [SGE-WAYLAND] XDG Decoration Manager registrado (SSD forçado): true
+QINFO  : TestClientSurfaceVisibility::alacrittyRendersVisibleTerminalCharacters() [SGE-WAYLAND] Viewporter (wp_viewporter) registrado: true
+QINFO  : TestClientSurfaceVisibility::alacrittyRendersVisibleTerminalCharacters() [SGE-WAYLAND] Assento padrão inicializado com teclado e ponteiro.
+QINFO  : TestClientSurfaceVisibility::alacrittyRendersVisibleTerminalCharacters() [SGE-WAYLAND] Novo cliente XDG Toplevel:  | Título:  | Decoração atual: ClientSide
+QINFO  : TestClientSurfaceVisibility::alacrittyRendersVisibleTerminalCharacters() [SGE-WAYLAND] Configure inicial enviado; serial: 2 | tamanho: 800x500
+QINFO  : TestClientSurfaceVisibility::alacrittyRendersVisibleTerminalCharacters() [SGE-WAYLAND] Modo de decoração do cliente atualizado: ServerSide
+QWARN  : TestClientSurfaceVisibility::alacrittyRendersVisibleTerminalCharacters() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::alacrittyRendersVisibleTerminalCharacters() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::alacrittyRendersVisibleTerminalCharacters() [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7f5254550b70, format=1, size=1024x768
+QWARN  : TestClientSurfaceVisibility::alacrittyRendersVisibleTerminalCharacters() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::alacrittyRendersVisibleTerminalCharacters() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::alacrittyRendersVisibleTerminalCharacters() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::alacrittyRendersVisibleTerminalCharacters() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::alacrittyRendersVisibleTerminalCharacters() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::alacrittyRendersVisibleTerminalCharacters() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::alacrittyRendersVisibleTerminalCharacters() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::alacrittyRendersVisibleTerminalCharacters() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::alacrittyRendersVisibleTerminalCharacters() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::alacrittyRendersVisibleTerminalCharacters() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::alacrittyRendersVisibleTerminalCharacters() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::alacrittyRendersVisibleTerminalCharacters() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::alacrittyRendersVisibleTerminalCharacters() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::alacrittyRendersVisibleTerminalCharacters() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::alacrittyRendersVisibleTerminalCharacters() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::alacrittyRendersVisibleTerminalCharacters() QProcess: Destroyed while process ("/usr/bin/alacritty") is still running.
+QINFO  : TestClientSurfaceVisibility::alacrittyRendersVisibleTerminalCharacters() [SGE-WAYLAND] Servidor finalizado no socket: wayland-visibility-test
+PASS   : TestClientSurfaceVisibility::alacrittyRendersVisibleTerminalCharacters()
+QWARN  : TestClientSurfaceVisibility::xwaylandWindowPresentsClientSurface() qt.waylandcompositor.hardwareintegration: Failed to initialize EGL display. There is no EGL_WL_bind_wayland_display extension.
+QINFO  : TestClientSurfaceVisibility::xwaylandWindowPresentsClientSurface() [SGE-WAYLAND] Servidor ativo em: wayland-visibility-test
+QINFO  : TestClientSurfaceVisibility::xwaylandWindowPresentsClientSurface() [SGE-WAYLAND] XDG Shell registrado: true
+QINFO  : TestClientSurfaceVisibility::xwaylandWindowPresentsClientSurface() [SGE-WAYLAND] XDG Decoration Manager registrado (SSD forçado): true
+QINFO  : TestClientSurfaceVisibility::xwaylandWindowPresentsClientSurface() [SGE-WAYLAND] Viewporter (wp_viewporter) registrado: true
+QINFO  : TestClientSurfaceVisibility::xwaylandWindowPresentsClientSurface() [SGE-WAYLAND] Assento padrão inicializado com teclado e ponteiro.
+QINFO  : TestClientSurfaceVisibility::xwaylandWindowPresentsClientSurface() [SGE-WAYLAND] Novo cliente XDG Toplevel:  | Título:  | Decoração atual: ClientSide
+QINFO  : TestClientSurfaceVisibility::xwaylandWindowPresentsClientSurface() [SGE-WAYLAND] Configure inicial enviado; serial: 2 | tamanho: 800x500
+QWARN  : TestClientSurfaceVisibility::xwaylandWindowPresentsClientSurface() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::xwaylandWindowPresentsClientSurface() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::xwaylandWindowPresentsClientSurface() [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7f5254319710, format=1, size=1024x768
+QWARN  : TestClientSurfaceVisibility::xwaylandWindowPresentsClientSurface() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::xwaylandWindowPresentsClientSurface() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : TestClientSurfaceVisibility::xwaylandWindowPresentsClientSurface() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QINFO  : TestClientSurfaceVisibility::xwaylandWindowPresentsClientSurface() [SGE-WAYLAND] Servidor finalizado no socket: wayland-visibility-test
+PASS   : TestClientSurfaceVisibility::xwaylandWindowPresentsClientSurface()
+PASS   : TestClientSurfaceVisibility::cleanupTestCase()
+Totals: 7 passed, 0 failed, 0 skipped, 0 blacklisted, 3877ms
+********* Finished testing of TestClientSurfaceVisibility *********

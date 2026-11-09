@@ -8,6 +8,9 @@ Item {
     id: taskSwitcher
 
     property var waylandServer: null
+    property int blurProfile: 1
+    property bool userHighContrast: false
+    property bool userPrefersReducedMotion: false
     property var backdropSource: null
     property vector2d screenResolution: Qt.vector2d(width, height)
     property real animationTime: 0.0
@@ -35,31 +38,21 @@ Item {
         NumberAnimation { duration: 180; easing.type: Easing.OutBack }
     }
 
-    SystaliaGlassItem {
+    ValoMaterialSurfaceV2 {
+        objectName: "SystaliaTaskSwitcherSurfaceV2"
+        geometryMode: ValoGlassItemV2.SquircleG2
+        backdropSource: taskSwitcher.backdropSource
+        cornerRadii: taskSwitcher.cornerRadii
+        blurProfile: taskSwitcher.blurProfile
+        userHighContrast: taskSwitcher.userHighContrast
+        userPrefersReducedMotion: taskSwitcher.userPrefersReducedMotion
         id: switcherFrame
         anchors.centerIn: parent
         width: taskSwitcher.frameWidth
         height: 220
         z: -1
-        radii: taskSwitcher.cornerRadii
-        slant: 0.0
-        ior: 1.28
-        chromaticDispersion: 0.035
         surfaceOpacity: 0.92
-        causticIntensity: 0.72
-        backdropSource: taskSwitcher.backdropSource
-        screenResolution: taskSwitcher.screenResolution
-        time: taskSwitcher.animationTime
-    }
-
-    SystaliaG2Frame {
-        anchors.centerIn: parent
-        width: switcherFrame.width
-        height: switcherFrame.height
-        radii: taskSwitcher.cornerRadii
-        fillColor: "#d20a1829"
-        strokeWidth: 1
-        strokeColor: "#8a70d9ed"
+        volumetricTint: "#0a1829"
     }
 
     ListView {
