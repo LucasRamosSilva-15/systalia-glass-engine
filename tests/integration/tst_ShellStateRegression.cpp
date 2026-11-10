@@ -192,7 +192,7 @@ private slots:
         QVERIFY(evaluate("materialWindow.opticalSurface.effectiveBackdropProvider.upstreamBlurProvider === filesOpticalItem.backdropProvider").toBool());
         evaluate("internalWindowBackdrop.externalClientsPresent = true");
         QVERIFY(!evaluate("internalWindowBackdrop.compositeAvailable").toBool());
-        evaluate("internalWindowBackdrop.externalClientsPresent = false; raiseFileWindow()");
+        evaluate("internalWindowBackdrop.externalClientsPresent = Qt.binding(() => externalBackdropBlocked(glassChassis.z > materialWindow.z ? glassChassis : materialWindow, [glassChassis.z > materialWindow.z ? materialWindow : glassChassis], false)); raiseFileWindow()");
         QVERIFY(evaluate("glassChassis.backdropSource === internalWindowBackdrop.compositeSource && materialWindow.backdropSource === backdropGrab").toBool());
         QVERIFY(evaluate("filesOpticalItem.backdropProvider.upstreamBlurProvider === materialWindow.opticalSurface.effectiveBackdropProvider").toBool());
         evaluate("WorkspaceManager.setWindowWorkspace(materialWindow, 1)");
@@ -395,6 +395,32 @@ private slots:
         evaluate("materialWindow.y=80");
         QTRY_VERIFY(!evaluate("overlayBackdrop.requiresBoth").toBool());
         evaluate("glassChassis.x=80; glassChassis.y=80; materialWindow.x=810; materialWindow.y=80; materialWindow.visible=true");
+    }
+
+    void externalBackdropFallbackIsLocal() {
+        evaluate("glassChassis.visible=true; materialWindow.visible=true; glassChassis.x=100; glassChassis.y=100; materialWindow.x=150; materialWindow.y=130; glassChassis.z=10; materialWindow.z=30");
+        evaluate("trackedClientContainers = [Qt.createQmlObject('import QtQuick; Item { property int workspaceIndex: 0; width: 120; height: 120; z: 20 }', clientWindowsLayer.workspacePageAt(0))]");
+        evaluate("trackedClientContainers[0].x=1200; trackedClientContainers[0].y=100");
+        QTRY_VERIFY(evaluate("internalWindowBackdrop.compositeAvailable").toBool());
+        evaluate("trackedClientContainers[0].x=180; trackedClientContainers[0].y=160");
+        QTRY_VERIFY(!evaluate("internalWindowBackdrop.compositeAvailable").toBool());
+        evaluate("trackedClientContainers[0].z=5");
+        QTRY_VERIFY(evaluate("internalWindowBackdrop.compositeAvailable").toBool());
+        evaluate("trackedClientContainers[0].z=40");
+        QTRY_VERIFY(evaluate("internalWindowBackdrop.compositeAvailable").toBool());
+        evaluate("trackedClientContainers[0].z=20; trackedClientContainers[0].workspaceIndex=1");
+        QTRY_VERIFY(evaluate("internalWindowBackdrop.compositeAvailable").toBool());
+        evaluate("trackedClientContainers[0].workspaceIndex=0; trackedClientContainers[0].visible=false");
+        QTRY_VERIFY(evaluate("internalWindowBackdrop.compositeAvailable").toBool());
+        evaluate("materialWindow.visible=false; glassChassis.x=500; glassChassis.y=450; trackedClientContainers[0].visible=true; trackedClientContainers[0].z=40; trackedClientContainers[0].x=0; trackedClientContainers[0].y=0");
+        QTRY_VERIFY(evaluate("overlayBackdrop.dockAvailable").toBool());
+        evaluate("trackedClientContainers[0].x=650; trackedClientContainers[0].y=760");
+        QTRY_VERIFY(!evaluate("overlayBackdrop.dockAvailable").toBool());
+        evaluate("glassChassis.y=-45; trackedClientContainers[0].x=0; trackedClientContainers[0].y=500");
+        QTRY_VERIFY(evaluate("overlayBackdrop.topBarAvailable").toBool());
+        evaluate("trackedClientContainers[0].x=650; trackedClientContainers[0].y=-45");
+        QTRY_VERIFY(!evaluate("overlayBackdrop.topBarAvailable").toBool());
+        evaluate("trackedClientContainers[0].destroy(); trackedClientContainers=[]; glassChassis.x=80; glassChassis.y=80; materialWindow.x=810; materialWindow.y=80");
     }
 
     void windowHeadersReleaseBadgeSpace() {

@@ -177,6 +177,24 @@ inline void installValoStabilityProbe(QQuickWindow *window) {
                 QTimer::singleShot(500, window, [snapshot,name] { snapshot(name); });
             });
         };
+        if (qEnvironmentVariableIsSet("SGE_VALO_LOCAL_FALLBACK_PROBE")) {
+            window->installEventFilter(new ValoProbeInputBlocker(window));
+            step(2500, "glassChassis.x=80;glassChassis.y=80;materialWindow.x=380;materialWindow.y=150;glassChassis.z=10;materialWindow.z=30", "00-no-client");
+            step(6000, "glassChassis.x=80;glassChassis.y=80;materialWindow.x=380;materialWindow.y=150;trackedClientContainers.forEach(w=>{w.x=1250;w.y=100;w.z=20})", "01-outside");
+            step(8000, "trackedClientContainers.forEach(w=>{w.x=400;w.y=200;w.z=20})", "02-between");
+            step(10000, "trackedClientContainers.forEach(w=>w.z=5)", "03-behind");
+            step(12000, "trackedClientContainers.forEach(w=>w.z=40)", "04-front");
+            step(14000, "glassChassis.x=400;glassChassis.y=450;materialWindow.x=600;materialWindow.y=450;trackedClientContainers.forEach(w=>{w.x=1350;w.y=20;w.z=50})", "05-dock-outside");
+            step(16000, "trackedClientContainers.forEach(w=>{w.x=650;w.y=760})", "06-dock-blocked");
+            step(18000, "glassChassis.y=-45;materialWindow.y=-45;trackedClientContainers.forEach(w=>{w.x=20;w.y=500})", "07-topbar-outside");
+            step(20000, "trackedClientContainers.forEach(w=>{w.x=650;w.y=-45})", "08-topbar-blocked");
+            step(22000, "trackedClientContainers.forEach(w=>w.workspaceIndex=1)", "09-other-workspace");
+            for (int i=0; i<18; ++i)
+                QTimer::singleShot(23500+i*100, window, [evaluate,i] { evaluate(QString("materialWindow.blurProfile=%1").arg(i%3)); });
+            step(26000, "trackedClientContainers.slice().forEach(w=>waylandServer.closeToplevel(w.toplevel))", "10-closed");
+            QTimer::singleShot(28000, window, [] { QCoreApplication::quit(); });
+            return;
+        }
         step(3000, "", "00-native-default");
         step(4000, "trackedClientContainers.forEach((w,i)=>{w.x=30+i*390;w.y=100+i*80;w.dispatchClientResize(Qt.size(400,260),false);w.useGraphicsV2=false})", "01-v1-fallback");
         step(6000, "trackedClientContainers.forEach(w=>w.useGraphicsV2=true)", "02-v2");

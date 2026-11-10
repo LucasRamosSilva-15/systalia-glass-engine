@@ -12,6 +12,8 @@ Item {
     required property Item workspacePage
     property bool enabledForWorkspace: true
     property bool externalClientsPresent: false
+    property bool topBarBlocked: false
+    property bool dockBlocked: false
     property real mappingRevision: 0
     readonly property Item producer: firstWindow && secondWindow && firstWindow.visible !== secondWindow.visible
         ? (firstWindow.visible ? firstWindow : secondWindow) : null
@@ -43,8 +45,8 @@ Item {
         return producerPosition.x < Math.max(p.x,q.x) && Math.min(p.x,q.x) < producerPosition.x + producer.width
             && producerPosition.y < Math.max(p.y,q.y) && Math.min(p.y,q.y) < producerPosition.y + producer.height
     }
-    readonly property bool topBarAvailable: overlaps(topBar)
-    readonly property bool dockAvailable: overlaps(dock)
+    readonly property bool topBarAvailable: !topBarBlocked && overlaps(topBar)
+    readonly property bool dockAvailable: !dockBlocked && overlaps(dock)
     readonly property bool compositeAvailable: topBarAvailable || dockAvailable
     readonly property string coverageMode: compositeAvailable ? "single-internal-window" : "wallpaper-only"
     function sourceFor(item) {

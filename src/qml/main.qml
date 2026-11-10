@@ -284,6 +284,56 @@ ApplicationWindow {
 
     property var trackedClientContainers: []
 
+    // Never sample a lower internal window through an external client that we
+    // cannot capture. Restrict the fallback to the affected consumer region.
+    function externalBackdropBlocked(consumer, producers, consumerAboveWorkspace) {
+        const page = clientWindowsLayer.workspacePageAt(WorkspaceManager.currentWorkspace)
+        void(clientWindowsLayer.viewportOffset)
+        if (!consumer || !page) return true
+        function bounds(item) {
+            void(item.x); void(item.y); void(item.width); void(item.height)
+            void(item.scale); void(item.rotation)
+            if (item.parent) { void(item.parent.x); void(item.parent.y); void(item.parent.scale); void(item.parent.rotation) }
+            const p = [item.mapToItem(null, 0, 0), item.mapToItem(null, item.width, 0),
+                       item.mapToItem(null, 0, item.height), item.mapToItem(null, item.width, item.height)]
+            return {left: Math.min(...p.map(v => v.x)), right: Math.max(...p.map(v => v.x)),
+                    top: Math.min(...p.map(v => v.y)), bottom: Math.max(...p.map(v => v.y))}
+        }
+        function above(a, b) {
+            return a.z > b.z || (a.z === b.z && page.children.indexOf(a) > page.children.indexOf(b))
+        }
+        const target = bounds(consumer)
+        for (const client of trackedClientContainers) {
+            if (!client) continue
+            // Read all changing fields even when a different condition excludes it.
+            void(client.x); void(client.y); void(client.width); void(client.height); void(client.z)
+            void(client.visible); void(client.opacity); void(client.parent); void(client.workspaceIndex)
+            if (!client.visible || client.opacity <= 0 || client.workspaceIndex !== WorkspaceManager.currentWorkspace)
+                continue
+            if (client.parent !== page || (!consumerAboveWorkspace && consumer.parent !== page))
+                return true
+            if (!consumerAboveWorkspace && !above(consumer, client)) continue
+            const c = bounds(client)
+            for (const producer of producers) {
+                if (!producer) continue
+                void(producer.x); void(producer.y); void(producer.width); void(producer.height); void(producer.z)
+                void(producer.visible); void(producer.opacity); void(producer.parent)
+                if (!producer.visible || producer.opacity <= 0 || producer.parent !== page || !above(client, producer)) continue
+                const p = bounds(producer)
+                // Fallback for the entire consumer if a client intersects a
+                // contributing producer. A remote part of that producer can
+                // reach the consumer through blur/refraction; do not guess the
+                // sampling radius or clip an uncaptured client to a fake mask.
+                if (Math.max(target.left, p.left) < Math.min(target.right, p.right)
+                        && Math.max(target.top, p.top) < Math.min(target.bottom, p.bottom)
+                        && Math.max(c.left, p.left) < Math.min(c.right, p.right)
+                        && Math.max(c.top, p.top) < Math.min(c.bottom, p.bottom))
+                    return true
+            }
+        }
+        return false
+    }
+
     Component.onCompleted: {
         SystemTelemetry.attachWindow(rootWindow)
         waylandServer.attachTaskSwitcherWindow(rootWindow)
@@ -456,7 +506,9 @@ ApplicationWindow {
         secondWindow: materialWindow
         wallpaperSource: backdropGrab
         // External buffers are deliberately outside this internal-pair pilot.
-        externalClientsPresent: waylandServer.windowCount > 0
+        externalClientsPresent: rootWindow.externalBackdropBlocked(
+            glassChassis.z > materialWindow.z ? glassChassis : materialWindow,
+            [glassChassis.z > materialWindow.z ? materialWindow : glassChassis], false)
         enabledForWorkspace: !WorkspaceManager.isTransitioning
             && glassChassis.parent === clientWindowsLayer.workspacePageAt(WorkspaceManager.currentWorkspace)
         mappingRevision: clientWindowsLayer.viewportOffset
@@ -495,7 +547,8 @@ ApplicationWindow {
             workspacePage: clientWindowsLayer.workspacePageAt(WorkspaceManager.currentWorkspace)
             topBar: topBar; dock: systemDock
             mappingRevision: clientWindowsLayer.viewportOffset
-            externalClientsPresent: waylandServer.windowCount > 0
+            topBarBlocked: rootWindow.externalBackdropBlocked(topBar, [glassChassis, materialWindow], true)
+            dockBlocked: rootWindow.externalBackdropBlocked(systemDock, [glassChassis, materialWindow], true)
             enabledForWorkspace: overlayBackdrop.enabledForWorkspace
         }
         GfxV2.ValoLimitedBackdropV2 {
@@ -507,7 +560,7 @@ ApplicationWindow {
             consumer: systemDock
             candidates: [glassChassis, materialWindow]
             consumerAboveWorkspace: true
-            externalClientsPresent: waylandServer.windowCount > 0
+            externalClientsPresent: rootWindow.externalBackdropBlocked(systemDock, [glassChassis, materialWindow], true)
             enabledForWorkspace: overlayBackdrop.enabledForWorkspace && singleStack.overlaysDisjoint && overlayBackdrop.bothVisible
             mappingRevision: clientWindowsLayer.viewportOffset
         }
@@ -520,7 +573,7 @@ ApplicationWindow {
             consumer: topBar
             candidates: [glassChassis, materialWindow]
             consumerAboveWorkspace: true
-            externalClientsPresent: waylandServer.windowCount > 0
+            externalClientsPresent: rootWindow.externalBackdropBlocked(topBar, [glassChassis, materialWindow], true)
             enabledForWorkspace: overlayBackdrop.enabledForWorkspace && singleStack.overlaysDisjoint && overlayBackdrop.bothVisible
             mappingRevision: clientWindowsLayer.viewportOffset
         }
