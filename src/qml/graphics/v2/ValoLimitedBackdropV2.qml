@@ -1,6 +1,6 @@
 import QtQuick
 
-// Bounded to three independent, explicitly supplied internal producers.
+// At most one independent, explicitly supplied internal producer.
 // Producers must share the consumer's workspace and be ordered behind it.
 Item {
     id: root
@@ -42,7 +42,7 @@ Item {
             items.push(item)
         }
         items.sort((a,b) => a.z === b.z ? workspacePage.children.indexOf(a) - workspacePage.children.indexOf(b) : a.z - b.z)
-        return items.slice(Math.max(0, items.length - 3))
+        return items.slice(Math.max(0, items.length - 1))
     }
     readonly property int selectedCount: selected.length
     readonly property bool compositeAvailable: selectedCount > 0
@@ -60,7 +60,7 @@ Item {
         }
         Repeater {
             // Keep the capture items stable while geometry or ordering changes.
-            model: 3
+            model: 1
             ShaderEffectSource {
                 required property int index
                 readonly property Item producer: root.selected[index] || null

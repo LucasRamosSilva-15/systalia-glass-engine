@@ -192,7 +192,7 @@ private slots:
         QVERIFY(evaluate("materialWindow.opticalSurface.effectiveBackdropProvider.upstreamBlurProvider === filesOpticalItem.backdropProvider").toBool());
         evaluate("internalWindowBackdrop.externalClientsPresent = true");
         QVERIFY(!evaluate("internalWindowBackdrop.compositeAvailable").toBool());
-        evaluate("internalWindowBackdrop.externalClientsPresent = Qt.binding(() => externalBackdropBlocked(glassChassis.z > materialWindow.z ? glassChassis : materialWindow, [glassChassis.z > materialWindow.z ? materialWindow : glassChassis], false)); raiseFileWindow()");
+        evaluate("internalWindowBackdrop.externalClientsPresent = Qt.binding(() => externalBackdropBlocked(glassChassis.z > materialWindow.z ? glassChassis : materialWindow, [glassChassis.z > materialWindow.z ? materialWindow : glassChassis], false) || nearestBackdropWindow(glassChassis.z > materialWindow.z ? glassChassis : materialWindow, false) !== (glassChassis.z > materialWindow.z ? materialWindow : glassChassis)); raiseFileWindow()");
         QVERIFY(evaluate("glassChassis.backdropSource === internalWindowBackdrop.compositeSource && materialWindow.backdropSource === backdropGrab").toBool());
         QVERIFY(evaluate("filesOpticalItem.backdropProvider.upstreamBlurProvider === materialWindow.opticalSurface.effectiveBackdropProvider").toBool());
         evaluate("WorkspaceManager.setWindowWorkspace(materialWindow, 1)");
@@ -387,7 +387,7 @@ private slots:
         QVERIFY(evaluate("topBarOpticalItem.backdropProvider.upstreamBlurProvider === filesOpticalItem.backdropProvider").toBool());
         evaluate("materialWindow.x=600; materialWindow.y=-45; materialWindow.visible=true; raiseMaterialWindow()");
         QTRY_COMPARE(evaluate("overlayBackdrop.coverageMode").toString(),QString("limited-internal-windows"));
-        QVERIFY(evaluate("overlayBackdrop.requiresBoth && overlayBackdrop.producerFor(topBar) === materialWindow").toBool());
+        QVERIFY(evaluate("!overlayBackdrop.requiresBoth && overlayBackdrop.producerFor(topBar) === materialWindow").toBool());
         QVERIFY(evaluate("topBarOpticalItem.backdropProvider.upstreamBlurProvider === materialWindow.opticalSurface.effectiveBackdropProvider").toBool());
         evaluate("raiseFileWindow()");
         QTRY_VERIFY(evaluate("overlayBackdrop.producerFor(topBar) === glassChassis").toBool());
@@ -402,12 +402,20 @@ private slots:
         evaluate("trackedClientContainers = [Qt.createQmlObject('import QtQuick; Item { property int workspaceIndex: 0; width: 120; height: 120; z: 20 }', clientWindowsLayer.workspacePageAt(0))]");
         evaluate("trackedClientContainers[0].x=1200; trackedClientContainers[0].y=100");
         QTRY_VERIFY(evaluate("internalWindowBackdrop.compositeAvailable").toBool());
+        QVERIFY(evaluate("nearestBackdropWindow(materialWindow, false) === glassChassis").toBool());
+        // The nearest external window blocks selection even where it does not
+        // intersect the deeper internal window; do not skip it for a capture.
+        evaluate("trackedClientContainers[0].x=820; trackedClientContainers[0].y=160");
+        QTRY_VERIFY(!evaluate("internalWindowBackdrop.compositeAvailable").toBool());
+        QVERIFY(evaluate("nearestBackdropWindow(materialWindow, false) === trackedClientContainers[0]").toBool());
         evaluate("trackedClientContainers[0].x=180; trackedClientContainers[0].y=160");
         QTRY_VERIFY(!evaluate("internalWindowBackdrop.compositeAvailable").toBool());
+        QVERIFY(evaluate("nearestBackdropWindow(materialWindow, false) === trackedClientContainers[0]").toBool());
         evaluate("trackedClientContainers[0].z=5");
         QTRY_VERIFY(evaluate("internalWindowBackdrop.compositeAvailable").toBool());
         evaluate("trackedClientContainers[0].z=40");
         QTRY_VERIFY(evaluate("internalWindowBackdrop.compositeAvailable").toBool());
+        QVERIFY(evaluate("nearestBackdropWindow(materialWindow, false) === glassChassis").toBool());
         evaluate("trackedClientContainers[0].z=20; trackedClientContainers[0].workspaceIndex=1");
         QTRY_VERIFY(evaluate("internalWindowBackdrop.compositeAvailable").toBool());
         evaluate("trackedClientContainers[0].workspaceIndex=0; trackedClientContainers[0].visible=false");

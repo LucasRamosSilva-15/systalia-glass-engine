@@ -1,0 +1,33 @@
+# Etapa 06.4 — Backdrop de camada única
+
+**Classificação: PARTIAL.** O seletor central e a política de no máximo uma produtora direta foram aplicados aos caminhos internos e aos overlays. Clientes Wayland/XWayland participam da seleção como bloqueadores, mas a captura de seus buffers e a composição em suas decorações não foram homologadas. Os componentes QML anteriores continuam disponíveis; esta etapa não implementa captura de cliente nem substitui integralmente o compositor por um novo pipeline central C++/QRhi.
+
+## Seleção e arquitetura
+
+`nearestBackdropWindow` em `src/qml/main.qml` escolhe, por consumidora, a janela visível mais próxima abaixo dela que intersecta sua área no workspace ativo. Compara Z e ordem de irmãos, e acompanha posição, tamanho, opacidade, visibilidade e transformações. A lista inclui Files, Material e os containers externos. Clientes externos são considerados para oclusão, mas seus buffers não são capturados. Se um cliente for o mais próximo, o caminho usa wallpaper-only: nenhuma janela mais profunda é escolhida como substituta. Pais incompatíveis, transição de workspace e múltiplos outputs mantêm fallback conservador; a seleção por output individual ainda não foi homologada.
+
+A composição entre Files/Material mantém o piloto existente, agora condicionado ao seletor. Dock e TopBar usam `ValoLimitedBackdropV2`, cujo modelo de captura foi limitado de três para **um** slot; a textura combina wallpaper e somente a produtora selecionada, e o provider existente da consumidora aplica o Dual-Kawase uma vez. A mesma limitação se aplica ao caminho anterior de uma produtora. A aparência da produtora é a que já foi renderizada: se a própria produtora for vidro, ela pode conter a aparência de sua única janela inferior; isso não adiciona outra captura direta à consumidora.
+
+`WaylandWindowContainer.qml` recebe a seleção central em `backdropSelection`, mas sua decoração usa explicitamente wallpaper-only enquanto a segurança de apresentação direta, sincronização e liberação dos buffers não for demonstrada. Não há `hideSource: true`, captura de `ShellSurfaceItem`, readback por frame ou alteração dos protocolos. A regra conservadora da etapa 06.3.1 também pode escolher fallback para uma consumidora inteira quando um cliente externo interfere em uma produtora, mesmo que parte da região pudesse ser composta com segurança.
+
+Arquivos alterados: `src/qml/main.qml`, `src/qml/graphics/v2/ValoLimitedBackdropV2.qml`, `src/qml/WaylandWindowContainer.qml`, testes em `tests/integration/tst_ShellStateRegression.cpp` e `tests/unit/tst_ValoOpticalContractV2.cpp`, e `tools/validate_valo_stage064.py` para reprodução. Renderer V1, UBOs, tokens, geometria, shaders e Dual-Kawase foram preservados.
+
+## Evidências e testes
+
+- Compilação do SDE: [build.log](evidence/etapa-06-4/build.log). CTest completo após adicionar a regressão: **47/47**, 24,85 s: [ctest.log](evidence/etapa-06-4/ctest.log).
+- Testes de framebuffer reais do pipeline QRhi em [Vulkan](evidence/etapa-06-4/framebuffer-vulkan.log) e [OpenGL](evidence/etapa-06-4/framebuffer-opengl.log): o cenário com quatro itens confirma uma única camada selecionada, mudança de Z, exclusão dos demais e fallback. Esses itens são diagnóstico de GPU, não evidência visual do SDE. A regressão de integração também confirma que um cliente externo mais próximo é escolhido como bloqueador mesmo quando não intersecta a janela interna mais profunda.
+- SDE principal em Vulkan: [sem cliente](evidence/etapa-06-4/clients/00-no-client.png), [Alacritty afastado](evidence/etapa-06-4/clients/01-outside.png), [cliente entre janelas](evidence/etapa-06-4/clients/02-between.png), [cliente atrás](evidence/etapa-06-4/clients/03-behind.png). Os arquivos `*-compositor.json` registram o par ativo ou fallback correspondente. O cliente externo permanece apresentado diretamente, e sua decoração usa wallpaper-only. A sonda é instrumentada; não comprova interação humana, XWayland real ou segurança de captura de buffers.
+- [Dock sobre Files e Material](evidence/etapa-06-4/limited-dock/sde-0.png): os estados de 0, 5, 15, 30 e 60 s registram apenas `Material` em `dockSelected`, com composição ativa e tempo óptico avançando de aproximadamente 0,9 para 60,4 s. O ensaio terminou sem crash. [Estresse](evidence/etapa-06-4/limited-stress/stress.json): 18 transições instrumentadas de perfis e ordem Z. A presença contínua da animação e capturas não substituem revisão manual de cintilação e legibilidade.
+- O cenário de cliente exercita ainda maximização/restauração, snap, workspace e alternância de perfis por instrumentação; ver [capturas e estados](evidence/etapa-06-4/client-interactions/). O processo encerrou sem crash; isso não substitui interação manual. Testes OpenGL cobriram QRhi, não homologação do SDE inteiro.
+
+## Custo observado
+
+SDE Vulkan, Radeon Vega, 1662 × 975, DPR 1, Balanced, aquecimento de 2 s: Dock com duas janelas visíveis e uma produtora selecionada registrou CPU média/p95 **6,95/14,17 ms** e GPU **3,03/4,91 ms**, com 5584 amostras CPU. CPU é intervalo entre sinais do frame e GPU é o último tempo concluído fornecido pelo QRhi; não são uso total de CPU ou necessariamente tempo de apresentação. Arquivo bruto: [frame-timings.json](evidence/etapa-06-4/limited-dock/frame-timings.json).
+
+A etapa 06.3 registrou para o cenário de duas produtoras CPU média/p95 7,08/14,60 ms e GPU 3,31/5,50 ms. Os ensaios foram feitos em momentos distintos; a suíte CTest também executou durante parte desta medição, portanto a diferença não é um benchmark causal isolado. Com uma produtora e uma textura composta em tela cheia, estimam-se **12,4 MiB** RGBA em DPR 1 por consumidora ativa, além da textura/pirâmide do provider e demais recursos; não é medição de memória do driver. Permanece trabalho para reduzir o tamanho dos intermediários e medir frame pacing e memória em hardware de destino.
+
+## Pendências e reprodução
+
+Com uma sessão Wayland local, execute `python3 tools/validate_valo_stage064.py clients`, `limited-dock`, `limited-stress` ou `client-interactions`. O comando inicia `build/systalia_glass_engine` e grava capturas reais. Para a suíte: `QT_QPA_PLATFORM=offscreen ctest --test-dir build --output-on-failure -j 2`.
+
+Faltam homologação manual de foco, resize, snap e workspaces, execução do SDE inteiro em OpenGL, múltiplos outputs/DPR, medição isolada de memória/latência e testes com clientes XWayland reais. A captura do cliente inferior permanece desabilitada até comprovar a vida útil e sincronização dos buffers. O problema de conteúdo preto XWayland segue reservado à Etapa 07, que não foi iniciada. Nenhum merge foi feito.

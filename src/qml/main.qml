@@ -284,6 +284,48 @@ ApplicationWindow {
 
     property var trackedClientContainers: []
 
+    // Single source of truth for the nearest intersecting lower window.
+    // External windows participate in ordering, but are never captured.
+    function nearestBackdropWindow(consumer, consumerAboveWorkspace) {
+        const page = clientWindowsLayer.workspacePageAt(WorkspaceManager.currentWorkspace)
+        void(clientWindowsLayer.viewportOffset)
+        if (!consumer || !page || !consumer.visible || WorkspaceManager.isTransitioning || OutputManager.screenCount > 1)
+            return null
+        if (!consumerAboveWorkspace && consumer.parent !== page) return null
+        function bounds(item) {
+            void(item.x); void(item.y); void(item.width); void(item.height); void(item.scale); void(item.rotation)
+            if (item.parent) { void(item.parent.x); void(item.parent.y); void(item.parent.scale); void(item.parent.rotation) }
+            const p = [item.mapToItem(null,0,0), item.mapToItem(null,item.width,0),
+                       item.mapToItem(null,0,item.height), item.mapToItem(null,item.width,item.height)]
+            return {l:Math.min(...p.map(v=>v.x)), r:Math.max(...p.map(v=>v.x)),
+                    t:Math.min(...p.map(v=>v.y)), b:Math.max(...p.map(v=>v.y))}
+        }
+        const area = bounds(consumer)
+        let nearest = null
+        const candidates = [glassChassis, materialWindow].concat(trackedClientContainers)
+        for (const item of candidates) {
+            if (!item || item === consumer) continue
+            void(item.x); void(item.y); void(item.width); void(item.height); void(item.z)
+            void(item.visible); void(item.opacity); void(item.parent); void(item.scale); void(item.rotation)
+            if (item.workspaceIndex !== undefined) void(item.workspaceIndex)
+            if (!item.visible || item.opacity <= 0) continue
+            if (item.workspaceIndex !== undefined && item.workspaceIndex !== WorkspaceManager.currentWorkspace) continue
+            if (item.parent !== page) {
+                if (trackedClientContainers.indexOf(item) !== -1) return item
+                continue
+            }
+            const index = page.children.indexOf(item)
+            if (!consumerAboveWorkspace && (item.z > consumer.z ||
+                (item.z === consumer.z && index >= page.children.indexOf(consumer)))) continue
+            const box = bounds(item)
+            if (Math.max(area.l,box.l) >= Math.min(area.r,box.r) ||
+                Math.max(area.t,box.t) >= Math.min(area.b,box.b)) continue
+            if (!nearest || item.z > nearest.z ||
+                (item.z === nearest.z && index > page.children.indexOf(nearest))) nearest = item
+        }
+        return nearest
+    }
+
     // Never sample a lower internal window through an external client that we
     // cannot capture. Restrict the fallback to the affected consumer region.
     function externalBackdropBlocked(consumer, producers, consumerAboveWorkspace) {
@@ -385,6 +427,7 @@ ApplicationWindow {
                         y: Math.round(80 + offset)
                     })
                     if (clientWindow) {
+                        clientWindow.backdropSelection = Qt.binding(() => rootWindow.nearestBackdropWindow(clientWindow, false))
                         clientWindow.inActiveWorkspace = Qt.binding(() => {
                             return clientWindow.workspaceIndex === WorkspaceManager.currentWorkspace
                         })
@@ -509,7 +552,10 @@ ApplicationWindow {
         externalClientsPresent: rootWindow.externalBackdropBlocked(
             glassChassis.z > materialWindow.z ? glassChassis : materialWindow,
             [glassChassis.z > materialWindow.z ? materialWindow : glassChassis], false)
+            || rootWindow.nearestBackdropWindow(glassChassis.z > materialWindow.z ? glassChassis : materialWindow, false)
+                !== (glassChassis.z > materialWindow.z ? materialWindow : glassChassis)
         enabledForWorkspace: !WorkspaceManager.isTransitioning
+            && OutputManager.screenCount <= 1
             && glassChassis.parent === clientWindowsLayer.workspacePageAt(WorkspaceManager.currentWorkspace)
         mappingRevision: clientWindowsLayer.viewportOffset
     }
@@ -548,7 +594,9 @@ ApplicationWindow {
             topBar: topBar; dock: systemDock
             mappingRevision: clientWindowsLayer.viewportOffset
             topBarBlocked: rootWindow.externalBackdropBlocked(topBar, [glassChassis, materialWindow], true)
+                || rootWindow.nearestBackdropWindow(topBar, true) !== singleStack.producer
             dockBlocked: rootWindow.externalBackdropBlocked(systemDock, [glassChassis, materialWindow], true)
+                || rootWindow.nearestBackdropWindow(systemDock, true) !== singleStack.producer
             enabledForWorkspace: overlayBackdrop.enabledForWorkspace
         }
         GfxV2.ValoLimitedBackdropV2 {
@@ -561,6 +609,8 @@ ApplicationWindow {
             candidates: [glassChassis, materialWindow]
             consumerAboveWorkspace: true
             externalClientsPresent: rootWindow.externalBackdropBlocked(systemDock, [glassChassis, materialWindow], true)
+                || (rootWindow.nearestBackdropWindow(systemDock, true) !== glassChassis
+                    && rootWindow.nearestBackdropWindow(systemDock, true) !== materialWindow)
             enabledForWorkspace: overlayBackdrop.enabledForWorkspace && singleStack.overlaysDisjoint && overlayBackdrop.bothVisible
             mappingRevision: clientWindowsLayer.viewportOffset
         }
@@ -574,6 +624,8 @@ ApplicationWindow {
             candidates: [glassChassis, materialWindow]
             consumerAboveWorkspace: true
             externalClientsPresent: rootWindow.externalBackdropBlocked(topBar, [glassChassis, materialWindow], true)
+                || (rootWindow.nearestBackdropWindow(topBar, true) !== glassChassis
+                    && rootWindow.nearestBackdropWindow(topBar, true) !== materialWindow)
             enabledForWorkspace: overlayBackdrop.enabledForWorkspace && singleStack.overlaysDisjoint && overlayBackdrop.bothVisible
             mappingRevision: clientWindowsLayer.viewportOffset
         }

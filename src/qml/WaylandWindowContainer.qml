@@ -13,6 +13,10 @@ Item {
     property var outputManager: null
     // External clients deliberately use the wallpaper-only backdrop.
     property var backdropSource: null
+    // The nearest lower window is tracked, but client decorations remain on
+    // the wallpaper fallback until their capture/provider lifecycle is proven.
+    property var backdropSelection: null
+    readonly property string backdropSelectionMode: backdropSelection ? "wallpaper-only-uncertified" : "wallpaper-only"
     property bool useGraphicsV2: true
     property int blurProfile: 1
     property bool userHighContrast: false
