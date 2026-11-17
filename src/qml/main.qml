@@ -14,7 +14,7 @@ ApplicationWindow {
     height: 975
     visible: true
     title: qsTr("Systalia Glass Engine — Systalia Desktop Environment")
-    color: SystaliaTheme.ocean
+    color: ValoTheme.primitiveNavy950
 
     property bool filesWindowMaximized: false
     property rect filesWindowRestoreGeometry: Qt.rect(80, 80, 701, 534)

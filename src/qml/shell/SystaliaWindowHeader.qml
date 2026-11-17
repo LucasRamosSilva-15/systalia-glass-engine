@@ -97,7 +97,7 @@ Item {
         height: Math.min(28, header.height)
         text: header.iconGlyph
         color: header.iconColor
-        font.family: SystaliaTheme.fontFamily
+        font.family: ValoTheme.fontFamily
         font.pixelSize: 24
         font.weight: Font.Bold
         horizontalAlignment: Text.AlignHCenter
@@ -124,7 +124,7 @@ Item {
             width: Math.max(0, parent.width - (badge.visible ? badge.width + 14 : 0))
             text: header.title
             color: header.titleColor
-            font.family: SystaliaTheme.fontFamily
+            font.family: ValoTheme.fontFamily
             font.pixelSize: header.titlePixelSize
             font.weight: Font.Medium
             elide: Text.ElideRight
@@ -153,7 +153,7 @@ Item {
                 anchors.rightMargin: 8
                 text: header.badgeText
                 color: header.badgeTextColor
-                font.family: SystaliaTheme.fontFamily
+                font.family: ValoTheme.fontFamily
                 font.pixelSize: 14
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
