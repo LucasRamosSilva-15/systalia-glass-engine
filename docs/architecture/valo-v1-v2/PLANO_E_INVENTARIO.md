@@ -75,3 +75,14 @@ Os quatro acessos diretos de produção a `SystaliaTheme` foram migrados: `main.
 - Arquivos alterados: `src/qml/main.qml`, `src/qml/shell/SystaliaWindowHeader.qml` e `tests/unit/tst_ValoTheme.cpp`. Nenhum arquivo de produto removido ou movido. O inventário de caminhos segue em 263; os módulos CMake adicionais e a matriz compartilhada são as duas adições sobre o inventário inicial de 261.
 
 A consolidação ainda é parcial: `SystaliaGlassItem`, `SystaliaGlassMaterial`, `ValoGlass.qml`, shaders antigos e `decorationV1` permanecem compilados ou expostos e ainda têm referências; V2 não é a única implementação existente. A eliminação depende da migração e validação descritas neste plano, em particular contratos públicos, interfaces QML, Release e apresentação real de clientes externos. O singleton de compatibilidade não foi removido.
+
+## Fase incremental: ponto de entrada
+
+`src/main.cpp` foi movido para `src/app/main.cpp`; seu conteúdo tem SHA-256 `2fcc09537c6dc813ec584b5ce95fb5a6e611e0c5fb2806048fd556083670d0cb` antes e depois. O alvo do executável em `CMakeLists.txt` e a referência no blueprint corrente foram atualizados. Relatórios históricos permanecem com os caminhos vigentes quando foram escritos. A busca textual por `src/main.cpp` no código, ferramentas e configuração não encontrou outras referências operacionais. Nenhum renderer ou contrato público foi removido.
+
+- Build limpo do estado após o movimento: 437/437 ações concluídas; [configuração](app-configure.log), [build](app-build.log). Os 27 QSB continuam com hashes idênticos ao baseline.
+- CTest completo: **47/47**, 34,33 s; [log](app-ctest.log). Instalação em prefixo temporário com os três caminhos anteriores: [log](app-install.log).
+- Binário limpo SHA-256 `f6702f129808a23a573fffdc3bcbe09377c4040b7acabc4b8af7f8405d36e124` executado com Alacritty no [SDE real](evidence-app/clients/), com capturas e estados instrumentados. Não é homologação manual completa nem validação do XWayland real.
+- [Inventário após o movimento](inventario-apos-app.txt): 263 caminhos de produto/testes/ferramentas. Sobre o baseline de 261, houve duas adições (`cmake/SgeShaders.cmake`, `src/gfx/ValoStd140Matrix.hpp`) e um arquivo movido (`src/main.cpp` → `src/app/main.cpp`); nenhum arquivo de produto foi excluído.
+
+**Situação final desta entrega: PARTIAL.** V1 ainda está compilado e exposto; a reorganização dos demais diretórios e targets, a investigação da falha Release e a migração e validação de clientes e fallback permanecem pendentes. Não é seguro declarar V2 como única implementação ou excluir os arquivos V1 com as evidências atuais.

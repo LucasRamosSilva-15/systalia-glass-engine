@@ -202,7 +202,7 @@ qt_add_qml_module(sge_core
 
 # Executável principal da aplicação
 qt_add_executable(systalia_glass_engine
-    src/main.cpp
+    src/app/main.cpp
 )
 
 target_link_libraries(systalia_glass_engine PRIVATE
