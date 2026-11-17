@@ -19,6 +19,10 @@ O Git registra 1.326 arquivos no baseline, dos quais 169 em `src`, 49 em `tests`
 
 `main.qml` instancia Files, Dock, TopBar e Control Center V2; Flow Menu, notificações, Task Switcher e Snap Preview já declaram superfícies V2. Isso não prova que arquivos V1 empacotados, caminhos de fallback ou tipos públicos não sejam utilizados por outros consumidores. O conteúdo dos clientes usa `ShellSurfaceItem`; mudanças devem preservar apresentação direta, subsurfaces, sincronização e liberação de buffers.
 
+O CMake declara `SGE_GRAPHICS_V2`, mas a busca no código e nos testes encontrou somente a declaração: não há evidência de que `OFF` desligue V2. Não tratar essa opção como chave de migração ou fallback funcional sem acrescentar verificação específica.
+
+Na busca textual de `SystaliaTheme.<propriedade>` em `src`, `tests` e `tools`, apareceram `fontFamily` (4), `ocean` (2), `textMuted` (1) e `valo` (1); algumas ocorrências são testes. O singleton expõe outras propriedades públicas, que não se tornam removíveis apenas por ausência de referências internas. O índice textual também não detecta acesso indireto por nome calculado ou consumidores externos.
+
 ## Baseline e limitações
 
 - Build limpo isolado na configuração padrão, com Ninja, GCC 16.2.1 e Qt 6.11.2: **437/437 ações concluídas**. [Configuração](baseline-configure.log) e [build](baseline-build.log). Binário limpo SHA-256 `5adbc1f0ce98917befc742d1b6356ffb6e54931a44e8dbd9cf4fa29ac9611202`.
@@ -42,3 +46,14 @@ As decisões [ADR 0001](../adr/0001-valo-v2-como-renderer-oficial.md) e [ADR 000
 ## Inventário depois desta fase
 
 Nenhum arquivo de produto removido ou migrado nesta fase de auditoria. Os arquivos de inventário, ADRs, logs e capturas de baseline são adições. A consolidação funcional e a reorganização ainda não foram concluídas; qualquer resultado posterior deve atualizar esta seção por commit e preservar o baseline histórico.
+
+## Fase incremental: módulo CMake de shaders
+
+`CMakeLists.txt` passou a incluir `cmake/SgeShaders.cmake`, com o mesmo conteúdo anterior de `sge_shaders`, incluindo shaders V1, V2 e de diagnóstico. É uma extração de configuração, sem remover arquivos ou criar uma implementação óptica. O `sge_core`, a URI QML e as regras de instalação não mudaram. O caminho final por responsabilidade e a divisão de targets continuam pendentes.
+
+- Compilação limpa isolada: 437/437 ações concluídas; [configuração](modular-configure.log), [build](modular-build.log).
+- 27 arquivos QSB gerados: hashes SHA-256 iguais aos do build limpo de baseline. Os três manifestos qrc de shaders são idênticos após normalizar os diretórios absolutos de build. Isso verifica conteúdo e mapeamento dos recursos, não todos os aspectos visuais.
+- CTest completo: **47/47**, 34,28 s: [log](modular-ctest.log). Instalação em prefixo temporário: [log](modular-install.log); os três caminhos instalados (`bin/systalia_glass_engine`, `bin/systalia-session`, `share/wayland-sessions/systalia.desktop`) coincidem com o baseline.
+- Binário do build modular SHA-256 `8704c0d0ca9fee48b3940f7980c2d501df6b0f2a6500a3cdafd9d79cd573b7ee` executado no SDE real com Alacritty: [capturas e estados](evidence-cmake-modular/clients/). A comparação de hashes dos executáveis não demonstra identidade binária: os builds em diretórios distintos produziram hashes diferentes. A sonda testa cenários instrumentados, não toda a interação manual ou clientes XWayland.
+
+**Arquivos de produto removidos ou migrados:** nenhum. **Arquivo adicionado:** `cmake/SgeShaders.cmake`; **arquivo alterado:** `CMakeLists.txt`. A migração V1 → V2, remoção do fallback e reorganização física permanecem pendentes, e a falha da configuração Release registrada no baseline continua sem correção.
