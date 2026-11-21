@@ -50,6 +50,7 @@ Item {
     property bool highContrast: false
     property bool prefersReducedMotion: false
     property alias debugPass: glassChassis.debugPass
+    readonly property alias opticalSurface: glassChassis
 
     width: 701
     height: 534
