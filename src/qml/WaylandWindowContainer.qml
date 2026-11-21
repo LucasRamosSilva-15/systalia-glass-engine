@@ -17,7 +17,7 @@ Item {
     // the wallpaper fallback until their capture/provider lifecycle is proven.
     property var backdropSelection: null
     readonly property string backdropSelectionMode: backdropSelection ? "wallpaper-only-uncertified" : "wallpaper-only"
-    property bool useGraphicsV2: true
+    readonly property bool useGraphicsV2: true
     property int blurProfile: 1
     property bool userHighContrast: false
     property bool userPrefersReducedMotion: false
@@ -476,49 +476,27 @@ Item {
         return true
     }
 
-    // Client presentation and input remain outside both optical renderers.
+    // Client presentation and input remain outside the optical renderer.
     Item {
         id: glassChassis
         anchors.fill: parent
 
-        Loader {
+        ValoMaterialSurfaceV2 {
+            id: clientDecorationV2
+            objectName: "clientDecorationV2"
             anchors.fill: parent
-            sourceComponent: windowContainer.useGraphicsV2 ? decorationV2 : decorationV1
-        }
-        Component {
-            id: decorationV2
-            ValoMaterialSurfaceV2 {
-                objectName: "clientDecorationV2"
-                geometryMode: ValoGlassItemV2.SquircleG2
-                backdropSource: windowContainer.backdropSource
-                blurProfile: windowContainer.blurProfile
-                cornerRadii: windowContainer.frameRadii
-                slant: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.slant : 0
-                ior: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.ior : 1.25
-                chromaticDispersion: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.dispersion : 0.04
-                surfaceOpacity: windowContainer.isWindowActive ? 0.50 : 0.42
-                // V2 active controls node lifetime, not keyboard activation.
-                active: windowContainer.visible
-                userHighContrast: windowContainer.userHighContrast
-                userPrefersReducedMotion: windowContainer.userPrefersReducedMotion
-            }
-        }
-        Component {
-            id: decorationV1
-            ValoGlass {
-                objectName: "clientDecorationV1"
-                active: windowContainer.isWindowActive
-                backdropSource: windowContainer.backdropSource
-                screenResolution: Qt.vector2d(windowContainer.screenResolution.x, windowContainer.screenResolution.y)
-                devicePixelRatio: windowContainer.currentScreenScale
-                titleBarHeight: windowContainer.titleBarHeight
-                cornerRadii: windowContainer.frameRadii
-                slant: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.slant : 0
-                refractionStrength: windowContainer.opticalMetadata ? Math.max(0, (windowContainer.opticalMetadata.ior - 1) / 0.25) : 1
-                chromaticDispersion: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.dispersion : 0.04
-                time: windowContainer.animTime
-                occluded: !windowContainer.visible
-            }
+            geometryMode: ValoGlassItemV2.SquircleG2
+            backdropSource: windowContainer.backdropSource
+            blurProfile: windowContainer.blurProfile
+            cornerRadii: windowContainer.frameRadii
+            slant: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.slant : 0
+            ior: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.ior : 1.25
+            chromaticDispersion: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.dispersion : 0.04
+            surfaceOpacity: windowContainer.isWindowActive ? 0.50 : 0.42
+            // V2 active controls node lifetime, not keyboard activation.
+            active: windowContainer.visible
+            userHighContrast: windowContainer.userHighContrast
+            userPrefersReducedMotion: windowContainer.userPrefersReducedMotion
         }
 
         // Native, unfiltered client buffers are painted above the decoration.

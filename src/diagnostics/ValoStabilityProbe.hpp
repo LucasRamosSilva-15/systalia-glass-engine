@@ -196,8 +196,8 @@ inline void installValoStabilityProbe(QQuickWindow *window) {
             return;
         }
         step(3000, "", "00-native-default");
-        step(4000, "trackedClientContainers.forEach((w,i)=>{w.x=30+i*390;w.y=100+i*80;w.dispatchClientResize(Qt.size(400,260),false);w.useGraphicsV2=false})", "01-v1-fallback");
-        step(6000, "trackedClientContainers.forEach(w=>w.useGraphicsV2=true)", "02-v2");
+        step(4000, "trackedClientContainers.forEach((w,i)=>{w.x=30+i*390;w.y=100+i*80;w.dispatchClientResize(Qt.size(400,260),false)})", "01-resized");
+        step(6000, "", "02-v2");
         step(8000, "trackedClientContainers.forEach(w=>w.toggleMaximized())", "03-maximized");
         step(10000, "trackedClientContainers.forEach(w=>w.toggleMaximized())", "04-restored");
         step(12000, "trackedClientContainers.forEach((w,i)=>w.snapToZone(i%2+1))", "05-snap");

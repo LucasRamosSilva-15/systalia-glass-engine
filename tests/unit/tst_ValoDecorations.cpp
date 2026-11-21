@@ -52,21 +52,19 @@ void TestValoDecorations::windowContainerIntegratesValoGlass() {
     auto *container = qobject_cast<QQuickItem *>(obj.data());
     QVERIFY(container);
 
-    // Verifica que o ValoGlass está presente e encapsula o SystaliaGlassItem
+    // Verifica que a decoração oficial V2 está presente diretamente, sem SystaliaGlassItem ou captura de cliente
     auto *glass = container->findChild<Systalia::Gfx::V2::ValoGlassItemV2 *>();
     QVERIFY(glass);
     QVERIFY(!container->findChild<SystaliaGlassItem *>());
+    QVERIFY(!container->findChild<QQuickItem *>("clientDecorationV1"));
+    QVERIFY(container->findChild<QQuickItem *>("clientDecorationV2"));
     QVERIFY(!container->findChild<QQuickItem *>("clientTextureCapture"));
+    QVERIFY(container->property("useGraphicsV2").toBool());
     QCOMPARE(glass->geometryMode(), int(Systalia::Gfx::V2::ValoGlassItemV2::SquircleG2));
     for (int i = 0; i < 30; ++i) {
         container->setProperty("blurProfile", i % 3);
         QCOMPARE(glass->blurProfile(), i % 3);
     }
-    container->setProperty("useGraphicsV2", false);
-    QVERIFY(container->findChild<SystaliaGlassItem *>());
-    QTRY_VERIFY(!container->findChild<Systalia::Gfx::V2::ValoGlassItemV2 *>());
-    container->setProperty("useGraphicsV2", true);
-    QVERIFY(container->findChild<Systalia::Gfx::V2::ValoGlassItemV2 *>());
 
     auto *viewport = container->findChild<QQuickItem *>("clientViewport");
     QVERIFY(viewport);
