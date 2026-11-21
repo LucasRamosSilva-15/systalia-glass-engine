@@ -420,3 +420,15 @@ add_test(NAME tst_evidence_cleanup
     COMMAND Python3::Interpreter "${CMAKE_CURRENT_SOURCE_DIR}/unit/tst_EvidenceCleanup.py"
 )
 set_tests_properties(tst_evidence_cleanup PROPERTIES LABELS "unit")
+
+qt_add_executable(tst_drm_backend_poc unit/tst_DrmBackendPoc.cpp)
+target_link_libraries(tst_drm_backend_poc PRIVATE
+    sge_drm_poc
+    Qt6::Test
+)
+add_test(NAME tst_drm_backend_poc COMMAND tst_drm_backend_poc)
+set_tests_properties(tst_drm_backend_poc PROPERTIES
+    LABELS "unit"
+    TIMEOUT 30
+    ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
