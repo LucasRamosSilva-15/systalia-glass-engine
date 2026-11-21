@@ -12,6 +12,7 @@
 #include <cmath>
 
 #include "ValoGlassItemV2.hpp"
+#include "SystaliaGlassItem.hpp"
 #include "ValoShadowItemV2.hpp"
 #include "ValoOpticalContext.hpp"
 #include "ValoBackdropProviderV2.hpp"
@@ -42,6 +43,7 @@ private slots:
     void testFilesWindowV2SquircleG2AndState();
     void testControlCenterV2SquircleG2AndServices();
     void testDockV2ShellIntegration();
+    void testLegacyDockAndTopBarResources();
     void testFramebufferPixelVisibilityV2();
 
 private:
@@ -249,6 +251,69 @@ void tst_ValoShellV2::testDockV2ShellIntegration() {
     QVERIFY(glass != nullptr);
     QCOMPARE(glass->geometryMode(), static_cast<int>(ValoGlassItemV2::CircularL2));
     QCOMPARE(glass->cornerRadii(), QVector4D(47, 47, 47, 47));
+}
+
+void tst_ValoShellV2::testLegacyDockAndTopBarResources() {
+    QQuickWindow window;
+    window.resize(800, 400);
+    const auto findVisual = [](auto &&self, QQuickItem *parent, const auto &matches) -> QQuickItem * {
+        for (auto *child : parent->childItems()) {
+            if (matches(child))
+                return child;
+            if (auto *found = self(self, child, matches))
+                return found;
+        }
+        return nullptr;
+    };
+    for (const auto &name : {QStringLiteral("SystaliaDock"), QStringLiteral("SystaliaTopBar")}) {
+        const QUrl url(QStringLiteral("qrc:/qt/qml/Systalia/Engine/src/qml/shell/%1.qml").arg(name));
+        QQmlComponent component(m_engine.get(), url);
+        std::unique_ptr<QObject> instance(component.create());
+        QVERIFY2(instance, qPrintable(component.errorString()));
+        auto *item = qobject_cast<QQuickItem *>(instance.get());
+        QVERIFY(item);
+        item->setParentItem(window.contentItem());
+        QCOMPARE(item->findChildren<ValoGlassItemV2 *>().size(), 1);
+        QVERIFY(item->findChildren<SystaliaGlassItem *>().isEmpty());
+        QSignalSpy terminal(item, SIGNAL(terminalRequested()));
+        QVERIFY(terminal.isValid());
+        if (name == QStringLiteral("SystaliaDock")) {
+            QCOMPARE(item->property("performanceProfile").toString(), QStringLiteral("balanced"));
+            item->setWidth(600);
+            QCOMPARE(item->property("dockWidth").toDouble(), 600.0);
+            QVERIFY(QMetaObject::invokeMethod(item, "activate", Q_ARG(QVariant, QVariant("terminal"))));
+            QCOMPARE(terminal.count(), 1);
+            auto *launcher = findVisual(findVisual, item, [](QQuickItem *child) {
+                return child->objectName() == QStringLiteral("dockItem_terminal");
+            });
+            QVERIFY(launcher);
+            window.show();
+            QVERIFY(QTest::qWaitForWindowExposed(&window));
+            launcher->forceActiveFocus();
+            QTRY_VERIFY(launcher->hasActiveFocus());
+            QTest::keyClick(&window, Qt::Key_Return);
+            QCOMPARE(terminal.count(), 2);
+            QTest::keyClick(&window, Qt::Key_Tab);
+            QTRY_VERIFY(!launcher->hasActiveFocus());
+            const auto position = launcher->mapToScene(launcher->boundingRect().center()).toPoint();
+            QTest::mouseMove(&window, position);
+            QTRY_VERIFY(launcher->property("effectiveHovered").toBool());
+        } else {
+            QCOMPARE(item->property("objectName").toString(), QStringLiteral("topBar"));
+            QCOMPARE(item->property("actionButtonCount").toInt(), 6);
+            QCOMPARE(item->property("cornerRadii").value<QVector4D>(), QVector4D(22, 22, 22, 22));
+            item->setWidth(800);
+            auto *terminalButton = findVisual(findVisual, item, [](QQuickItem *child) {
+                return child->objectName() == QStringLiteral("statusButton")
+                    && child->property("iconType").toString() == QStringLiteral("terminal");
+            });
+            QVERIFY(terminalButton);
+            terminalButton->forceActiveFocus();
+            QTRY_VERIFY(terminalButton->hasActiveFocus());
+            QTest::keyClick(&window, Qt::Key_Space);
+            QCOMPARE(terminal.count(), 1);
+        }
+    }
 }
 
 void tst_ValoShellV2::testFramebufferPixelVisibilityV2() {

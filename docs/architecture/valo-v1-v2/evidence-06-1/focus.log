@@ -1,0 +1,9 @@
+********* Start testing of tst_ValoShellV2 *********
+Config: Using QtTest library 6.11.2, Qt 6.11.2 (x86_64-little_endian-lp64 shared (dynamic) release build; by GCC 16.2.1 20260819 (Red Hat 16.2.1-2)), fedora 44
+PASS   : tst_ValoShellV2::initTestCase()
+QWARN  : tst_ValoShellV2::testLegacyDockAndTopBarResources() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+QWARN  : tst_ValoShellV2::testLegacyDockAndTopBarResources() [SGE-BACKDROP-V2] ATENÇÃO: Recorrendo ao fallback sintético createSyntheticBackdrop (source=0x0)
+PASS   : tst_ValoShellV2::testLegacyDockAndTopBarResources()
+PASS   : tst_ValoShellV2::cleanupTestCase()
+Totals: 3 passed, 0 failed, 0 skipped, 0 blacklisted, 116ms
+********* Finished testing of tst_ValoShellV2 *********

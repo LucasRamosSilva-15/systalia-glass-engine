@@ -1,0 +1,8 @@
+********* Start testing of tst_ValoShellV2 *********
+Config: Using QtTest library 6.11.2, Qt 6.11.2 (x86_64-little_endian-lp64 shared (dynamic) release build; by GCC 16.2.1 20260819 (Red Hat 16.2.1-2)), fedora 44
+PASS   : tst_ValoShellV2::initTestCase()
+FAIL!  : tst_ValoShellV2::testLegacyDockAndTopBarResources() 'launcher' returned FALSE. ()
+   Loc: [/home/lucasramos/Documentos/systalia-glass-engine/tests/unit/tst_ValoShellV2.cpp(278)]
+PASS   : tst_ValoShellV2::cleanupTestCase()
+Totals: 2 passed, 1 failed, 0 skipped, 0 blacklisted, 91ms
+********* Finished testing of tst_ValoShellV2 *********

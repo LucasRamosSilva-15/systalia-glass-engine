@@ -38,3 +38,7 @@
 ## Resultado deste primeiro commit
 
 Esta alteração cria exclusivamente o roteiro de execução e a matriz por família. **Nenhum componente de produção foi modificado; nenhum teste, build ou sessão gráfica foi executado neste commit.** A fase continua PARTIAL.
+
+## Continuação 06.1
+
+Dock e TopBar agora delegam aos componentes V2 pelos mesmos nomes QML e URLs QRC. A etapa permanece **PARTIAL** pela compatibilidade profunda da Dock antiga. O relatório registra a auditoria, os resultados de 47/47 em ambas as configurações e as capturas com lançamentos Wayland reais. [Consolidação 06.1](CONSOLIDACAO_06_1_DOCK_TOPBAR.md)

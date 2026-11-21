@@ -222,6 +222,14 @@ inline void installValoStabilityProbe(QQuickWindow *window) {
         step(36000, "snapPreviewOverlay.active=false; Notifications.Notify('VALO',0,'','V2 notification','Main SDE client migration',[],{},0)", "14-notification");
         step(39000, "flowMenu.opened=false", "15-final");
         step(40000, "trackedClientContainers.slice().forEach(w=>waylandServer.closeToplevel(w.toplevel))", "16-closed");
+        if (qEnvironmentVariableIsSet("SGE_VALO_SHELL_LAUNCH_PROBE")) {
+            step(42000, "systemDock.activate('terminal')", "17-dock-terminal");
+            step(46000, "trackedClientContainers.slice().forEach(w=>waylandServer.closeToplevel(w.toplevel))", "18-dock-terminal-closed");
+            step(48000, "topBar.terminalRequested()", "19-topbar-terminal");
+            step(52000, "trackedClientContainers.slice().forEach(w=>waylandServer.closeToplevel(w.toplevel))", "20-topbar-terminal-closed");
+            QTimer::singleShot(54000, window, [] { QCoreApplication::quit(); });
+            return;
+        }
         QTimer::singleShot(42000, window, [] { QCoreApplication::quit(); });
         return;
     }

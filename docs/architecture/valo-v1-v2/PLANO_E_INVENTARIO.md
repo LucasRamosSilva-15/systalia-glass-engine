@@ -92,3 +92,7 @@ A consolidação ainda é parcial: `SystaliaGlassItem`, `SystaliaGlassMaterial`,
 O [diagnóstico Release](DIAGNOSTICO_RELEASE.md) registra a reprodução limpa, a classificação e a correção isolada no teste Liquid Tiling. A [matriz de consumidores V1](CONSUMIDORES_V1.md) complementa o inventário com caminhos verificáveis para os consumidores diretos, dependências de build e contratos públicos. A retirada de `decorationV1`, a migração dos consumidores públicos restantes e a validação de XWayland real continuam como bloqueadores da consolidação.
 
 A correção foi validada com CTest completo em Debug e Release (47/47 em cada) e com Alacritty no SDE Release, com capturas de ambas as decorações. A falha de compilação histórica continua registrada como baseline. O próximo passo da consolidação é migrar os consumidores ainda ativos e auditar a compatibilidade dos tipos públicos, preservando a paridade dos clientes e do fallback até validação apropriada.
+
+## Consolidação 06.1
+
+Os caminhos antigos `src/qml/shell/SystaliaDock.qml` e `src/qml/shell/SystaliaTopBar.qml` foram migrados no lugar para adaptadores V2. Nenhum caminho do inventário de produto foi adicionado, movido ou excluído. Os componentes V2 concentram a renderização, com ajustes no contrato da Dock e uma regressão QRC. O fallback de clientes e os contratos V1 protegidos permanecem disponíveis. O estado é **PARTIAL** pela API profunda de `valoGlassInstance` e pela validação pendente dos consumidores externos. [Auditoria e evidências](CONSOLIDACAO_06_1_DOCK_TOPBAR.md)
