@@ -21,6 +21,7 @@
 #include "ValoBlurPipelineV2.hpp"
 #include "ValoBackdropProviderV2.hpp"
 #include "ValoOrganicTransform.hpp"
+#include "sge_artifact_dir.hpp"
 
 void qml_register_types_Systalia_Engine();
 
@@ -65,7 +66,7 @@ struct BenchStats {
 int main(int argc, char **argv) {
     std::string backend = "opengl";
     std::string platform = "wayland";
-    std::string artifactDir = "/tmp/systalia-runs/graphics-v2-stage-04-2";
+    std::string artifactDir;
     std::string brainDir = "/home/lucasramos/.gemini/antigravity/brain/db6eb3e4-2bf0-441e-9ef2-a1601d0a1c5f";
     std::string targetPass = "all";
     int filterProfile = -1;
@@ -96,9 +97,9 @@ int main(int argc, char **argv) {
     QGuiApplication app(argc, argv);
     qml_register_types_Systalia_Engine();
 
-    const QString qArtifactDir = QString::fromStdString(artifactDir);
+    Systalia::Tools::ScopedArtifactRun artifactRun(QStringLiteral("dock-v2-artifacts"), QString::fromStdString(artifactDir));
+    const QString qArtifactDir = artifactRun.path();
     const QString qBrainDir = QString::fromStdString(brainDir);
-    QDir().mkpath(qArtifactDir);
     QDir().mkpath(qBrainDir);
 
     QQuickWindow window;
@@ -307,5 +308,6 @@ int main(int argc, char **argv) {
     }
 
     std::cout << "\nGeração de artefatos da Etapa 04.2 finalizada com sucesso." << std::endl;
+    artifactRun.markSuccess();
     return 0;
 }

@@ -413,3 +413,9 @@ sge_add_expanded_test(tst_valo_optical_contract_v2 unit/tst_ValoOpticalContractV
 set_tests_properties(tst_valo_optical_contract_v2 PROPERTIES
     ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_QUICK_BACKEND=rhi;QSG_RHI_BACKEND=opengl"
 )
+
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
+add_test(NAME tst_evidence_cleanup
+    COMMAND Python3::Interpreter "${CMAKE_CURRENT_SOURCE_DIR}/unit/tst_EvidenceCleanup.py"
+)
+set_tests_properties(tst_evidence_cleanup PROPERTIES LABELS "unit")

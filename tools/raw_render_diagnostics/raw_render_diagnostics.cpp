@@ -25,6 +25,7 @@
 #include "ValoGlassItemV2.hpp"
 #include "ValoShadowItemV2.hpp"
 #include "ValoBackdropProviderV2.hpp"
+#include "../sge_artifact_dir.hpp"
 #include <QQmlEngine>
 #include <QQmlComponent>
 
@@ -634,6 +635,7 @@ int main(int argc, char **argv) {
     std::string targetTest = "all";
     bool runnerMode = false;
 
+    std::string artifactDir;
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
         if (arg == "--backend" && i + 1 < argc) {
@@ -642,14 +644,16 @@ int main(int argc, char **argv) {
             platform = argv[++i];
         } else if (arg == "--test" && i + 1 < argc) {
             targetTest = argv[++i];
+        } else if (arg == "--artifact-dir" && i + 1 < argc) {
+            artifactDir = argv[++i];
         } else if (arg == "--orchestrate") {
             runnerMode = true;
         }
     }
 
-    const QString repoArtifactDir = QStringLiteral("/tmp/systalia-runs/raw-render-tests");
+    Systalia::Tools::ScopedArtifactRun artifactRun(QStringLiteral("raw-render-tests"), QString::fromStdString(artifactDir));
+    const QString repoArtifactDir = artifactRun.path();
     const QString brainArtifactDir = QStringLiteral("/home/lucasramos/.gemini/antigravity/brain/db6eb3e4-2bf0-441e-9ef2-a1601d0a1c5f");
-    QDir().mkpath(repoArtifactDir);
     QDir().mkpath(brainArtifactDir);
 
     // ========================================================================
@@ -725,5 +729,6 @@ int main(int argc, char **argv) {
         }
     }
 
+    artifactRun.markSuccess();
     return 0;
 }

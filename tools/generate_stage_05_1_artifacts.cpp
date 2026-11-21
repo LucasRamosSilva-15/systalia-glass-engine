@@ -23,6 +23,7 @@
 #include "OutputManagerService.hpp"
 #include "InputDeviceManager.hpp"
 #include "LogindSessionService.hpp"
+#include "sge_artifact_dir.hpp"
 
 void qml_register_types_Systalia_Engine();
 
@@ -31,7 +32,7 @@ using namespace Systalia::Gfx::V2;
 int main(int argc, char **argv) {
     std::string backend = "vulkan";
     std::string platform = "wayland";
-    std::string artifactDir = "/tmp/systalia-runs/graphics-v2-stage-05-1";
+    std::string artifactDir;
     std::string brainDir = "/home/lucasramos/.gemini/antigravity/brain/db6eb3e4-2bf0-441e-9ef2-a1601d0a1c5f";
 
     for (int i = 1; i < argc; ++i) {
@@ -77,9 +78,9 @@ int main(int argc, char **argv) {
     qmlRegisterSingletonInstance("Systalia.System", 1, 0, "LogindSession", &session);
     qmlRegisterSingletonInstance("Systalia.System", 1, 0, "InputDeviceManager", &input);
 
-    const QString qArtifactDir = QString::fromStdString(artifactDir);
+    Systalia::Tools::ScopedArtifactRun artifactRun(QStringLiteral("stage-05-1-artifacts"), QString::fromStdString(artifactDir));
+    const QString qArtifactDir = artifactRun.path();
     const QString qBrainDir = QString::fromStdString(brainDir);
-    QDir().mkpath(qArtifactDir);
     QDir().mkpath(qBrainDir);
 
     QQuickWindow window;
@@ -206,5 +207,6 @@ int main(int argc, char **argv) {
     // Restaura H
     if (filesWindow) filesWindow->setProperty("debugPass", "H");
 
+    artifactRun.markSuccess();
     return 0;
 }
