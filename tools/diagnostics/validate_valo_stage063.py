@@ -8,7 +8,7 @@ import sys
 import tempfile
 import time
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "maintenance"))
 from sge_evidence import EvidenceRun
 
 root = pathlib.Path(__file__).resolve().parents[1]
@@ -16,13 +16,13 @@ os.chdir(root)
 mode = sys.argv[1] if len(sys.argv) > 1 else "dock"
 if mode not in {
     "resize", "dock", "control", "topbar", "policy", "clients",
-    "client-interactions", "pair-stress", "limited-dock", "limited-topbar", "limited-stress",
+    "pair-stress", "limited-dock", "limited-topbar", "limited-stress",
 }:
     raise SystemExit("Modo inválido")
 
-with EvidenceRun(f"stage064-{mode}") as run:
+with EvidenceRun(f"stage063-{mode}") as run:
     out = run.path
-    with tempfile.TemporaryDirectory(prefix="valo064-") as runtime_dir:
+    with tempfile.TemporaryDirectory(prefix="valo063-") as runtime_dir:
         env = os.environ.copy()
         host = env["WAYLAND_DISPLAY"]
         host = host if host.startswith("/") else env["XDG_RUNTIME_DIR"] + "/" + host
@@ -55,12 +55,6 @@ with EvidenceRun(f"stage064-{mode}") as run:
         if mode == "policy":
             env["SGE_VALO_POLICY_PROBE"] = "1"
         if mode == "clients":
-            env.update(
-                SGE_VALO_CLIENT_MIGRATION_PROBE="1",
-                SGE_VALO_INTERNAL_OVERLAP="1",
-                SGE_VALO_LOCAL_FALLBACK_PROBE="1",
-            )
-        if mode == "client-interactions":
             env.update(SGE_VALO_CLIENT_MIGRATION_PROBE="1", SGE_VALO_INTERNAL_OVERLAP="1")
         if mode == "pair-stress":
             env.update(SGE_VALO_INTERNAL_OVERLAP="1", SGE_VALO_PROFILE_STRESS="3")
@@ -75,15 +69,13 @@ with EvidenceRun(f"stage064-{mode}") as run:
             )
             client = None
             try:
-                if mode in {"clients", "client-interactions"}:
+                if mode == "clients":
                     for _ in range(100):
                         if pathlib.Path(runtime_dir, "wayland-systalia-0").exists():
                             break
                         if p.poll() is not None:
                             raise RuntimeError("SDE startup failed")
                         time.sleep(0.1)
-                    if mode == "clients":
-                        time.sleep(4)
                     clientenv = env.copy()
                     clientenv.update(WAYLAND_DISPLAY="wayland-systalia-0", WINIT_UNIX_BACKEND="wayland")
                     client = subprocess.Popen(

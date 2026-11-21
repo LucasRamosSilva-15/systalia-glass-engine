@@ -8,21 +8,18 @@ import sys
 import tempfile
 import time
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "maintenance"))
 from sge_evidence import EvidenceRun
 
 root = pathlib.Path(__file__).resolve().parents[1]
 os.chdir(root)
 mode = sys.argv[1] if len(sys.argv) > 1 else "dock"
-if mode not in {
-    "resize", "dock", "control", "topbar", "policy", "clients",
-    "pair-stress", "limited-dock", "limited-topbar", "limited-stress",
-}:
+if mode not in {"resize", "dock", "control", "topbar", "policy", "clients", "pair-stress"}:
     raise SystemExit("Modo inválido")
 
-with EvidenceRun(f"stage063-{mode}") as run:
+with EvidenceRun(f"stage062-{mode}") as run:
     out = run.path
-    with tempfile.TemporaryDirectory(prefix="valo063-") as runtime_dir:
+    with tempfile.TemporaryDirectory(prefix="valo062-") as runtime_dir:
         env = os.environ.copy()
         host = env["WAYLAND_DISPLAY"]
         host = host if host.startswith("/") else env["XDG_RUNTIME_DIR"] + "/" + host
@@ -40,15 +37,9 @@ with EvidenceRun(f"stage063-{mode}") as run:
             env["SGE_VALO_OVERLAY_DOCK_SCENARIO"] = "1"
         if mode == "topbar":
             env["SGE_VALO_OVERLAY_TOPBAR_SCENARIO"] = "1"
-        if mode == "limited-dock":
-            env["SGE_VALO_LIMITED_DOCK_SCENARIO"] = "1"
-        if mode == "limited-topbar":
-            env["SGE_VALO_LIMITED_TOPBAR_SCENARIO"] = "1"
-        if mode == "limited-stress":
-            env.update(SGE_VALO_LIMITED_DOCK_SCENARIO="1", SGE_VALO_PROFILE_STRESS="3")
-        if mode in ["dock", "control", "topbar", "limited-dock", "limited-topbar"]:
+        if mode in ["dock", "control", "topbar"]:
             env.update(SGE_VALO_BACKDROP_BENCHMARK="1", SGE_VALO_OPTICAL_PROFILE="1")
-        if mode == "limited-dock":
+        if mode == "dock":
             env["SGE_VALO_OPTICAL_TIMELINE"] = "1"
         if mode == "control":
             env["SGE_VALO_WALLPAPER_ONLY"] = "1"

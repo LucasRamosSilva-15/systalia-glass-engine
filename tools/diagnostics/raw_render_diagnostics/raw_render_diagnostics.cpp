@@ -25,7 +25,7 @@
 #include "ValoGlassItemV2.hpp"
 #include "ValoShadowItemV2.hpp"
 #include "ValoBackdropProviderV2.hpp"
-#include "../sge_artifact_dir.hpp"
+#include "sge_artifact_dir.hpp"
 #include <QQmlEngine>
 #include <QQmlComponent>
 

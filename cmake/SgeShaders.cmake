@@ -30,14 +30,14 @@ qt6_add_shaders(sge_shaders "sge_raw_shaders_resource"
     PREFIX
         "/raw_shaders"
     BASE
-        "tools/raw_render_diagnostics/shaders"
+        "tools/diagnostics/raw_render_diagnostics/shaders"
     FILES
-        tools/raw_render_diagnostics/shaders/raw_t2_minimal.vert
-        tools/raw_render_diagnostics/shaders/raw_t2_minimal.frag
-        tools/raw_render_diagnostics/shaders/raw_t3_ubo.vert
-        tools/raw_render_diagnostics/shaders/raw_t3_ubo.frag
-        tools/raw_render_diagnostics/shaders/raw_t4_sdf.vert
-        tools/raw_render_diagnostics/shaders/raw_t4_sdf.frag
+        tools/diagnostics/raw_render_diagnostics/shaders/raw_t2_minimal.vert
+        tools/diagnostics/raw_render_diagnostics/shaders/raw_t2_minimal.frag
+        tools/diagnostics/raw_render_diagnostics/shaders/raw_t3_ubo.vert
+        tools/diagnostics/raw_render_diagnostics/shaders/raw_t3_ubo.frag
+        tools/diagnostics/raw_render_diagnostics/shaders/raw_t4_sdf.vert
+        tools/diagnostics/raw_render_diagnostics/shaders/raw_t4_sdf.frag
 )
 target_link_libraries(sge_shaders PUBLIC
     Qt6::Core

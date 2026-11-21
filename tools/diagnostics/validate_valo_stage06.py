@@ -13,7 +13,7 @@ import sys
 import tempfile
 import time
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "maintenance"))
 from sge_evidence import EvidenceRun
 
 root = pathlib.Path(__file__).resolve().parents[1]

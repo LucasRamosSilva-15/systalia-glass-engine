@@ -13,7 +13,7 @@ import time
 import unittest
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(REPO_ROOT / "tools"))
+sys.path.insert(0, str(REPO_ROOT / "tools" / "maintenance"))
 
 from sge_evidence import (  # noqa: E402
     MANAGED_BY,
@@ -151,7 +151,7 @@ class TestEvidenceCleanup(unittest.TestCase):
     def test_interruption_preserves_evidence_with_interrupted_status(self) -> None:
         script = (
             "import pathlib, sys, time\n"
-            f"sys.path.insert(0, {str(REPO_ROOT / 'tools')!r})\n"
+            f"sys.path.insert(0, {str(REPO_ROOT / 'tools' / 'maintenance')!r})\n"
             "from sge_evidence import EvidenceRun\n"
             "with EvidenceRun('unit-sigterm') as run:\n"
             "    (run.path / 'marker.txt').write_text('running', encoding='utf-8')\n"
