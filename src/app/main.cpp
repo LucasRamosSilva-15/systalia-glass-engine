@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
 
     if (engine.rootObjects().isEmpty()) {
         qWarning() << "Tentando carregar a partir do caminho de arquivo local...";
-        engine.load(QUrl::fromLocalFile(QStringLiteral("src/qml/main.qml")));
+        engine.load(QUrl::fromLocalFile(QStringLiteral("src/shell/main.qml")));
     }
 
     if (auto *window = engine.rootObjects().isEmpty() ? nullptr
