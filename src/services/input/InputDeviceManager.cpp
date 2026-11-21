@@ -390,8 +390,13 @@ int InputDeviceManager::openRestrictedCallback(const char *path, int flags, void
             return -EINVAL;
         bool inactive = false;
         const int leaseFd = logind->takeDeviceByPath(QString::fromLocal8Bit(path), &inactive);
-        if (leaseFd < 0 || inactive)
+        if (leaseFd < 0 || inactive) {
+            quint32 major = 0, minor = 0;
+            if (leaseFd >= 0 && LogindSessionService::statDeviceMajorMinor(QString::fromLocal8Bit(path), &major, &minor)) {
+                logind->releaseDevice(major, minor);
+            }
             return -EACCES;
+        }
         const int fd = ::fcntl(leaseFd, F_DUPFD_CLOEXEC, 0);
         if (fd < 0)
             return -errno;

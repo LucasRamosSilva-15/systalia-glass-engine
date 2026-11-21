@@ -76,6 +76,12 @@ public:
     [[nodiscard]] static constexpr quint64 deviceKey(quint32 major, quint32 minor) noexcept {
         return (static_cast<quint64>(major) << 32u) | static_cast<quint64>(minor);
     }
+    [[nodiscard]] static constexpr bool shouldAbortOnLogindFailure(
+        bool isBareMetalKms,
+        quint32 effectiveUid,
+        bool allowNoLogind) noexcept {
+        return isBareMetalKms && effectiveUid != 0u && !allowNoLogind;
+    }
 
     // 3. Injeção de transport handler para testes unitários determinísticos (Mock D-Bus)
     void setCustomCallHandler(DbusCallHandler handler);

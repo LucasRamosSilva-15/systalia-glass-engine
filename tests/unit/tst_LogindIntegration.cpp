@@ -352,6 +352,12 @@ void TestLogindIntegration::sddmDesktopEntryAndSessionScriptValidation() {
     QVERIFY(desktopContent.contains(QStringLiteral("/systalia-session")));
     QVERIFY(desktopContent.contains(QStringLiteral("Type=Application")));
     QVERIFY(desktopContent.contains(QStringLiteral("DesktopNames=Systalia;VALO")));
+
+    // Política de aborto seguro quando logind falha em bare-metal sem root/override
+    QVERIFY(LogindSessionService::shouldAbortOnLogindFailure(true, 1000u, false));
+    QVERIFY(!LogindSessionService::shouldAbortOnLogindFailure(true, 0u, false));
+    QVERIFY(!LogindSessionService::shouldAbortOnLogindFailure(true, 1000u, true));
+    QVERIFY(!LogindSessionService::shouldAbortOnLogindFailure(false, 1000u, false));
 }
 
 QTEST_MAIN(TestLogindIntegration)

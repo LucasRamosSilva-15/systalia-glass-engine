@@ -6,6 +6,7 @@
 #include <QQuickGraphicsConfiguration>
 #include <QUrl>
 #include <QDebug>
+#include <unistd.h>
 #include "SystaliaCompositor.hpp"
 #include "SystemTelemetryService.hpp"
 #include "ProcessLauncherService.hpp"
@@ -42,11 +43,23 @@ int main(int argc, char *argv[]) {
     InputDeviceManager inputDeviceManager;
     if (platformCfg.mode == InputDeviceManager::SessionBareMetalKms) {
         if (logindSessionService.initializeSession(false)) {
-            logindSessionService.acquirePrimaryDrmDevice(inputDeviceManager.activeDrmDevice());
+            if (logindSessionService.acquirePrimaryDrmDevice(inputDeviceManager.activeDrmDevice()) < 0) {
+                qWarning() << "[SGE-LOGIND] Falha ao adquirir dispositivo DRM primário:"
+                           << inputDeviceManager.activeDrmDevice();
+            }
+        } else if (LogindSessionService::shouldAbortOnLogindFailure(
+                       true,
+                       static_cast<quint32>(::geteuid()),
+                       qEnvironmentVariableIsSet("SGE_ALLOW_NO_LOGIND"))) {
+            qCritical() << "[SGE-LOGIND] Sessão bare-metal abortada: falha ao assumir controle via systemd-logind"
+                        << "(defina SGE_ALLOW_NO_LOGIND=1 apenas para depuração controlada).";
+            return 1;
         } else {
-            qWarning() << "Sessão logind não inicializada; prosseguindo sem controle DRM via logind.";
+            qWarning() << "[SGE-LOGIND] Sessão logind não inicializada; prosseguindo por override explícito ou UID 0.";
         }
-        inputDeviceManager.initializeHardwareContext();
+        if (!inputDeviceManager.initializeHardwareContext()) {
+            qWarning() << "[SGE-INPUT] Backend de hardware libinput/udev não inicializado.";
+        }
     }
 
     // Registro dos tipos QML
