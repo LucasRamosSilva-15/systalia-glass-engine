@@ -17,8 +17,9 @@
 #include <utility>
 
 #include "SystaliaCompositor.hpp"
-#include "SystaliaGlassItem.hpp"
 #include "wayland-z_systalia_surface_v1-client-protocol.h"
+
+void qml_register_types_Systalia_Engine();
 
 // A real wire client connected to QtWayland's wl_client through a local socketpair.
 // No private Qt headers or server request handlers are called directly.
@@ -156,7 +157,7 @@ void TestSystaliaProtocol::initTestCase() {
     m_runtime = std::make_unique<QTemporaryDir>();
     QVERIFY(m_runtime->isValid());
     qputenv("XDG_RUNTIME_DIR", m_runtime->path().toUtf8());
-    qmlRegisterType<SystaliaGlassItem>("Systalia.Engine", 1, 0, "SystaliaGlassItem");
+    qml_register_types_Systalia_Engine();
 }
 
 void TestSystaliaProtocol::init() {
@@ -265,9 +266,9 @@ void TestSystaliaProtocol::qmlItemTracksMetadataChanges() {
     component.setData(R"(
         import QtQuick
         import Systalia.Engine
-        SystaliaGlassItem {
+        ValoGlassItemV2 {
             required property var metadata
-            radii: metadata.radii
+            cornerRadii: metadata.radii
             slant: metadata.slant
             ior: metadata.ior
             chromaticDispersion: metadata.dispersion
@@ -283,7 +284,7 @@ void TestSystaliaProtocol::qmlItemTracksMetadataChanges() {
         wl_fixed_from_double(1.5), wl_fixed_from_double(0.0625),
         wl_fixed_from_double(32.25));
     QVERIFY(client.roundtrip());
-    QCOMPARE(item->property("radii").value<QVector4D>(),
+    QCOMPARE(item->property("cornerRadii").value<QVector4D>(),
              QVector4D(16.25f, 28.5f, 32.75f, 1.0f / 256.0f));
     QCOMPARE(item->property("slant").toFloat(), -0.375f);
     QCOMPARE(item->property("ior").toFloat(), 1.5f);
