@@ -8,11 +8,11 @@
 #include <cmath>
 #include <memory>
 
-#include "compositor/OutputManagerService.hpp"
+#include "compositor/outputs/OutputManagerService.hpp"
 #include "graphics/ValoGlassItemV2.hpp"
 #include "graphics/ValoBackdropProviderV2.hpp"
-#include "services/LiquidTilingService.hpp"
-#include "services/WorkspaceManagerService.hpp"
+#include "services/windows/LiquidTilingService.hpp"
+#include "services/windows/WorkspaceManagerService.hpp"
 
 class tst_Phase4Audit : public QObject {
     Q_OBJECT

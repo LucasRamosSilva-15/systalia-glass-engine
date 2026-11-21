@@ -7,10 +7,10 @@
 #include <QtWaylandCompositor/QWaylandSeat>
 #include <fcntl.h>
 
-#include "compositor/OutputManagerService.hpp"
-#include "compositor/SystaliaCompositor.hpp"
-#include "services/InputDeviceManager.hpp"
-#include "services/WorkspaceManagerService.hpp"
+#include "compositor/outputs/OutputManagerService.hpp"
+#include "compositor/core/SystaliaCompositor.hpp"
+#include "services/input/InputDeviceManager.hpp"
+#include "services/windows/WorkspaceManagerService.hpp"
 
 class tst_InputHardwareBackend final : public QObject {
     Q_OBJECT

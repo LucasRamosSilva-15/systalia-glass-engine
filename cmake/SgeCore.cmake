@@ -21,34 +21,34 @@ qt_add_library(sge_core STATIC
     src/graphics/ValoGpuBlurPipelineV2.cpp
     src/graphics/ValoShadowItemV2.hpp
     src/graphics/ValoShadowItemV2.cpp
-    src/compositor/SystaliaSurfaceExtension.hpp
-    src/compositor/SystaliaSurfaceExtension.cpp
-    src/compositor/SystaliaCompositor.hpp
-    src/compositor/SystaliaCompositor.cpp
-    src/compositor/WindowStackModel.hpp
-    src/compositor/WindowStackModel.cpp
-    src/compositor/OutputManagerService.hpp
-    src/compositor/OutputManagerService.cpp
-    src/compositor/XWaylandManager.hpp
-    src/compositor/XWaylandManager.cpp
-    src/services/SystemTelemetryService.hpp
-    src/services/SystemTelemetryService.cpp
-    src/services/ProcessLauncherService.hpp
-    src/services/ProcessLauncherService.cpp
-    src/services/AppRegistryService.hpp
-    src/services/AppRegistryService.cpp
-    src/services/NotificationServer.hpp
-    src/services/NotificationServer.cpp
-    src/services/SystemControlService.hpp
-    src/services/SystemControlService.cpp
-    src/services/WorkspaceManagerService.hpp
-    src/services/WorkspaceManagerService.cpp
-    src/services/LiquidTilingService.hpp
-    src/services/LiquidTilingService.cpp
-    src/services/InputDeviceManager.hpp
-    src/services/InputDeviceManager.cpp
-    src/services/LogindSessionService.hpp
-    src/services/LogindSessionService.cpp
+    src/compositor/surfaces/SystaliaSurfaceExtension.hpp
+    src/compositor/surfaces/SystaliaSurfaceExtension.cpp
+    src/compositor/core/SystaliaCompositor.hpp
+    src/compositor/core/SystaliaCompositor.cpp
+    src/compositor/windows/WindowStackModel.hpp
+    src/compositor/windows/WindowStackModel.cpp
+    src/compositor/outputs/OutputManagerService.hpp
+    src/compositor/outputs/OutputManagerService.cpp
+    src/compositor/xwayland/XWaylandManager.hpp
+    src/compositor/xwayland/XWaylandManager.cpp
+    src/services/system/SystemTelemetryService.hpp
+    src/services/system/SystemTelemetryService.cpp
+    src/services/applications/ProcessLauncherService.hpp
+    src/services/applications/ProcessLauncherService.cpp
+    src/services/applications/AppRegistryService.hpp
+    src/services/applications/AppRegistryService.cpp
+    src/services/notifications/NotificationServer.hpp
+    src/services/notifications/NotificationServer.cpp
+    src/services/system/SystemControlService.hpp
+    src/services/system/SystemControlService.cpp
+    src/services/windows/WorkspaceManagerService.hpp
+    src/services/windows/WorkspaceManagerService.cpp
+    src/services/windows/LiquidTilingService.hpp
+    src/services/windows/LiquidTilingService.cpp
+    src/services/input/InputDeviceManager.hpp
+    src/services/input/InputDeviceManager.cpp
+    src/services/session/LogindSessionService.hpp
+    src/services/session/LogindSessionService.cpp
     src/theme/ValoTokens.hpp
 )
 
@@ -60,8 +60,17 @@ target_include_directories(sge_core PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>"
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/compositor
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/services
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/compositor/core
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/compositor/surfaces
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/compositor/windows
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/compositor/outputs
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/compositor/xwayland
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/services/applications
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/services/input
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/services/session
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/services/windows
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/services/notifications
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/services/system
     ${CMAKE_CURRENT_SOURCE_DIR}/src/theme
 )
 

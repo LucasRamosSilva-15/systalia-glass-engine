@@ -14,7 +14,7 @@
 #include <QJSValue>
 #include <QtWaylandCompositor/QWaylandSeat>
 #include <QtWaylandCompositor/QWaylandKeyboard>
-#include "compositor/SystaliaCompositor.hpp"
+#include "compositor/core/SystaliaCompositor.hpp"
 
 // Measurements from the real SDE, enabled only for this diagnostic session.
 template <typename Evaluate>
