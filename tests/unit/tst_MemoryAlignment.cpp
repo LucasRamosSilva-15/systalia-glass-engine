@@ -2,7 +2,7 @@
 #include <cstddef>
 #include <array>
 
-#include "graphics/SystaliaSurfacePropsV2.hpp"
+#include "graphics/v2/core/SystaliaSurfacePropsV2.hpp"
 
 using namespace Systalia::Gfx::V2;
 

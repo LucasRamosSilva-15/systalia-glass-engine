@@ -1,26 +1,26 @@
 # Biblioteca estática central com o motor óptico, compositor Wayland e serviços de sistema
 qt_add_library(sge_core STATIC
-    src/graphics/ValoStd140Matrix.hpp
-    src/graphics/SystaliaClientClip.hpp
-    src/graphics/SystaliaSurfacePropsV2.hpp
-    src/graphics/ValoGeometryEngineV2.hpp
-    src/graphics/ValoGeometryEngineV2.cpp
-    src/graphics/ValoOrganicTransform.hpp
-    src/graphics/ValoOrganicTransform.cpp
-    src/graphics/ValoOpticalContext.hpp
-    src/graphics/ValoOpticalContext.cpp
-    src/graphics/ValoGlassMaterialV2.hpp
-    src/graphics/ValoGlassMaterialV2.cpp
-    src/graphics/ValoGlassItemV2.hpp
-    src/graphics/ValoGlassItemV2.cpp
-    src/graphics/ValoBackdropProviderV2.hpp
-    src/graphics/ValoBackdropProviderV2.cpp
-    src/graphics/ValoBlurPipelineV2.hpp
-    src/graphics/ValoBlurPipelineV2.cpp
-    src/graphics/ValoGpuBlurPipelineV2.hpp
-    src/graphics/ValoGpuBlurPipelineV2.cpp
-    src/graphics/ValoShadowItemV2.hpp
-    src/graphics/ValoShadowItemV2.cpp
+    src/graphics/shared/ValoStd140Matrix.hpp
+    src/graphics/shared/SystaliaClientClip.hpp
+    src/graphics/v2/core/SystaliaSurfacePropsV2.hpp
+    src/graphics/v2/geometry/ValoGeometryEngineV2.hpp
+    src/graphics/v2/geometry/ValoGeometryEngineV2.cpp
+    src/graphics/v2/geometry/ValoOrganicTransform.hpp
+    src/graphics/v2/geometry/ValoOrganicTransform.cpp
+    src/graphics/v2/core/ValoOpticalContext.hpp
+    src/graphics/v2/core/ValoOpticalContext.cpp
+    src/graphics/v2/materials/ValoGlassMaterialV2.hpp
+    src/graphics/v2/materials/ValoGlassMaterialV2.cpp
+    src/graphics/v2/materials/ValoGlassItemV2.hpp
+    src/graphics/v2/materials/ValoGlassItemV2.cpp
+    src/graphics/v2/backdrop/ValoBackdropProviderV2.hpp
+    src/graphics/v2/backdrop/ValoBackdropProviderV2.cpp
+    src/graphics/v2/blur/ValoBlurPipelineV2.hpp
+    src/graphics/v2/blur/ValoBlurPipelineV2.cpp
+    src/graphics/v2/blur/ValoGpuBlurPipelineV2.hpp
+    src/graphics/v2/blur/ValoGpuBlurPipelineV2.cpp
+    src/graphics/v2/shadows/ValoShadowItemV2.hpp
+    src/graphics/v2/shadows/ValoShadowItemV2.cpp
     src/compositor/surfaces/SystaliaSurfaceExtension.hpp
     src/compositor/surfaces/SystaliaSurfaceExtension.cpp
     src/compositor/core/SystaliaCompositor.hpp
@@ -49,7 +49,7 @@ qt_add_library(sge_core STATIC
     src/services/input/InputDeviceManager.cpp
     src/services/session/LogindSessionService.hpp
     src/services/session/LogindSessionService.cpp
-    src/theme/ValoTokens.hpp
+    src/theme/tokens/ValoTokens.hpp
 )
 
 qt6_generate_wayland_protocol_server_sources(sge_core
@@ -59,7 +59,13 @@ qt6_generate_wayland_protocol_server_sources(sge_core
 target_include_directories(sge_core PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>"
     ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/shared
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/v2/core
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/v2/geometry
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/v2/materials
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/v2/backdrop
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/v2/blur
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/v2/shadows
     ${CMAKE_CURRENT_SOURCE_DIR}/src/compositor/core
     ${CMAKE_CURRENT_SOURCE_DIR}/src/compositor/surfaces
     ${CMAKE_CURRENT_SOURCE_DIR}/src/compositor/windows
@@ -71,7 +77,7 @@ target_include_directories(sge_core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/services/windows
     ${CMAKE_CURRENT_SOURCE_DIR}/src/services/notifications
     ${CMAKE_CURRENT_SOURCE_DIR}/src/services/system
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/theme
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/theme/tokens
 )
 
 target_link_libraries(sge_core PUBLIC

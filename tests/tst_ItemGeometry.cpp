@@ -1,7 +1,7 @@
 #include <QTest>
 #include <QSGGeometry>
-#include "graphics/ValoGlassItemV2.hpp"
-#include "graphics/SystaliaSurfacePropsV2.hpp"
+#include "graphics/v2/materials/ValoGlassItemV2.hpp"
+#include "graphics/v2/core/SystaliaSurfacePropsV2.hpp"
 
 using namespace Systalia::Gfx::V2;
 

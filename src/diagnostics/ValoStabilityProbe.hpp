@@ -23,9 +23,9 @@
 #include <QElapsedTimer>
 #include <QQuickPaintedItem>
 #include <QPainter>
-#include "graphics/ValoGlassItemV2.hpp"
-#include "graphics/ValoBackdropProviderV2.hpp"
-#include "graphics/ValoOpticalContext.hpp"
+#include "graphics/v2/materials/ValoGlassItemV2.hpp"
+#include "graphics/v2/backdrop/ValoBackdropProviderV2.hpp"
+#include "graphics/v2/core/ValoOpticalContext.hpp"
 
 // Enforce the stated "no interaction" condition on the observation window only.
 // The normal SDE and the profile-button regression keep their input unchanged.

@@ -6,7 +6,7 @@
 #include <QJsonObject>
 #include <QFile>
 
-#include "theme/ValoTokens.hpp"
+#include "theme/tokens/ValoTokens.hpp"
 
 class TestValoTheme final : public QObject {
     Q_OBJECT

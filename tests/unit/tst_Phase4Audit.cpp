@@ -9,8 +9,8 @@
 #include <memory>
 
 #include "compositor/outputs/OutputManagerService.hpp"
-#include "graphics/ValoGlassItemV2.hpp"
-#include "graphics/ValoBackdropProviderV2.hpp"
+#include "graphics/v2/materials/ValoGlassItemV2.hpp"
+#include "graphics/v2/backdrop/ValoBackdropProviderV2.hpp"
 #include "services/windows/LiquidTilingService.hpp"
 #include "services/windows/WorkspaceManagerService.hpp"
 

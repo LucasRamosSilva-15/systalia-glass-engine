@@ -1,6 +1,6 @@
 #include <QTest>
 #include <QFile>
-#include "graphics/SystaliaSurfacePropsV2.hpp"
+#include "graphics/v2/core/SystaliaSurfacePropsV2.hpp"
 
 using namespace Systalia::Gfx::V2;
 

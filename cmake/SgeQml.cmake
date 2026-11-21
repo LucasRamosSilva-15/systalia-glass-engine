@@ -1,5 +1,5 @@
 # Módulo QML Systalia.Engine 1.0, singletons, recursos Figma e preservação de aliases QRC
-set_source_files_properties(src/theme/qml/SystaliaTheme.qml src/theme/qml/ValoTheme.qml PROPERTIES
+set_source_files_properties(src/theme/compatibility/v1/SystaliaTheme.qml src/theme/qml/ValoTheme.qml PROPERTIES
     QT_QML_SINGLETON_TYPE TRUE
 )
 
@@ -19,7 +19,7 @@ set_source_files_properties(src/shell/WorkspaceViewport.qml PROPERTIES QT_RESOUR
 set_source_files_properties(src/shell/WaylandClientView.qml PROPERTIES QT_RESOURCE_ALIAS "src/qml/WaylandClientView.qml")
 set_source_files_properties(src/shell/WaylandWindowContainer.qml PROPERTIES QT_RESOURCE_ALIAS "src/qml/WaylandWindowContainer.qml")
 
-set_source_files_properties(src/theme/qml/SystaliaTheme.qml PROPERTIES QT_RESOURCE_ALIAS "src/qml/theme/SystaliaTheme.qml")
+set_source_files_properties(src/theme/compatibility/v1/SystaliaTheme.qml PROPERTIES QT_RESOURCE_ALIAS "src/qml/theme/SystaliaTheme.qml")
 set_source_files_properties(src/theme/qml/ValoTheme.qml PROPERTIES QT_RESOURCE_ALIAS "src/qml/theme/ValoTheme.qml")
 
 foreach(ctrl_qml IN ITEMS
@@ -61,7 +61,7 @@ foreach(gfx_qml IN ITEMS
     ValoDockV2.qml
     ValoDockV2Scene.qml
 )
-    set_source_files_properties("src/graphics/qml/${gfx_qml}" PROPERTIES QT_RESOURCE_ALIAS "src/qml/graphics/v2/${gfx_qml}")
+    set_source_files_properties("src/graphics/v2/qml/${gfx_qml}" PROPERTIES QT_RESOURCE_ALIAS "src/qml/graphics/v2/${gfx_qml}")
 endforeach()
 
 qt_add_qml_module(sge_core
@@ -72,7 +72,7 @@ qt_add_qml_module(sge_core
     QML_FILES
         src/shell/main.qml
         src/shell/WorkspaceViewport.qml
-        src/theme/qml/SystaliaTheme.qml
+        src/theme/compatibility/v1/SystaliaTheme.qml
         src/theme/qml/ValoTheme.qml
         src/shell/WaylandClientView.qml
         src/shell/WaylandWindowContainer.qml
@@ -94,15 +94,15 @@ qt_add_qml_module(sge_core
         src/shell/SystaliaTopBarV2.qml
         src/shell/SystaliaFilesWindowV2.qml
         src/shell/SystaliaControlCenterV2.qml
-        src/graphics/qml/ValoMaterialSurfaceV2.qml
-        src/graphics/qml/ValoInternalWindowBackdropV2.qml
-        src/graphics/qml/ValoSingleWindowBackdropV2.qml
-        src/graphics/qml/ValoLimitedBackdropV2.qml
-        src/graphics/qml/ValoOpticalParticlesV2.qml
-        src/graphics/qml/ValoSurfaceV2.qml
-        src/graphics/qml/ValoDockItemV2.qml
-        src/graphics/qml/ValoDockV2.qml
-        src/graphics/qml/ValoDockV2Scene.qml
+        src/graphics/v2/qml/ValoMaterialSurfaceV2.qml
+        src/graphics/v2/qml/ValoInternalWindowBackdropV2.qml
+        src/graphics/v2/qml/ValoSingleWindowBackdropV2.qml
+        src/graphics/v2/qml/ValoLimitedBackdropV2.qml
+        src/graphics/v2/qml/ValoOpticalParticlesV2.qml
+        src/graphics/v2/qml/ValoSurfaceV2.qml
+        src/graphics/v2/qml/ValoDockItemV2.qml
+        src/graphics/v2/qml/ValoDockV2.qml
+        src/graphics/v2/qml/ValoDockV2Scene.qml
     RESOURCES
         ${sge_valo_assets}
     NO_PLUGIN
