@@ -593,6 +593,25 @@ private slots:
         QVERIFY(result.first().at(2).toString().contains("denied:poweroff"));
     }
 
+    void systemControlDestructorStopsRunningProbesCleanly() {
+        QTemporaryDir binaries;
+        QVERIFY(binaries.isValid());
+        QFile executable(binaries.filePath("wpctl"));
+        QVERIFY(executable.open(QIODevice::WriteOnly));
+        executable.write("#!/bin/sh\nsleep 10\n");
+        executable.close();
+        QVERIFY(executable.setPermissions(QFileDevice::ReadOwner | QFileDevice::WriteOwner | QFileDevice::ExeOwner));
+
+        const auto previousPath = qgetenv("PATH");
+        qputenv("PATH", binaries.path().toUtf8());
+        QTest::failOnWarning(QRegularExpression("QProcess: Destroyed while process"));
+        {
+            SystemControlService control;
+            QVERIFY(!control.findChildren<QProcess *>().isEmpty());
+        }
+        qputenv("PATH", previousPath);
+    }
+
     void desktopTerminalRequirementReachesTheModel() {
         QTemporaryDir entries;
         QFile file(entries.filePath("editor.desktop"));

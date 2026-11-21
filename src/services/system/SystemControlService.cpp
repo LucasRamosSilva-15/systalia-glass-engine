@@ -34,6 +34,27 @@ SystemControlService::SystemControlService(QObject *parent)
     m_refreshTimer.start();
 }
 
+SystemControlService::~SystemControlService() {
+    m_refreshTimer.stop();
+    m_volumeDebounce.stop();
+    m_brightnessDebounce.stop();
+
+    const auto processes = findChildren<QProcess *>();
+    for (QProcess *process : processes) {
+        if (!process) {
+            continue;
+        }
+        process->disconnect(this);
+        if (process->state() != QProcess::NotRunning) {
+            process->terminate();
+            if (!process->waitForFinished(150)) {
+                process->kill();
+                process->waitForFinished(150);
+            }
+        }
+    }
+}
+
 void SystemControlService::refresh() {
     probeAudio();
     probeBrightness();

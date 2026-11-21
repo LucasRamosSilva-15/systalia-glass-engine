@@ -21,6 +21,7 @@ class SystemControlService final : public QObject {
 
 public:
     explicit SystemControlService(QObject *parent = nullptr);
+    ~SystemControlService() override;
 
     int volume() const { return m_volume; }
     bool isMuted() const { return m_isMuted; }
