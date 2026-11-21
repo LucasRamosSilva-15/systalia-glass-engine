@@ -6,7 +6,6 @@
 #include <memory>
 
 #include "LiquidTilingService.hpp"
-#include "SystaliaGlassItem.hpp"
 
 void qml_register_types_Systalia_Engine();
 
@@ -27,7 +26,6 @@ private slots:
 
 void TestLiquidTiling::initTestCase() {
     qml_register_types_Systalia_Engine();
-    qmlRegisterType<SystaliaGlassItem>("Systalia.Engine", 1, 0, "SystaliaGlassItem");
 }
 
 void TestLiquidTiling::calculateSnapTargetResolvesEdgesAndQuadrantsOn1080p() {
