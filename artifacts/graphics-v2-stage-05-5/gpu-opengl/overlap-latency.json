@@ -1,5 +1,0 @@
-{
-    "changeToReadbackMs": 20.620382,
-    "note": "Diagnostic upper bound including qWait, scheduling and readback; not presentation latency",
-    "readbackAttempts": 1
-}
