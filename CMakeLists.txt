@@ -45,12 +45,7 @@ include(cmake/SgeShaders.cmake)
 # Biblioteca estática central com o motor, itens visuais, compositor Wayland e módulo QML
 qt_add_library(sge_core STATIC
     src/gfx/ValoStd140Matrix.hpp
-    src/gfx/SystaliaSurfaceProps.hpp
     src/gfx/SystaliaClientClip.hpp
-    src/gfx/SystaliaGlassMaterial.hpp
-    src/gfx/SystaliaGlassMaterial.cpp
-    src/gfx/SystaliaGlassItem.hpp
-    src/gfx/SystaliaGlassItem.cpp
     src/compositor/SystaliaSurfaceExtension.hpp
     src/compositor/SystaliaSurfaceExtension.cpp
     src/compositor/SystaliaCompositor.hpp
@@ -167,7 +162,6 @@ qt_add_qml_module(sge_core
         src/qml/theme/ValoTheme.qml
         src/qml/WaylandClientView.qml
         src/qml/WaylandWindowContainer.qml
-        src/qml/ValoGlass.qml
         src/qml/shell/SystaliaTopBar.qml
         src/qml/shell/SystaliaDock.qml
         src/qml/shell/ValoDockItem.qml

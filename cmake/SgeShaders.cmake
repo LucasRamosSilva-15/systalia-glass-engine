@@ -1,14 +1,5 @@
 # Biblioteca estática com os bytecodes SPIR-V compilados via ShaderTools
 qt_add_library(sge_shaders STATIC)
-qt6_add_shaders(sge_shaders "sge_shaders_resource"
-    PREFIX
-        "/shaders"
-    BASE
-        "shaders"
-    FILES
-        shaders/valo_optical.vert
-        shaders/valo_optical.frag
-)
 qt6_add_shaders(sge_shaders "sge_shaders_v2_resource"
     PREFIX
         "/shaders/v2"
