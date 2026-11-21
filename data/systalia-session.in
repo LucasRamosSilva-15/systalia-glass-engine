@@ -2,11 +2,19 @@
 export XDG_CURRENT_DESKTOP="Systalia:VALO"
 export XDG_SESSION_TYPE="wayland"
 export XDG_SESSION_DESKTOP="systalia"
-export QT_QPA_PLATFORM="wayland;eglfs"
 export GDK_BACKEND="wayland,x11"
 export MOZ_ENABLE_WAYLAND=1
 export ELECTRON_OZONE_PLATFORM_HINT="auto"
 
-# Lançar compositor nativo
-exec /usr/bin/systalia_glass_engine
+# Resolve o executável relativamente ao script, ao prefixo configurado ou ao PATH
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+if [ -x "$SCRIPT_DIR/systalia_glass_engine" ]; then
+    EXEC_BIN="$SCRIPT_DIR/systalia_glass_engine"
+elif [ -x "@CMAKE_INSTALL_FULL_BINDIR@/systalia_glass_engine" ]; then
+    EXEC_BIN="@CMAKE_INSTALL_FULL_BINDIR@/systalia_glass_engine"
+else
+    EXEC_BIN="systalia_glass_engine"
+fi
 
+# Lançar compositor nativo preservando argumentos opcionais
+exec "$EXEC_BIN" "$@"

@@ -322,12 +322,16 @@ void TestLogindIntegration::activePropertyChangeUpdatesSessionState() {
 }
 
 void TestLogindIntegration::sddmDesktopEntryAndSessionScriptValidation() {
-    const QString scriptPath = QStringLiteral(SGE_SOURCE_DIR "/data/systalia-session");
-    const QString desktopPath = QStringLiteral(SGE_SOURCE_DIR "/data/systalia.desktop");
+    const QString scriptTemplatePath = QStringLiteral(SGE_SOURCE_DIR "/data/systalia-session.in");
+    const QString desktopTemplatePath = QStringLiteral(SGE_SOURCE_DIR "/data/systalia.desktop.in");
+    const QString scriptPath = QStringLiteral(SGE_BINARY_DIR "/data/systalia-session");
+    const QString desktopPath = QStringLiteral(SGE_BINARY_DIR "/data/systalia.desktop");
+
+    QVERIFY2(QFileInfo::exists(scriptTemplatePath), qPrintable(scriptTemplatePath));
+    QVERIFY2(QFileInfo::exists(desktopTemplatePath), qPrintable(desktopTemplatePath));
 
     QFileInfo scriptInfo(scriptPath);
     QVERIFY2(scriptInfo.exists(), qPrintable(scriptPath));
-    QVERIFY(scriptInfo.permission(QFileDevice::ExeOwner));
 
     QFile scriptFile(scriptPath);
     QVERIFY(scriptFile.open(QIODevice::ReadOnly | QIODevice::Text));
@@ -336,15 +340,16 @@ void TestLogindIntegration::sddmDesktopEntryAndSessionScriptValidation() {
     QVERIFY(scriptContent.contains(QStringLiteral("export XDG_CURRENT_DESKTOP=\"Systalia:VALO\"")));
     QVERIFY(scriptContent.contains(QStringLiteral("export XDG_SESSION_TYPE=\"wayland\"")));
     QVERIFY(scriptContent.contains(QStringLiteral("export XDG_SESSION_DESKTOP=\"systalia\"")));
-    QVERIFY(scriptContent.contains(QStringLiteral("export QT_QPA_PLATFORM=\"wayland;eglfs\"")));
-    QVERIFY(scriptContent.contains(QStringLiteral("exec /usr/bin/systalia_glass_engine")));
+    QVERIFY(!scriptContent.contains(QStringLiteral("@CMAKE_INSTALL_FULL_BINDIR@")));
+    QVERIFY(scriptContent.contains(QStringLiteral("exec \"$EXEC_BIN\" \"$@\"")));
 
     QFile desktopFile(desktopPath);
     QVERIFY2(desktopFile.open(QIODevice::ReadOnly | QIODevice::Text), qPrintable(desktopPath));
     const QString desktopContent = QString::fromUtf8(desktopFile.readAll());
     QVERIFY(desktopContent.contains(QStringLiteral("[Desktop Entry]")));
     QVERIFY(desktopContent.contains(QStringLiteral("Name=Systalia (VALO Glass)")));
-    QVERIFY(desktopContent.contains(QStringLiteral("Exec=/usr/bin/systalia-session")));
+    QVERIFY(!desktopContent.contains(QStringLiteral("@CMAKE_INSTALL_FULL_BINDIR@")));
+    QVERIFY(desktopContent.contains(QStringLiteral("/systalia-session")));
     QVERIFY(desktopContent.contains(QStringLiteral("Type=Application")));
     QVERIFY(desktopContent.contains(QStringLiteral("DesktopNames=Systalia;VALO")));
 }

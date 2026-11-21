@@ -248,6 +248,7 @@ endif()
 sge_add_expanded_test(tst_logind_integration unit/tst_LogindIntegration.cpp unit)
 target_compile_definitions(tst_logind_integration PRIVATE
     SGE_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+    SGE_BINARY_DIR="${PROJECT_BINARY_DIR}"
 )
 target_link_libraries(tst_logind_integration PRIVATE Qt6::DBus)
 sge_add_expanded_test(tst_xwayland_integration unit/tst_XWaylandIntegration.cpp unit)

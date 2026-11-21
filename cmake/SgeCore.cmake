@@ -106,3 +106,7 @@ endif()
 if(TARGET PkgConfig::WAYLAND_SERVER)
     target_link_libraries(sge_core PUBLIC PkgConfig::WAYLAND_SERVER)
 endif()
+
+target_compile_definitions(sge_core PRIVATE
+    SGE_DATA_INSTALL_DIR="${CMAKE_INSTALL_FULL_DATADIR}/systalia"
+)

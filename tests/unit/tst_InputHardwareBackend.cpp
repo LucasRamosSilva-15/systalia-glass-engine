@@ -17,6 +17,7 @@ class tst_InputHardwareBackend final : public QObject {
 
 private slots:
     void platformEnvironmentDetectionForHeadlessNestedAndBareMetal();
+    void kmsConfigResolutionAcrossInstallPrefixesAndEnv();
     void kmsNativeModeSelectionAndEglfsJsonGeneration();
     void libinputPipelineToWaylandSeatAndGestureRouting();
     void pointerBoundaryClampingAgainstKmsGeometry();
@@ -231,6 +232,41 @@ void tst_InputHardwareBackend::pointerBoundaryClampingAgainstKmsGeometry() {
     const QPointF absMid = inputMgr.processLibinputPointerMotionAbsolute(0.5, 0.5);
     QVERIFY(absMid.x() >= 1279.0 && absMid.x() <= 1280.0);
     QVERIFY(absMid.y() >= 719.0 && absMid.y() <= 720.0);
+}
+
+void tst_InputHardwareBackend::kmsConfigResolutionAcrossInstallPrefixesAndEnv() {
+    QTemporaryDir tempDir;
+    QVERIFY(tempDir.isValid());
+
+    const QString shareDir = tempDir.filePath(QStringLiteral("share/systalia"));
+    QVERIFY(QDir().mkpath(shareDir));
+    const QString prefixConfig = shareDir + QStringLiteral("/eglfs_kms.json");
+    {
+        QFile f(prefixConfig);
+        QVERIFY(f.open(QIODevice::WriteOnly));
+        f.write(R"({"device":"/dev/dri/card0"})");
+    }
+
+    // 1. Quando o caminho relativo não existe no CWD, resolve pelo diretório de instalação extra
+    const QString resolvedPrefix = InputDeviceManager::resolveKmsConfigPath(
+        QStringLiteral("nonexistent/config/eglfs_kms.json"),
+        QStringList{shareDir});
+    QCOMPARE(QFileInfo(resolvedPrefix).canonicalFilePath(),
+             QFileInfo(prefixConfig).canonicalFilePath());
+
+    // 2. Variável de ambiente QT_QPA_EGLFS_KMS_CONFIG existente tem prioridade
+    const QString envConfig = tempDir.filePath(QStringLiteral("override_kms.json"));
+    {
+        QFile f(envConfig);
+        QVERIFY(f.open(QIODevice::WriteOnly));
+        f.write(R"({"device":"/dev/dri/card1"})");
+    }
+    const QString resolvedEnv = InputDeviceManager::resolveKmsConfigPath(
+        prefixConfig,
+        QStringList{shareDir},
+        envConfig.toUtf8());
+    QCOMPARE(QFileInfo(resolvedEnv).canonicalFilePath(),
+             QFileInfo(envConfig).canonicalFilePath());
 }
 
 QTEST_MAIN(tst_InputHardwareBackend)

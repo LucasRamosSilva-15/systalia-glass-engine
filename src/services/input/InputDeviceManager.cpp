@@ -5,7 +5,9 @@
 #include "WorkspaceManagerService.hpp"
 
 #include <QDebug>
+#include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -13,6 +15,7 @@
 #include <QMouseEvent>
 #include <QGuiApplication>
 #include <QQuickWindow>
+#include <QStandardPaths>
 #include <QtWaylandCompositor/QWaylandOutput>
 #include <QtWaylandCompositor/QWaylandKeyboard>
 #include <QtWaylandCompositor/QWaylandPointer>
@@ -141,9 +144,64 @@ InputDeviceManager::PlatformEnvironmentConfig InputDeviceManager::evaluatePlatfo
     return cfg;
 }
 
+QString InputDeviceManager::resolveKmsConfigPath(
+    const QString &preferredPath,
+    const QStringList &extraSearchDirs,
+    const QByteArray &existingEnvKmsConfig) {
+    const QString envPath = QString::fromUtf8(existingEnvKmsConfig.trimmed());
+    if (!envPath.isEmpty()) {
+        const QFileInfo envInfo(envPath);
+        if (envInfo.exists() && envInfo.isFile()) {
+            return envInfo.canonicalFilePath().isEmpty() ? envPath : envInfo.canonicalFilePath();
+        }
+    }
+
+    const QString trimmedPreferred = preferredPath.trimmed();
+    if (!trimmedPreferred.isEmpty()) {
+        const QFileInfo prefInfo(trimmedPreferred);
+        if (prefInfo.exists() && prefInfo.isFile()) {
+            return prefInfo.canonicalFilePath().isEmpty() ? trimmedPreferred : prefInfo.canonicalFilePath();
+        }
+    }
+
+    QStringList candidates;
+    for (const QString &dir : extraSearchDirs) {
+        if (!dir.trimmed().isEmpty()) {
+            candidates.append(QDir(dir).filePath(QStringLiteral("eglfs_kms.json")));
+        }
+    }
+
+    const QString userCfgDir = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation);
+    if (!userCfgDir.isEmpty()) {
+        candidates.append(QDir(userCfgDir).filePath(QStringLiteral("systalia/eglfs_kms.json")));
+    }
+
+    const QString exePath = QFileInfo(QStringLiteral("/proc/self/exe")).symLinkTarget();
+    if (!exePath.isEmpty()) {
+        const QDir exeDir = QFileInfo(exePath).dir();
+        candidates.append(exeDir.filePath(QStringLiteral("config/eglfs_kms.json")));
+        candidates.append(QDir::cleanPath(exeDir.filePath(QStringLiteral("../share/systalia/eglfs_kms.json"))));
+    }
+
+#ifdef SGE_DATA_INSTALL_DIR
+    candidates.append(QDir(QStringLiteral(SGE_DATA_INSTALL_DIR)).filePath(QStringLiteral("eglfs_kms.json")));
+#endif
+    candidates.append(QStringLiteral("/etc/systalia/eglfs_kms.json"));
+    candidates.append(QStringLiteral("/usr/share/systalia/eglfs_kms.json"));
+
+    for (const QString &candidate : candidates) {
+        const QFileInfo info(candidate);
+        if (info.exists() && info.isFile()) {
+            return info.canonicalFilePath().isEmpty() ? candidate : info.canonicalFilePath();
+        }
+    }
+
+    return QString();
+}
+
 InputDeviceManager::PlatformEnvironmentConfig InputDeviceManager::configureProcessPlatformEnvironment(
     const QString &kmsConfigPath) {
-    const PlatformEnvironmentConfig cfg = evaluatePlatformEnvironment(
+    PlatformEnvironmentConfig cfg = evaluatePlatformEnvironment(
         qgetenv("WAYLAND_DISPLAY"),
         qgetenv("DISPLAY"),
         qgetenv("QT_QPA_PLATFORM"),
@@ -155,8 +213,14 @@ InputDeviceManager::PlatformEnvironmentConfig InputDeviceManager::configureProce
         qputenv("QT_QPA_PLATFORM", cfg.qtQpaPlatform);
         qputenv("QT_QPA_EGLFS_INTEGRATION", cfg.qtQpaEglfsIntegration);
         qputenv("QT_QPA_EGLFS_KMS_ATOMIC", QByteArrayLiteral("1"));
-        if (!cfg.eglfsKmsConfigPath.isEmpty() && QFile::exists(QString::fromUtf8(cfg.eglfsKmsConfigPath))) {
+        const QString resolvedKms = resolveKmsConfigPath(
+            kmsConfigPath, QStringList(), qgetenv("QT_QPA_EGLFS_KMS_CONFIG"));
+        if (!resolvedKms.isEmpty()) {
+            cfg.eglfsKmsConfigPath = resolvedKms.toUtf8();
             qputenv("QT_QPA_EGLFS_KMS_CONFIG", cfg.eglfsKmsConfigPath);
+        } else {
+            cfg.eglfsKmsConfigPath.clear();
+            qWarning() << "Nenhum arquivo eglfs_kms.json encontrado; eglfs_kms usará detecção padrão do Qt.";
         }
     } else if (cfg.mode == SessionNested) {
         if (qgetenv("QT_QPA_PLATFORM").trimmed().isEmpty()) {

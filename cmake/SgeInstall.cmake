@@ -16,17 +16,33 @@ if(qt_core_type STREQUAL "SHARED_LIBRARY")
     set_property(TARGET systalia_glass_engine PROPERTY QT_QML_MODULE_NO_IMPORT_SCAN TRUE)
 endif()
 
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/data/systalia-session.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/data/systalia-session"
+    @ONLY
+)
+
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/data/systalia.desktop.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/data/systalia.desktop"
+    @ONLY
+)
+
 install(TARGETS systalia_glass_engine
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-install(PROGRAMS data/systalia-session
+install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/data/systalia-session"
     DESTINATION ${CMAKE_INSTALL_BINDIR}
     PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
                 GROUP_READ GROUP_EXECUTE
                 WORLD_READ WORLD_EXECUTE
 )
 
-install(FILES data/systalia.desktop
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/data/systalia.desktop"
     DESTINATION ${CMAKE_INSTALL_DATADIR}/wayland-sessions
+)
+
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/config/eglfs_kms.json"
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/systalia
 )

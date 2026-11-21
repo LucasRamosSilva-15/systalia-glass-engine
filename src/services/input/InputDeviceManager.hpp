@@ -106,6 +106,11 @@ public:
     static PlatformEnvironmentConfig configureProcessPlatformEnvironment(
         const QString &kmsConfigPath = QString());
 
+    [[nodiscard]] static QString resolveKmsConfigPath(
+        const QString &preferredPath = QString(),
+        const QStringList &extraSearchDirs = QStringList(),
+        const QByteArray &existingEnvKmsConfig = QByteArray());
+
     // 2. Seleção de modo nativo KMS / Atomic Mode Setting (maior resolução e refresh rate)
     [[nodiscard]] static KmsConnectorMode selectBestKmsConnectorMode(
         const QList<KmsConnectorMode> &candidates) noexcept;

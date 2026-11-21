@@ -7,3 +7,4 @@ Estas diretrizes aplicam-se a todas as execuções de agentes Gemini (incluindo 
 3. **Fluxo obrigatório por tarefa:** **gerar → inspecionar → resumir no relatório → confirmar limpeza automática**. Diretórios externos (`--artifact-dir`, `SGE_KEEP_EVIDENCE_DIR`) nunca sofrem remoção automática.
 4. **Preservação explícita:** Use `SGE_KEEP_EVIDENCE=1` ou `SGE_KEEP_EVIDENCE_DIR=<dir>` quando precisar reter evidências para inspeção.
 5. **Integridade V1/V2 e testes:** Nunca remova componentes VALO V1/V2, shaders, contratos ABI ou testes durante tarefas de limpeza de artefatos.
+6. **Ordem obrigatória de execução de testes:** Ao modificar ou criar qualquer componente, execute **primeiro** o(s) teste(s) específico(s) do(s) componente(s) mexido(s) ou criado(s) (ex.: `ctest -R <teste_especifico> --output-on-failure`) e, após aprovação, execute **todos** os testes da suíte completa (`ctest --output-on-failure`).

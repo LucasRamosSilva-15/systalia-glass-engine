@@ -43,6 +43,8 @@ int main(int argc, char *argv[]) {
     if (platformCfg.mode == InputDeviceManager::SessionBareMetalKms) {
         if (logindSessionService.initializeSession(false)) {
             logindSessionService.acquirePrimaryDrmDevice(inputDeviceManager.activeDrmDevice());
+        } else {
+            qWarning() << "Sessão logind não inicializada; prosseguindo sem controle DRM via logind.";
         }
         inputDeviceManager.initializeHardwareContext();
     }
