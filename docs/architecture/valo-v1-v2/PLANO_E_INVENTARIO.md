@@ -86,3 +86,9 @@ A consolidação ainda é parcial: `SystaliaGlassItem`, `SystaliaGlassMaterial`,
 - [Inventário após o movimento](inventario-apos-app.txt): 263 caminhos de produto/testes/ferramentas. Sobre o baseline de 261, houve duas adições (`cmake/SgeShaders.cmake`, `src/gfx/ValoStd140Matrix.hpp`) e um arquivo movido (`src/main.cpp` → `src/app/main.cpp`); nenhum arquivo de produto foi excluído.
 
 **Situação final desta entrega: PARTIAL.** V1 ainda está compilado e exposto; a reorganização dos demais diretórios e targets, a investigação da falha Release e a migração e validação de clientes e fallback permanecem pendentes. Não é seguro declarar V2 como única implementação ou excluir os arquivos V1 com as evidências atuais.
+
+## Investigação Release e consumidores V1
+
+O [diagnóstico Release](DIAGNOSTICO_RELEASE.md) registra a reprodução limpa, a classificação e a correção isolada no teste Liquid Tiling. A [matriz de consumidores V1](CONSUMIDORES_V1.md) complementa o inventário com caminhos verificáveis para os consumidores diretos, dependências de build e contratos públicos. A retirada de `decorationV1`, a migração dos consumidores públicos restantes e a validação de XWayland real continuam como bloqueadores da consolidação.
+
+A correção foi validada com CTest completo em Debug e Release (47/47 em cada) e com Alacritty no SDE Release, com capturas de ambas as decorações. A falha de compilação histórica continua registrada como baseline. O próximo passo da consolidação é migrar os consumidores ainda ativos e auditar a compatibilidade dos tipos públicos, preservando a paridade dos clientes e do fallback até validação apropriada.

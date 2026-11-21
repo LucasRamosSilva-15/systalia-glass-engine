@@ -1,0 +1,276 @@
+[1/276] Generating wayland-z_systalia_surface_v1-protocol.c
+[2/276] Generating wayland-z_systalia_surface_v1-client-protocol.h
+[3/276] Generating qwayland-z_systalia_surface_v1.h
+[4/276] Generating qwayland-z_systalia_surface_v1.cpp
+[5/276] Running qmlimportscanner for tst_xdg_resize
+[6/276] Automatic MOC and UIC for target sge_test_protocol_client
+[7/276] Running AUTOMOC file extraction for target sge_test_protocol_client
+[8/276] Building CXX object CMakeFiles/sge_core_resources_1.dir/.qt/rcc/qrc_qmake_Systalia_Engine_init.cpp.o
+[9/276] Building CXX object CMakeFiles/sge_core_resources_2.dir/.qt/rcc/qrc_sge_core_raw_qml_0_init.cpp.o
+[10/276] Running moc --collect-json for target sge_test_protocol_client
+[11/276] Building CXX object CMakeFiles/sge_core_resources_3.dir/.qt/rcc/qrc_sge_core_raw_res_0_init.cpp.o
+[12/276] Building CXX object tests/protocol-client/CMakeFiles/sge_test_protocol_client.dir/sge_test_protocol_client_autogen/mocs_compilation.cpp.o
+[13/276] Building C object tests/protocol-client/CMakeFiles/sge_test_protocol_client.dir/wayland-z_systalia_surface_v1-protocol.c.o
+[14/276] Building CXX object CMakeFiles/sge_core_resources_4.dir/.qt/rcc/qrc_sge_core_raw_qml_0_extra_qmldirs_init.cpp.o
+[15/276] Running qmlimportscanner for valo_gpu_benchmark
+[16/276] Running qmlimportscanner for valo_dock_v2_artifacts
+[17/276] Running qmlimportscanner for valo_shell_v2_artifacts
+[18/276] Running qmlimportscanner for tst_systalia_engine
+[19/276] Running qmlimportscanner for tst_item_geometry
+[20/276] Running qmlimportscanner for tst_backdrop_binding
+[21/276] Running qmlimportscanner for tst_wayland_socket
+[22/276] Running qmlimportscanner for valo_stage_05_1_artifacts
+[23/276] Running qmlimportscanner for tst_xdg_shell
+[24/276] Running qmlimportscanner for tst_systalia_protocol
+[25/276] Running qmlimportscanner for tst_xdg_decorations
+[26/276] Running qmlimportscanner for tst_unified_composition
+[27/276] Running qmlimportscanner for tst_telemetry
+[28/276] Running qmlimportscanner for raw_render_diagnostics
+[29/276] Running qmlimportscanner for tst_process_launcher
+[30/276] Running qmlimportscanner for tst_app_registry
+[31/276] Running qmlimportscanner for tst_notification_server
+[32/276] Running qmlimportscanner for tst_sdf_geometry_math
+[33/276] Running qmlimportscanner for tst_memory_alignment
+[34/276] Running qmlimportscanner for tst_linux_parsers
+[35/276] Running qmlimportscanner for tst_resource_leak_audit
+[36/276] Running qmlimportscanner for tst_task_switcher
+[37/276] Running qmlimportscanner for tst_phase4_audit
+[38/276] Running qmlimportscanner for tst_workspace_manager
+[39/276] Running qmlimportscanner for tst_output_manager
+[40/276] Running qmlimportscanner for tst_input_hardware_backend
+[41/276] Running qmlimportscanner for tst_xwayland_integration
+[42/276] Running qmlimportscanner for tst_logind_integration
+[43/276] Running qmlimportscanner for tst_valo_theme
+[44/276] Running qmlimportscanner for tst_valo_glass
+[45/276] Running qmlimportscanner for tst_valo_decorations
+[46/276] Running qmlimportscanner for tst_sdf_geometry_math_v2
+[47/276] Running qmlimportscanner for tst_surface_props_alignment_v2
+[48/276] Running qmlimportscanner for tst_valo_organic_transform_v2
+[49/276] Running qmlimportscanner for tst_valo_glass_shader_v2
+[50/276] Running qmlimportscanner for tst_valo_glass_rendering_v2
+[51/276] Running qmlimportscanner for tst_valo_backdrop_blur_v2
+[52/276] Automatic MOC and UIC for target tst_xdg_resize
+[53/276] Running qmlimportscanner for tst_valo_gpu_blur_pipeline_v2
+[54/276] Running qmlimportscanner for tst_valo_refraction_optics_v2
+[55/276] Running qmlimportscanner for tst_valo_dock_v2
+[56/276] Building CXX object tests/CMakeFiles/tst_xdg_resize.dir/tst_xdg_resize_autogen/mocs_compilation.cpp.o
+[57/276] Running qmlimportscanner for tst_valo_shell_v2
+[58/276] Running qmlimportscanner for tst_protocol_roundtrip
+[59/276] Running qmlimportscanner for tst_xdg_shell_decoration
+[60/276] Running qmlimportscanner for tst_app_model_filtering
+[61/276] Running qmlimportscanner for tst_shell_state_regression
+[62/276] Running qmlimportscanner for tst_wayland_client_lifecycle_e2e
+[63/276] Running qmlimportscanner for tst_client_surface_visibility
+[64/276] Running qmlimportscanner for tst_valo_optical_contract_v2
+[65/276] Automatic MOC and UIC for target systalia_glass_engine
+[66/276] Automatic MOC and UIC for target valo_gpu_benchmark
+[67/276] Automatic MOC and UIC for target valo_dock_v2_artifacts
+[68/276] Automatic MOC and UIC for target valo_shell_v2_artifacts
+[69/276] Automatic MOC and UIC for target valo_stage_05_1_artifacts
+[70/276] Automatic MOC and UIC for target raw_render_diagnostics
+[71/276] Building CXX object tests/protocol-client/CMakeFiles/sge_test_protocol_client.dir/qwayland-z_systalia_surface_v1.cpp.o
+[72/276] Automatic MOC and UIC for target tst_sdf_geometry
+[73/276] Linking CXX static library tests/protocol-client/libsge_test_protocol_client.a
+[74/276] Automatic MOC and UIC for target tst_optical_physics
+[75/276] Automatic MOC and UIC for target tst_liquid_tiling
+[76/276] Automatic MOC and UIC for target tst_item_geometry
+[77/276] Automatic MOC and UIC for target tst_systalia_engine
+[78/276] Automatic MOC and UIC for target tst_backdrop_binding
+[79/276] Automatic MOC and UIC for target tst_wayland_socket
+[80/276] Automatic MOC and UIC for target tst_xdg_shell
+[81/276] Automatic MOC and UIC for target tst_xdg_decorations
+[82/276] Automatic MOC and UIC for target tst_unified_composition
+[83/276] Automatic MOC and UIC for target tst_systalia_protocol
+[84/276] Automatic MOC and UIC for target tst_telemetry
+[85/276] Automatic MOC and UIC for target tst_process_launcher
+[86/276] Automatic MOC and UIC for target tst_app_registry
+[87/276] Automatic MOC and UIC for target tst_notification_server
+[88/276] Automatic MOC and UIC for target tst_sdf_geometry_math
+[89/276] Automatic MOC and UIC for target tst_memory_alignment
+[90/276] Automatic MOC and UIC for target tst_linux_parsers
+[91/276] Automatic MOC and UIC for target tst_task_switcher
+[92/276] Automatic MOC and UIC for target tst_workspace_manager
+[93/276] Automatic MOC and UIC for target tst_resource_leak_audit
+[94/276] Automatic MOC and UIC for target tst_output_manager
+[95/276] Automatic MOC and UIC for target tst_phase4_audit
+[96/276] Automatic MOC and UIC for target tst_input_hardware_backend
+[97/276] Automatic MOC and UIC for target tst_logind_integration
+[98/276] Automatic MOC and UIC for target tst_xwayland_integration
+[99/276] Automatic MOC and UIC for target tst_valo_theme
+[100/276] Automatic MOC and UIC for target tst_valo_glass
+[101/276] Automatic MOC and UIC for target tst_valo_decorations
+[102/276] Automatic MOC and UIC for target tst_surface_props_alignment_v2
+[103/276] Automatic MOC and UIC for target tst_sdf_geometry_math_v2
+[104/276] Automatic MOC and UIC for target tst_valo_organic_transform_v2
+[105/276] Automatic MOC and UIC for target tst_valo_glass_shader_v2
+[106/276] Automatic MOC and UIC for target tst_valo_backdrop_blur_v2
+[107/276] Automatic MOC and UIC for target tst_valo_glass_rendering_v2
+[108/276] Automatic MOC and UIC for target tst_valo_gpu_blur_pipeline_v2
+[109/276] Automatic MOC and UIC for target tst_valo_refraction_optics_v2
+[110/276] Automatic MOC and UIC for target tst_valo_dock_v2
+[111/276] Automatic MOC and UIC for target tst_valo_shell_v2
+[112/276] Automatic MOC and UIC for target tst_protocol_roundtrip
+[113/276] Automatic MOC and UIC for target tst_xdg_shell_decoration
+[114/276] Building CXX object CMakeFiles/systalia_glass_engine.dir/systalia_glass_engine_autogen/mocs_compilation.cpp.o
+[115/276] Automatic MOC and UIC for target tst_app_model_filtering
+[116/276] Building CXX object CMakeFiles/valo_gpu_benchmark.dir/valo_gpu_benchmark_autogen/mocs_compilation.cpp.o
+[117/276] Automatic MOC and UIC for target tst_wayland_client_lifecycle_e2e
+[118/276] Building CXX object CMakeFiles/valo_dock_v2_artifacts.dir/valo_dock_v2_artifacts_autogen/mocs_compilation.cpp.o
+[119/276] Automatic MOC and UIC for target tst_valo_optical_contract_v2
+[120/276] Building CXX object CMakeFiles/valo_shell_v2_artifacts.dir/valo_shell_v2_artifacts_autogen/mocs_compilation.cpp.o
+[121/276] Building CXX object CMakeFiles/valo_gpu_benchmark.dir/tools/bench_and_artifacts.cpp.o
+[122/276] Building CXX object CMakeFiles/valo_stage_05_1_artifacts.dir/valo_stage_05_1_artifacts_autogen/mocs_compilation.cpp.o
+[123/276] Building CXX object CMakeFiles/valo_dock_v2_artifacts.dir/tools/generate_dock_v2_artifacts.cpp.o
+[124/276] Building CXX object CMakeFiles/raw_render_diagnostics.dir/raw_render_diagnostics_autogen/mocs_compilation.cpp.o
+[125/276] Building CXX object tests/CMakeFiles/tst_xdg_resize.dir/tst_XdgResize.cpp.o
+[126/276] Building CXX object CMakeFiles/valo_shell_v2_artifacts.dir/tools/generate_shell_v2_artifacts.cpp.o
+[127/276] Building CXX object tests/CMakeFiles/tst_systalia_engine.dir/tst_systalia_engine_autogen/mocs_compilation.cpp.o
+[128/276] Linking CXX executable tests/tst_xdg_resize
+[129/276] Automatic MOC and UIC for target tst_shell_state_regression
+[130/276] Automatic MOC and UIC for target tst_client_surface_visibility
+[131/276] Building CXX object tests/CMakeFiles/tst_item_geometry.dir/tst_item_geometry_autogen/mocs_compilation.cpp.o
+[132/276] Building CXX object CMakeFiles/systalia_glass_engine.dir/src/app/main.cpp.o
+[133/276] Building CXX object tests/CMakeFiles/tst_sdf_geometry.dir/tst_sdf_geometry_autogen/mocs_compilation.cpp.o
+[134/276] Building CXX object CMakeFiles/valo_stage_05_1_artifacts.dir/tools/generate_stage_05_1_artifacts.cpp.o
+[135/276] Building CXX object tests/CMakeFiles/tst_backdrop_binding.dir/tst_backdrop_binding_autogen/mocs_compilation.cpp.o
+[136/276] Building CXX object tests/CMakeFiles/tst_systalia_engine.dir/tst_SystaliaEngine.cpp.o
+[137/276] Building CXX object tests/CMakeFiles/tst_optical_physics.dir/tst_optical_physics_autogen/mocs_compilation.cpp.o
+[138/276] Building CXX object CMakeFiles/raw_render_diagnostics.dir/tools/raw_render_diagnostics/raw_render_diagnostics.cpp.o
+[139/276] Building CXX object tests/CMakeFiles/tst_wayland_socket.dir/tst_wayland_socket_autogen/mocs_compilation.cpp.o
+[140/276] Building CXX object tests/CMakeFiles/tst_item_geometry.dir/tst_ItemGeometry.cpp.o
+[141/276] Building CXX object tests/CMakeFiles/tst_xdg_shell.dir/tst_xdg_shell_autogen/mocs_compilation.cpp.o
+[142/276] Building CXX object tests/CMakeFiles/tst_sdf_geometry.dir/tst_SdfGeometry.cpp.o
+[143/276] Building CXX object tests/CMakeFiles/tst_xdg_decorations.dir/tst_xdg_decorations_autogen/mocs_compilation.cpp.o
+[144/276] Building CXX object tests/CMakeFiles/tst_optical_physics.dir/tst_OpticalPhysics.cpp.o
+[145/276] Building CXX object tests/CMakeFiles/tst_systalia_protocol.dir/tst_systalia_protocol_autogen/mocs_compilation.cpp.o
+[146/276] Building CXX object tests/CMakeFiles/tst_backdrop_binding.dir/tst_BackdropBinding.cpp.o
+[147/276] Building CXX object tests/CMakeFiles/tst_unified_composition.dir/tst_unified_composition_autogen/mocs_compilation.cpp.o
+[148/276] Building CXX object tests/CMakeFiles/tst_wayland_socket.dir/tst_WaylandSocket.cpp.o
+[149/276] Building CXX object tests/CMakeFiles/tst_telemetry.dir/tst_telemetry_autogen/mocs_compilation.cpp.o
+[150/276] Building CXX object tests/CMakeFiles/tst_xdg_shell.dir/tst_XdgShell.cpp.o
+[151/276] Building CXX object tests/CMakeFiles/tst_process_launcher.dir/tst_process_launcher_autogen/mocs_compilation.cpp.o
+[152/276] Building CXX object tests/CMakeFiles/tst_xdg_decorations.dir/tst_XdgDecorations.cpp.o
+[153/276] Building CXX object tests/CMakeFiles/tst_app_registry.dir/tst_app_registry_autogen/mocs_compilation.cpp.o
+[154/276] Building CXX object tests/CMakeFiles/tst_unified_composition.dir/tst_UnifiedComposition.cpp.o
+[155/276] Building CXX object tests/CMakeFiles/tst_notification_server.dir/tst_notification_server_autogen/mocs_compilation.cpp.o
+[156/276] Building CXX object tests/CMakeFiles/tst_telemetry.dir/tst_Telemetry.cpp.o
+[157/276] Building CXX object tests/CMakeFiles/tst_sdf_geometry_math.dir/tst_sdf_geometry_math_autogen/mocs_compilation.cpp.o
+[158/276] Building CXX object tests/CMakeFiles/tst_process_launcher.dir/tst_ProcessLauncher.cpp.o
+[159/276] Building CXX object tests/CMakeFiles/tst_memory_alignment.dir/tst_memory_alignment_autogen/mocs_compilation.cpp.o
+[160/276] Building CXX object tests/CMakeFiles/tst_systalia_protocol.dir/tst_SystaliaProtocol.cpp.o
+[161/276] Building CXX object tests/CMakeFiles/tst_linux_parsers.dir/tst_linux_parsers_autogen/mocs_compilation.cpp.o
+[162/276] Building CXX object tests/CMakeFiles/tst_app_registry.dir/tst_AppRegistry.cpp.o
+[163/276] Building CXX object tests/CMakeFiles/tst_task_switcher.dir/tst_task_switcher_autogen/mocs_compilation.cpp.o
+[164/276] Building CXX object tests/CMakeFiles/tst_notification_server.dir/tst_NotificationServer.cpp.o
+[165/276] Building CXX object tests/CMakeFiles/tst_resource_leak_audit.dir/tst_resource_leak_audit_autogen/mocs_compilation.cpp.o
+[166/276] Building CXX object tests/CMakeFiles/tst_memory_alignment.dir/unit/tst_MemoryAlignment.cpp.o
+[167/276] Building CXX object tests/CMakeFiles/tst_sdf_geometry_math.dir/unit/tst_SdfGeometryMath.cpp.o
+[168/276] Building CXX object tests/CMakeFiles/tst_workspace_manager.dir/tst_workspace_manager_autogen/mocs_compilation.cpp.o
+[169/276] Building CXX object tests/CMakeFiles/tst_liquid_tiling.dir/tst_liquid_tiling_autogen/mocs_compilation.cpp.o
+[170/276] Building CXX object tests/CMakeFiles/tst_linux_parsers.dir/unit/tst_LinuxParsers.cpp.o
+[171/276] Building CXX object tests/CMakeFiles/tst_output_manager.dir/tst_output_manager_autogen/mocs_compilation.cpp.o
+[172/276] Building CXX object tests/CMakeFiles/tst_task_switcher.dir/unit/tst_TaskSwitcher.cpp.o
+[173/276] Building CXX object tests/CMakeFiles/tst_phase4_audit.dir/tst_phase4_audit_autogen/mocs_compilation.cpp.o
+[174/276] Building CXX object tests/CMakeFiles/tst_resource_leak_audit.dir/unit/tst_ResourceLeakAudit.cpp.o
+[175/276] Building CXX object tests/CMakeFiles/tst_input_hardware_backend.dir/tst_input_hardware_backend_autogen/mocs_compilation.cpp.o
+[176/276] Building CXX object tests/CMakeFiles/tst_workspace_manager.dir/unit/tst_WorkspaceManager.cpp.o
+[177/276] Building CXX object tests/CMakeFiles/tst_logind_integration.dir/tst_logind_integration_autogen/mocs_compilation.cpp.o
+[178/276] Building CXX object tests/CMakeFiles/tst_liquid_tiling.dir/unit/tst_LiquidTiling.cpp.o
+[179/276] Building CXX object tests/CMakeFiles/tst_xwayland_integration.dir/tst_xwayland_integration_autogen/mocs_compilation.cpp.o
+[180/276] Building CXX object tests/CMakeFiles/tst_output_manager.dir/unit/tst_OutputManager.cpp.o
+[181/276] Building CXX object tests/CMakeFiles/tst_valo_theme.dir/tst_valo_theme_autogen/mocs_compilation.cpp.o
+[182/276] Building CXX object tests/CMakeFiles/tst_phase4_audit.dir/unit/tst_Phase4Audit.cpp.o
+[183/276] Building CXX object tests/CMakeFiles/tst_valo_glass.dir/tst_valo_glass_autogen/mocs_compilation.cpp.o
+[184/276] Building CXX object tests/CMakeFiles/tst_input_hardware_backend.dir/unit/tst_InputHardwareBackend.cpp.o
+[185/276] Building CXX object tests/CMakeFiles/tst_valo_decorations.dir/tst_valo_decorations_autogen/mocs_compilation.cpp.o
+[186/276] Building CXX object tests/CMakeFiles/tst_logind_integration.dir/unit/tst_LogindIntegration.cpp.o
+[187/276] Building CXX object tests/CMakeFiles/tst_sdf_geometry_math_v2.dir/tst_sdf_geometry_math_v2_autogen/mocs_compilation.cpp.o
+[188/276] Building CXX object tests/CMakeFiles/tst_xwayland_integration.dir/unit/tst_XWaylandIntegration.cpp.o
+[189/276] Building CXX object tests/CMakeFiles/tst_surface_props_alignment_v2.dir/tst_surface_props_alignment_v2_autogen/mocs_compilation.cpp.o
+[190/276] Building CXX object tests/CMakeFiles/tst_valo_theme.dir/unit/tst_ValoTheme.cpp.o
+[191/276] Building CXX object tests/CMakeFiles/tst_valo_organic_transform_v2.dir/tst_valo_organic_transform_v2_autogen/mocs_compilation.cpp.o
+[192/276] Building CXX object tests/CMakeFiles/tst_valo_glass.dir/unit/tst_ValoGlass.cpp.o
+[193/276] Building CXX object tests/CMakeFiles/tst_valo_glass_shader_v2.dir/tst_valo_glass_shader_v2_autogen/mocs_compilation.cpp.o
+[194/276] Building CXX object tests/CMakeFiles/tst_valo_decorations.dir/unit/tst_ValoDecorations.cpp.o
+[195/276] Building CXX object tests/CMakeFiles/tst_valo_glass_rendering_v2.dir/tst_valo_glass_rendering_v2_autogen/mocs_compilation.cpp.o
+[196/276] Building CXX object tests/CMakeFiles/tst_sdf_geometry_math_v2.dir/unit/tst_SdfGeometryMathV2.cpp.o
+[197/276] Building CXX object tests/CMakeFiles/tst_valo_backdrop_blur_v2.dir/tst_valo_backdrop_blur_v2_autogen/mocs_compilation.cpp.o
+[198/276] Building CXX object tests/CMakeFiles/tst_surface_props_alignment_v2.dir/unit/tst_SurfacePropsAlignmentV2.cpp.o
+[199/276] Building CXX object tests/CMakeFiles/tst_valo_refraction_optics_v2.dir/tst_valo_refraction_optics_v2_autogen/mocs_compilation.cpp.o
+[200/276] Building CXX object tests/CMakeFiles/tst_valo_organic_transform_v2.dir/unit/tst_ValoOrganicTransformV2.cpp.o
+[201/276] Building CXX object tests/CMakeFiles/tst_valo_gpu_blur_pipeline_v2.dir/tst_valo_gpu_blur_pipeline_v2_autogen/mocs_compilation.cpp.o
+[202/276] Building CXX object tests/CMakeFiles/tst_valo_glass_shader_v2.dir/unit/tst_ValoGlassShaderV2.cpp.o
+[203/276] Building CXX object tests/CMakeFiles/tst_valo_dock_v2.dir/tst_valo_dock_v2_autogen/mocs_compilation.cpp.o
+[204/276] Building CXX object tests/CMakeFiles/tst_valo_glass_rendering_v2.dir/unit/tst_ValoGlassRenderingV2.cpp.o
+[205/276] Building CXX object tests/CMakeFiles/tst_valo_shell_v2.dir/tst_valo_shell_v2_autogen/mocs_compilation.cpp.o
+[206/276] Building CXX object tests/CMakeFiles/tst_valo_gpu_blur_pipeline_v2.dir/unit/tst_ValoGpuBlurPipelineV2.cpp.o
+[207/276] Building CXX object tests/CMakeFiles/tst_protocol_roundtrip.dir/tst_protocol_roundtrip_autogen/mocs_compilation.cpp.o
+[208/276] Building CXX object tests/CMakeFiles/tst_valo_backdrop_blur_v2.dir/unit/tst_ValoBackdropBlurV2.cpp.o
+[209/276] Building CXX object tests/CMakeFiles/tst_xdg_shell_decoration.dir/tst_xdg_shell_decoration_autogen/mocs_compilation.cpp.o
+[210/276] Building CXX object tests/CMakeFiles/tst_valo_refraction_optics_v2.dir/unit/tst_ValoRefractionOpticsV2.cpp.o
+[211/276] Building CXX object tests/CMakeFiles/tst_app_model_filtering.dir/tst_app_model_filtering_autogen/mocs_compilation.cpp.o
+[212/276] Building CXX object tests/CMakeFiles/tst_valo_dock_v2.dir/unit/tst_ValoDockV2.cpp.o
+[213/276] Building CXX object tests/CMakeFiles/tst_wayland_client_lifecycle_e2e.dir/tst_wayland_client_lifecycle_e2e_autogen/mocs_compilation.cpp.o
+[214/276] Building CXX object tests/CMakeFiles/tst_valo_shell_v2.dir/unit/tst_ValoShellV2.cpp.o
+[215/276] Building CXX object tests/CMakeFiles/tst_shell_state_regression.dir/tst_shell_state_regression_autogen/mocs_compilation.cpp.o
+[216/276] Building CXX object tests/CMakeFiles/tst_app_model_filtering.dir/integration/tst_AppModelFiltering.cpp.o
+[217/276] Building CXX object tests/CMakeFiles/tst_client_surface_visibility.dir/tst_client_surface_visibility_autogen/mocs_compilation.cpp.o
+[218/276] Building CXX object tests/CMakeFiles/tst_protocol_roundtrip.dir/integration/tst_ProtocolRoundtrip.cpp.o
+[219/276] Building CXX object tests/CMakeFiles/tst_valo_optical_contract_v2.dir/tst_valo_optical_contract_v2_autogen/mocs_compilation.cpp.o
+[220/276] Building CXX object tests/CMakeFiles/tst_xdg_shell_decoration.dir/integration/tst_XdgShellDecoration.cpp.o
+[221/276] Linking CXX executable systalia_glass_engine
+[222/276] Linking CXX executable valo_gpu_benchmark
+[223/276] Linking CXX executable valo_dock_v2_artifacts
+[224/276] Linking CXX executable valo_shell_v2_artifacts
+[225/276] Linking CXX executable valo_stage_05_1_artifacts
+[226/276] Linking CXX executable raw_render_diagnostics
+[227/276] Building CXX object tests/CMakeFiles/tst_wayland_client_lifecycle_e2e.dir/e2e/tst_WaylandClientLifecycleE2E.cpp.o
+[228/276] Linking CXX executable tests/tst_systalia_engine
+[229/276] Linking CXX executable tests/tst_sdf_geometry
+[230/276] Linking CXX executable tests/tst_item_geometry
+[231/276] Linking CXX executable tests/tst_optical_physics
+[232/276] Building CXX object tests/CMakeFiles/tst_valo_optical_contract_v2.dir/unit/tst_ValoOpticalContractV2.cpp.o
+[233/276] Linking CXX executable tests/tst_backdrop_binding
+[234/276] Building CXX object tests/CMakeFiles/tst_client_surface_visibility.dir/integration/tst_ClientSurfaceVisibility.cpp.o
+[235/276] Linking CXX executable tests/tst_wayland_socket
+[236/276] Linking CXX executable tests/tst_xdg_shell
+[237/276] Linking CXX executable tests/tst_xdg_decorations
+[238/276] Linking CXX executable tests/tst_systalia_protocol
+[239/276] Linking CXX executable tests/tst_unified_composition
+[240/276] Linking CXX executable tests/tst_telemetry
+[241/276] Linking CXX executable tests/tst_process_launcher
+[242/276] Linking CXX executable tests/tst_app_registry
+[243/276] Linking CXX executable tests/tst_notification_server
+[244/276] Building CXX object tests/CMakeFiles/tst_shell_state_regression.dir/integration/tst_ShellStateRegression.cpp.o
+[245/276] Linking CXX executable tests/tst_sdf_geometry_math
+[246/276] Linking CXX executable tests/tst_linux_parsers
+[247/276] Linking CXX executable tests/tst_memory_alignment
+[248/276] Linking CXX executable tests/tst_task_switcher
+[249/276] Linking CXX executable tests/tst_resource_leak_audit
+[250/276] Linking CXX executable tests/tst_workspace_manager
+[251/276] Linking CXX executable tests/tst_liquid_tiling
+[252/276] Linking CXX executable tests/tst_output_manager
+[253/276] Linking CXX executable tests/tst_phase4_audit
+[254/276] Linking CXX executable tests/tst_input_hardware_backend
+[255/276] Linking CXX executable tests/tst_xwayland_integration
+[256/276] Linking CXX executable tests/tst_logind_integration
+[257/276] Linking CXX executable tests/tst_valo_theme
+[258/276] Linking CXX executable tests/tst_valo_glass
+[259/276] Linking CXX executable tests/tst_valo_decorations
+[260/276] Linking CXX executable tests/tst_sdf_geometry_math_v2
+[261/276] Linking CXX executable tests/tst_valo_organic_transform_v2
+[262/276] Linking CXX executable tests/tst_surface_props_alignment_v2
+[263/276] Linking CXX executable tests/tst_valo_glass_shader_v2
+[264/276] Linking CXX executable tests/tst_valo_glass_rendering_v2
+[265/276] Linking CXX executable tests/tst_valo_refraction_optics_v2
+[266/276] Linking CXX executable tests/tst_valo_backdrop_blur_v2
+[267/276] Linking CXX executable tests/tst_valo_gpu_blur_pipeline_v2
+[268/276] Linking CXX executable tests/tst_valo_dock_v2
+[269/276] Linking CXX executable tests/tst_valo_shell_v2
+[270/276] Linking CXX executable tests/tst_protocol_roundtrip
+[271/276] Linking CXX executable tests/tst_xdg_shell_decoration
+[272/276] Linking CXX executable tests/tst_app_model_filtering
+[273/276] Linking CXX executable tests/tst_wayland_client_lifecycle_e2e
+[274/276] Linking CXX executable tests/tst_shell_state_regression
+[275/276] Linking CXX executable tests/tst_client_surface_visibility
+[276/276] Linking CXX executable tests/tst_valo_optical_contract_v2

@@ -1,0 +1,16 @@
+# Consumidores VALO V1
+
+Referência da auditoria `ebaed25`, com caminhos e linhas no [índice textual](consumidores-v1-referencias.txt). O índice inclui declarações e comentários para auditoria. Ausência de referência estática não exclui chamadas dinâmicas ou consumidores fora do repositório.
+
+| Camada | Consumidor e ligação | Classificação |
+|---|---|---|
+| C++ e API QML | `src/app/main.cpp` registra `SystaliaGlassItem` em `Systalia.Engine 1.0`. O cabeçalho também declara `QML_ELEMENT` e o registrar gerado inclui o tipo. | API publicada pelo módulo. Inventariar propriedades e sinais antes de substituir a implementação. |
+| C++ e ABI | `SystaliaGlassItem` cria `SystaliaGlassMaterial`. Ambos usam `SystaliaSurfaceProps`. O upload V1 inclui `SystaliaRenderUniforms` de 144 bytes. V2 inclui o cabeçalho de props V1 transitivamente. | Separar dependência de cabeçalho, API e renderer. Preservar matriz de 64 bytes e ABI necessária. |
+| QML em execução | `WaylandWindowContainer.qml` seleciona `decorationV1` via `useGraphicsV2`. O fallback instancia `ValoGlass.qml`, que instancia `SystaliaGlassItem`. | Fallback acessível e mantido. |
+| QML empacotado | `SystaliaDock.qml` e `SystaliaFilesWindow.qml` usam `ValoGlass`. `SystaliaTopBar.qml` e `SystaliaControlCenter.qml` instanciam o item C++ diretamente. Os componentes correspondentes da shell ativa são V2. | Tipos ainda publicados pelo módulo. A ausência de instância na shell não justifica exclusão. |
+| QML compartilhado | `SystaliaTheme.qml` permanece como singleton público. `SystaliaG2Frame.qml` é usado por `ValoGlass` e pelo cabeçalho compartilhado. | Compatibilidade e primitiva compartilhada. |
+| GLSL, qrc e build | `cmake/SgeShaders.cmake` compila `shaders/valo_optical.vert` e `shaders/valo_optical.frag`. O material V1 carrega os QSB em `:/shaders/valo_optical.*.qsb`. `tst_SystaliaEngine` verifica esses recursos. `CMakeLists.txt` lista fontes e QML V1 em `sge_core`. | Recursos com consumidores ativos. |
+| Testes do renderer e ABI | Geometria, backdrop, ciclo de vida, alinhamento, shader e composição aparecem em `tst_ItemGeometry`, `tst_BackdropBinding`, `tst_ResourceLeakAudit`, `tst_MemoryAlignment`, `tst_SurfacePropsAlignmentV2`, `tst_SystaliaEngine`, `tst_UnifiedComposition`, `tst_OutputManager`, `tst_Phase4Audit` e `tst_SdfGeometryMath`. | Distinguir cobertura de ABI, referências analíticas e instâncias reais antes de migrar. |
+| Testes QML e clientes | `tst_ValoGlass` cobre o tipo QML legado. `tst_ValoDecorations` e `tst_ShellStateRegression` inspecionam a decoração ou o chassis. `tst_XdgResize`, `tst_ClientSurfaceVisibility`, `tst_XdgShellDecoration` e `tst_WaylandClientLifecycleE2E` registram o tipo. `tst_SystaliaProtocol` também instancia o item. | Registro por si só não demonstra uso pelo cenário. Preservar cobertura do fallback e do cliente. |
+| Ferramentas | A sonda `src/diagnostics/ValoStabilityProbe.hpp` alterna explicitamente `useGraphicsV2`; `tools/validate_valo_stage064.py client-interactions` aciona esse caminho. Os diagnósticos raw de shaders usam o renderer V2 nos modos ópticos. | Dependência indireta, além de recursos compartilhados pelo build. |
+| Protocolo | `protocols/z_systalia_surface_v1.xml`, geração CMake, extensão, testes e cliente de teste. | Versão do protocolo independente da versão do renderer. |
