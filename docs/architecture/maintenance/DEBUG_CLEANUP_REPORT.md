@@ -51,3 +51,22 @@
 - **Verificação de links Markdown:** **173/173** links relativos em `docs/` válidos (**0 quebrados**).
 - **Build + CTest QRC/QML/Shaders:** compilação limpa do target completo em `build/` e aprovação de **7/7** testes críticos de recursos e renderização (`tst_systalia_engine`, `tst_valo_glass`, `tst_valo_decorations`, `tst_valo_glass_shader_v2`, `tst_valo_glass_rendering_v2`, `tst_valo_shell_v2`, `tst_shell_state_regression`).
 - **Pendências / Observação:** O histórico Git anterior não foi reescrito (conforme política); objetos históricos continuam no packfile local até eventual política futura de manutenção de repositório.
+
+---
+
+## 5. Endurecimento da Limpeza Automática (Consolidação 06.6A.1 — COMPLETE)
+
+**Commit de implementação:** `6c64f04` (+ commit de documentação/política).
+
+### Lacunas corrigidas
+1. `tools/validate_valo_stage06.py` agora utiliza `EvidenceRun` (`tools/sge_evidence.py`) e remove seu diretório temporário próprio ao concluir com sucesso, preservando apenas se `[output-directory]` explícito ou `SGE_KEEP_EVIDENCE=1` for usado.
+2. Todos os validadores Python (`validate_valo_stage06.py`, `validate_valo_header.py`, `validate_valo_stage062.py`, `validate_valo_stage063.py`, `validate_valo_stage0631.py`, `validate_valo_stage064.py`) executam todo o ciclo de subprocessos dentro de `with EvidenceRun(...)` + `try/finally` com tratamento de `SIGINT`/`SIGTERM`:
+   - **Sucesso:** remove exclusivamente o diretório temporário próprio criado por `mkdtemp` dentro de `${TMPDIR:-/tmp}/systalia-runs/`.
+   - **Falha / Interrupção:** preserva o diretório próprio com `run-status.json` (`retention_hours: 24`) e executa poda automática (`prune_expired_runs`) de execuções expiradas com mais de 24h.
+   - **Proteção de caminhos:** diretórios fornecidos pelo usuário (`--artifact-dir`, argumento posicional, `SGE_KEEP_EVIDENCE_DIR`) ou externos a `systalia-runs/` nunca são removidos.
+3. Os 4 geradores C++ (`generate_dock_v2_artifacts.cpp`, `generate_shell_v2_artifacts.cpp`, `generate_stage_05_1_artifacts.cpp`, `raw_render_diagnostics.cpp`) foram padronizados via [`tools/sge_artifact_dir.hpp`](../../../tools/sge_artifact_dir.hpp) para criar diretórios exclusivos por execução (`QTemporaryDir` em `${TMPDIR:-/tmp}/systalia-runs/<tool>-XXXXXX`), eliminando colisões e retenção indefinida.
+
+### Validação 06.6A.1
+- **Testes automatizados (`tests/unit/tst_EvidenceCleanup.py`, registrado como `tst_evidence_cleanup` no CTest):** **7/7** cenários aprovados (sucesso, falha de subprocesso + poda TTL, interrupção `SIGTERM`, retenção explícita `SGE_KEEP_EVIDENCE=1`, diretório customizado, 4 execuções simultâneas sem colisão e proteção contra remoção de diretórios externos).
+- **Build limpo Debug (`-Werror`) + CTest completo:** **48/48 aprovados** (49,93 s).
+- **Build limpo Release (`-Werror`) + CTest completo:** **48/48 aprovados**.

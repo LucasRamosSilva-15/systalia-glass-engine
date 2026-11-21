@@ -12,3 +12,5 @@ systalia-runs/
 artifacts/tmp-*
 docs/**/tmp-*
 *.tmp
+__pycache__/
+*.pyc
