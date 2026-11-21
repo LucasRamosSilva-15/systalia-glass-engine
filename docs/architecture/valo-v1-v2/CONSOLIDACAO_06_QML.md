@@ -20,7 +20,7 @@
 | Files | `src/qml/shell/SystaliaFilesWindow.qml` | `SystaliaFilesWindowV2.qml` | ADAPTADOR V2 | Paridade visual do antigo chassis e semântica óptica externa pendentes |
 | Control Center | `src/qml/shell/SystaliaControlCenter.qml` | `SystaliaControlCenterV2.qml` | ADAPTADOR V2 | Homologação completa dos serviços e da acessibilidade pendente |
 | Componentes compartilhados | `ValoGlass.qml`, `SystaliaG2Frame.qml`, `SystaliaWindowHeader.qml` | Sem equivalência integral demonstrada | PRESERVAR | Não excluir por associação com V1 |
-| Decoração de clientes | `decorationV1` | `decorationV2` | PRESERVAR | Exige fase própria de compatibilidade e clientes reais |
+| Decoração de clientes | `decorationV1` (aposentada em `20ff507`) | `ValoMaterialSurfaceV2` (`clientDecorationV2`) | **V2 ÚNICA** | Concluído na Consolidação 06.5 (ADR 0003) |
 
 ## Execução por família
 
@@ -54,3 +54,7 @@ Redução de dependências restantes do VALO V1: desacoplamento do cabeçalho `S
 ## Continuação 06.4
 
 Homologação de clientes Wayland (Alacritty, GTK3, Qt6) e XWayland (GTK3 X11, Qt6 XCB, Alacritty X11, `xmessage`), comprovando paridade de `decorationV2` com `decorationV1` e isolando o comportamento de `xmessage` como independente do renderer óptico. `decorationV1` preservada até decisão formal de quebra de contrato e teste multimonitor físico. [Relatório e evidências](CONSOLIDACAO_06_4.md)
+
+## Continuação 06.5
+
+`decorationV1` e o `Loader` condicional foram aposentados em `WaylandWindowContainer.qml` (`20ff507`, ADR 0003). `ValoStabilityProbe.hpp` e `tst_ValoDecorations.cpp` validam a decoração única V2, mantendo `ValoGlass.qml`, `SystaliaGlassItem` e shaders V1 preservados para os testes unitários/ABI restantes. [Relatório e evidências](CONSOLIDACAO_06_5.md)

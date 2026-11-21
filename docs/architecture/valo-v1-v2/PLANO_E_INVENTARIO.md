@@ -108,3 +108,7 @@ Foram eliminadas a dependência transitiva de `SystaliaSurfacePropsV2.hpp` no ca
 ## Consolidação 06.4
 
 Clientes reais Wayland (Alacritty, GTK3, Qt6) e XWayland modernos (GTK3 X11, Qt6 XCB, Alacritty X11) foram homologados em `decorationV1` e `decorationV2` com conteúdo visível e ciclo completo (maximização, snap, workspaces, fechamento). O comportamento de `xmessage` (Xt/Xaw) foi isolado como independente do renderer óptico. `decorationV1` permanece preservada até validação multimonitor física e decisão formal de descontinuação de `useGraphicsV2`. Estado: **PARTIAL**. [Relatório e evidências](CONSOLIDACAO_06_4.md)
+
+## Consolidação 06.5
+
+`decorationV1` foi aposentada em `WaylandWindowContainer.qml` (`20ff507`, ADR 0003), tornando `ValoMaterialSurfaceV2` (`clientDecorationV2`) a decoração única de clientes, com `ValoStabilityProbe.hpp` e `tst_ValoDecorations.cpp` atualizados. Builds Debug/Release com `-Werror` (47/47 CTest) e os 6 clientes reais (Wayland + XWayland) foram aprovados. `ValoGlass.qml`, `SystaliaGlassItem` e shaders V1 seguem preservados apenas pelos testes unitários/ABI restantes (migração geral ainda **PARTIAL**). [Relatório e evidências](CONSOLIDACAO_06_5.md)
