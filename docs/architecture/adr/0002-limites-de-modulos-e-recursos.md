@@ -1,6 +1,6 @@
 # ADR 0002 — Limites de módulos e recursos
 
-- **Estado:** aceita e implementada na Consolidação 06.6C (árvore modular `app`/`compositor`/`graphics`/`services`/`shell`/`controls`/`theme`/`assets` e CMake modular preservando `sge_core`, `sge_shaders` e aliases QRC)
+- **Estado:** aceita e implementada nas Consolidações 06.6C e 06.6D (árvore hierárquica por responsabilidade e versão, CMake modular, preservação de `sge_core`, `sge_shaders` e aliases QRC)
 - **Data:** 2026-11-17
 - **Contexto:** `sge_core` agrupa compositor, serviços, renderers e módulo QML; `sge_shaders` agrupa shaders de produção e diagnósticos. Uma separação apressada pode quebrar inicialização QML, recursos estáticos, geração de protocolo e includes públicos.
 
