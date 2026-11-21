@@ -12,7 +12,6 @@
 #include <cmath>
 
 #include "ValoGlassItemV2.hpp"
-#include "SystaliaGlassItem.hpp"
 #include "ValoShadowItemV2.hpp"
 #include "ValoOpticalContext.hpp"
 #include "ValoBackdropProviderV2.hpp"
@@ -275,7 +274,6 @@ void tst_ValoShellV2::testLegacyDockAndTopBarResources() {
         QVERIFY(item);
         item->setParentItem(window.contentItem());
         QCOMPARE(item->findChildren<ValoGlassItemV2 *>().size(), 1);
-        QVERIFY(item->findChildren<SystaliaGlassItem *>().isEmpty());
         QSignalSpy terminal(item, SIGNAL(terminalRequested()));
         QVERIFY(terminal.isValid());
         if (name == QStringLiteral("SystaliaDock")) {
@@ -340,7 +338,6 @@ void tst_ValoShellV2::testLegacyFilesAndControlCenterResources() {
     QVERIFY(filesItem);
     filesItem->setParentItem(window.contentItem());
     QCOMPARE(filesItem->findChildren<ValoGlassItemV2 *>().size(), 1);
-    QVERIFY(filesItem->findChildren<SystaliaGlassItem *>().isEmpty());
     QCOMPARE(filesItem->property("surfaceOpacity").toDouble(), 0.85);
     auto *search = filesItem->findChild<QQuickItem *>("filesSearch");
     auto *closeButton = filesItem->findChild<QQuickItem *>("closeToplevelButton");
@@ -357,7 +354,6 @@ void tst_ValoShellV2::testLegacyFilesAndControlCenterResources() {
     QVERIFY(centerItem);
     centerItem->setParentItem(window.contentItem());
     QCOMPARE(centerItem->findChildren<ValoGlassItemV2 *>().size(), 1);
-    QVERIFY(centerItem->findChildren<SystaliaGlassItem *>().isEmpty());
     centerItem->setProperty("prefersReducedMotion", true);
     QVERIFY(QMetaObject::invokeMethod(centerItem, "open"));
     QTRY_VERIFY(centerItem->isVisible());

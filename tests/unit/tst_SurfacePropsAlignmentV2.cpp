@@ -2,7 +2,7 @@
 #include <cstddef>
 #include <array>
 
-#include "SystaliaSurfaceProps.hpp"
+#include "ValoStd140Matrix.hpp"
 #include "SystaliaSurfacePropsV2.hpp"
 
 using namespace Systalia::Gfx::V2;
@@ -11,7 +11,7 @@ class TestSurfacePropsAlignmentV2 final : public QObject {
     Q_OBJECT
 
 private slots:
-    void v1LegacyUniformBlockPreserved();
+    void std140MatrixBlockPreserved();
     void v2UniformBlockSizeIs160Bytes();
     void v2UniformBlockAlignmentIs16Bytes();
     void v2MemberOffsets_data();
@@ -19,22 +19,10 @@ private slots:
     void v2SurfaceDefaultsAreStable();
 };
 
-void TestSurfacePropsAlignmentV2::v1LegacyUniformBlockPreserved() {
-    // Garantir que a ABI legada de 128 bytes permaneceu 100% inalterada
-    QCOMPARE(sizeof(SystaliaSurfaceProps), std::size_t(128));
-    QCOMPARE(alignof(SystaliaSurfaceProps), std::size_t(16));
-    QCOMPARE(offsetof(SystaliaSurfaceProps, matrix), std::size_t(0));
-    QCOMPARE(offsetof(SystaliaSurfaceProps, radii), std::size_t(64));
-    QCOMPARE(offsetof(SystaliaSurfaceProps, windowSize), std::size_t(80));
-    QCOMPARE(offsetof(SystaliaSurfaceProps, screenResolution), std::size_t(88));
-    QCOMPARE(offsetof(SystaliaSurfaceProps, slant), std::size_t(96));
-    QCOMPARE(offsetof(SystaliaSurfaceProps, ior), std::size_t(100));
-    QCOMPARE(offsetof(SystaliaSurfaceProps, chromaticDispersion), std::size_t(104));
-    QCOMPARE(offsetof(SystaliaSurfaceProps, causticIntensity), std::size_t(108));
-    QCOMPARE(offsetof(SystaliaSurfaceProps, opacity), std::size_t(112));
-    QCOMPARE(offsetof(SystaliaSurfaceProps, time), std::size_t(116));
-    QCOMPARE(offsetof(SystaliaSurfaceProps, hasClientTexture), std::size_t(120));
-    QCOMPARE(offsetof(SystaliaSurfaceProps, titleBarHeight), std::size_t(124));
+void TestSurfacePropsAlignmentV2::std140MatrixBlockPreserved() {
+    // Garantir que o bloco compartilhado Matrix4x4_std140 (64 bytes, align 16) está preservado
+    QCOMPARE(sizeof(Matrix4x4_std140), std::size_t(64));
+    QCOMPARE(alignof(Matrix4x4_std140), std::size_t(16));
 }
 
 void TestSurfacePropsAlignmentV2::v2UniformBlockSizeIs160Bytes() {

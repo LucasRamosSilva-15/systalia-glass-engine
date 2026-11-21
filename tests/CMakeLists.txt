@@ -12,7 +12,7 @@ target_link_libraries(tst_systalia_engine PRIVATE
 )
 add_test(NAME tst_systalia_engine COMMAND tst_systalia_engine)
 
-# Teste 2: Geometria de Vértices e Propriedades do SystaliaGlassItem
+# Teste 2: Geometria de Vértices e Propriedades do ValoGlassItemV2
 qt_add_executable(tst_item_geometry
     tst_ItemGeometry.cpp
 )

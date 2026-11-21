@@ -1,7 +1,9 @@
 #include <QTest>
 #include <QSGGeometry>
-#include "SystaliaGlassItem.hpp"
-#include "SystaliaSurfaceProps.hpp"
+#include "gfx/v2/ValoGlassItemV2.hpp"
+#include "gfx/v2/SystaliaSurfacePropsV2.hpp"
+
+using namespace Systalia::Gfx::V2;
 
 class TestItemGeometry : public QObject {
     Q_OBJECT
@@ -12,15 +14,15 @@ private slots:
 };
 
 void TestItemGeometry::testItemPropertiesAndDimensions() {
-    SystaliaGlassItem item;
+    ValoGlassItemV2 item;
     item.setWidth(800.0);
     item.setHeight(600.0);
 
     QCOMPARE(item.width(), 800.0);
     QCOMPARE(item.height(), 600.0);
 
-    // Validação da sincronização de props
-    SystaliaSurfaceProps props;
+    // Validação da sincronização de props V2
+    SystaliaSurfacePropsV2 props;
     props.windowSize = QVector2D(static_cast<float>(item.width()),
                                  static_cast<float>(item.height()));
 

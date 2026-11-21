@@ -2,35 +2,37 @@
 #include <QSignalSpy>
 #include <QQuickWindow>
 #include <QQuickItem>
-#include "SystaliaGlassItem.hpp"
-#include "SystaliaSurfaceProps.hpp"
+#include "gfx/v2/ValoGlassItemV2.hpp"
+#include "gfx/v2/ValoBackdropProviderV2.hpp"
+#include "gfx/v2/SystaliaSurfacePropsV2.hpp"
+
+using namespace Systalia::Gfx::V2;
 
 class TestBackdropBinding : public QObject {
     Q_OBJECT
 
 private slots:
-    void testScreenResolutionAssignmentAndSignal();
+    void testBackdropProviderAssignmentAndSignal();
     void testSurfacePropsScreenParameters();
-    void testFallbackTextureManagement();
+    void testBackdropProviderLifecycle();
 };
 
-void TestBackdropBinding::testScreenResolutionAssignmentAndSignal() {
-    SystaliaGlassItem item;
-    QSignalSpy spy(&item, &SystaliaGlassItem::screenResolutionChanged);
+void TestBackdropBinding::testBackdropProviderAssignmentAndSignal() {
+    ValoGlassItemV2 item;
+    ValoBackdropProviderV2 provider;
+    QSignalSpy spy(&item, &ValoGlassItemV2::backdropProviderChanged);
 
-    const QVector2D targetRes(1920.0f, 1080.0f);
-    item.setScreenResolution(targetRes);
-
-    QCOMPARE(item.screenResolution(), targetRes);
+    item.setBackdropProvider(&provider);
+    QCOMPARE(item.backdropProvider(), &provider);
     QCOMPARE(spy.count(), 1);
 
-    // Atribuição com valor idêntico não deve disparar sinal desnecessário
-    item.setScreenResolution(targetRes);
+    // Atribuição com ponteiro idêntico não deve disparar sinal desnecessário
+    item.setBackdropProvider(&provider);
     QCOMPARE(spy.count(), 1);
 }
 
 void TestBackdropBinding::testSurfacePropsScreenParameters() {
-    SystaliaSurfaceProps props;
+    SystaliaSurfacePropsV2 props;
     props.windowSize = QVector2D(860.0f, 580.0f);
     props.screenResolution = QVector2D(1280.0f, 800.0f);
 
@@ -41,30 +43,26 @@ void TestBackdropBinding::testSurfacePropsScreenParameters() {
     QCOMPARE(aspectRatio, 1280.0f / 800.0f);
 }
 
-void TestBackdropBinding::testFallbackTextureManagement() {
+void TestBackdropBinding::testBackdropProviderLifecycle() {
     QQuickWindow window;
     window.resize(300, 300);
-    SystaliaGlassItem item;
-    item.setParentItem(window.contentItem());
+
+    ValoBackdropProviderV2 provider;
+    ValoGlassItemV2 item(window.contentItem());
+    item.setSize(QSizeF(200.0, 200.0));
+    item.setBackdropProvider(&provider);
+
     window.show();
     const bool exposed = QTest::qWaitForWindowExposed(&window);
     Q_UNUSED(exposed);
 
     QVERIFY(item.window() != nullptr);
+    QCOMPARE(item.backdropProvider(), &provider);
 
-    // ensureFallbackTexture aloca uma textura sólida quando o SceneGraph está ativo
-    QSGTexture *tex = item.ensureFallbackTexture();
-    if (tex) {
-        QCOMPARE(tex->textureSize(), QSize(4, 4));
-        QSGTexture *cachedTex = item.ensureFallbackTexture();
-        QCOMPARE(cachedTex, tex);
-    } else {
-        // Se a plataforma headless não inicializar RHI swapchain, valida o ciclo de fallback
-        QVERIFY(item.window() != nullptr);
-    }
-
-    // Limpeza de recursos
-    item.releaseResources();
+    // Garante limpeza segura dos recursos sem vazamentos em execução headless/RHI
+    provider.releaseResources();
+    item.setBackdropProvider(nullptr);
+    QVERIFY(item.backdropProvider() == nullptr);
 }
 
 QTEST_MAIN(TestBackdropBinding)

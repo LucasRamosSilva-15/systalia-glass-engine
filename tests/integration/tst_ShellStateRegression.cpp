@@ -14,7 +14,6 @@
 #include <memory>
 
 #include "SystaliaCompositor.hpp"
-#include "SystaliaGlassItem.hpp"
 #include "gfx/v2/ValoGlassItemV2.hpp"
 #include "gfx/v2/ValoShadowItemV2.hpp"
 #include "SystemTelemetryService.hpp"
@@ -104,7 +103,6 @@ private slots:
         QVERIFY(surface);
         QCOMPARE(surface->findChildren<ValoGlassItemV2 *>().size(), 1);
         QCOMPARE(surface->findChildren<ValoShadowItemV2 *>().size(), 1);
-        QCOMPARE(surface->findChildren<SystaliaGlassItem *>().size(), 0);
         QCOMPARE(evaluate("materialWindow.opticalSurface.geometryMode").toInt(), 1);
         QCOMPARE(evaluate("materialWindow.blurProfile").toInt(), 1);
         QCOMPARE(evaluate("materialWindow.surfaceOpacity").toDouble(), .50);
@@ -167,7 +165,6 @@ private slots:
             auto *surface = findSurface(name);
             QCOMPARE(surface->findChildren<ValoGlassItemV2 *>().size(),1);
             QCOMPARE(surface->findChildren<ValoShadowItemV2 *>().size(),1);
-            QCOMPARE(surface->findChildren<SystaliaGlassItem *>().size(),0);
             QCOMPARE(surface->property("geometryMode").toInt(),1);
         }
         for (int profile : {0,1,2,1}) {
@@ -668,7 +665,7 @@ private slots:
         QCOMPARE(evaluate("systemDock.height").toDouble(), 125.0);
         QCOMPARE(evaluate("systemDock.pillRadius").toDouble(), 47.0);
 
-        // Valida que o chassi óptico principal é um ValoGlass unificado com cantos circulares de 47px
+        // Valida que o chassi óptico principal é uma superfície V2 unificada com cantos circulares de 47px
         QVERIFY(evaluate("systemDock.valoGlassInstance !== null").toBool());
         QVERIFY(evaluate("systemDock.valoGlassInstance.circularCorners").toBool());
         QCOMPARE(evaluate("systemDock.valoGlassInstance.cornerRadius").toDouble(), 47.0);

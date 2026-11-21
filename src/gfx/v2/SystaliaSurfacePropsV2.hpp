@@ -26,7 +26,7 @@ enum class GeometryMode : uint32_t {
  * - Alinhamento: 16 bytes.
  * - Todos os membros alinhados aos múltiplos dos seus tamanhos base std140.
  *
- * Contrato legado V1 (SystaliaSurfaceProps, 128 bytes) é preservado em paralelo.
+ * Bloco std140 oficial da arquitetura VALO Graphics 2.0.
  */
 struct alignas(16) SystaliaSurfacePropsV2 {
     Matrix4x4_std140 matrix;               // offset 0,   tamanho 64 (Matriz MVP normalizada)

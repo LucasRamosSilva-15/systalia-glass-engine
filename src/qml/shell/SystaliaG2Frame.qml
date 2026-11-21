@@ -4,8 +4,7 @@ import QtQuick.Shapes
 Shape {
     id: frame
 
-    // Ordem igual a SystaliaGlassItem.radii: topo esquerdo, topo direito,
-    // inferior esquerdo e inferior direito.
+    // Ordem dos raios: topo esquerdo, topo direito, inferior esquerdo e inferior direito.
     property vector4d radii: Qt.vector4d(20, 20, 20, 20)
     property bool circularCorners: false
     property color fillColor: "transparent"

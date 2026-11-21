@@ -1,7 +1,9 @@
 #include <QTest>
 #include <cmath>
 #include "SystaliaClientClip.hpp"
-#include "SystaliaSurfaceProps.hpp"
+#include "gfx/v2/SystaliaSurfacePropsV2.hpp"
+
+using namespace Systalia::Gfx::V2;
 
 class TestUnifiedComposition final : public QObject {
     Q_OBJECT
@@ -19,19 +21,19 @@ private slots:
 };
 
 void TestUnifiedComposition::clientStd140BlockHasExpectedSize() {
-    const SystaliaSurfaceProps props;
-    QCOMPARE(sizeof(props), size_t(128));
-    QCOMPARE(offsetof(SystaliaSurfaceProps, hasClientTexture), size_t(120));
-    QCOMPARE(offsetof(SystaliaSurfaceProps, titleBarHeight), size_t(124));
+    const SystaliaSurfacePropsV2 props;
+    QCOMPARE(sizeof(props), size_t(160));
+    QCOMPARE(offsetof(SystaliaSurfacePropsV2, hasClientTexture), size_t(120));
+    QCOMPARE(offsetof(SystaliaSurfacePropsV2, titleBarHeight), size_t(124));
 }
 
 void TestUnifiedComposition::clientTextureFlagDefaultsToDisabled() {
-    const SystaliaSurfaceProps props;
+    const SystaliaSurfacePropsV2 props;
     QCOMPARE(props.hasClientTexture, 0.0f);
 }
 
 void TestUnifiedComposition::clientTitleBarHeightMatchesLayout() {
-    const SystaliaSurfaceProps props;
+    const SystaliaSurfacePropsV2 props;
     QCOMPARE(props.titleBarHeight, SystaliaDefaultTitleBarHeight);
 }
 

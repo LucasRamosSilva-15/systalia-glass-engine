@@ -4,12 +4,12 @@
 #include <QQuickItem>
 #include <memory>
 
-#include "SystaliaGlassItem.hpp"
-#include "SystaliaGlassMaterial.hpp"
+#include "gfx/v2/ValoGlassItemV2.hpp"
+#include "gfx/v2/ValoGlassMaterialV2.hpp"
 #include "AppRegistryService.hpp"
 #include "NotificationServer.hpp"
 #include "WindowStackModel.hpp"
-#include "SystaliaSurfaceProps.hpp"
+#include "gfx/v2/SystaliaSurfacePropsV2.hpp"
 
 class TestResourceLeakAudit final : public QObject {
     Q_OBJECT
@@ -24,22 +24,23 @@ private slots:
 };
 
 void TestResourceLeakAudit::glassItemLifecycleInLoop() {
+    using Systalia::Gfx::V2::ValoGlassItemV2;
+
     std::unique_ptr<QQuickWindow> window = std::make_unique<QQuickWindow>();
     constexpr int ITERATIONS = 100;
 
     for (int i = 0; i < ITERATIONS; ++i) {
-        auto *item = new SystaliaGlassItem(window->contentItem());
+        auto *item = new ValoGlassItemV2(window->contentItem());
         item->setWidth(800.0);
         item->setHeight(500.0);
-        item->setIor(1.20f + static_cast<float>(i) * 0.001f);
-        item->setRadii(QVector4D(20.0f, 20.0f, 20.0f, 20.0f));
+        item->setIor(1.12f + static_cast<float>(i) * 0.001f);
+        item->setCornerRadii(QVector4D(20.0f, 20.0f, 20.0f, 20.0f));
         item->setCausticIntensity(0.85f);
-        item->setTime(static_cast<float>(i) * 0.016f);
+        item->setBlurProfile(i % 3);
 
-        QCOMPARE(item->radii(), QVector4D(20.0f, 20.0f, 20.0f, 20.0f));
+        QCOMPARE(item->cornerRadii(), QVector4D(20.0f, 20.0f, 20.0f, 20.0f));
         QCOMPARE(item->causticIntensity(), 0.85f);
 
-        item->releaseResources();
         delete item;
     }
 
@@ -47,12 +48,13 @@ void TestResourceLeakAudit::glassItemLifecycleInLoop() {
 }
 
 void TestResourceLeakAudit::materialShaderPipelineSharing() {
-    // Valida que múltiplas instâncias de SystaliaGlassMaterial compartilham exatamente
-    // o mesmo QSGMaterialType, garantindo que o Qt SceneGraph / QRhi compartilhe o mesmo
-    // pipeline state e shader program sem recompilações em tempo de execução.
-    SystaliaGlassMaterial mat1;
-    SystaliaGlassMaterial mat2;
-    SystaliaGlassMaterial mat3;
+    using Systalia::Gfx::V2::ValoGlassMaterialV2;
+
+    // Valida que múltiplas instâncias de ValoGlassMaterialV2 compartilham exatamente
+    // o mesmo QSGMaterialType por modo diagnóstico, evitando recompilações em tempo de execução.
+    ValoGlassMaterialV2 mat1(0);
+    ValoGlassMaterialV2 mat2(0);
+    ValoGlassMaterialV2 mat3(0);
 
     QVERIFY(mat1.type() != nullptr);
     QCOMPARE(mat1.type(), mat2.type());
@@ -60,8 +62,10 @@ void TestResourceLeakAudit::materialShaderPipelineSharing() {
 }
 
 void TestResourceLeakAudit::materialBatchingComparison() {
-    SystaliaGlassMaterial matA;
-    SystaliaGlassMaterial matB;
+    using Systalia::Gfx::V2::ValoGlassMaterialV2;
+
+    ValoGlassMaterialV2 matA(0);
+    ValoGlassMaterialV2 matB(0);
 
     // Sem texturas vinculadas, materiais devem ser equivalentes para batching (compare == 0)
     QCOMPARE(matA.compare(&matB), 0);
