@@ -4,12 +4,12 @@
 #include <QQuickItem>
 #include <memory>
 
-#include "gfx/v2/ValoGlassItemV2.hpp"
-#include "gfx/v2/ValoGlassMaterialV2.hpp"
+#include "graphics/ValoGlassItemV2.hpp"
+#include "graphics/ValoGlassMaterialV2.hpp"
 #include "AppRegistryService.hpp"
 #include "NotificationServer.hpp"
 #include "WindowStackModel.hpp"
-#include "gfx/v2/SystaliaSurfacePropsV2.hpp"
+#include "graphics/SystaliaSurfacePropsV2.hpp"
 
 class TestResourceLeakAudit final : public QObject {
     Q_OBJECT

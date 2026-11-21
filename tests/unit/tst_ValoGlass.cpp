@@ -7,7 +7,7 @@
 #include <QImage>
 #include <QDir>
 
-#include "gfx/v2/ValoGlassItemV2.hpp"
+#include "graphics/ValoGlassItemV2.hpp"
 
 void qml_register_types_Systalia_Engine();
 

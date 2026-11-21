@@ -9,8 +9,8 @@
 
 #include "compositor/OutputManagerService.hpp"
 #include "compositor/SystaliaCompositor.hpp"
-#include "system/InputDeviceManager.hpp"
-#include "system/WorkspaceManagerService.hpp"
+#include "services/InputDeviceManager.hpp"
+#include "services/WorkspaceManagerService.hpp"
 
 class tst_InputHardwareBackend final : public QObject {
     Q_OBJECT

@@ -8,8 +8,8 @@
 
 #include "OutputManagerService.hpp"
 #include "SystaliaCompositor.hpp"
-#include "gfx/v2/ValoGlassItemV2.hpp"
-#include "gfx/v2/SystaliaSurfacePropsV2.hpp"
+#include "graphics/ValoGlassItemV2.hpp"
+#include "graphics/SystaliaSurfacePropsV2.hpp"
 
 class TestOutputManager final : public QObject {
     Q_OBJECT

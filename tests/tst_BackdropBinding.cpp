@@ -2,9 +2,9 @@
 #include <QSignalSpy>
 #include <QQuickWindow>
 #include <QQuickItem>
-#include "gfx/v2/ValoGlassItemV2.hpp"
-#include "gfx/v2/ValoBackdropProviderV2.hpp"
-#include "gfx/v2/SystaliaSurfacePropsV2.hpp"
+#include "graphics/ValoGlassItemV2.hpp"
+#include "graphics/ValoBackdropProviderV2.hpp"
+#include "graphics/SystaliaSurfacePropsV2.hpp"
 
 using namespace Systalia::Gfx::V2;
 

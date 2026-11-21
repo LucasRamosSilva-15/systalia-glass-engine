@@ -14,8 +14,8 @@
 #include <memory>
 
 #include "SystaliaCompositor.hpp"
-#include "gfx/v2/ValoGlassItemV2.hpp"
-#include "gfx/v2/ValoShadowItemV2.hpp"
+#include "graphics/ValoGlassItemV2.hpp"
+#include "graphics/ValoShadowItemV2.hpp"
 #include "SystemTelemetryService.hpp"
 #include "ProcessLauncherService.hpp"
 #include "AppRegistryService.hpp"

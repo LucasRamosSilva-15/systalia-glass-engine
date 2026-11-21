@@ -9,10 +9,10 @@
 #include <memory>
 
 #include "compositor/OutputManagerService.hpp"
-#include "gfx/v2/ValoGlassItemV2.hpp"
-#include "gfx/v2/ValoBackdropProviderV2.hpp"
-#include "system/LiquidTilingService.hpp"
-#include "system/WorkspaceManagerService.hpp"
+#include "graphics/ValoGlassItemV2.hpp"
+#include "graphics/ValoBackdropProviderV2.hpp"
+#include "services/LiquidTilingService.hpp"
+#include "services/WorkspaceManagerService.hpp"
 
 class tst_Phase4Audit : public QObject {
     Q_OBJECT

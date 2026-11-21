@@ -10,7 +10,7 @@
 #include <QSignalSpy>
 
 #include "ValoGlassItemV2.hpp"
-#include "tokens/ValoTokens.hpp"
+#include "theme/ValoTokens.hpp"
 
 void qml_register_types_Systalia_Engine();
 

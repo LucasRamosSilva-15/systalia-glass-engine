@@ -4,7 +4,7 @@
 #include <cmath>
 #include <algorithm>
 
-#include "v2/ValoGeometryEngineV2.hpp"
+#include "graphics/ValoGeometryEngineV2.hpp"
 
 using namespace Systalia::Gfx::V2;
 

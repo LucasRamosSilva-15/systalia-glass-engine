@@ -44,8 +44,8 @@ include(cmake/SgeShaders.cmake)
 
 # Biblioteca estática central com o motor, itens visuais, compositor Wayland e módulo QML
 qt_add_library(sge_core STATIC
-    src/gfx/ValoStd140Matrix.hpp
-    src/gfx/SystaliaClientClip.hpp
+    src/graphics/ValoStd140Matrix.hpp
+    src/graphics/SystaliaClientClip.hpp
     src/compositor/SystaliaSurfaceExtension.hpp
     src/compositor/SystaliaSurfaceExtension.cpp
     src/compositor/SystaliaCompositor.hpp
@@ -56,44 +56,44 @@ qt_add_library(sge_core STATIC
     src/compositor/OutputManagerService.cpp
     src/compositor/XWaylandManager.hpp
     src/compositor/XWaylandManager.cpp
-    src/system/SystemTelemetryService.hpp
-    src/system/SystemTelemetryService.cpp
-    src/system/ProcessLauncherService.hpp
-    src/system/ProcessLauncherService.cpp
-    src/system/AppRegistryService.hpp
-    src/system/AppRegistryService.cpp
-    src/system/NotificationServer.hpp
-    src/system/NotificationServer.cpp
-    src/system/SystemControlService.hpp
-    src/system/SystemControlService.cpp
-    src/system/WorkspaceManagerService.hpp
-    src/system/WorkspaceManagerService.cpp
-    src/system/LiquidTilingService.hpp
-    src/system/LiquidTilingService.cpp
-    src/system/InputDeviceManager.hpp
-    src/system/InputDeviceManager.cpp
-    src/system/LogindSessionService.hpp
-    src/system/LogindSessionService.cpp
-    src/tokens/ValoTokens.hpp
-    src/gfx/v2/SystaliaSurfacePropsV2.hpp
-    src/gfx/v2/ValoGeometryEngineV2.hpp
-    src/gfx/v2/ValoGeometryEngineV2.cpp
-    src/gfx/v2/ValoOrganicTransform.hpp
-    src/gfx/v2/ValoOrganicTransform.cpp
-    src/gfx/v2/ValoOpticalContext.hpp
-    src/gfx/v2/ValoOpticalContext.cpp
-    src/gfx/v2/ValoGlassMaterialV2.hpp
-    src/gfx/v2/ValoGlassMaterialV2.cpp
-    src/gfx/v2/ValoGlassItemV2.hpp
-    src/gfx/v2/ValoGlassItemV2.cpp
-    src/gfx/v2/ValoBackdropProviderV2.hpp
-    src/gfx/v2/ValoBackdropProviderV2.cpp
-    src/gfx/v2/ValoBlurPipelineV2.hpp
-    src/gfx/v2/ValoBlurPipelineV2.cpp
-    src/gfx/v2/ValoGpuBlurPipelineV2.hpp
-    src/gfx/v2/ValoGpuBlurPipelineV2.cpp
-    src/gfx/v2/ValoShadowItemV2.hpp
-    src/gfx/v2/ValoShadowItemV2.cpp
+    src/services/SystemTelemetryService.hpp
+    src/services/SystemTelemetryService.cpp
+    src/services/ProcessLauncherService.hpp
+    src/services/ProcessLauncherService.cpp
+    src/services/AppRegistryService.hpp
+    src/services/AppRegistryService.cpp
+    src/services/NotificationServer.hpp
+    src/services/NotificationServer.cpp
+    src/services/SystemControlService.hpp
+    src/services/SystemControlService.cpp
+    src/services/WorkspaceManagerService.hpp
+    src/services/WorkspaceManagerService.cpp
+    src/services/LiquidTilingService.hpp
+    src/services/LiquidTilingService.cpp
+    src/services/InputDeviceManager.hpp
+    src/services/InputDeviceManager.cpp
+    src/services/LogindSessionService.hpp
+    src/services/LogindSessionService.cpp
+    src/theme/ValoTokens.hpp
+    src/graphics/SystaliaSurfacePropsV2.hpp
+    src/graphics/ValoGeometryEngineV2.hpp
+    src/graphics/ValoGeometryEngineV2.cpp
+    src/graphics/ValoOrganicTransform.hpp
+    src/graphics/ValoOrganicTransform.cpp
+    src/graphics/ValoOpticalContext.hpp
+    src/graphics/ValoOpticalContext.cpp
+    src/graphics/ValoGlassMaterialV2.hpp
+    src/graphics/ValoGlassMaterialV2.cpp
+    src/graphics/ValoGlassItemV2.hpp
+    src/graphics/ValoGlassItemV2.cpp
+    src/graphics/ValoBackdropProviderV2.hpp
+    src/graphics/ValoBackdropProviderV2.cpp
+    src/graphics/ValoBlurPipelineV2.hpp
+    src/graphics/ValoBlurPipelineV2.cpp
+    src/graphics/ValoGpuBlurPipelineV2.hpp
+    src/graphics/ValoGpuBlurPipelineV2.cpp
+    src/graphics/ValoShadowItemV2.hpp
+    src/graphics/ValoShadowItemV2.cpp
 )
 
 qt6_generate_wayland_protocol_server_sources(sge_core
@@ -103,11 +103,10 @@ qt6_generate_wayland_protocol_server_sources(sge_core
 target_include_directories(sge_core PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>"
     ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gfx
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gfx/v2
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics
     ${CMAKE_CURRENT_SOURCE_DIR}/src/compositor
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/system
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/tokens
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/services
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/theme
 )
 
 target_link_libraries(sge_core PUBLIC
