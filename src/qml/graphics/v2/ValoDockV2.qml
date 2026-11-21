@@ -24,6 +24,7 @@ Item {
 
     // Propriedades de Integração Gráfica e Óptica V2
     property alias backdropSource: backdropProvider.source
+    readonly property alias glassItemInstance: glassItem
     property alias backdropProvider: glassItem.backdropProvider
     property alias opticalContext: glassItem.opticalContext
 
@@ -204,6 +205,7 @@ Item {
 
             delegate: ValoDockItemV2 {
                 id: itemDelegate
+                objectName: "dockItem_" + modelData.action
                 required property var modelData
                 required property int index
 

@@ -34,11 +34,11 @@ Item {
     property bool materialActive: true
     readonly property real pillRadius: 47.0
     property vector4d cornerRadii: Qt.vector4d(pillRadius, pillRadius, pillRadius, pillRadius)
-    property bool keyboardNavActive: false
+    property alias keyboardNavActive: valoDockInstance.keyboardNavActive
 
-    readonly property real dockWidth: 555.0
-    readonly property real dockHeight: 125.0
-    readonly property int dockItemCount: 5
+    readonly property real dockWidth: width
+    readonly property real dockHeight: height
+    readonly property int dockItemCount: launchers.length
 
     readonly property var launchers: [
         { action: "files", label: "Systalia Files", icon: "valo-dock-folder.svg", appIds: ["systalia-files"], relX: 33.75 },
@@ -89,7 +89,6 @@ Item {
         launchedAppIds: root.launchedAppIds
         filesVisible: root.filesVisible
         settingsOpen: root.settingsOpen
-        keyboardNavActive: root.keyboardNavActive
         userPrefersReducedMotion: root.prefersReducedMotion
         userHighContrast: root.highContrast
 
@@ -98,6 +97,16 @@ Item {
         onTerminalRequested: root.terminalRequested()
         onIdeRequested: root.ideRequested()
         onSettingsRequested: root.settingsRequested()
+    }
+
+    function activate(action) {
+        switch (action) {
+        case "files": filesRequested(); break
+        case "audio": audioRequested(); break
+        case "terminal": terminalRequested(); break
+        case "ide": ideRequested(); break
+        case "settings": settingsRequested(); break
+        }
     }
 
     function dockItemAt(index) {

@@ -28,6 +28,9 @@ Item {
     property bool forceActive: false
     property bool forceBackgroundRunning: false
 
+    readonly property bool isHovered: hoverHandler.hovered
+    readonly property bool isPressed: tapHandler.pressed
+
     readonly property bool effectiveHovered: forceHovered || (hoverHandler.hovered && !forcePressed)
     readonly property bool effectivePressed: forcePressed || tapHandler.pressed
     readonly property bool effectiveRunning: forceActive || forceBackgroundRunning || isRunning
