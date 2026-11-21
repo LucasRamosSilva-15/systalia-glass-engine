@@ -17,8 +17,8 @@
 |---|---|---|---|---|
 | Dock | `src/qml/shell/SystaliaDock.qml` | `SystaliaDockV2.qml` | PENDENTE | Buscar instâncias QML estáticas/dinâmicas, testes, ferramentas, QRC e consumidores externos; decidir adaptador |
 | TopBar | `src/qml/shell/SystaliaTopBar.qml` | `SystaliaTopBarV2.qml` | PENDENTE | Mesma auditoria; verificar sinais e telemetria |
-| Files | `src/qml/shell/SystaliaFilesWindow.qml` | `SystaliaFilesWindowV2.qml` | PENDENTE | Verificar contrato visual, ações, drag/resize e abertura/fechamento |
-| Control Center | `src/qml/shell/SystaliaControlCenter.qml` | `SystaliaControlCenterV2.qml` | PENDENTE | Verificar controles, serviços e acessibilidade |
+| Files | `src/qml/shell/SystaliaFilesWindow.qml` | `SystaliaFilesWindowV2.qml` | ADAPTADOR V2 | Paridade visual do antigo chassis e semântica óptica externa pendentes |
+| Control Center | `src/qml/shell/SystaliaControlCenter.qml` | `SystaliaControlCenterV2.qml` | ADAPTADOR V2 | Homologação completa dos serviços e da acessibilidade pendente |
 | Componentes compartilhados | `ValoGlass.qml`, `SystaliaG2Frame.qml`, `SystaliaWindowHeader.qml` | Sem equivalência integral demonstrada | PRESERVAR | Não excluir por associação com V1 |
 | Decoração de clientes | `decorationV1` | `decorationV2` | PRESERVAR | Exige fase própria de compatibilidade e clientes reais |
 
@@ -42,3 +42,7 @@ Esta alteração cria exclusivamente o roteiro de execução e a matriz por fam�
 ## Continuação 06.1
 
 Dock e TopBar agora delegam aos componentes V2 pelos mesmos nomes QML e URLs QRC. A etapa permanece **PARTIAL** pela compatibilidade profunda da Dock antiga. O relatório registra a auditoria, os resultados de 47/47 em ambas as configurações e as capturas com lançamentos Wayland reais. [Consolidação 06.1](CONSOLIDACAO_06_1_DOCK_TOPBAR.md)
+
+## Continuação 06.2
+
+Files e Control Center usam adaptadores V2 pelos nomes anteriores. [Relatório e evidências](CONSOLIDACAO_06_2_FILES_CONTROLCENTER.md)

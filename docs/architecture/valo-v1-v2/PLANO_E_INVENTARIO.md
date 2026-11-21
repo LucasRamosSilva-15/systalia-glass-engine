@@ -96,3 +96,7 @@ A correção foi validada com CTest completo em Debug e Release (47/47 em cada) 
 ## Consolidação 06.1
 
 Os caminhos antigos `src/qml/shell/SystaliaDock.qml` e `src/qml/shell/SystaliaTopBar.qml` foram migrados no lugar para adaptadores V2. Nenhum caminho do inventário de produto foi adicionado, movido ou excluído. Os componentes V2 concentram a renderização, com ajustes no contrato da Dock e uma regressão QRC. O fallback de clientes e os contratos V1 protegidos permanecem disponíveis. O estado é **PARTIAL** pela API profunda de `valoGlassInstance` e pela validação pendente dos consumidores externos. [Auditoria e evidências](CONSOLIDACAO_06_1_DOCK_TOPBAR.md)
+
+## Consolidação 06.2
+
+Files e Control Center foram migrados no lugar para adaptadores V2. Os caminhos do inventário do produto continuam os mesmos. A consolidação desta etapa é **PARTIAL** porque o acabamento V1 e a semântica de todos os parâmetros ópticos externos não têm paridade comprovada. Os contratos V1 protegidos seguem disponíveis. [Inventário da etapa, testes e capturas](CONSOLIDACAO_06_2_FILES_CONTROLCENTER.md)

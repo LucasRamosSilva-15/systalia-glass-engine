@@ -44,6 +44,7 @@ private slots:
     void testControlCenterV2SquircleG2AndServices();
     void testDockV2ShellIntegration();
     void testLegacyDockAndTopBarResources();
+    void testLegacyFilesAndControlCenterResources();
     void testFramebufferPixelVisibilityV2();
 
 private:
@@ -314,6 +315,68 @@ void tst_ValoShellV2::testLegacyDockAndTopBarResources() {
             QCOMPARE(terminal.count(), 1);
         }
     }
+}
+
+void tst_ValoShellV2::testLegacyFilesAndControlCenterResources() {
+    QQuickWindow window;
+    window.resize(1280, 800);
+    window.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+
+    auto load = [&](const QString &name) {
+        QQmlComponent component(m_engine.get(),
+            QUrl(QStringLiteral("qrc:/qt/qml/Systalia/Engine/src/qml/shell/%1.qml").arg(name)));
+        if (!component.isReady())
+            qWarning().noquote() << component.errorString();
+        return std::unique_ptr<QObject>(component.create());
+    };
+    auto click = [&](QQuickItem *item) {
+        QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier,
+                          item->mapToScene(item->boundingRect().center()).toPoint());
+    };
+
+    auto files = load(QStringLiteral("SystaliaFilesWindow"));
+    auto *filesItem = qobject_cast<QQuickItem *>(files.get());
+    QVERIFY(filesItem);
+    filesItem->setParentItem(window.contentItem());
+    QCOMPARE(filesItem->findChildren<ValoGlassItemV2 *>().size(), 1);
+    QVERIFY(filesItem->findChildren<SystaliaGlassItem *>().isEmpty());
+    QCOMPARE(filesItem->property("surfaceOpacity").toDouble(), 0.85);
+    auto *search = filesItem->findChild<QQuickItem *>("filesSearch");
+    auto *closeButton = filesItem->findChild<QQuickItem *>("closeToplevelButton");
+    QVERIFY(search && closeButton);
+    click(search);
+    QTRY_VERIFY(search->hasActiveFocus());
+    QTest::keyClick(&window, Qt::Key_A);
+    QCOMPARE(search->property("text").toString(), QStringLiteral("a"));
+    click(closeButton);
+    QTRY_VERIFY(!filesItem->isVisible());
+
+    auto center = load(QStringLiteral("SystaliaControlCenter"));
+    auto *centerItem = qobject_cast<QQuickItem *>(center.get());
+    QVERIFY(centerItem);
+    centerItem->setParentItem(window.contentItem());
+    QCOMPARE(centerItem->findChildren<ValoGlassItemV2 *>().size(), 1);
+    QVERIFY(centerItem->findChildren<SystaliaGlassItem *>().isEmpty());
+    centerItem->setProperty("prefersReducedMotion", true);
+    QVERIFY(QMetaObject::invokeMethod(centerItem, "open"));
+    QTRY_VERIFY(centerItem->isVisible());
+    const auto controls = centerItem->findChildren<QQuickItem *>();
+    auto *quietToggle = [&]() -> QQuickItem * {
+        for (auto *control : controls) {
+            if (control->property("iconType").toString() == QStringLiteral("moon")
+                && control->property("label").toString() == QStringLiteral("Silencioso"))
+                return control;
+        }
+        return nullptr;
+    }();
+    QVERIFY(quietToggle);
+    const bool original = m_control.doNotDisturb();
+    click(quietToggle);
+    QCOMPARE(m_control.doNotDisturb(), !original);
+    m_control.setDoNotDisturb(original);
+    QTest::keyClick(&window, Qt::Key_Escape);
+    QTRY_VERIFY(!centerItem->property("opened").toBool());
 }
 
 void tst_ValoShellV2::testFramebufferPixelVisibilityV2() {
