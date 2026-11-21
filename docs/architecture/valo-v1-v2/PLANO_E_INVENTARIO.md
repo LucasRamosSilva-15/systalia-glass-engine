@@ -100,3 +100,7 @@ Os caminhos antigos `src/qml/shell/SystaliaDock.qml` e `src/qml/shell/SystaliaTo
 ## Consolidação 06.2
 
 Files e Control Center foram migrados no lugar para adaptadores V2. Os caminhos do inventário do produto continuam os mesmos. A consolidação desta etapa é **PARTIAL** porque o acabamento V1 e a semântica de todos os parâmetros ópticos externos não têm paridade comprovada. Os contratos V1 protegidos seguem disponíveis. [Inventário da etapa, testes e capturas](CONSOLIDACAO_06_2_FILES_CONTROLCENTER.md)
+
+## Consolidação 06.3
+
+Foram eliminadas a dependência transitiva de `SystaliaSurfacePropsV2.hpp` no cabeçalho V1 (`SystaliaSurfaceProps.hpp`), os registros manuais redundantes de `SystaliaGlassItem` em `src/app/main.cpp` e em seis suítes de teste, e o uso de `SystaliaGlassItem` em `tst_SystaliaProtocol.cpp` (migrado para `ValoGlassItemV2`). `decorationV1`, `ValoGlass.qml`, `SystaliaGlassItem`, `SystaliaGlassMaterial` e os shaders legados permanecem preservados até homologação completa de clientes e XWayland. Estado: **PARTIAL**. [Relatório e evidências](CONSOLIDACAO_06_3.md)

@@ -46,3 +46,7 @@ Dock e TopBar agora delegam aos componentes V2 pelos mesmos nomes QML e URLs QRC
 ## Continuação 06.2
 
 Files e Control Center usam adaptadores V2 pelos nomes anteriores. [Relatório e evidências](CONSOLIDACAO_06_2_FILES_CONTROLCENTER.md)
+
+## Continuação 06.3
+
+Redução de dependências restantes do VALO V1: desacoplamento do cabeçalho `SystaliaSurfacePropsV2.hpp`, remoção de registros manuais redundantes de `SystaliaGlassItem` e migração de `tst_SystaliaProtocol` para `ValoGlassItemV2`. `decorationV1`, `ValoGlass.qml`, classes C++ e shaders V1 permanecem preservados. [Relatório e evidências](CONSOLIDACAO_06_3.md)
