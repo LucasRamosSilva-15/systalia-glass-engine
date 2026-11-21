@@ -231,8 +231,8 @@ void tst_DrmBackendPoc::descriptorTransferAndMoveSemantics() {
     QCOMPARE(d1.fd, -1);
     QVERIFY(d2.isValid());
     QCOMPARE(d2.fd, 77);
-    QCOMPARE(d2.major, 226U);
-    QCOMPARE(d2.minor, 1U);
+    QCOMPARE(d2.majorNumber, 226U);
+    QCOMPARE(d2.minorNumber, 1U);
 }
 
 QTEST_MAIN(tst_DrmBackendPoc)

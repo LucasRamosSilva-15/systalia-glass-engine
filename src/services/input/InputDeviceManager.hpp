@@ -70,6 +70,7 @@ public:
         QByteArray qsgRhiBackend;
         QByteArray eglfsKmsConfigPath;
         bool atomicDrmEnabled = true;
+        bool useExperimentalDrmBackend = false;
     };
 
     struct KmsConnectorMode {
@@ -101,7 +102,8 @@ public:
         const QByteArray &waylandDisplay,
         const QByteArray &x11Display,
         const QByteArray &existingQpaPlatform = QByteArray(),
-        const QString &kmsConfigPath = QString()) noexcept;
+        const QString &kmsConfigPath = QString(),
+        bool useExperimentalDrmBackend = false) noexcept;
 
     static PlatformEnvironmentConfig configureProcessPlatformEnvironment(
         const QString &kmsConfigPath = QString());

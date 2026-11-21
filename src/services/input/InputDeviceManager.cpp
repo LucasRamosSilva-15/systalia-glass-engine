@@ -105,7 +105,8 @@ InputDeviceManager::PlatformEnvironmentConfig InputDeviceManager::evaluatePlatfo
     const QByteArray &waylandDisplay,
     const QByteArray &x11Display,
     const QByteArray &existingQpaPlatform,
-    const QString &kmsConfigPath) noexcept {
+    const QString &kmsConfigPath,
+    bool useExperimentalDrmBackend) noexcept {
     PlatformEnvironmentConfig cfg;
     cfg.qsgRhiBackend = QByteArrayLiteral("vulkan");
 
@@ -124,14 +125,19 @@ InputDeviceManager::PlatformEnvironmentConfig InputDeviceManager::evaluatePlatfo
     if (!hasWayland && !hasX11) {
         // Execução direta de um TTY Linux puro (Bare-Metal DRM/KMS)
         cfg.mode = SessionBareMetalKms;
-        cfg.qtQpaPlatform = QByteArrayLiteral("eglfs");
-        cfg.qtQpaEglfsIntegration = QByteArrayLiteral("eglfs_kms");
         cfg.qsgRhiBackend = QByteArrayLiteral("vulkan");
         cfg.atomicDrmEnabled = true;
-        if (!kmsConfigPath.trimmed().isEmpty()) {
-            cfg.eglfsKmsConfigPath = kmsConfigPath.trimmed().toUtf8();
+        if (useExperimentalDrmBackend) {
+            cfg.useExperimentalDrmBackend = true;
+            cfg.qtQpaPlatform = QByteArrayLiteral("sge_vulkan_offscreen");
         } else {
-            cfg.eglfsKmsConfigPath = QByteArrayLiteral("config/eglfs_kms.json");
+            cfg.qtQpaPlatform = QByteArrayLiteral("eglfs");
+            cfg.qtQpaEglfsIntegration = QByteArrayLiteral("eglfs_kms");
+            if (!kmsConfigPath.trimmed().isEmpty()) {
+                cfg.eglfsKmsConfigPath = kmsConfigPath.trimmed().toUtf8();
+            } else {
+                cfg.eglfsKmsConfigPath = QByteArrayLiteral("config/eglfs_kms.json");
+            }
         }
     } else {
         // Execução aninhada em sessão gráfica existente (Wayland / X11)
@@ -238,26 +244,43 @@ QString InputDeviceManager::discoverPrimaryDrmDevice(
 
 InputDeviceManager::PlatformEnvironmentConfig InputDeviceManager::configureProcessPlatformEnvironment(
     const QString &kmsConfigPath) {
+    const bool useExperimentalDrm =
+        qgetenv("SGE_USE_DRM_BACKEND").trimmed() == QByteArrayLiteral("1");
     PlatformEnvironmentConfig cfg = evaluatePlatformEnvironment(
         qgetenv("WAYLAND_DISPLAY"),
         qgetenv("DISPLAY"),
         qgetenv("QT_QPA_PLATFORM"),
-        kmsConfigPath);
+        kmsConfigPath,
+        useExperimentalDrm);
 
     qputenv("QSG_RHI_BACKEND", cfg.qsgRhiBackend);
 
     if (cfg.mode == SessionBareMetalKms) {
         qputenv("QT_QPA_PLATFORM", cfg.qtQpaPlatform);
-        qputenv("QT_QPA_EGLFS_INTEGRATION", cfg.qtQpaEglfsIntegration);
-        qputenv("QT_QPA_EGLFS_KMS_ATOMIC", QByteArrayLiteral("1"));
-        const QString resolvedKms = resolveKmsConfigPath(
-            kmsConfigPath, QStringList(), qgetenv("QT_QPA_EGLFS_KMS_CONFIG"));
-        if (!resolvedKms.isEmpty()) {
-            cfg.eglfsKmsConfigPath = resolvedKms.toUtf8();
-            qputenv("QT_QPA_EGLFS_KMS_CONFIG", cfg.eglfsKmsConfigPath);
+        if (cfg.useExperimentalDrmBackend) {
+            const QString exePath = QFileInfo(QStringLiteral("/proc/self/exe")).symLinkTarget();
+            if (!exePath.isEmpty()) {
+                const QDir exeDir = QFileInfo(exePath).dir();
+                const QString localPlatforms = exeDir.filePath(QStringLiteral("platforms"));
+                const QByteArray existingPluginPath = qgetenv("QT_QPA_PLATFORM_PLUGIN_PATH");
+                QByteArray nextPath = localPlatforms.toUtf8();
+                if (!existingPluginPath.isEmpty()) {
+                    nextPath += ':' + existingPluginPath;
+                }
+                qputenv("QT_QPA_PLATFORM_PLUGIN_PATH", nextPath);
+            }
         } else {
-            cfg.eglfsKmsConfigPath.clear();
-            qWarning() << "Nenhum arquivo eglfs_kms.json encontrado; eglfs_kms usará detecção padrão do Qt.";
+            qputenv("QT_QPA_EGLFS_INTEGRATION", cfg.qtQpaEglfsIntegration);
+            qputenv("QT_QPA_EGLFS_KMS_ATOMIC", QByteArrayLiteral("1"));
+            const QString resolvedKms = resolveKmsConfigPath(
+                kmsConfigPath, QStringList(), qgetenv("QT_QPA_EGLFS_KMS_CONFIG"));
+            if (!resolvedKms.isEmpty()) {
+                cfg.eglfsKmsConfigPath = resolvedKms.toUtf8();
+                qputenv("QT_QPA_EGLFS_KMS_CONFIG", cfg.eglfsKmsConfigPath);
+            } else {
+                cfg.eglfsKmsConfigPath.clear();
+                qWarning() << "Nenhum arquivo eglfs_kms.json encontrado; eglfs_kms usará detecção padrão do Qt.";
+            }
         }
     } else if (cfg.mode == SessionNested) {
         if (qgetenv("QT_QPA_PLATFORM").trimmed().isEmpty()) {

@@ -36,8 +36,8 @@ enum class FdOwnership {
  */
 struct DrmDeviceDescriptor {
     int fd = -1;
-    uint32_t major = 0;
-    uint32_t minor = 0;
+    uint32_t majorNumber = 0;
+    uint32_t minorNumber = 0;
     QString devicePath;
     FdOwnership ownership = FdOwnership::None;
 
@@ -48,8 +48,8 @@ struct DrmDeviceDescriptor {
                         QString path,
                         FdOwnership fdOwnership = FdOwnership::BorrowedFromSession)
         : fd(rawFd),
-          major(devMajor),
-          minor(devMinor),
+          majorNumber(devMajor),
+          minorNumber(devMinor),
           devicePath(std::move(path)),
           ownership(fdOwnership) {}
 
@@ -58,16 +58,16 @@ struct DrmDeviceDescriptor {
 
     DrmDeviceDescriptor(DrmDeviceDescriptor &&other) noexcept
         : fd(std::exchange(other.fd, -1)),
-          major(std::exchange(other.major, 0)),
-          minor(std::exchange(other.minor, 0)),
+          majorNumber(std::exchange(other.majorNumber, 0)),
+          minorNumber(std::exchange(other.minorNumber, 0)),
           devicePath(std::move(other.devicePath)),
           ownership(std::exchange(other.ownership, FdOwnership::None)) {}
 
     DrmDeviceDescriptor &operator=(DrmDeviceDescriptor &&other) noexcept {
         if (this != &other) {
             fd = std::exchange(other.fd, -1);
-            major = std::exchange(other.major, 0);
-            minor = std::exchange(other.minor, 0);
+            majorNumber = std::exchange(other.majorNumber, 0);
+            minorNumber = std::exchange(other.minorNumber, 0);
             devicePath = std::move(other.devicePath);
             ownership = std::exchange(other.ownership, FdOwnership::None);
         }

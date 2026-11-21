@@ -5,6 +5,7 @@ qt_add_executable(systalia_glass_engine
 
 target_link_libraries(systalia_glass_engine PRIVATE
     sge_core
+    sge_drm_poc
     Qt6::QuickControls2
     Qt6::WaylandCompositor
     Qt6::DBus

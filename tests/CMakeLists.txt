@@ -456,3 +456,16 @@ set_tests_properties(tst_vulkan_quick_renderer PROPERTIES
     TIMEOUT 45
     ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
 )
+
+qt_add_executable(tst_independent_vulkan_session unit/tst_IndependentVulkanSession.cpp)
+target_link_libraries(tst_independent_vulkan_session PRIVATE
+    sge_drm_poc
+    Qt6::Test
+)
+add_dependencies(tst_independent_vulkan_session sge_vulkan_offscreen)
+add_test(NAME tst_independent_vulkan_session COMMAND tst_independent_vulkan_session)
+set_tests_properties(tst_independent_vulkan_session PROPERTIES
+    LABELS "unit"
+    TIMEOUT 45
+    ENVIRONMENT "QT_QPA_PLATFORM=sge_vulkan_offscreen;QT_QPA_PLATFORM_PLUGIN_PATH=${CMAKE_BINARY_DIR}/platforms"
+)

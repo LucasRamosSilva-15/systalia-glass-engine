@@ -1,5 +1,4 @@
-# Infraestrutura DRM/KMS, GBM e ponte Vulkan/Qt Quick com proprietário único (Etapas 03.2.4.2–03.2.4.4).
-# Compilada separadamente do executável principal para preservar o caminho de produção atual.
+# Infraestrutura DRM/KMS, GBM, ponte Vulkan/Qt Quick e QPA neutro (Etapas 03.2.4.2–03.2.4.5).
 
 pkg_check_modules(LIBDRM REQUIRED IMPORTED_TARGET libdrm)
 pkg_check_modules(GBM REQUIRED IMPORTED_TARGET gbm)
@@ -19,6 +18,10 @@ add_library(sge_drm_poc STATIC
     src/platform/drm/VulkanQuickContracts.hpp
     src/platform/drm/VulkanQuickRenderer.hpp
     src/platform/drm/VulkanQuickRenderer.cpp
+    src/platform/drm/WaylandFrameCoordinator.hpp
+    src/platform/drm/WaylandFrameCoordinator.cpp
+    src/platform/drm/DrmVulkanMatcher.hpp
+    src/platform/drm/DrmVulkanMatcher.cpp
 )
 
 target_include_directories(sge_drm_poc PUBLIC
@@ -31,10 +34,33 @@ target_link_libraries(sge_drm_poc PUBLIC
     Qt6::Quick
     Qt6::Qml
     Qt6::DBus
+    Qt6::WaylandCompositor
     Vulkan::Vulkan
     sge_core
     PkgConfig::LIBDRM
     PkgConfig::GBM
+)
+
+# Plugin QPA neutro com suporte a QVulkanInstance sem abrir /dev/dri/* (Etapa 03.2.4.5).
+add_library(sge_vulkan_offscreen MODULE
+    src/platform/qpa/SgeVulkanOffscreenQpa.hpp
+    src/platform/qpa/SgeVulkanOffscreenQpa.cpp
+)
+
+set_target_properties(sge_vulkan_offscreen PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/platforms"
+    PREFIX "lib"
+)
+
+target_link_libraries(sge_vulkan_offscreen PRIVATE
+    Qt6::Core
+    Qt6::Gui
+    Qt6::GuiPrivate
+    Vulkan::Vulkan
+)
+
+install(TARGETS sge_vulkan_offscreen
+    LIBRARY DESTINATION "${CMAKE_INSTALL_BINDIR}/platforms"
 )
 
 qt_add_executable(sge_vulkan_quick_poc

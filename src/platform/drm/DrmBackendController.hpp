@@ -30,8 +30,8 @@ public:
 
     [[nodiscard]] DrmOwnershipState state() const noexcept { return m_state; }
     [[nodiscard]] int activeFd() const noexcept { return m_descriptor.fd; }
-    [[nodiscard]] uint32_t activeMajor() const noexcept { return m_descriptor.major; }
-    [[nodiscard]] uint32_t activeMinor() const noexcept { return m_descriptor.minor; }
+    [[nodiscard]] uint32_t activeMajor() const noexcept { return m_descriptor.majorNumber; }
+    [[nodiscard]] uint32_t activeMinor() const noexcept { return m_descriptor.minorNumber; }
     [[nodiscard]] uint64_t presentedFrames() const noexcept { return m_presentedFrames; }
     [[nodiscard]] bool isPresentationActive() const noexcept {
         return m_state == DrmOwnershipState::Acquired && m_presenterInitialized;

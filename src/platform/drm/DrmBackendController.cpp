@@ -98,7 +98,9 @@ void DrmBackendController::shutdown() {
 }
 
 bool DrmBackendController::matchesActiveDevice(uint32_t major, uint32_t minor) const noexcept {
-    return m_descriptor.isValid() && m_descriptor.major == major && m_descriptor.minor == minor;
+    return m_descriptor.isValid()
+           && m_descriptor.majorNumber == major
+           && m_descriptor.minorNumber == minor;
 }
 
 void DrmBackendController::releaseDescriptorIfHeld() {
@@ -106,11 +108,11 @@ void DrmBackendController::releaseDescriptorIfHeld() {
         return;
     }
 
-    const uint32_t major = m_descriptor.major;
-    const uint32_t minor = m_descriptor.minor;
+    const uint32_t devMajor = m_descriptor.majorNumber;
+    const uint32_t devMinor = m_descriptor.minorNumber;
     const int fd = m_descriptor.fd;
     m_descriptor = DrmDeviceDescriptor{};
-    m_sessionProvider.releaseDrmDevice(major, minor, fd);
+    m_sessionProvider.releaseDrmDevice(devMajor, devMinor, fd);
 }
 
 } // namespace Systalia::Platform::Drm
