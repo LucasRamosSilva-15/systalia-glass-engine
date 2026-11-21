@@ -432,3 +432,15 @@ set_tests_properties(tst_drm_backend_poc PROPERTIES
     TIMEOUT 30
     ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
 )
+
+qt_add_executable(tst_drm_gbm_integration unit/tst_DrmGbmIntegration.cpp)
+target_link_libraries(tst_drm_gbm_integration PRIVATE
+    sge_drm_poc
+    Qt6::Test
+)
+add_test(NAME tst_drm_gbm_integration COMMAND tst_drm_gbm_integration)
+set_tests_properties(tst_drm_gbm_integration PROPERTIES
+    LABELS "unit"
+    TIMEOUT 30
+    ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)

@@ -19,6 +19,16 @@ enum class DrmOwnershipState {
 };
 
 /**
+ * @brief Origem e responsabilidade de fechamento do descritor de arquivo DRM.
+ */
+enum class FdOwnership {
+    None,
+    BorrowedFromSession, ///< Pertence ao LogindSessionService; não chamar ::close() fora dele.
+    OwnedDirect,         ///< Aberto diretamente (ex.: mock/pipe em teste); deve ser fechado pelo dono.
+    OwnedDuplicate       ///< Duplicado via dup()/F_DUPFD_CLOEXEC; deve ser fechado pelo dono.
+};
+
+/**
  * @brief Representa a concessão (lease) exclusiva de um único nó DRM obtido via sessão.
  *
  * Move-only para garantir propriedade única do descritor sem cópias acidentais
@@ -29,10 +39,19 @@ struct DrmDeviceDescriptor {
     uint32_t major = 0;
     uint32_t minor = 0;
     QString devicePath;
+    FdOwnership ownership = FdOwnership::None;
 
     DrmDeviceDescriptor() = default;
-    DrmDeviceDescriptor(int rawFd, uint32_t devMajor, uint32_t devMinor, QString path)
-        : fd(rawFd), major(devMajor), minor(devMinor), devicePath(std::move(path)) {}
+    DrmDeviceDescriptor(int rawFd,
+                        uint32_t devMajor,
+                        uint32_t devMinor,
+                        QString path,
+                        FdOwnership fdOwnership = FdOwnership::BorrowedFromSession)
+        : fd(rawFd),
+          major(devMajor),
+          minor(devMinor),
+          devicePath(std::move(path)),
+          ownership(fdOwnership) {}
 
     DrmDeviceDescriptor(const DrmDeviceDescriptor &) = delete;
     DrmDeviceDescriptor &operator=(const DrmDeviceDescriptor &) = delete;
@@ -41,7 +60,8 @@ struct DrmDeviceDescriptor {
         : fd(std::exchange(other.fd, -1)),
           major(std::exchange(other.major, 0)),
           minor(std::exchange(other.minor, 0)),
-          devicePath(std::move(other.devicePath)) {}
+          devicePath(std::move(other.devicePath)),
+          ownership(std::exchange(other.ownership, FdOwnership::None)) {}
 
     DrmDeviceDescriptor &operator=(DrmDeviceDescriptor &&other) noexcept {
         if (this != &other) {
@@ -49,6 +69,7 @@ struct DrmDeviceDescriptor {
             major = std::exchange(other.major, 0);
             minor = std::exchange(other.minor, 0);
             devicePath = std::move(other.devicePath);
+            ownership = std::exchange(other.ownership, FdOwnership::None);
         }
         return *this;
     }
@@ -87,9 +108,6 @@ public:
 
 /**
  * @brief Abstração de apresentação gráfica/KMS sobre o FD único cedido pela sessão.
- *
- * Na implementação de produção, encapsulará GBM + Vulkan (QQuickRenderControl) + Atomic KMS
- * sem nunca chamar open("/dev/dri/card*") diretamente.
  */
 class IDrmPresenter {
 public:
