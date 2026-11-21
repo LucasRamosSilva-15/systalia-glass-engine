@@ -1,6 +1,6 @@
 # ADR 0001 — VALO V2 como renderer oficial
 
-- **Estado:** aceita como direção; migração ainda não concluída
+- **Estado:** aceita e concluída na Consolidação 06.6B (VALO V2 como renderer único; renderer V1 removido)
 - **Data:** 2026-11-17
 - **Contexto:** a shell principal usa V2, mas V1 continua registrado no módulo QML, é compilado e aparece em fallback e testes. V2 também depende do tipo de matriz std140 declarado no cabeçalho de dados V1.
 
