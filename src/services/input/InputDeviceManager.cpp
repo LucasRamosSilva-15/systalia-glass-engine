@@ -59,6 +59,7 @@ InputDeviceManager::InputDeviceManager(QObject *parent)
     m_sessionMode = envCfg.mode;
     if (m_sessionMode == SessionBareMetalKms) {
         m_platformModeName = QStringLiteral("bare-metal-drm-kms");
+        m_activeDrmDevice = discoverPrimaryDrmDevice();
     } else if (m_sessionMode == SessionHeadless) {
         m_platformModeName = QStringLiteral("headless-offscreen");
     } else {
@@ -197,6 +198,42 @@ QString InputDeviceManager::resolveKmsConfigPath(
     }
 
     return QString();
+}
+
+QString InputDeviceManager::discoverPrimaryDrmDevice(
+    const QString &driDir,
+    const QString &overrideDevice) {
+    const QString envOverride = overrideDevice.trimmed().isEmpty()
+                                    ? QString::fromUtf8(qgetenv("SGE_DRM_DEVICE").trimmed())
+                                    : overrideDevice.trimmed();
+    if (!envOverride.isEmpty() && QFileInfo::exists(envOverride)) {
+        return envOverride;
+    }
+
+    const QDir dir(driDir);
+    if (dir.exists()) {
+        static const QRegularExpression kCardRegex(QStringLiteral(R"(^card(\d+)$)"));
+        struct CardEntry {
+            int index = 0;
+            QString path;
+        };
+        QList<CardEntry> cards;
+        const QStringList entries = dir.entryList(QDir::System | QDir::Files | QDir::NoDotAndDotDot);
+        for (const QString &name : entries) {
+            const auto match = kCardRegex.match(name);
+            if (match.hasMatch()) {
+                cards.append(CardEntry{match.captured(1).toInt(), dir.filePath(name)});
+            }
+        }
+        std::sort(cards.begin(), cards.end(), [](const CardEntry &a, const CardEntry &b) {
+            return a.index < b.index;
+        });
+        if (!cards.isEmpty()) {
+            return cards.first().path;
+        }
+    }
+
+    return QStringLiteral("/dev/dri/card0");
 }
 
 InputDeviceManager::PlatformEnvironmentConfig InputDeviceManager::configureProcessPlatformEnvironment(

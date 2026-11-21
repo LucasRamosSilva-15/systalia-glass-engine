@@ -111,6 +111,10 @@ public:
         const QStringList &extraSearchDirs = QStringList(),
         const QByteArray &existingEnvKmsConfig = QByteArray());
 
+    [[nodiscard]] static QString discoverPrimaryDrmDevice(
+        const QString &driDir = QStringLiteral("/dev/dri"),
+        const QString &overrideDevice = QString());
+
     // 2. Seleção de modo nativo KMS / Atomic Mode Setting (maior resolução e refresh rate)
     [[nodiscard]] static KmsConnectorMode selectBestKmsConnectorMode(
         const QList<KmsConnectorMode> &candidates) noexcept;

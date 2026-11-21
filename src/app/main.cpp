@@ -4,8 +4,11 @@
 #include <QQmlEngine>
 #include <QQuickWindow>
 #include <QQuickGraphicsConfiguration>
+#include <QSocketNotifier>
 #include <QUrl>
 #include <QDebug>
+#include <csignal>
+#include <sys/socket.h>
 #include <unistd.h>
 #include "SystaliaCompositor.hpp"
 #include "SystemTelemetryService.hpp"
@@ -22,6 +25,18 @@
 
 void qml_register_types_Systalia_Engine();
 
+namespace {
+int g_signalFd[2] = {-1, -1};
+
+void handleUnixTerminationSignal(int) {
+    const char byte = 1;
+    if (g_signalFd[0] >= 0) {
+        const ssize_t ignored = ::write(g_signalFd[0], &byte, sizeof(byte));
+        Q_UNUSED(ignored);
+    }
+}
+} // namespace
+
 int main(int argc, char *argv[]) {
     // Deteção dinâmica de sessão (Bare-Metal DRM/KMS via TTY vs. Aninhada Wayland/X11 vs. Headless)
     // Configura QT_QPA_PLATFORM=eglfs, QT_QPA_EGLFS_INTEGRATION=eglfs_kms e QSG_RHI_BACKEND=vulkan
@@ -33,6 +48,23 @@ int main(int argc, char *argv[]) {
     QGuiApplication app(argc, argv);
     app.setApplicationName(QStringLiteral("SystaliaGlassEngine"));
     app.setOrganizationName(QStringLiteral("Systalia"));
+
+    if (::socketpair(AF_UNIX, SOCK_STREAM, 0, g_signalFd) == 0) {
+        auto *signalNotifier = new QSocketNotifier(g_signalFd[1], QSocketNotifier::Read, &app);
+        QObject::connect(signalNotifier, &QSocketNotifier::activated, &app, [signalNotifier]() {
+            signalNotifier->setEnabled(false);
+            char tmp = 0;
+            const ssize_t ignored = ::read(g_signalFd[1], &tmp, sizeof(tmp));
+            Q_UNUSED(ignored);
+            QCoreApplication::quit();
+        });
+        struct sigaction sa {};
+        sa.sa_handler = handleUnixTerminationSignal;
+        sigemptyset(&sa.sa_mask);
+        sa.sa_flags = SA_RESTART;
+        ::sigaction(SIGTERM, &sa, nullptr);
+        ::sigaction(SIGINT, &sa, nullptr);
+    }
 
     NotificationServer notificationServer;
     SystemControlService systemControlService;

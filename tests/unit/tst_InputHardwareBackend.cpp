@@ -18,6 +18,7 @@ class tst_InputHardwareBackend final : public QObject {
 private slots:
     void platformEnvironmentDetectionForHeadlessNestedAndBareMetal();
     void kmsConfigResolutionAcrossInstallPrefixesAndEnv();
+    void primaryDrmDeviceDiscovery();
     void kmsNativeModeSelectionAndEglfsJsonGeneration();
     void libinputPipelineToWaylandSeatAndGestureRouting();
     void pointerBoundaryClampingAgainstKmsGeometry();
@@ -267,6 +268,33 @@ void tst_InputHardwareBackend::kmsConfigResolutionAcrossInstallPrefixesAndEnv() 
         envConfig.toUtf8());
     QCOMPARE(QFileInfo(resolvedEnv).canonicalFilePath(),
              QFileInfo(envConfig).canonicalFilePath());
+}
+
+void tst_InputHardwareBackend::primaryDrmDeviceDiscovery() {
+    QTemporaryDir tempDir;
+    QVERIFY(tempDir.isValid());
+
+    // 1. Sem card0, seleciona card1 (cenário real AMD Cezanne / Fedora 44)
+    const QString card1 = tempDir.filePath(QStringLiteral("card1"));
+    const QString card2 = tempDir.filePath(QStringLiteral("card2"));
+    {
+        QFile f1(card1);
+        QVERIFY(f1.open(QIODevice::WriteOnly));
+        QFile f2(card2);
+        QVERIFY(f2.open(QIODevice::WriteOnly));
+    }
+    QCOMPARE(InputDeviceManager::discoverPrimaryDrmDevice(tempDir.path()), card1);
+
+    // 2. Quando card0 existe, seleciona o menor índice numérico
+    const QString card0 = tempDir.filePath(QStringLiteral("card0"));
+    {
+        QFile f0(card0);
+        QVERIFY(f0.open(QIODevice::WriteOnly));
+    }
+    QCOMPARE(InputDeviceManager::discoverPrimaryDrmDevice(tempDir.path()), card0);
+
+    // 3. Override explícito existente tem prioridade
+    QCOMPARE(InputDeviceManager::discoverPrimaryDrmDevice(tempDir.path(), card2), card2);
 }
 
 QTEST_MAIN(tst_InputHardwareBackend)
