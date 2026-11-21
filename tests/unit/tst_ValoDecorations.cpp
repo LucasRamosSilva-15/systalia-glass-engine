@@ -31,7 +31,6 @@ private slots:
 
 void TestValoDecorations::initTestCase() {
     qml_register_types_Systalia_Engine();
-    qmlRegisterType<SystaliaGlassItem>("Systalia.Engine", 1, 0, "SystaliaGlassItem");
 }
 
 void TestValoDecorations::windowContainerIntegratesValoGlass() {

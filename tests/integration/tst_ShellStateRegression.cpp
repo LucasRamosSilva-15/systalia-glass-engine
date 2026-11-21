@@ -67,7 +67,6 @@ private slots:
         QVERIFY(m_runtime.isValid());
         qputenv("XDG_RUNTIME_DIR", m_runtime.path().toUtf8());
         qml_register_types_Systalia_Engine();
-        qmlRegisterType<SystaliaGlassItem>("Systalia.Engine", 1, 0, "SystaliaGlassItem");
         qmlRegisterType<SystaliaCompositor>("Systalia.Compositor", 1, 0, "SystaliaCompositor");
         qmlRegisterSingletonType<SystemTelemetryService>("Systalia.System", 1, 0, "SystemTelemetry",
             [](QQmlEngine *, QJSEngine *) -> QObject * { return new SystemTelemetryService; });

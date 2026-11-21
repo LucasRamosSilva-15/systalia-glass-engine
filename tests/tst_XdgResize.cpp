@@ -16,7 +16,6 @@
 #include <memory>
 
 #include "SystaliaCompositor.hpp"
-#include "SystaliaGlassItem.hpp"
 #include "ValoGlassItemV2.hpp"
 #include "InputDeviceManager.hpp"
 #include <QtWaylandCompositor/QWaylandPointer>
@@ -81,7 +80,6 @@ void TestXdgResize::initTestCase() {
     QVERIFY(m_runtime->isValid());
     qputenv("XDG_RUNTIME_DIR", m_runtime->path().toUtf8());
     qml_register_types_Systalia_Engine();
-    qmlRegisterType<SystaliaGlassItem>("Systalia.Engine", 1, 0, "SystaliaGlassItem");
 }
 
 void TestXdgResize::init() {

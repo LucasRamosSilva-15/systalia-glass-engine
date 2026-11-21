@@ -6,7 +6,6 @@
 #include <QQuickGraphicsConfiguration>
 #include <QUrl>
 #include <QDebug>
-#include "SystaliaGlassItem.hpp"
 #include "SystaliaCompositor.hpp"
 #include "SystemTelemetryService.hpp"
 #include "ProcessLauncherService.hpp"
@@ -50,7 +49,6 @@ int main(int argc, char *argv[]) {
 
     // Registro dos tipos QML
     qml_register_types_Systalia_Engine();
-    qmlRegisterType<SystaliaGlassItem>("Systalia.Engine", 1, 0, "SystaliaGlassItem");
     qmlRegisterType<SystaliaCompositor>("Systalia.Compositor", 1, 0, "SystaliaCompositor");
     qmlRegisterSingletonType<SystemTelemetryService>(
         "Systalia.System", 1, 0, "SystemTelemetry",
