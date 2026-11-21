@@ -104,3 +104,7 @@ Files e Control Center foram migrados no lugar para adaptadores V2. Os caminhos 
 ## Consolidação 06.3
 
 Foram eliminadas a dependência transitiva de `SystaliaSurfacePropsV2.hpp` no cabeçalho V1 (`SystaliaSurfaceProps.hpp`), os registros manuais redundantes de `SystaliaGlassItem` em `src/app/main.cpp` e em seis suítes de teste, e o uso de `SystaliaGlassItem` em `tst_SystaliaProtocol.cpp` (migrado para `ValoGlassItemV2`). `decorationV1`, `ValoGlass.qml`, `SystaliaGlassItem`, `SystaliaGlassMaterial` e os shaders legados permanecem preservados até homologação completa de clientes e XWayland. Estado: **PARTIAL**. [Relatório e evidências](CONSOLIDACAO_06_3.md)
+
+## Consolidação 06.4
+
+Clientes reais Wayland (Alacritty, GTK3, Qt6) e XWayland modernos (GTK3 X11, Qt6 XCB, Alacritty X11) foram homologados em `decorationV1` e `decorationV2` com conteúdo visível e ciclo completo (maximização, snap, workspaces, fechamento). O comportamento de `xmessage` (Xt/Xaw) foi isolado como independente do renderer óptico. `decorationV1` permanece preservada até validação multimonitor física e decisão formal de descontinuação de `useGraphicsV2`. Estado: **PARTIAL**. [Relatório e evidências](CONSOLIDACAO_06_4.md)

@@ -50,3 +50,7 @@ Files e Control Center usam adaptadores V2 pelos nomes anteriores. [Relatório e
 ## Continuação 06.3
 
 Redução de dependências restantes do VALO V1: desacoplamento do cabeçalho `SystaliaSurfacePropsV2.hpp`, remoção de registros manuais redundantes de `SystaliaGlassItem` e migração de `tst_SystaliaProtocol` para `ValoGlassItemV2`. `decorationV1`, `ValoGlass.qml`, classes C++ e shaders V1 permanecem preservados. [Relatório e evidências](CONSOLIDACAO_06_3.md)
+
+## Continuação 06.4
+
+Homologação de clientes Wayland (Alacritty, GTK3, Qt6) e XWayland (GTK3 X11, Qt6 XCB, Alacritty X11, `xmessage`), comprovando paridade de `decorationV2` com `decorationV1` e isolando o comportamento de `xmessage` como independente do renderer óptico. `decorationV1` preservada até decisão formal de quebra de contrato e teste multimonitor físico. [Relatório e evidências](CONSOLIDACAO_06_4.md)
