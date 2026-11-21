@@ -1,0 +1,658 @@
+#include "VulkanQuickRenderer.hpp"
+
+#include <QQmlComponent>
+#include <QQmlEngine>
+#include <QQuickGraphicsDevice>
+#include <QQuickItem>
+#include <QQuickRenderControl>
+#include <QQuickRenderTarget>
+#include <QQuickWindow>
+#include <QUrl>
+#include <QVulkanDeviceFunctions>
+#include <QVulkanFunctions>
+
+#include <cstring>
+#include <vector>
+
+extern "C" PFN_vkVoidFunction vkGetInstanceProcAddr(VkInstance instance, const char *pName);
+
+namespace Systalia::Platform::Drm {
+
+namespace {
+
+bool hasExtension(const std::vector<VkExtensionProperties> &exts, const char *name) {
+    for (const auto &ext : exts) {
+        if (std::strcmp(ext.extensionName, name) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+} // namespace
+
+VulkanQuickRenderer::VulkanQuickRenderer(QObject *parent)
+    : QObject(parent) {}
+
+VulkanQuickRenderer::~VulkanQuickRenderer() {
+    shutdown();
+}
+
+bool VulkanQuickRenderer::initialize(const QSize &pixelSize) {
+    if (m_initialized) {
+        return false;
+    }
+    if (!pixelSize.isValid() || pixelSize.width() <= 0 || pixelSize.height() <= 0) {
+        m_lastError = QStringLiteral("Resolução inválida para render target Vulkan.");
+        return false;
+    }
+
+    m_lastError.clear();
+    m_pixelSize = pixelSize;
+
+    if (!createVulkanDevice()) {
+        shutdown();
+        return false;
+    }
+    if (!createCommandPool()) {
+        shutdown();
+        return false;
+    }
+    if (!createOffscreenImage(m_pixelSize)) {
+        shutdown();
+        return false;
+    }
+
+    m_renderControl = std::make_unique<QQuickRenderControl>();
+    m_window = std::make_unique<QQuickWindow>(m_renderControl.get());
+    m_window->setVulkanInstance(&m_vulkanInstance);
+    m_window->setGraphicsDevice(QQuickGraphicsDevice::fromDeviceObjects(
+        m_physicalDevice, m_device, static_cast<int>(m_graphicsQueueFamily), 0));
+    m_window->setGeometry(0, 0, m_pixelSize.width(), m_pixelSize.height());
+    m_window->contentItem()->setSize(QSizeF(m_pixelSize));
+
+    if (!m_renderControl->initialize()) {
+        m_lastError = QStringLiteral("Falha em QQuickRenderControl::initialize() sobre Vulkan.");
+        shutdown();
+        return false;
+    }
+
+    m_window->setRenderTarget(QQuickRenderTarget::fromVulkanImage(
+        m_colorImage, VK_IMAGE_LAYOUT_UNDEFINED, m_vkFormat, m_pixelSize, 1));
+
+    m_qmlEngine = std::make_unique<QQmlEngine>();
+    m_initialized = true;
+    return true;
+}
+
+bool VulkanQuickRenderer::loadQmlSource(const QByteArray &qmlSource) {
+    if (!m_initialized || !m_qmlEngine || !m_window) {
+        m_lastError = QStringLiteral("Renderer não inicializado para carregar QML.");
+        return false;
+    }
+
+    if (m_rootItem) {
+        m_rootItem->setParentItem(nullptr);
+        delete m_rootItem;
+        m_rootItem = nullptr;
+    }
+    m_qmlComponent = std::make_unique<QQmlComponent>(m_qmlEngine.get());
+    m_qmlComponent->setData(qmlSource, QUrl());
+    if (m_qmlComponent->isError()) {
+        m_lastError = m_qmlComponent->errorString();
+        return false;
+    }
+
+    QObject *obj = m_qmlComponent->create();
+    auto *item = qobject_cast<QQuickItem *>(obj);
+    if (!item) {
+        delete obj;
+        m_lastError = QStringLiteral("Objeto raiz QML não é QQuickItem.");
+        return false;
+    }
+
+    m_rootItem = item;
+    m_rootItem->setParentItem(m_window->contentItem());
+    m_rootItem->setSize(QSizeF(m_pixelSize));
+    return true;
+}
+
+bool VulkanQuickRenderer::resize(const QSize &pixelSize) {
+    if (!m_initialized || !pixelSize.isValid() || pixelSize.width() <= 0 || pixelSize.height() <= 0) {
+        return false;
+    }
+    if (pixelSize == m_pixelSize) {
+        return true;
+    }
+
+    if (QVulkanDeviceFunctions *df = m_vulkanInstance.deviceFunctions(m_device)) {
+        df->vkDeviceWaitIdle(m_device);
+    }
+    m_window->setRenderTarget(QQuickRenderTarget{});
+    destroyOffscreenImage();
+
+    m_pixelSize = pixelSize;
+    if (!createOffscreenImage(m_pixelSize)) {
+        m_lastError = QStringLiteral("Falha ao recriar VkImage após resize.");
+        return false;
+    }
+
+    m_window->setGeometry(0, 0, m_pixelSize.width(), m_pixelSize.height());
+    m_window->setRenderTarget(QQuickRenderTarget::fromVulkanImage(
+        m_colorImage, VK_IMAGE_LAYOUT_UNDEFINED, m_vkFormat, m_pixelSize, 1));
+    if (m_rootItem) {
+        m_rootItem->setSize(QSizeF(m_pixelSize));
+    }
+    return true;
+}
+
+bool VulkanQuickRenderer::renderFrame() {
+    if (!m_initialized || m_suspended || !m_renderControl || m_colorImage == VK_NULL_HANDLE) {
+        return false;
+    }
+
+    m_renderControl->polishItems();
+    m_renderControl->beginFrame();
+    const bool synced = m_renderControl->sync();
+    if (synced) {
+        m_renderControl->render();
+    }
+    m_renderControl->endFrame();
+    if (QVulkanDeviceFunctions *df = m_vulkanInstance.deviceFunctions(m_device)) {
+        df->vkQueueWaitIdle(m_graphicsQueue);
+    }
+    return synced;
+}
+
+QImage VulkanQuickRenderer::readbackImage() {
+    if (!m_initialized || m_colorImage == VK_NULL_HANDLE || m_commandPool == VK_NULL_HANDLE) {
+        return {};
+    }
+    QVulkanDeviceFunctions *df = m_vulkanInstance.deviceFunctions(m_device);
+    if (!df) {
+        return {};
+    }
+
+    const VkDeviceSize bufferSize = static_cast<VkDeviceSize>(m_pixelSize.width())
+                                    * static_cast<VkDeviceSize>(m_pixelSize.height()) * 4;
+
+    VkBufferCreateInfo bufInfo{};
+    bufInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufInfo.size = bufferSize;
+    bufInfo.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    bufInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    VkBuffer stagingBuffer = VK_NULL_HANDLE;
+    if (df->vkCreateBuffer(m_device, &bufInfo, nullptr, &stagingBuffer) != VK_SUCCESS) {
+        return {};
+    }
+
+    VkMemoryRequirements memReq{};
+    df->vkGetBufferMemoryRequirements(m_device, stagingBuffer, &memReq);
+    const uint32_t memType = findMemoryType(
+        memReq.memoryTypeBits,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    if (memType == UINT32_MAX) {
+        df->vkDestroyBuffer(m_device, stagingBuffer, nullptr);
+        return {};
+    }
+
+    VkMemoryAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memReq.size;
+    allocInfo.memoryTypeIndex = memType;
+
+    VkDeviceMemory stagingMemory = VK_NULL_HANDLE;
+    if (df->vkAllocateMemory(m_device, &allocInfo, nullptr, &stagingMemory) != VK_SUCCESS) {
+        df->vkDestroyBuffer(m_device, stagingBuffer, nullptr);
+        return {};
+    }
+    df->vkBindBufferMemory(m_device, stagingBuffer, stagingMemory, 0);
+
+    VkCommandBufferAllocateInfo cmdAlloc{};
+    cmdAlloc.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    cmdAlloc.commandPool = m_commandPool;
+    cmdAlloc.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    cmdAlloc.commandBufferCount = 1;
+
+    VkCommandBuffer cmd = VK_NULL_HANDLE;
+    if (df->vkAllocateCommandBuffers(m_device, &cmdAlloc, &cmd) != VK_SUCCESS) {
+        df->vkFreeMemory(m_device, stagingMemory, nullptr);
+        df->vkDestroyBuffer(m_device, stagingBuffer, nullptr);
+        return {};
+    }
+
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    df->vkBeginCommandBuffer(cmd, &beginInfo);
+
+    VkImageMemoryBarrier toTransfer{};
+    toTransfer.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    toTransfer.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    toTransfer.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    toTransfer.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    toTransfer.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    toTransfer.image = m_colorImage;
+    toTransfer.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    toTransfer.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    toTransfer.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+    df->vkCmdPipelineBarrier(cmd,
+                             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                             VK_PIPELINE_STAGE_TRANSFER_BIT,
+                             0, 0, nullptr, 0, nullptr, 1, &toTransfer);
+
+    VkBufferImageCopy region{};
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.imageExtent = {static_cast<uint32_t>(m_pixelSize.width()),
+                          static_cast<uint32_t>(m_pixelSize.height()), 1};
+    df->vkCmdCopyImageToBuffer(cmd, m_colorImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                               stagingBuffer, 1, &region);
+
+    VkImageMemoryBarrier toColor = toTransfer;
+    toColor.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    toColor.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    toColor.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    toColor.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    df->vkCmdPipelineBarrier(cmd,
+                             VK_PIPELINE_STAGE_TRANSFER_BIT,
+                             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                             0, 0, nullptr, 0, nullptr, 1, &toColor);
+
+    df->vkEndCommandBuffer(cmd);
+
+    VkFenceCreateInfo fenceInfo{};
+    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    VkFence fence = VK_NULL_HANDLE;
+    QImage result;
+
+    if (df->vkCreateFence(m_device, &fenceInfo, nullptr, &fence) == VK_SUCCESS) {
+        VkSubmitInfo submit{};
+        submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submit.commandBufferCount = 1;
+        submit.pCommandBuffers = &cmd;
+
+        if (df->vkQueueSubmit(m_graphicsQueue, 1, &submit, fence) == VK_SUCCESS
+            && df->vkWaitForFences(m_device, 1, &fence, VK_TRUE, 2000000000ULL) == VK_SUCCESS) {
+            void *mapped = nullptr;
+            if (df->vkMapMemory(m_device, stagingMemory, 0, bufferSize, 0, &mapped) == VK_SUCCESS && mapped) {
+                QImage img(m_pixelSize, QImage::Format_ARGB32);
+                const auto *src = static_cast<const uint8_t *>(mapped);
+                const size_t rowBytes = static_cast<size_t>(m_pixelSize.width()) * 4;
+                for (int y = 0; y < m_pixelSize.height(); ++y) {
+                    std::memcpy(img.scanLine(y), src + static_cast<size_t>(y) * rowBytes, rowBytes);
+                }
+                df->vkUnmapMemory(m_device, stagingMemory);
+                result = img;
+            }
+        }
+        df->vkDestroyFence(m_device, fence, nullptr);
+    }
+
+    df->vkFreeCommandBuffers(m_device, m_commandPool, 1, &cmd);
+    df->vkFreeMemory(m_device, stagingMemory, nullptr);
+    df->vkDestroyBuffer(m_device, stagingBuffer, nullptr);
+    return result;
+}
+
+int VulkanQuickRenderer::exportDmabufFd() {
+    if (!m_initialized || !m_capabilities.dmabufExportImageCreated || m_colorMemory == VK_NULL_HANDLE) {
+        return -1;
+    }
+    QVulkanFunctions *f = m_vulkanInstance.functions();
+    if (!f) {
+        return -1;
+    }
+
+    auto fnGetMemoryFd = reinterpret_cast<PFN_vkGetMemoryFdKHR>(
+        f->vkGetDeviceProcAddr(m_device, "vkGetMemoryFdKHR"));
+    if (!fnGetMemoryFd) {
+        return -1;
+    }
+
+    VkMemoryGetFdInfoKHR fdInfo{};
+    fdInfo.sType = VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR;
+    fdInfo.memory = m_colorMemory;
+    fdInfo.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT;
+
+    int fd = -1;
+    if (fnGetMemoryFd(m_device, &fdInfo, &fd) != VK_SUCCESS) {
+        return -1;
+    }
+    return fd;
+}
+
+void VulkanQuickRenderer::setSuspended(bool suspended) noexcept {
+    m_suspended = suspended;
+}
+
+void VulkanQuickRenderer::shutdown() {
+    m_initialized = false;
+    m_suspended = false;
+
+    if (m_rootItem) {
+        m_rootItem->setParentItem(nullptr);
+        delete m_rootItem;
+        m_rootItem = nullptr;
+    }
+    m_qmlComponent.reset();
+    m_qmlEngine.reset();
+
+    if (m_renderControl) {
+        m_renderControl->invalidate();
+    }
+    m_window.reset();
+    m_renderControl.reset();
+
+    if (m_device != VK_NULL_HANDLE) {
+        if (QVulkanDeviceFunctions *df = m_vulkanInstance.deviceFunctions(m_device)) {
+            df->vkDeviceWaitIdle(m_device);
+        }
+    }
+    destroyOffscreenImage();
+    if (m_commandPool != VK_NULL_HANDLE && m_device != VK_NULL_HANDLE) {
+        if (QVulkanDeviceFunctions *df = m_vulkanInstance.deviceFunctions(m_device)) {
+            df->vkDestroyCommandPool(m_device, m_commandPool, nullptr);
+        }
+        m_commandPool = VK_NULL_HANDLE;
+    }
+    destroyVulkanDevice();
+    m_vulkanInstance.destroy();
+    if (m_ownedVkInstance != VK_NULL_HANDLE) {
+        if (auto fnDestroy = reinterpret_cast<PFN_vkDestroyInstance>(
+                vkGetInstanceProcAddr(m_ownedVkInstance, "vkDestroyInstance"))) {
+            fnDestroy(m_ownedVkInstance, nullptr);
+        }
+        m_ownedVkInstance = VK_NULL_HANDLE;
+    }
+}
+
+bool VulkanQuickRenderer::createVulkanDevice() {
+    const QByteArrayList instExts{
+        QByteArrayLiteral("VK_KHR_get_physical_device_properties2"),
+        QByteArrayLiteral("VK_KHR_external_memory_capabilities"),
+        QByteArrayLiteral("VK_KHR_external_semaphore_capabilities")};
+    QByteArrayList enabledInstExts;
+    const auto supportedInst = m_vulkanInstance.supportedExtensions();
+    for (const QByteArray &ext : instExts) {
+        if (supportedInst.contains(ext)) {
+            enabledInstExts.append(ext);
+        }
+    }
+    m_vulkanInstance.setExtensions(enabledInstExts);
+    if (!m_vulkanInstance.create()) {
+        // Fallback para QPA neutro (ex.: offscreen/minimal) que não implementa createPlatformVulkanInstance():
+        // cria VkInstance diretamente via libvulkan e envolve com setVkInstance().
+        auto fnCreate = reinterpret_cast<PFN_vkCreateInstance>(
+            vkGetInstanceProcAddr(VK_NULL_HANDLE, "vkCreateInstance"));
+        if (fnCreate) {
+            std::vector<const char *> rawExts;
+            rawExts.reserve(static_cast<size_t>(enabledInstExts.size()));
+            for (const QByteArray &ext : enabledInstExts) {
+                rawExts.push_back(ext.constData());
+            }
+            VkApplicationInfo appInfo{};
+            appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+            appInfo.pApplicationName = "SystaliaVulkanQuick";
+            appInfo.apiVersion = VK_API_VERSION_1_2;
+
+            VkInstanceCreateInfo instInfo{};
+            instInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+            instInfo.pApplicationInfo = &appInfo;
+            instInfo.enabledExtensionCount = static_cast<uint32_t>(rawExts.size());
+            instInfo.ppEnabledExtensionNames = rawExts.empty() ? nullptr : rawExts.data();
+
+            if (fnCreate(&instInfo, nullptr, &m_ownedVkInstance) == VK_SUCCESS) {
+                m_vulkanInstance.setVkInstance(m_ownedVkInstance);
+                if (!m_vulkanInstance.create()) {
+                    m_lastError = QStringLiteral("Falha ao envolver VkInstance com QVulkanInstance::setVkInstance().");
+                    return false;
+                }
+            }
+        }
+    }
+    if (!m_vulkanInstance.isValid()) {
+        m_lastError = QStringLiteral("Falha ao criar QVulkanInstance (errorCode=%1).")
+                          .arg(m_vulkanInstance.errorCode());
+        return false;
+    }
+
+    QVulkanFunctions *f = m_vulkanInstance.functions();
+    if (!f) {
+        m_lastError = QStringLiteral("QVulkanFunctions indisponível.");
+        return false;
+    }
+
+    uint32_t gpuCount = 0;
+    f->vkEnumeratePhysicalDevices(m_vulkanInstance.vkInstance(), &gpuCount, nullptr);
+    if (gpuCount == 0) {
+        m_lastError = QStringLiteral("Nenhum VkPhysicalDevice Vulkan encontrado.");
+        return false;
+    }
+
+    std::vector<VkPhysicalDevice> gpus(gpuCount);
+    f->vkEnumeratePhysicalDevices(m_vulkanInstance.vkInstance(), &gpuCount, gpus.data());
+
+    VkPhysicalDevice chosen = VK_NULL_HANDLE;
+    uint32_t chosenQueueFamily = UINT32_MAX;
+    VkPhysicalDeviceProperties chosenProps{};
+
+    for (VkPhysicalDevice gpu : gpus) {
+        VkPhysicalDeviceProperties props{};
+        f->vkGetPhysicalDeviceProperties(gpu, &props);
+
+        uint32_t qCount = 0;
+        f->vkGetPhysicalDeviceQueueFamilyProperties(gpu, &qCount, nullptr);
+        std::vector<VkQueueFamilyProperties> qProps(qCount);
+        f->vkGetPhysicalDeviceQueueFamilyProperties(gpu, &qCount, qProps.data());
+
+        uint32_t gfxIdx = UINT32_MAX;
+        for (uint32_t i = 0; i < qCount; ++i) {
+            if ((qProps[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0) {
+                gfxIdx = i;
+                break;
+            }
+        }
+        if (gfxIdx == UINT32_MAX) {
+            continue;
+        }
+
+        if (chosen == VK_NULL_HANDLE || props.deviceType != VK_PHYSICAL_DEVICE_TYPE_CPU) {
+            chosen = gpu;
+            chosenQueueFamily = gfxIdx;
+            chosenProps = props;
+            if (props.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU
+                || props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+                break;
+            }
+        }
+    }
+
+    if (chosen == VK_NULL_HANDLE) {
+        m_lastError = QStringLiteral("Nenhuma fila gráfica Vulkan disponível.");
+        return false;
+    }
+
+    m_physicalDevice = chosen;
+    m_graphicsQueueFamily = chosenQueueFamily;
+    m_capabilities.deviceName = QString::fromUtf8(chosenProps.deviceName);
+    m_capabilities.vendorId = chosenProps.vendorID;
+    m_capabilities.deviceId = chosenProps.deviceID;
+    m_capabilities.isSoftware = (chosenProps.deviceType == VK_PHYSICAL_DEVICE_TYPE_CPU);
+
+    uint32_t devExtCount = 0;
+    f->vkEnumerateDeviceExtensionProperties(m_physicalDevice, nullptr, &devExtCount, nullptr);
+    std::vector<VkExtensionProperties> devExts(devExtCount);
+    f->vkEnumerateDeviceExtensionProperties(m_physicalDevice, nullptr, &devExtCount, devExts.data());
+
+    m_capabilities.supportsExternalMemoryFd = hasExtension(devExts, VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
+    m_capabilities.supportsExternalMemoryDmabuf = hasExtension(devExts, VK_EXT_EXTERNAL_MEMORY_DMA_BUF_EXTENSION_NAME);
+    m_capabilities.supportsDrmFormatModifier = hasExtension(devExts, VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
+    m_capabilities.supportsExternalSemaphoreFd = hasExtension(devExts, VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME);
+
+    std::vector<const char *> enabledDevExts;
+    if (hasExtension(devExts, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME)) {
+        enabledDevExts.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+    }
+    if (m_capabilities.supportsExternalMemoryFd) {
+        enabledDevExts.push_back(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
+    }
+    if (m_capabilities.supportsExternalMemoryDmabuf) {
+        enabledDevExts.push_back(VK_EXT_EXTERNAL_MEMORY_DMA_BUF_EXTENSION_NAME);
+    }
+
+    const float queuePriority = 1.0f;
+    VkDeviceQueueCreateInfo queueInfo{};
+    queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queueInfo.queueFamilyIndex = m_graphicsQueueFamily;
+    queueInfo.queueCount = 1;
+    queueInfo.pQueuePriorities = &queuePriority;
+
+    VkDeviceCreateInfo devInfo{};
+    devInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    devInfo.queueCreateInfoCount = 1;
+    devInfo.pQueueCreateInfos = &queueInfo;
+    devInfo.enabledExtensionCount = static_cast<uint32_t>(enabledDevExts.size());
+    devInfo.ppEnabledExtensionNames = enabledDevExts.empty() ? nullptr : enabledDevExts.data();
+
+    if (f->vkCreateDevice(m_physicalDevice, &devInfo, nullptr, &m_device) != VK_SUCCESS) {
+        m_lastError = QStringLiteral("Falha em vkCreateDevice.");
+        return false;
+    }
+
+    QVulkanDeviceFunctions *df = m_vulkanInstance.deviceFunctions(m_device);
+    if (!df) {
+        m_lastError = QStringLiteral("QVulkanDeviceFunctions indisponível.");
+        return false;
+    }
+    df->vkGetDeviceQueue(m_device, m_graphicsQueueFamily, 0, &m_graphicsQueue);
+    return m_graphicsQueue != VK_NULL_HANDLE;
+}
+
+bool VulkanQuickRenderer::createCommandPool() {
+    QVulkanDeviceFunctions *df = m_vulkanInstance.deviceFunctions(m_device);
+    if (!df) {
+        return false;
+    }
+    VkCommandPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolInfo.queueFamilyIndex = m_graphicsQueueFamily;
+    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    return df->vkCreateCommandPool(m_device, &poolInfo, nullptr, &m_commandPool) == VK_SUCCESS;
+}
+
+bool VulkanQuickRenderer::createOffscreenImage(const QSize &pixelSize) {
+    QVulkanDeviceFunctions *df = m_vulkanInstance.deviceFunctions(m_device);
+    if (!df) {
+        return false;
+    }
+
+    const bool tryDmabufExport = m_capabilities.supportsExternalMemoryFd
+                                 && m_capabilities.supportsExternalMemoryDmabuf;
+
+    VkExternalMemoryImageCreateInfo extImageInfo{};
+    extImageInfo.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO;
+    extImageInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT;
+
+    VkImageCreateInfo imgInfo{};
+    imgInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imgInfo.pNext = tryDmabufExport ? &extImageInfo : nullptr;
+    imgInfo.imageType = VK_IMAGE_TYPE_2D;
+    imgInfo.format = m_vkFormat;
+    imgInfo.extent = {static_cast<uint32_t>(pixelSize.width()),
+                      static_cast<uint32_t>(pixelSize.height()), 1};
+    imgInfo.mipLevels = 1;
+    imgInfo.arrayLayers = 1;
+    imgInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imgInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imgInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT
+                    | VK_IMAGE_USAGE_SAMPLED_BIT;
+    imgInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    imgInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    if (df->vkCreateImage(m_device, &imgInfo, nullptr, &m_colorImage) != VK_SUCCESS) {
+        return false;
+    }
+
+    VkMemoryRequirements memReq{};
+    df->vkGetImageMemoryRequirements(m_device, m_colorImage, &memReq);
+    const uint32_t memType = findMemoryType(memReq.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    if (memType == UINT32_MAX) {
+        return false;
+    }
+
+    VkExportMemoryAllocateInfo exportAlloc{};
+    exportAlloc.sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO;
+    exportAlloc.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT;
+
+    VkMemoryAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.pNext = tryDmabufExport ? &exportAlloc : nullptr;
+    allocInfo.allocationSize = memReq.size;
+    allocInfo.memoryTypeIndex = memType;
+
+    if (df->vkAllocateMemory(m_device, &allocInfo, nullptr, &m_colorMemory) != VK_SUCCESS) {
+        if (!tryDmabufExport) {
+            return false;
+        }
+        allocInfo.pNext = nullptr;
+        if (df->vkAllocateMemory(m_device, &allocInfo, nullptr, &m_colorMemory) != VK_SUCCESS) {
+            return false;
+        }
+        m_capabilities.dmabufExportImageCreated = false;
+    } else {
+        m_capabilities.dmabufExportImageCreated = tryDmabufExport;
+    }
+
+    m_imageAllocationSize = memReq.size;
+    return df->vkBindImageMemory(m_device, m_colorImage, m_colorMemory, 0) == VK_SUCCESS;
+}
+
+void VulkanQuickRenderer::destroyOffscreenImage() {
+    if (m_device == VK_NULL_HANDLE) {
+        return;
+    }
+    QVulkanDeviceFunctions *df = m_vulkanInstance.deviceFunctions(m_device);
+    if (!df) {
+        return;
+    }
+    if (m_colorImage != VK_NULL_HANDLE) {
+        df->vkDestroyImage(m_device, m_colorImage, nullptr);
+        m_colorImage = VK_NULL_HANDLE;
+    }
+    if (m_colorMemory != VK_NULL_HANDLE) {
+        df->vkFreeMemory(m_device, m_colorMemory, nullptr);
+        m_colorMemory = VK_NULL_HANDLE;
+    }
+    m_imageAllocationSize = 0;
+}
+
+void VulkanQuickRenderer::destroyVulkanDevice() {
+    if (m_device != VK_NULL_HANDLE) {
+        if (QVulkanDeviceFunctions *df = m_vulkanInstance.deviceFunctions(m_device)) {
+            df->vkDestroyDevice(m_device, nullptr);
+        }
+        m_device = VK_NULL_HANDLE;
+    }
+    m_graphicsQueue = VK_NULL_HANDLE;
+    m_physicalDevice = VK_NULL_HANDLE;
+}
+
+uint32_t VulkanQuickRenderer::findMemoryType(uint32_t typeBits, VkMemoryPropertyFlags properties) const {
+    QVulkanFunctions *f = m_vulkanInstance.functions();
+    if (!f || m_physicalDevice == VK_NULL_HANDLE) {
+        return UINT32_MAX;
+    }
+    VkPhysicalDeviceMemoryProperties memProps{};
+    f->vkGetPhysicalDeviceMemoryProperties(m_physicalDevice, &memProps);
+    for (uint32_t i = 0; i < memProps.memoryTypeCount; ++i) {
+        if ((typeBits & (1u << i)) != 0
+            && (memProps.memoryTypes[i].propertyFlags & properties) == properties) {
+            return i;
+        }
+    }
+    return UINT32_MAX;
+}
+
+} // namespace Systalia::Platform::Drm

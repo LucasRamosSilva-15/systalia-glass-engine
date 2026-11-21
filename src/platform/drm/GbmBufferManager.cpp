@@ -148,15 +148,29 @@ GbmExportedBuffer *GbmBufferManager::acquireBufferForRendering() {
     return nullptr;
 }
 
-bool GbmBufferManager::markBufferReadyForFlip(uint64_t bufferId, int acquireFenceFd) {
+bool GbmBufferManager::markBufferReadyForScanout(uint64_t bufferId, int acquireFenceFd) {
     GbmExportedBuffer *buf = findBuffer(bufferId);
     if (!buf || buf->state != GbmBufferState::Rendering) {
         return false;
     }
     closeFdIfValid(buf->acquireFenceFd);
     buf->acquireFenceFd = acquireFenceFd;
+    buf->state = GbmBufferState::ReadyForScanout;
+    return true;
+}
+
+bool GbmBufferManager::markBufferPendingFlip(uint64_t bufferId) {
+    GbmExportedBuffer *buf = findBuffer(bufferId);
+    if (!buf || buf->state != GbmBufferState::ReadyForScanout) {
+        return false;
+    }
     buf->state = GbmBufferState::PendingFlip;
     return true;
+}
+
+bool GbmBufferManager::markBufferReadyForFlip(uint64_t bufferId, int acquireFenceFd) {
+    return markBufferReadyForScanout(bufferId, acquireFenceFd)
+           && markBufferPendingFlip(bufferId);
 }
 
 bool GbmBufferManager::markBufferPresented(uint64_t bufferId, uint32_t kmsFbId) {

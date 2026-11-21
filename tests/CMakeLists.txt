@@ -444,3 +444,15 @@ set_tests_properties(tst_drm_gbm_integration PROPERTIES
     TIMEOUT 30
     ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
 )
+
+qt_add_executable(tst_vulkan_quick_renderer unit/tst_VulkanQuickRenderer.cpp)
+target_link_libraries(tst_vulkan_quick_renderer PRIVATE
+    sge_drm_poc
+    Qt6::Test
+)
+add_test(NAME tst_vulkan_quick_renderer COMMAND tst_vulkan_quick_renderer)
+set_tests_properties(tst_vulkan_quick_renderer PROPERTIES
+    LABELS "unit"
+    TIMEOUT 45
+    ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)

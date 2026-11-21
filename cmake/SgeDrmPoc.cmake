@@ -1,4 +1,4 @@
-# Infraestrutura DRM/KMS, GBM e preparação Vulkan com proprietário único (Etapas 03.2.4.2–03.2.4.3).
+# Infraestrutura DRM/KMS, GBM e ponte Vulkan/Qt Quick com proprietário único (Etapas 03.2.4.2–03.2.4.4).
 # Compilada separadamente do executável principal para preservar o caminho de produção atual.
 
 pkg_check_modules(LIBDRM REQUIRED IMPORTED_TARGET libdrm)
@@ -14,7 +14,11 @@ add_library(sge_drm_poc STATIC
     src/platform/drm/KmsOutputDiscovery.cpp
     src/platform/drm/GbmBufferManager.hpp
     src/platform/drm/GbmBufferManager.cpp
+    src/platform/drm/AtomicKmsPresenter.hpp
+    src/platform/drm/AtomicKmsPresenter.cpp
     src/platform/drm/VulkanQuickContracts.hpp
+    src/platform/drm/VulkanQuickRenderer.hpp
+    src/platform/drm/VulkanQuickRenderer.cpp
 )
 
 target_include_directories(sge_drm_poc PUBLIC
@@ -23,8 +27,20 @@ target_include_directories(sge_drm_poc PUBLIC
 
 target_link_libraries(sge_drm_poc PUBLIC
     Qt6::Core
+    Qt6::Gui
+    Qt6::Quick
+    Qt6::Qml
     Qt6::DBus
+    Vulkan::Vulkan
     sge_core
     PkgConfig::LIBDRM
     PkgConfig::GBM
+)
+
+qt_add_executable(sge_vulkan_quick_poc
+    src/platform/drm/sge_vulkan_quick_poc.cpp
+)
+
+target_link_libraries(sge_vulkan_quick_poc PRIVATE
+    sge_drm_poc
 )

@@ -12,6 +12,7 @@ namespace Systalia::Platform::Drm {
 enum class GbmBufferState {
     Available,
     Rendering,
+    ReadyForScanout,
     PendingFlip,
     Presented
 };
@@ -83,7 +84,9 @@ public:
     [[nodiscard]] bool initializeDevice(int drmFd);
     [[nodiscard]] bool allocateSwapchainPool(const GbmBufferAllocationRequest &req, int bufferCount);
     [[nodiscard]] GbmExportedBuffer *acquireBufferForRendering();
+    [[nodiscard]] bool markBufferReadyForScanout(uint64_t bufferId, int acquireFenceFd = -1);
     [[nodiscard]] bool markBufferReadyForFlip(uint64_t bufferId, int acquireFenceFd = -1);
+    [[nodiscard]] bool markBufferPendingFlip(uint64_t bufferId);
     [[nodiscard]] bool markBufferPresented(uint64_t bufferId, uint32_t kmsFbId = 0);
     [[nodiscard]] bool releaseBufferToAvailable(uint64_t bufferId, int releaseFenceFd = -1);
     void releaseAllBuffers();

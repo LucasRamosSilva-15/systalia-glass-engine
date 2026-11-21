@@ -322,7 +322,10 @@ void tst_DrmGbmIntegration::gbmBufferLifecycleFailuresAndCleanup() {
         QVERIFY(!buf->vulkanExternalMemoryVerified);
         QCOMPARE(mgr.countInState(GbmBufferState::Rendering), 1);
 
-        QVERIFY(mgr.markBufferReadyForFlip(buf->id));
+        QVERIFY(mgr.markBufferReadyForScanout(buf->id));
+        QCOMPARE(mgr.countInState(GbmBufferState::ReadyForScanout), 1);
+
+        QVERIFY(mgr.markBufferPendingFlip(buf->id));
         QCOMPARE(mgr.countInState(GbmBufferState::PendingFlip), 1);
 
         QVERIFY(mgr.markBufferPresented(buf->id, 901));
