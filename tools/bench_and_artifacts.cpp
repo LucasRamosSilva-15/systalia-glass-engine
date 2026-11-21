@@ -15,6 +15,7 @@
 #include "ValoGpuBlurPipelineV2.hpp"
 #include "ValoBlurPipelineV2.hpp"
 #include "ValoBackdropProviderV2.hpp"
+#include "sge_artifact_dir.hpp"
 
 using namespace Systalia::Gfx::V2;
 
@@ -206,7 +207,14 @@ int main(int argc, char **argv) {
     std::cout << "========================================================================\n";
     std::cout << "  GERAÇÃO DE ARTEFATOS VISUAIS E COMPROVAÇÃO DE IMPULSO\n";
     std::cout << "========================================================================\n";
-    const QString artifactDir = "/home/lucasramos/.gemini/antigravity/brain/db6eb3e4-2bf0-441e-9ef2-a1601d0a1c5f";
+    QString explicitArtifactDir;
+    for (int i = 1; i < argc; ++i) {
+        if (std::string(argv[i]) == "--artifact-dir" && i + 1 < argc) {
+            explicitArtifactDir = QString::fromLocal8Bit(argv[++i]);
+        }
+    }
+    Systalia::Tools::ScopedArtifactRun artifactRun(QStringLiteral("valo-gpu-benchmark"), explicitArtifactDir);
+    const QString artifactDir = artifactRun.path();
 
     // 1. Verificação do Impulso Físico com energia suficiente e normalização analítica
     const int impulseDim = 256;
@@ -310,5 +318,6 @@ int main(int argc, char **argv) {
     std::cout << "  HOTFIX E BENCHMARKS CONCLUÍDOS COM SUCESSO!\n";
     std::cout << "========================================================================\n";
 
+    artifactRun.markSuccess();
     return 0;
 }

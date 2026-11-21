@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
     std::string backend = "opengl";
     std::string platform = "wayland";
     std::string artifactDir;
-    std::string brainDir = "/home/lucasramos/.gemini/antigravity/brain/db6eb3e4-2bf0-441e-9ef2-a1601d0a1c5f";
+    std::string brainDir;
     std::string targetPass = "all";
     int filterProfile = -1;
 
@@ -100,7 +100,9 @@ int main(int argc, char **argv) {
     Systalia::Tools::ScopedArtifactRun artifactRun(QStringLiteral("dock-v2-artifacts"), QString::fromStdString(artifactDir));
     const QString qArtifactDir = artifactRun.path();
     const QString qBrainDir = QString::fromStdString(brainDir);
-    QDir().mkpath(qBrainDir);
+    if (!qBrainDir.isEmpty()) {
+        QDir().mkpath(qBrainDir);
+    }
 
     QQuickWindow window;
     window.resize(1280, 720);
@@ -173,9 +175,10 @@ int main(int argc, char **argv) {
         QImage img = window.grabWindow();
         if (!img.isNull()) {
             const QString path1 = qArtifactDir + "/" + filename;
-            const QString path2 = qBrainDir + "/" + filename;
             img.save(path1);
-            img.save(path2);
+            if (!qBrainDir.isEmpty()) {
+                img.save(qBrainDir + "/" + filename);
+            }
             std::cout << "[ARTEFATO GERADO] " << path1.toStdString() << " (" << img.width() << "x" << img.height() << ")" << std::endl;
         } else {
             std::cerr << "[FALHA GRAB] " << filename.toStdString() << std::endl;

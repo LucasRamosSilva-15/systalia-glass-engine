@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
     std::string backend = "opengl";
     std::string platform = "wayland";
     std::string artifactDir;
-    std::string brainDir = "/home/lucasramos/.gemini/antigravity/brain/db6eb3e4-2bf0-441e-9ef2-a1601d0a1c5f";
+    std::string brainDir;
 
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
@@ -90,7 +90,9 @@ int main(int argc, char **argv) {
     Systalia::Tools::ScopedArtifactRun artifactRun(QStringLiteral("shell-v2-artifacts"), QString::fromStdString(artifactDir));
     const QString qArtifactDir = artifactRun.path();
     const QString qBrainDir = QString::fromStdString(brainDir);
-    QDir().mkpath(qBrainDir);
+    if (!qBrainDir.isEmpty()) {
+        QDir().mkpath(qBrainDir);
+    }
 
     QQuickWindow window;
     window.resize(1920, 1080);
@@ -243,9 +245,10 @@ int main(int argc, char **argv) {
         QImage img = window.grabWindow();
         if (!img.isNull()) {
             const QString path1 = qArtifactDir + "/" + filename;
-            const QString path2 = qBrainDir + "/" + filename;
             img.save(path1);
-            img.save(path2);
+            if (!qBrainDir.isEmpty()) {
+                img.save(qBrainDir + "/" + filename);
+            }
             std::cout << "[ARTEFATO GERADO] " << path1.toStdString() << " (" << img.width() << "x" << img.height() << ")" << std::endl;
         } else {
             std::cerr << "[FALHA GRAB] " << filename.toStdString() << std::endl;
@@ -257,7 +260,9 @@ int main(int argc, char **argv) {
         QImage cropped = src.copy(rect);
         if (!cropped.isNull()) {
             cropped.save(qArtifactDir + "/" + filename);
-            cropped.save(qBrainDir + "/" + filename);
+            if (!qBrainDir.isEmpty()) {
+                cropped.save(qBrainDir + "/" + filename);
+            }
             std::cout << "[ARTEFATO CROP] " << filename.toStdString() << " (" << cropped.width() << "x" << cropped.height() << ")" << std::endl;
         }
     };
@@ -334,7 +339,9 @@ int main(int argc, char **argv) {
         p.drawText(940, 16, "UNFOCUSED (Inactive Glass Chassis - Specular 0.75px / Opacity 0.35)");
     }
     focusComparison.save(qArtifactDir + "/valo_window_focus_comparison.png");
-    focusComparison.save(qBrainDir + "/valo_window_focus_comparison.png");
+    if (!qBrainDir.isEmpty()) {
+        focusComparison.save(qBrainDir + "/valo_window_focus_comparison.png");
+    }
     std::cout << "[ARTEFATO GERADO] valo_window_focus_comparison.png" << std::endl;
 
     // 7. High Contrast Shell
@@ -393,7 +400,9 @@ int main(int argc, char **argv) {
         p.drawText(1230, 16, "PERFORMANCE PROFILE (2 Passes Dual-Kawase, IOR 1.05)");
     }
     profileComparison.save(qArtifactDir + "/valo_profiles_comparison.png");
-    profileComparison.save(qBrainDir + "/valo_profiles_comparison.png");
+    if (!qBrainDir.isEmpty()) {
+        profileComparison.save(qBrainDir + "/valo_profiles_comparison.png");
+    }
     std::cout << "[ARTEFATO GERADO] valo_profiles_comparison.png" << std::endl;
 
     std::cout << "\n================================================================================" << std::endl;

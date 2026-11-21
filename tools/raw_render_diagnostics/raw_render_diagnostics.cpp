@@ -636,6 +636,7 @@ int main(int argc, char **argv) {
     bool runnerMode = false;
 
     std::string artifactDir;
+    std::string brainDir;
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
         if (arg == "--backend" && i + 1 < argc) {
@@ -646,6 +647,8 @@ int main(int argc, char **argv) {
             targetTest = argv[++i];
         } else if (arg == "--artifact-dir" && i + 1 < argc) {
             artifactDir = argv[++i];
+        } else if (arg == "--brain-dir" && i + 1 < argc) {
+            brainDir = argv[++i];
         } else if (arg == "--orchestrate") {
             runnerMode = true;
         }
@@ -653,7 +656,7 @@ int main(int argc, char **argv) {
 
     Systalia::Tools::ScopedArtifactRun artifactRun(QStringLiteral("raw-render-tests"), QString::fromStdString(artifactDir));
     const QString repoArtifactDir = artifactRun.path();
-    const QString brainArtifactDir = QStringLiteral("/home/lucasramos/.gemini/antigravity/brain/db6eb3e4-2bf0-441e-9ef2-a1601d0a1c5f");
+    const QString brainArtifactDir = brainDir.empty() ? repoArtifactDir : QString::fromStdString(brainDir);
     QDir().mkpath(brainArtifactDir);
 
     // ========================================================================

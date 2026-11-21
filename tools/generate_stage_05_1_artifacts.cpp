@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
     std::string backend = "vulkan";
     std::string platform = "wayland";
     std::string artifactDir;
-    std::string brainDir = "/home/lucasramos/.gemini/antigravity/brain/db6eb3e4-2bf0-441e-9ef2-a1601d0a1c5f";
+    std::string brainDir;
 
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
@@ -81,7 +81,9 @@ int main(int argc, char **argv) {
     Systalia::Tools::ScopedArtifactRun artifactRun(QStringLiteral("stage-05-1-artifacts"), QString::fromStdString(artifactDir));
     const QString qArtifactDir = artifactRun.path();
     const QString qBrainDir = QString::fromStdString(brainDir);
-    QDir().mkpath(qBrainDir);
+    if (!qBrainDir.isEmpty()) {
+        QDir().mkpath(qBrainDir);
+    }
 
     QQuickWindow window;
     window.resize(1920, 1080);
@@ -175,7 +177,9 @@ int main(int argc, char **argv) {
             QRect cropRect(300, 140, 741, 574);
             QImage cropped = full.copy(cropRect);
             cropped.save(qArtifactDir + "/" + filename);
-            cropped.save(qBrainDir + "/" + filename);
+            if (!qBrainDir.isEmpty()) {
+                cropped.save(qBrainDir + "/" + filename);
+            }
             std::cout << "[ARTEFATO GERADO] " << filename.toStdString() << " (" << cropped.width() << "x" << cropped.height() << ")" << std::endl;
         }
     };

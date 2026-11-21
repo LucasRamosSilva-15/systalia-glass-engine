@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""Automated tests for SYSTALIA temporary evidence management (Consolidation 06.6A.1)."""
+"""Automated tests for SYSTALIA temporary evidence management (Consolidation 06.6A.2)."""
 
 import json
 import os
 import pathlib
-import shutil
 import signal
 import subprocess
 import sys
@@ -16,7 +15,12 @@ import unittest
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "tools"))
 
-from sge_evidence import EvidenceRun, default_runs_root, prune_expired_runs  # noqa: E402
+from sge_evidence import (  # noqa: E402
+    MANAGED_BY,
+    EvidenceRun,
+    default_runs_root,
+    prune_expired_runs,
+)
 
 
 class TestEvidenceCleanup(unittest.TestCase):
@@ -66,16 +70,83 @@ class TestEvidenceCleanup(unittest.TestCase):
         self.assertIsNotNone(captured_path)
         self.assertTrue(captured_path.exists())
         status = json.loads((captured_path / "run-status.json").read_text(encoding="utf-8"))
+        self.assertEqual(status["managed_by"], MANAGED_BY)
         self.assertEqual(status["status"], "failed")
         self.assertEqual(status["exit_code"], 2)
         self.assertEqual(status["retention_hours"], 24.0)
+        self.assertFalse(status["explicit_keep"])
 
-        # Backdate mtime by 48h and verify TTL pruning cleans only expired runs.
+        # Backdate mtime by 48h and verify TTL pruning cleans terminated failed run.
         old_time = time.time() - 48 * 3600
         os.utime(captured_path, (old_time, old_time))
         removed = prune_expired_runs(default_runs_root(), max_age_hours=24.0)
-        self.assertGreaterEqual(removed, 1)
+        self.assertEqual(removed, 1)
         self.assertFalse(captured_path.exists())
+
+    def test_explicit_retention_survives_beyond_24h_ttl(self) -> None:
+        os.environ["SGE_KEEP_EVIDENCE"] = "1"
+        with EvidenceRun("unit-keep-forever") as run:
+            kept_path = run.path
+            (kept_path / "capture.png").write_bytes(b"PNG")
+            run.mark_success()
+
+        old_time = time.time() - 72 * 3600
+        os.utime(kept_path, (old_time, old_time))
+        removed = prune_expired_runs(default_runs_root(), max_age_hours=24.0)
+        self.assertEqual(removed, 0)
+        self.assertTrue(kept_path.exists())
+        status = json.loads((kept_path / "run-status.json").read_text(encoding="utf-8"))
+        self.assertEqual(status["status"], "success-kept")
+        self.assertTrue(status["explicit_keep"])
+
+    def test_active_run_with_old_directory_is_never_pruned(self) -> None:
+        with EvidenceRun("unit-active-long", prune_expired=False) as active_run:
+            active_path = active_run.path
+            old_time = time.time() - 72 * 3600
+            os.utime(active_path, (old_time, old_time))
+            removed = prune_expired_runs(default_runs_root(), max_age_hours=24.0)
+            self.assertEqual(removed, 0)
+            self.assertTrue(active_path.exists())
+            active_run.mark_success()
+
+    def test_unknown_directory_without_metadata_is_preserved(self) -> None:
+        runs_root = default_runs_root()
+        runs_root.mkdir(parents=True, exist_ok=True)
+        unknown_dir = runs_root / "historical-manual-debug"
+        unknown_dir.mkdir()
+        sentinel = unknown_dir / "notes.txt"
+        sentinel.write_text("historical data\n", encoding="utf-8")
+
+        old_time = time.time() - 96 * 3600
+        os.utime(unknown_dir, (old_time, old_time))
+        removed = prune_expired_runs(runs_root, max_age_hours=24.0)
+        self.assertEqual(removed, 0)
+        self.assertTrue(unknown_dir.exists())
+        self.assertTrue(sentinel.exists())
+
+    def test_symlink_and_path_traversal_protection(self) -> None:
+        external_target = pathlib.Path(self._tmp.name) / "external-sensitive"
+        external_target.mkdir(parents=True, exist_ok=True)
+        external_file = external_target / "secret.txt"
+        external_file.write_text("do not delete\n", encoding="utf-8")
+
+        runs_root = default_runs_root()
+        runs_root.mkdir(parents=True, exist_ok=True)
+        symlink_entry = runs_root / "malicious-link"
+        symlink_entry.symlink_to(external_target)
+        old_time = time.time() - 96 * 3600
+        os.utime(external_target, (old_time, old_time))
+
+        removed = prune_expired_runs(runs_root, max_age_hours=24.0)
+        self.assertEqual(removed, 0)
+        self.assertTrue(external_target.exists())
+        self.assertTrue(external_file.exists())
+
+        with EvidenceRun("unit-traversal", prune_expired=False) as run:
+            self.assertFalse(run._is_safe_owned_temp_dir(symlink_entry))
+            self.assertFalse(run._is_safe_owned_temp_dir(run.path / ".." / "other"))
+            self.assertFalse(run._is_safe_owned_temp_dir(runs_root))
+            run.mark_success()
 
     def test_interruption_preserves_evidence_with_interrupted_status(self) -> None:
         script = (
@@ -114,17 +185,8 @@ class TestEvidenceCleanup(unittest.TestCase):
         assert run_dir is not None
         self.assertTrue(run_dir.exists())
         status = json.loads((run_dir / "run-status.json").read_text(encoding="utf-8"))
+        self.assertEqual(status["managed_by"], MANAGED_BY)
         self.assertEqual(status["status"], "interrupted")
-
-    def test_explicit_retention_via_env_keeps_success_artifacts(self) -> None:
-        os.environ["SGE_KEEP_EVIDENCE"] = "1"
-        with EvidenceRun("unit-keep") as run:
-            kept_path = run.path
-            (kept_path / "capture.png").write_bytes(b"PNG")
-            run.mark_success()
-        self.assertTrue(kept_path.exists())
-        status = json.loads((kept_path / "run-status.json").read_text(encoding="utf-8"))
-        self.assertEqual(status["status"], "success-kept")
 
     def test_custom_directory_is_never_deleted(self) -> None:
         custom_dir = pathlib.Path(self._tmp.name) / "user-custom-evidence"
