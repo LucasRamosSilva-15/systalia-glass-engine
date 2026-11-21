@@ -13,41 +13,43 @@ foreach(asset IN LISTS sge_valo_assets)
     set_source_files_properties(${asset} PROPERTIES QT_RESOURCE_ALIAS "src/qml/assets/figma/${asset_name}")
 endforeach()
 
-# Preserva aliases QRC públicos (:/qt/qml/Systalia/Engine/src/qml/...) após reorganização modular
-set_source_files_properties(src/shell/main.qml PROPERTIES QT_RESOURCE_ALIAS "src/qml/main.qml")
-set_source_files_properties(src/shell/WorkspaceViewport.qml PROPERTIES QT_RESOURCE_ALIAS "src/qml/WorkspaceViewport.qml")
-set_source_files_properties(src/shell/WaylandClientView.qml PROPERTIES QT_RESOURCE_ALIAS "src/qml/WaylandClientView.qml")
-set_source_files_properties(src/shell/WaylandWindowContainer.qml PROPERTIES QT_RESOURCE_ALIAS "src/qml/WaylandWindowContainer.qml")
+# Preserva aliases QRC públicos (:/qt/qml/Systalia/Engine/src/qml/...) após reorganização hierárquica
+set_source_files_properties(src/shell/core/main.qml PROPERTIES QT_RESOURCE_ALIAS "src/qml/main.qml")
+set_source_files_properties(src/shell/core/WorkspaceViewport.qml PROPERTIES QT_RESOURCE_ALIAS "src/qml/WorkspaceViewport.qml")
+set_source_files_properties(src/shell/core/WaylandClientView.qml PROPERTIES QT_RESOURCE_ALIAS "src/qml/WaylandClientView.qml")
+set_source_files_properties(src/shell/core/WaylandWindowContainer.qml PROPERTIES QT_RESOURCE_ALIAS "src/qml/WaylandWindowContainer.qml")
 
 set_source_files_properties(src/theme/compatibility/v1/SystaliaTheme.qml PROPERTIES QT_RESOURCE_ALIAS "src/qml/theme/SystaliaTheme.qml")
 set_source_files_properties(src/theme/qml/ValoTheme.qml PROPERTIES QT_RESOURCE_ALIAS "src/qml/theme/ValoTheme.qml")
 
-foreach(ctrl_qml IN ITEMS
-    SystaliaG2Frame.qml
-    SystaliaWindowAction.qml
-    SystaliaWindowHeader.qml
-    ValoDockItem.qml
-)
-    set_source_files_properties("src/controls/${ctrl_qml}" PROPERTIES QT_RESOURCE_ALIAS "src/qml/shell/${ctrl_qml}")
-endforeach()
+set_source_files_properties(src/controls/frames/SystaliaG2Frame.qml PROPERTIES QT_RESOURCE_ALIAS "src/qml/shell/SystaliaG2Frame.qml")
+set_source_files_properties(src/controls/windows/SystaliaWindowAction.qml PROPERTIES QT_RESOURCE_ALIAS "src/qml/shell/SystaliaWindowAction.qml")
+set_source_files_properties(src/controls/windows/SystaliaWindowHeader.qml PROPERTIES QT_RESOURCE_ALIAS "src/qml/shell/SystaliaWindowHeader.qml")
+set_source_files_properties(src/controls/dock/ValoDockItem.qml PROPERTIES QT_RESOURCE_ALIAS "src/qml/shell/ValoDockItem.qml")
 
-foreach(shell_qml IN ITEMS
-    SystaliaTopBar.qml
-    SystaliaDock.qml
-    SystaliaFilesWindow.qml
-    SystaliaMaterialWindow.qml
+set_source_files_properties(src/shell/dock/SystaliaDockV2.qml PROPERTIES QT_RESOURCE_ALIAS "src/qml/shell/SystaliaDockV2.qml")
+set_source_files_properties(src/shell/topbar/SystaliaTopBarV2.qml PROPERTIES QT_RESOURCE_ALIAS "src/qml/shell/SystaliaTopBarV2.qml")
+set_source_files_properties(src/shell/windows/SystaliaFilesWindowV2.qml PROPERTIES QT_RESOURCE_ALIAS "src/qml/shell/SystaliaFilesWindowV2.qml")
+set_source_files_properties(src/shell/windows/SystaliaMaterialWindow.qml PROPERTIES QT_RESOURCE_ALIAS "src/qml/shell/SystaliaMaterialWindow.qml")
+set_source_files_properties(src/shell/panels/SystaliaControlCenterV2.qml PROPERTIES QT_RESOURCE_ALIAS "src/qml/shell/SystaliaControlCenterV2.qml")
+
+foreach(overlay_qml IN ITEMS
+    SnapPreviewOverlay.qml
     SystaliaFlowMenu.qml
     SystaliaNotificationHost.qml
-    SystaliaControlCenter.qml
     SystaliaTaskSwitcher.qml
-    SnapPreviewOverlay.qml
     TileSplitter.qml
-    SystaliaDockV2.qml
-    SystaliaTopBarV2.qml
-    SystaliaFilesWindowV2.qml
-    SystaliaControlCenterV2.qml
 )
-    set_source_files_properties("src/shell/${shell_qml}" PROPERTIES QT_RESOURCE_ALIAS "src/qml/shell/${shell_qml}")
+    set_source_files_properties("src/shell/overlays/${overlay_qml}" PROPERTIES QT_RESOURCE_ALIAS "src/qml/shell/${overlay_qml}")
+endforeach()
+
+foreach(compat_qml IN ITEMS
+    SystaliaControlCenter.qml
+    SystaliaDock.qml
+    SystaliaFilesWindow.qml
+    SystaliaTopBar.qml
+)
+    set_source_files_properties("src/shell/compatibility/v1/${compat_qml}" PROPERTIES QT_RESOURCE_ALIAS "src/qml/shell/${compat_qml}")
 endforeach()
 
 foreach(gfx_qml IN ITEMS
@@ -70,30 +72,30 @@ qt_add_qml_module(sge_core
     VERSION 1.0
     RESOURCE_PREFIX "/qt/qml"
     QML_FILES
-        src/shell/main.qml
-        src/shell/WorkspaceViewport.qml
+        src/shell/core/main.qml
+        src/shell/core/WorkspaceViewport.qml
         src/theme/compatibility/v1/SystaliaTheme.qml
         src/theme/qml/ValoTheme.qml
-        src/shell/WaylandClientView.qml
-        src/shell/WaylandWindowContainer.qml
-        src/shell/SystaliaTopBar.qml
-        src/shell/SystaliaDock.qml
-        src/controls/ValoDockItem.qml
-        src/controls/SystaliaG2Frame.qml
-        src/controls/SystaliaWindowAction.qml
-        src/controls/SystaliaWindowHeader.qml
-        src/shell/SystaliaFilesWindow.qml
-        src/shell/SystaliaMaterialWindow.qml
-        src/shell/SystaliaFlowMenu.qml
-        src/shell/SystaliaNotificationHost.qml
-        src/shell/SystaliaControlCenter.qml
-        src/shell/SystaliaTaskSwitcher.qml
-        src/shell/SnapPreviewOverlay.qml
-        src/shell/TileSplitter.qml
-        src/shell/SystaliaDockV2.qml
-        src/shell/SystaliaTopBarV2.qml
-        src/shell/SystaliaFilesWindowV2.qml
-        src/shell/SystaliaControlCenterV2.qml
+        src/shell/core/WaylandClientView.qml
+        src/shell/core/WaylandWindowContainer.qml
+        src/shell/compatibility/v1/SystaliaTopBar.qml
+        src/shell/compatibility/v1/SystaliaDock.qml
+        src/controls/dock/ValoDockItem.qml
+        src/controls/frames/SystaliaG2Frame.qml
+        src/controls/windows/SystaliaWindowAction.qml
+        src/controls/windows/SystaliaWindowHeader.qml
+        src/shell/compatibility/v1/SystaliaFilesWindow.qml
+        src/shell/windows/SystaliaMaterialWindow.qml
+        src/shell/overlays/SystaliaFlowMenu.qml
+        src/shell/overlays/SystaliaNotificationHost.qml
+        src/shell/compatibility/v1/SystaliaControlCenter.qml
+        src/shell/overlays/SystaliaTaskSwitcher.qml
+        src/shell/overlays/SnapPreviewOverlay.qml
+        src/shell/overlays/TileSplitter.qml
+        src/shell/dock/SystaliaDockV2.qml
+        src/shell/topbar/SystaliaTopBarV2.qml
+        src/shell/windows/SystaliaFilesWindowV2.qml
+        src/shell/panels/SystaliaControlCenterV2.qml
         src/graphics/v2/qml/ValoMaterialSurfaceV2.qml
         src/graphics/v2/qml/ValoInternalWindowBackdropV2.qml
         src/graphics/v2/qml/ValoSingleWindowBackdropV2.qml
