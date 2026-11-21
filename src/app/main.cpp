@@ -42,15 +42,21 @@ int main(int argc, char *argv[]) {
     LogindSessionService logindSessionService;
     InputDeviceManager inputDeviceManager;
     if (platformCfg.mode == InputDeviceManager::SessionBareMetalKms) {
-        if (logindSessionService.initializeSession(false)) {
+        const bool allowNoLogind = qEnvironmentVariableIsSet("SGE_ALLOW_NO_LOGIND");
+        const bool hasLogind = logindSessionService.initializeSession(false);
+        if (hasLogind) {
             if (logindSessionService.acquirePrimaryDrmDevice(inputDeviceManager.activeDrmDevice()) < 0) {
-                qWarning() << "[SGE-LOGIND] Falha ao adquirir dispositivo DRM primário:"
-                           << inputDeviceManager.activeDrmDevice();
+                qCritical() << "[SGE-LOGIND] Falha ao adquirir dispositivo DRM primário:"
+                            << inputDeviceManager.activeDrmDevice();
+                if (!allowNoLogind) {
+                    logindSessionService.releaseControl();
+                    return 1;
+                }
             }
         } else if (LogindSessionService::shouldAbortOnLogindFailure(
                        true,
                        static_cast<quint32>(::geteuid()),
-                       qEnvironmentVariableIsSet("SGE_ALLOW_NO_LOGIND"))) {
+                       allowNoLogind)) {
             qCritical() << "[SGE-LOGIND] Sessão bare-metal abortada: falha ao assumir controle via systemd-logind"
                         << "(defina SGE_ALLOW_NO_LOGIND=1 apenas para depuração controlada).";
             return 1;
@@ -58,7 +64,11 @@ int main(int argc, char *argv[]) {
             qWarning() << "[SGE-LOGIND] Sessão logind não inicializada; prosseguindo por override explícito ou UID 0.";
         }
         if (!inputDeviceManager.initializeHardwareContext()) {
-            qWarning() << "[SGE-INPUT] Backend de hardware libinput/udev não inicializado.";
+            qCritical() << "[SGE-INPUT] Backend de hardware libinput/udev não inicializado em bare-metal.";
+            if (!qEnvironmentVariableIsSet("SGE_ALLOW_NO_INPUT") && !allowNoLogind) {
+                logindSessionService.releaseControl();
+                return 1;
+            }
         }
     }
 
@@ -123,6 +133,14 @@ int main(int argc, char *argv[]) {
             window->setGraphicsConfiguration(configuration);
         }
         installValoStabilityProbe(window);
+        QObject::connect(window, &QQuickWindow::sceneGraphError, &app,
+                         [&inputDeviceManager, &logindSessionService](
+                             QQuickWindow::SceneGraphError error, const QString &message) {
+            qCritical() << "[SGE-RHI] Erro fatal no Scene Graph/Vulkan (" << error << "):" << message;
+            inputDeviceManager.shutdownHardwareContext();
+            logindSessionService.releaseControl();
+            QCoreApplication::exit(2);
+        });
         QObject::connect(&logindSessionService, &LogindSessionService::gpuSubmissionSuspendedChanged,
                          window, [window, wasVisible = false](bool suspended) mutable {
             if (suspended) {

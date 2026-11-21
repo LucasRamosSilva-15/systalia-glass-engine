@@ -437,6 +437,7 @@ void InputDeviceManager::setHardwareSuspended(bool suspended) {
         } else if (libinput_resume(m_libinput) == 0) {
             if (m_libinputNotifier)
                 m_libinputNotifier->setEnabled(true);
+            QMetaObject::invokeMethod(this, &InputDeviceManager::pollHardwareEvents, Qt::QueuedConnection);
         } else {
             m_hardwareSuspended = true;
             qWarning() << "[SGE-INPUT] Não foi possível retomar libinput.";
@@ -550,6 +551,9 @@ void InputDeviceManager::shutdownHardwareContext() {
     }
 #endif
 
+    m_leasedDevices.clear();
+    m_pressedButtons = Qt::NoButton;
+    m_hardwareSuspended = false;
     m_hardwareInitialized = false;
 }
 

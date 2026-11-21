@@ -358,6 +358,43 @@ void TestLogindIntegration::sddmDesktopEntryAndSessionScriptValidation() {
     QVERIFY(!LogindSessionService::shouldAbortOnLogindFailure(true, 0u, false));
     QVERIFY(!LogindSessionService::shouldAbortOnLogindFailure(true, 1000u, true));
     QVERIFY(!LogindSessionService::shouldAbortOnLogindFailure(false, 1000u, false));
+
+    // VT Active=true antes de ResumeDevice(DRM) não deve liberar submissão GPU prematuramente
+    LogindSessionService vtService;
+    vtService.setCustomCallHandler([](const QDBusMessage &msg) -> QDBusMessage {
+        if (msg.member() == QLatin1String("GetSessionByPID")) {
+            return msg.createReply(QVariant::fromValue(QDBusObjectPath(QStringLiteral("/org/freedesktop/login1/session/c1"))));
+        }
+        if (msg.member() == QLatin1String("TakeDevice")) {
+            const int pipeFd = ::open("/dev/null", O_RDONLY | O_CLOEXEC);
+            QList<QVariant> args;
+            args << QVariant::fromValue(QDBusUnixFileDescriptor(pipeFd)) << QVariant::fromValue(false);
+            if (pipeFd >= 0) {
+                ::close(pipeFd);
+            }
+            return msg.createReply(args);
+        }
+        return msg.createReply();
+    });
+    QVERIFY(vtService.initializeSession(false));
+    QVERIFY(vtService.takeDevice(LogindSessionService::kDrmMajorNumber, 0u) >= 0);
+    vtService.onPauseDevice(LogindSessionService::kDrmMajorNumber, 0u, QStringLiteral("pause"));
+    QVERIFY(vtService.isGpuSubmissionSuspended());
+    QVERIFY(vtService.hasPausedDrmDevice());
+
+    QVariantMap activeProps;
+    activeProps.insert(QStringLiteral("Active"), true);
+    vtService.onPropertiesChanged(QString::fromLatin1(LogindSessionService::kLogindSessionInterface),
+                                  activeProps, QStringList());
+    QVERIFY(vtService.isGpuSubmissionSuspended());
+
+    const int resumedFd = ::open("/dev/null", O_RDONLY | O_CLOEXEC);
+    vtService.onResumeDevice(LogindSessionService::kDrmMajorNumber, 0u, QDBusUnixFileDescriptor(resumedFd));
+    if (resumedFd >= 0) {
+        ::close(resumedFd);
+    }
+    QVERIFY(!vtService.isGpuSubmissionSuspended());
+    QVERIFY(!vtService.hasPausedDrmDevice());
 }
 
 QTEST_MAIN(TestLogindIntegration)

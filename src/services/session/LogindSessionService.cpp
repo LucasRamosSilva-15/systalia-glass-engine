@@ -464,6 +464,15 @@ bool LogindSessionService::hasPausedDevices() const noexcept {
     return false;
 }
 
+bool LogindSessionService::hasPausedDrmDevice() const noexcept {
+    for (const auto &device : m_devices) {
+        if (device.major == kDrmMajorNumber && device.paused) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool LogindSessionService::isDevicePaused(quint32 major, quint32 minor) const noexcept {
     const auto it = m_devices.constFind(deviceKey(major, minor));
     if (it == m_devices.cend()) {
@@ -587,7 +596,7 @@ void LogindSessionService::onPropertiesChanged(const QString &interfaceName,
         if (!activeNow) {
             setGpuSubmissionSuspended(true);
             setSessionState(Suspended);
-        } else {
+        } else if (!hasPausedDrmDevice()) {
             setGpuSubmissionSuspended(false);
             setSessionState(Active);
         }

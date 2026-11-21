@@ -112,6 +112,7 @@ public:
     [[nodiscard]] int activeDeviceCount() const noexcept { return static_cast<int>(m_devices.size()); }
     [[nodiscard]] int deviceFileDescriptor(quint32 major, quint32 minor) const noexcept;
     [[nodiscard]] bool hasPausedDevices() const noexcept;
+    [[nodiscard]] bool hasPausedDrmDevice() const noexcept;
     [[nodiscard]] bool isDevicePaused(quint32 major, quint32 minor) const noexcept;
     [[nodiscard]] int primaryDrmFileDescriptor() const noexcept { return m_primaryDrmFd; }
     [[nodiscard]] int pauseCompleteAckCount() const noexcept { return m_pauseCompleteAckCount; }
