@@ -2,9 +2,12 @@
 """Capture header alignment in the actual Vulkan SDE inside a host Wayland session.
 Usage: python3 tools/validate_valo_header.py [after]
 """
-import pathlib,os,tempfile,subprocess,time,signal,sys
+import pathlib,os,tempfile,subprocess,time,signal,sys,shutil
 root=pathlib.Path(__file__).resolve().parents[1];os.chdir(root)
-out=root/'docs/graphics-v2/evidence/etapa-06-1'/(sys.argv[1] if len(sys.argv)>1 else 'after');out.mkdir(parents=True,exist_ok=True)
+keep_dir=os.environ.get('SGE_KEEP_EVIDENCE_DIR','')
+keep_flag=bool(keep_dir) or os.environ.get('SGE_KEEP_EVIDENCE','')=='1'
+out=pathlib.Path(keep_dir) if keep_dir else (pathlib.Path(os.environ.get('TMPDIR','/tmp'))/'systalia-runs'/f'header-{os.getpid()}')
+out.mkdir(parents=True,exist_ok=True)
 runtime=tempfile.TemporaryDirectory(prefix='valo061-');env=os.environ.copy();host=env['WAYLAND_DISPLAY'];host=host if host.startswith('/') else env['XDG_RUNTIME_DIR']+'/'+host
 env.update(XDG_RUNTIME_DIR=runtime.name,WAYLAND_DISPLAY=host,QT_QPA_PLATFORM='wayland',QT_QPA_PLATFORMTHEME='generic',QT_NO_XDG_DESKTOP_PORTAL='1',SGE_VALO_STABILITY_PROBE_DIR=str(out),SGE_VALO_HEADER_ALIGNMENT_PROBE='1')
 with open(out/'sde.log','w') as log:
@@ -23,3 +26,5 @@ with open(out/'sde.log','w') as log:
   if c is not None and c.poll() is None:c.terminate();c.wait()
   if p.poll() is None:os.killpg(p.pid,signal.SIGTERM);p.wait()
 runtime.cleanup()
+if not keep_flag:shutil.rmtree(out,ignore_errors=True)
+else:print('Preserved evidence in',out,flush=True)

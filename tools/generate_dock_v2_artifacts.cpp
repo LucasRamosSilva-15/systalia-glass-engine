@@ -65,7 +65,7 @@ struct BenchStats {
 int main(int argc, char **argv) {
     std::string backend = "opengl";
     std::string platform = "wayland";
-    std::string artifactDir = "/home/lucasramos/Documentos/systalia-glass-engine/artifacts/graphics-v2-stage-04-2";
+    std::string artifactDir = "/tmp/systalia-runs/graphics-v2-stage-04-2";
     std::string brainDir = "/home/lucasramos/.gemini/antigravity/brain/db6eb3e4-2bf0-441e-9ef2-a1601d0a1c5f";
     std::string targetPass = "all";
     int filterProfile = -1;

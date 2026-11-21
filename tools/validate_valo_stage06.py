@@ -6,7 +6,7 @@ No desktop generator or offline filtering is involved.
 import os,subprocess,tempfile,time,re,pathlib,signal,sys,shutil
 root=pathlib.Path(__file__).resolve().parents[1]
 os.chdir(root)
-out=pathlib.Path(sys.argv[1]).resolve() if len(sys.argv)>1 else root/'docs/graphics-v2/evidence/etapa-06'
+out=pathlib.Path(sys.argv[1]).resolve() if len(sys.argv)>1 else (pathlib.Path(os.environ.get('TMPDIR','/tmp'))/'systalia-runs'/f'stage06-{os.getpid()}')
 out.mkdir(parents=True,exist_ok=True)
 (out/'xwayland-display.txt').unlink(missing_ok=True)
 host_display=os.environ.get('WAYLAND_DISPLAY','')

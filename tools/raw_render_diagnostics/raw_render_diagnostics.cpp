@@ -647,7 +647,7 @@ int main(int argc, char **argv) {
         }
     }
 
-    const QString repoArtifactDir = QStringLiteral("/home/lucasramos/Documentos/systalia-glass-engine/artifacts/raw-render-tests");
+    const QString repoArtifactDir = QStringLiteral("/tmp/systalia-runs/raw-render-tests");
     const QString brainArtifactDir = QStringLiteral("/home/lucasramos/.gemini/antigravity/brain/db6eb3e4-2bf0-441e-9ef2-a1601d0a1c5f");
     QDir().mkpath(repoArtifactDir);
     QDir().mkpath(brainArtifactDir);

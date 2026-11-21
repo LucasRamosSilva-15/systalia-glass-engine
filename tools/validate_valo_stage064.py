@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """Run opt-in diagnostics on the real SDE."""
-import os,sys,pathlib,tempfile,subprocess,time,signal
+import os,sys,pathlib,tempfile,subprocess,time,signal,shutil
 root=pathlib.Path(__file__).resolve().parents[1];os.chdir(root)
 mode=sys.argv[1] if len(sys.argv)>1 else 'dock'
 if mode not in {'resize','dock','control','topbar','policy','clients','client-interactions','pair-stress','limited-dock','limited-topbar','limited-stress'}: raise SystemExit('Modo inválido')
-out=root/'docs/graphics-v2/evidence/etapa-06-4'/(mode+os.environ.get('SGE_STAGE064_SUFFIX',''));out.mkdir(parents=True,exist_ok=True)
+keep_dir=os.environ.get('SGE_KEEP_EVIDENCE_DIR','')
+keep_flag=bool(keep_dir) or os.environ.get('SGE_KEEP_EVIDENCE','')=='1'
+out=pathlib.Path(keep_dir) if keep_dir else (pathlib.Path(os.environ.get('TMPDIR','/tmp'))/'systalia-runs'/f'stage064-{mode}-{os.getpid()}')
+out.mkdir(parents=True,exist_ok=True)
 runtime=tempfile.TemporaryDirectory(prefix='valo064-');env=os.environ.copy();host=env['WAYLAND_DISPLAY'];host=host if host.startswith('/') else env['XDG_RUNTIME_DIR']+'/'+host
 env.update(XDG_RUNTIME_DIR=runtime.name,WAYLAND_DISPLAY=host,QT_QPA_PLATFORM='wayland',QT_QPA_PLATFORMTHEME='generic',QT_NO_XDG_DESKTOP_PORTAL='1',SGE_VALO_STABILITY_PROBE_DIR=str(out))
 if mode=='resize':env['SGE_VALO_INTERNAL_RESIZE_PROBE']='1'
@@ -37,3 +40,5 @@ with open(out/'sde.log','w') as f:
   if client and client.poll() is None:client.terminate();client.wait(timeout=5)
   if p.poll() is None:os.killpg(p.pid,signal.SIGTERM);p.wait(timeout=5)
 runtime.cleanup()
+if not keep_flag:shutil.rmtree(out,ignore_errors=True)
+else:print('Preserved evidence in',out,flush=True)
