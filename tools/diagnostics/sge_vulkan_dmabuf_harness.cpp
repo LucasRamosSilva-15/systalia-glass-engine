@@ -1,5 +1,9 @@
+#include "AtomicKmsPresenter.hpp"
+#include "DrmEventDispatcher.hpp"
 #include "GbmBufferManager.hpp"
+#include "IndependentFrameLoop.hpp"
 #include "VulkanQuickRenderer.hpp"
+#include "WaylandFrameCoordinator.hpp"
 
 #include "AppRegistryService.hpp"
 #include "InputDeviceManager.hpp"
@@ -20,6 +24,7 @@
 #include <QQuickWindow>
 #include <QSGRendererInterface>
 #include <QTemporaryDir>
+#include <QWaylandQuickOutput>
 
 #include <drm_fourcc.h>
 #include <fcntl.h>
@@ -35,6 +40,45 @@ public:
     void destroyDevice(void *) override {}
     bool allocateBuffer(void *, const GbmBufferAllocationRequest &, GbmExportedBuffer *) override { return true; }
     void destroyBuffer(GbmExportedBuffer *) override {}
+};
+
+class HarnessMockKms final : public IKmsResourceBackend {
+public:
+    QSize modeSize{128, 128};
+    KmsDiscoverySnapshot probeResources(int drmFd) override {
+        KmsDiscoverySnapshot snap;
+        if (drmFd < 0) return snap;
+        snap.valid = true;
+        snap.atomicSupported = true;
+        snap.crtcs.append(KmsCrtcInfo{55, 0, true, 0, 0, modeSize.width(), modeSize.height()});
+        snap.planes.append(KmsPlaneInfo{77, 0x1, 55, KmsPlaneType::Primary, {DRM_FORMAT_XRGB8888}});
+        KmsConnectorInfo hdmi;
+        hdmi.connectorId = 20;
+        hdmi.name = QStringLiteral("HDMI-A-1");
+        hdmi.connected = true;
+        hdmi.possibleCrtcs = 0x1;
+        hdmi.modes.append(DrmOutputMode{QStringLiteral("HDMI-A-1"), modeSize.width(), modeSize.height(), 60, true});
+        hdmi.preferredMode = hdmi.modes.first();
+        snap.connectors.append(hdmi);
+        return snap;
+    }
+};
+
+class HarnessMockAtomic final : public IAtomicKmsBackend {
+public:
+    uint32_t nextFb = 800;
+    QList<AtomicCommitRequest> commits;
+    KmsFenceCapabilities probeFenceCapabilities(int, uint32_t, uint32_t) override {
+        return {true, true};
+    }
+    uint32_t addFramebuffer(int, const GbmExportedBuffer &b) override {
+        return b.stride > 0 ? nextFb++ : 0;
+    }
+    void removeFramebuffer(int, uint32_t) override {}
+    AtomicCommitResult commitAtomic(int, const AtomicCommitRequest &req) override {
+        commits.append(req);
+        return {true, -1};
+    }
 };
 
 struct ScenarioSpec {
@@ -138,20 +182,32 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    HarnessMockKms mockKms;
+    mockKms.modeSize = spec.size;
     HarnessMockGbm mockGbm;
-    GbmBufferManager pool(mockGbm);
+    HarnessMockAtomic mockAtomic;
+    AtomicKmsPresenter presenter(mockKms, mockGbm, mockAtomic);
+    presenter.setUseExternalVulkanPool(true);
+    if (!presenter.initializeOnFd(10)
+        || !presenter.configureOutput(DrmOutputMode{QStringLiteral("HDMI-A-1"), spec.size.width(), spec.size.height(), 60, true})) {
+        std::cerr << "[FAIL] presenter init/configure\n";
+        renderer.shutdown();
+        return 1;
+    }
+
     QList<int> trackedFds;
     if (spec.useDmabufPool) {
         QList<uint64_t> mods;
         if (spec.forceLinearModifier) {
             mods.append(DRM_FORMAT_MOD_LINEAR);
         }
-        if (!renderer.createSharedPoolSlots(pool, spec.size, 2, mods)) {
+        if (!renderer.createSharedPoolSlots(presenter.bufferManager(), spec.size, 2, mods)) {
             std::cerr << "[FAIL] createSharedPoolSlots: " << renderer.lastError().toStdString() << "\n";
+            presenter.shutdown();
             renderer.shutdown();
             return 1;
         }
-        for (const auto &s : pool.buffers()) {
+        for (const auto &s : presenter.bufferManager().buffers()) {
             trackedFds.append(s.dmabufFd);
         }
     }
@@ -186,8 +242,9 @@ int main(int argc, char *argv[]) {
         if (!renderer.loadQmlUrl(QUrl(QStringLiteral("qrc:/qt/qml/Systalia/Engine/src/qml/ShellRoot.qml")),
                                  &qmlEngine)) {
             std::cerr << "[FAIL] loadQmlUrl(ShellRoot.qml): " << renderer.lastError().toStdString() << "\n";
-            renderer.destroySharedPoolSlots(pool);
-            pool.shutdown();
+            presenter.releaseKmsFramebuffers();
+            renderer.destroySharedPoolSlots(presenter.bufferManager());
+            presenter.shutdown();
             renderer.shutdown();
             return 1;
         }
@@ -198,44 +255,51 @@ int main(int argc, char *argv[]) {
         if (!renderer.loadQmlSource(
                 "import QtQuick 2.15\nRectangle { anchors.fill: parent; color: '#0b1e36' }\n")) {
             std::cerr << "[FAIL] loadQmlSource: " << renderer.lastError().toStdString() << "\n";
-            renderer.destroySharedPoolSlots(pool);
-            pool.shutdown();
+            presenter.releaseKmsFramebuffers();
+            renderer.destroySharedPoolSlots(presenter.bufferManager());
+            presenter.shutdown();
             renderer.shutdown();
             return 1;
         }
     }
 
+    auto *waylandOutput = renderer.rootItem()
+                              ? renderer.rootItem()->findChild<QWaylandQuickOutput *>()
+                              : nullptr;
+    QWaylandOutputFrameSink frameSink(waylandOutput);
+    WaylandFrameCoordinator waylandCoord(frameSink);
+    DrmEventDispatcher drmEvents;
+    IndependentFrameLoop frameLoop(renderer, presenter, waylandCoord, drmEvents);
+
     const int frames = qMax(1, parser.value(optFrames).toInt());
     for (int i = 0; i < frames; ++i) {
         bool ok = false;
         if (spec.useDmabufPool) {
-            auto *slot = pool.acquireBufferForRendering();
-            if (!slot) {
-                std::cerr << "[FAIL] acquireBufferForRendering null\n";
-                break;
+            frameLoop.requestFrame();
+            ok = frameLoop.processNextFrame();
+            if (ok && !mockAtomic.commits.isEmpty()) {
+                drmEvents.dispatchKernelPageFlipForTest(
+                    static_cast<uint64_t>(i + 1), 55, mockAtomic.commits.last().userData);
             }
-            ok = renderer.renderIntoBuffer(*slot);
-            if (ok && slot->acquireFenceFd >= 0) {
-                Q_UNUSED(VulkanQuickRenderer::isSyncFdSignaled(slot->acquireFenceFd, 2000));
-                ::close(slot->acquireFenceFd);
-                slot->acquireFenceFd = -1;
-            }
-            Q_UNUSED(pool.releaseBufferToAvailable(slot->id));
         } else {
             ok = renderer.renderFrame();
         }
         if (!ok || renderer.isDeviceLost()) {
             std::cerr << "[FAIL] Render frame " << i << " deviceLost=" << renderer.isDeviceLost()
                       << " err=" << renderer.lastError().toStdString() << "\n";
-            renderer.destroySharedPoolSlots(pool);
-            pool.shutdown();
+            frameLoop.shutdown();
+            presenter.releaseKmsFramebuffers();
+            renderer.destroySharedPoolSlots(presenter.bufferManager());
+            presenter.shutdown();
             renderer.shutdown();
             return 1;
         }
     }
 
-    renderer.destroySharedPoolSlots(pool);
-    pool.shutdown();
+    frameLoop.shutdown();
+    presenter.releaseKmsFramebuffers();
+    renderer.destroySharedPoolSlots(presenter.bufferManager());
+    presenter.shutdown();
     renderer.shutdown();
 
     for (int fd : trackedFds) {

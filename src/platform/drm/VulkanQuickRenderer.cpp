@@ -248,12 +248,14 @@ bool VulkanQuickRenderer::renderIntoBuffer(GbmExportedBuffer &slot) {
 
     const uint64_t frameId = ++m_frameCounter;
     if (graphicsDiagnosticsEnabled()) {
-        qInfo() << "[SGE-DIAG] renderIntoBuffer start frameId=" << frameId
-                << "bufferId=" << slot.id
+        qInfo() << "[SGE-DIAG] frameId=" << frameId
+                << "slotId=" << slot.id
                 << "size=" << m_pixelSize
+                << "vkFormat=" << static_cast<int>(m_vkFormat)
                 << "modifier=0x" << QString::number(slot.modifier, 16)
-                << "thread=" << QThread::currentThread()
-                << "vkImage=" << Qt::hex << slot.vkImageHandle << Qt::dec
+                << "expectedLayout=UNDEFINED->COLOR_ATTACHMENT_OPTIMAL"
+                << "waitSem=" << Qt::hex << slot.vkWaitSemaphoreHandle
+                << "signalSem=" << slot.vkSignalSemaphoreHandle << Qt::dec
                 << "releaseFenceFd=" << slot.releaseFenceFd;
     }
 
@@ -308,6 +310,9 @@ bool VulkanQuickRenderer::renderIntoBuffer(GbmExportedBuffer &slot) {
     const bool synced = m_renderControl->sync();
     if (synced) {
         m_renderControl->render();
+        if (graphicsDiagnosticsEnabled()) {
+            qInfo() << "[SGE-DIAG] CPU_COMMAND_RECORDED frameId=" << frameId << "slotId=" << slot.id;
+        }
     }
 
     QRhi *rhi = m_window->rhi();
@@ -331,7 +336,25 @@ bool VulkanQuickRenderer::renderIntoBuffer(GbmExportedBuffer &slot) {
     }
 
     if (!synced) {
+        // Se importamos um SYNC_FD temporário mas não submetemos, recria waitSem para descartar payload não consumido.
+        if (hasImportedWaitSemaphore && waitSem != VK_NULL_HANDLE) {
+            if (QVulkanDeviceFunctions *df = m_vulkanInstance.deviceFunctions(m_device)) {
+                df->vkDestroySemaphore(m_device, waitSem, nullptr);
+                VkSemaphoreCreateInfo waitSemInfo{};
+                waitSemInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+                VkSemaphore freshWait = VK_NULL_HANDLE;
+                if (df->vkCreateSemaphore(m_device, &waitSemInfo, nullptr, &freshWait) == VK_SUCCESS) {
+                    slot.vkWaitSemaphoreHandle = reinterpret_cast<uint64_t>(freshWait);
+                } else {
+                    slot.vkWaitSemaphoreHandle = 0;
+                }
+            }
+        }
         return false;
+    }
+
+    if (graphicsDiagnosticsEnabled()) {
+        qInfo() << "[SGE-DIAG] GPU_SUBMITTED frameId=" << frameId << "slotId=" << slot.id;
     }
 
     if (m_capabilities.supportsSyncFdExport && signalSem != VK_NULL_HANDLE && f) {
@@ -352,6 +375,22 @@ bool VulkanQuickRenderer::renderIntoBuffer(GbmExportedBuffer &slot) {
             return false;
         }
         if (fdRc != VK_SUCCESS || syncFd < 0) {
+            // Recria semáforo sinalizado para não re-submeter semáforo binário em estado sinalizado.
+            if (QVulkanDeviceFunctions *df = m_vulkanInstance.deviceFunctions(m_device)) {
+                df->vkDestroySemaphore(m_device, signalSem, nullptr);
+                VkExportSemaphoreCreateInfo exportSemInfo{};
+                exportSemInfo.sType = VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO;
+                exportSemInfo.handleTypes = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT;
+                VkSemaphoreCreateInfo semInfo{};
+                semInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+                semInfo.pNext = &exportSemInfo;
+                VkSemaphore freshSig = VK_NULL_HANDLE;
+                if (df->vkCreateSemaphore(m_device, &semInfo, nullptr, &freshSig) == VK_SUCCESS) {
+                    slot.vkSignalSemaphoreHandle = reinterpret_cast<uint64_t>(freshSig);
+                } else {
+                    slot.vkSignalSemaphoreHandle = 0;
+                }
+            }
             m_lastError = QStringLiteral("Falha ao exportar SYNC_FD após endFrame() do Qt Quick.");
             return false;
         }
@@ -360,8 +399,9 @@ bool VulkanQuickRenderer::renderIntoBuffer(GbmExportedBuffer &slot) {
         }
         slot.acquireFenceFd = syncFd;
         if (graphicsDiagnosticsEnabled()) {
-            qInfo() << "[SGE-DIAG] renderIntoBuffer done bufferId=" << slot.id
-                    << "exportedSyncFd=" << syncFd;
+            qInfo() << "[SGE-DIAG] SYNC_FD exported frameId=" << frameId
+                    << "slotId=" << slot.id
+                    << "acquireFenceFd=" << syncFd;
         }
     }
 

@@ -40,6 +40,7 @@ private slots:
     void auditsExternalMemoryAndDrmModifierCapabilitiesOnRadv();
     void runsSafeMatrixScenariosAandBWithDeterministicCleanup();
     void rejectsUnsignaledReleaseFenceAndIncompatibleModifiersSafely();
+    void recyclesWaitSemaphoreWhenFrameAbortedAfterImport();
 };
 
 void tst_VulkanDmabufAudit::auditsExternalMemoryAndDrmModifierCapabilitiesOnRadv() {
@@ -141,6 +142,43 @@ void tst_VulkanDmabufAudit::rejectsUnsignaledReleaseFenceAndIncompatibleModifier
     QVERIFY(!VulkanQuickRenderer::isSyncFdSignaled(unsignaledReadFd, 5));
     ::close(writeEnd);
     ::close(unsignaledReadFd);
+
+    renderer.destroySharedPoolSlots(pool);
+    pool.shutdown();
+    renderer.shutdown();
+}
+
+void tst_VulkanDmabufAudit::recyclesWaitSemaphoreWhenFrameAbortedAfterImport() {
+    VulkanQuickRenderer renderer;
+    QVERIFY2(renderer.initialize(QSize(64, 64)), qPrintable(renderer.lastError()));
+
+    AuditMockGbm gbm;
+    GbmBufferManager pool(gbm);
+    QVERIFY(renderer.createSharedPoolSlots(pool, QSize(64, 64), 2, {DRM_FORMAT_MOD_LINEAR}));
+    QVERIFY(renderer.loadQmlSource(
+        "import QtQuick 2.15\nRectangle { width: 64; height: 64; color: '#114477' }\n"));
+
+    auto *slot0 = pool.acquireBufferForRendering();
+    QVERIFY(slot0 != nullptr);
+    QVERIFY(renderer.renderIntoBuffer(*slot0));
+    const int realSyncFd = slot0->acquireFenceFd;
+    QVERIFY(realSyncFd >= 0);
+    slot0->acquireFenceFd = -1;
+    QVERIFY(pool.releaseBufferToAvailable(slot0->id));
+
+    // Simula importação de releaseFenceFd seguida de suspensão (frame abortado antes de submissão)
+    slot0 = pool.acquireBufferForRendering();
+    QVERIFY(slot0 != nullptr);
+    slot0->releaseFenceFd = realSyncFd;
+    const uint64_t origWaitSem = slot0->vkWaitSemaphoreHandle;
+    QVERIFY(origWaitSem != 0);
+    QVERIFY(renderer.renderIntoBuffer(*slot0));
+    QCOMPARE(slot0->releaseFenceFd, -1);
+    if (slot0->acquireFenceFd >= 0) {
+        ::close(slot0->acquireFenceFd);
+        slot0->acquireFenceFd = -1;
+    }
+    QCOMPARE(::fcntl(realSyncFd, F_GETFD), -1);
 
     renderer.destroySharedPoolSlots(pool);
     pool.shutdown();
