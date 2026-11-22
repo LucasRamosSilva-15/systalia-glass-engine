@@ -143,6 +143,7 @@ private slots:
     void shutdownWithPendingFrameLeavesZeroHeldBuffers();
     void reorderedLogindEventsControlFrameLoop();
     void rendersRealOffscreenVulkanSceneWithReadback();
+    void strictOneFrameHomologLimitBlocksSecondFrameAndHaltsOnFailure();
 };
 
 void tst_IndependentFrameLoop::singleAndMultipleFramesWithBackpressureAndDuplicateFlip() {
@@ -359,6 +360,88 @@ void tst_IndependentFrameLoop::rendersRealOffscreenVulkanSceneWithReadback() {
     QVERIFY(qAbs(topBarPixel.red() - 0x14) <= 4 && qAbs(topBarPixel.blue() - 0x4d) <= 4);
     QVERIFY(dockPixel.blue() >= 250 && qAbs(dockPixel.green() - 0xd4) <= 4);
     renderer.shutdown();
+}
+
+void tst_IndependentFrameLoop::strictOneFrameHomologLimitBlocksSecondFrameAndHaltsOnFailure() {
+    // 1. Funcionamento normal sem SGE_HOMOLOG_MAX_FRAMES preserva múltiplas submissões
+    {
+        qunsetenv("SGE_HOMOLOG_MAX_FRAMES");
+        LoopHarness h;
+        QVERIFY(h.init(10));
+        QCOMPARE(h.loop.maxSubmittedFrames(), 0ULL);
+        h.loop.requestFrame();
+        QTRY_VERIFY(h.loop.isFlipInFlight());
+        h.dispatcher.dispatchSimulatedPageFlip(1, 0);
+        h.loop.requestFrame();
+        QTRY_VERIFY(h.loop.isFlipInFlight());
+        QCOMPARE(h.render.renderCalls, 2);
+        QCOMPARE(h.atomic.commitCalls, 2);
+        h.loop.shutdown();
+    }
+
+    // 2. Com SGE_HOMOLOG_MAX_FRAMES=1, múltiplos pedidos antes do Frame 1 e após o limite geram apenas 1 frame
+    {
+        qputenv("SGE_HOMOLOG_MAX_FRAMES", "1");
+        LoopHarness h;
+        QVERIFY(h.init(10));
+        QCOMPARE(h.loop.maxSubmittedFrames(), 1ULL);
+        QSignalSpy limitSpy(&h.loop, &IndependentFrameLoop::frameLimitReached);
+
+        h.loop.requestFrame();
+        h.loop.requestFrame();
+        h.loop.requestFrame();
+        QTRY_VERIFY(h.loop.isFlipInFlight());
+        QVERIFY(h.loop.isFrameLimitReached());
+        QCOMPARE(h.loop.submittedFrameCount(), 1ULL);
+        QCOMPARE(h.render.renderCalls, 1);
+        QCOMPARE(h.atomic.commitCalls, 1);
+        QCOMPARE(limitSpy.count(), 1);
+
+        // Pedido adicional após flip real não dispara segundo commit
+        h.dispatcher.dispatchSimulatedPageFlip(1, 0);
+        QCOMPARE(h.loop.presentedCount(), 1ULL);
+        h.loop.requestFrame();
+        QCoreApplication::processEvents();
+        QVERIFY(!h.loop.isFlipInFlight());
+        QCOMPARE(h.render.renderCalls, 1);
+        QCOMPARE(h.atomic.commitCalls, 1);
+        h.loop.shutdown();
+        qunsetenv("SGE_HOMOLOG_MAX_FRAMES");
+    }
+
+    // 3. Falha antes da submissão não contabiliza como frame submetido e entra em halt controlado
+    {
+        LoopHarness h;
+        QVERIFY(h.init(10));
+        h.loop.setMaxSubmittedFrames(1);
+        h.render.failRender = true;
+        h.loop.requestFrame();
+        QTRY_VERIFY(h.loop.isHaltedByFailure());
+        QCOMPARE(h.loop.submittedFrameCount(), 0ULL);
+        QCOMPARE(h.atomic.commitCalls, 0);
+
+        h.render.failRender = false;
+        h.loop.requestFrame();
+        QCoreApplication::processEvents();
+        QCOMPARE(h.atomic.commitCalls, 0);
+        h.loop.shutdown();
+    }
+
+    // 4. Commit rejeitado com limite ativo entra em halt e bloqueia novo agendamento
+    {
+        LoopHarness h;
+        QVERIFY(h.init(10));
+        h.loop.setMaxSubmittedFrames(1);
+        h.atomic.failCommit = true;
+        h.loop.requestFrame();
+        QTRY_VERIFY(h.loop.isHaltedByFailure());
+        QCOMPARE(h.atomic.commitCalls, 1);
+        h.atomic.failCommit = false;
+        h.loop.requestFrame();
+        QCoreApplication::processEvents();
+        QCOMPARE(h.atomic.commitCalls, 1);
+        h.loop.shutdown();
+    }
 }
 
 QTEST_MAIN(tst_IndependentFrameLoop)

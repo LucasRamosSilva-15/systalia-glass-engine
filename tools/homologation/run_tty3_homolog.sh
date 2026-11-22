@@ -68,10 +68,18 @@ export SGE_USE_DRM_BACKEND=1
 export QT_QPA_PLATFORM=sge_vulkan_offscreen
 export QT_QPA_PLATFORM_PLUGIN_PATH="$QPA_DIR"
 export QSG_RHI_BACKEND=vulkan
+export SGE_HOMOLOG_MAX_FRAMES="${SGE_HOMOLOG_MAX_FRAMES:-1}"
+export SGE_GRAPHICS_DIAGNOSTICS="${SGE_GRAPHICS_DIAGNOSTICS:-1}"
 export QT_LOGGING_RULES="qt.qpa.*=true;sge.*=true"
+
+if [[ -f "$HOMOLOG_DIR/share/systalia/BUILD_IDENTITY.txt" ]]; then
+    cat "$HOMOLOG_DIR/share/systalia/BUILD_IDENTITY.txt" | tee -a "$LOG_FILE"
+fi
+echo "SGE_HOMOLOG_MAX_FRAMES=$SGE_HOMOLOG_MAX_FRAMES SGE_GRAPHICS_DIAGNOSTICS=$SGE_GRAPHICS_DIAGNOSTICS" | tee -a "$LOG_FILE"
 
 "$ENGINE_BIN" >>"$LOG_FILE" 2>&1
 RC=$?
+sync "$LOG_FILE" 2>/dev/null || true
 
 echo "=== Encerrado com código de saída: $RC ($(date -Iseconds)) ===" | tee -a "$LOG_FILE"
 exit "$RC"

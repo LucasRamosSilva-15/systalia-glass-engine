@@ -34,6 +34,25 @@ if [[ ! -c /dev/dri/card1 || ! -c /dev/dri/renderD128 ]]; then
 fi
 echo "[OK] Nós DRM presentes: /dev/dri/card1, /dev/dri/renderD128"
 
+if [[ -f /sys/class/drm/card1/device/vendor && -f /sys/class/drm/card1/device/device ]]; then
+    GPU_VENDOR="$(cat /sys/class/drm/card1/device/vendor)"
+    GPU_DEVICE="$(cat /sys/class/drm/card1/device/device)"
+    echo "[OK] GPU card1: vendor=$GPU_VENDOR device=$GPU_DEVICE"
+    if [[ "$GPU_VENDOR" != "0x1002" ]]; then
+        echo "[WARN] Vendor inesperado em card1 ($GPU_VENDOR != 0x1002 AMD)."
+    fi
+fi
+
+if [[ -f "$HOMOLOG_DIR/share/systalia/BUILD_IDENTITY.txt" ]]; then
+    echo "[OK] Identidade instalada:"
+    sed 's/^/  /' "$HOMOLOG_DIR/share/systalia/BUILD_IDENTITY.txt"
+else
+    echo "[WARN] BUILD_IDENTITY.txt ausente em $HOMOLOG_DIR/share/systalia/"
+fi
+
+echo "[OK] Limite de frame padrão no script TTY3: SGE_HOMOLOG_MAX_FRAMES=${SGE_HOMOLOG_MAX_FRAMES:-1}"
+echo "[OK] Diagnóstico gráfico no script TTY3: SGE_GRAPHICS_DIAGNOSTICS=${SGE_GRAPHICS_DIAGNOSTICS:-1}"
+
 if [[ -n "${SGE_USE_DRM_BACKEND:-}" ]]; then
     echo "[WARN] SGE_USE_DRM_BACKEND está definido no ambiente atual ($SGE_USE_DRM_BACKEND)."
 else
@@ -41,7 +60,7 @@ else
 fi
 
 mkdir -p "$LOG_DIR"
-echo "[OK] Diretório de logs: $LOG_DIR"
+echo "[OK] Diretório de logs: $LOG_DIR ($(df -h "$LOG_DIR" | awk 'NR==2 {print $4" livres"}'))"
 
 echo "=== Conectores DRM (sysfs, leitura não invasiva) ==="
 for conn in /sys/class/drm/card1-*; do

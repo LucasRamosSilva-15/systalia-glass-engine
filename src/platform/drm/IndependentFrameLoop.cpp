@@ -27,6 +27,12 @@ IndependentFrameLoop::IndependentFrameLoop(IControlledRenderSource &renderSource
     connect(&m_eventDispatcher, &DrmEventDispatcher::pageFlipTimedOut,
             this, &IndependentFrameLoop::onPageFlipTimedOut);
     m_eventDispatcher.setFlipContextRegistry(m_presenter.flipContextRegistry());
+
+    bool ok = false;
+    const int envLimit = qEnvironmentVariableIntValue("SGE_HOMOLOG_MAX_FRAMES", &ok);
+    if (ok && envLimit > 0) {
+        m_maxSubmittedFrames = static_cast<uint64_t>(envLimit);
+    }
 }
 
 IndependentFrameLoop::~IndependentFrameLoop() {
@@ -34,7 +40,7 @@ IndependentFrameLoop::~IndependentFrameLoop() {
 }
 
 void IndependentFrameLoop::requestFrame() {
-    if (m_shuttingDown || m_suspended || m_deviceLost) {
+    if (m_shuttingDown || m_suspended || m_deviceLost || m_frameLimitReached || m_haltedOnError) {
         return;
     }
     m_renderPending = true;
@@ -44,7 +50,8 @@ void IndependentFrameLoop::requestFrame() {
 }
 
 void IndependentFrameLoop::scheduleQueuedProcess() {
-    if (m_scheduled || m_shuttingDown || m_suspended || m_deviceLost || m_flipInFlight) {
+    if (m_scheduled || m_shuttingDown || m_suspended || m_deviceLost
+        || m_frameLimitReached || m_haltedOnError || m_flipInFlight) {
         return;
     }
     m_scheduled = true;
@@ -55,7 +62,13 @@ void IndependentFrameLoop::scheduleQueuedProcess() {
 }
 
 bool IndependentFrameLoop::processNextFrame() {
-    if (m_shuttingDown || m_suspended || m_deviceLost || m_flipInFlight || !m_renderPending) {
+    if (m_shuttingDown || m_suspended || m_deviceLost || m_frameLimitReached || m_haltedOnError
+        || m_flipInFlight || !m_renderPending) {
+        return false;
+    }
+    if (m_maxSubmittedFrames > 0 && m_submittedFrameCount >= m_maxSubmittedFrames) {
+        m_frameLimitReached = true;
+        m_renderPending = false;
         return false;
     }
     m_renderPending = false;
@@ -78,14 +91,30 @@ bool IndependentFrameLoop::processNextFrame() {
         Q_UNUSED(gbm.releaseBufferToAvailable(bufferId));
         Q_UNUSED(m_waylandCoordinator.completeFrame(false));
         ++m_failedRenderCount;
+        if (m_maxSubmittedFrames > 0) {
+            m_haltedOnError = true;
+        }
         emit frameFailed();
         return false;
+    }
+
+    ++m_submittedFrameCount;
+    if (m_maxSubmittedFrames > 0 && m_submittedFrameCount >= m_maxSubmittedFrames) {
+        m_frameLimitReached = true;
+        m_renderPending = false;
+        m_scheduled = false;
+        qInfo() << "[SGE-DIAG] HOMOLOG_FRAME_LIMIT_REACHED submittedFrames=" << m_submittedFrameCount
+                << "maxFrames=" << m_maxSubmittedFrames;
+        emit frameLimitReached(static_cast<quint64>(m_submittedFrameCount));
     }
 
     if (!gbm.markBufferReadyForScanout(bufferId, buf->acquireFenceFd)) {
         Q_UNUSED(gbm.releaseBufferToAvailable(bufferId));
         Q_UNUSED(m_waylandCoordinator.completeFrame(false));
         ++m_failedRenderCount;
+        if (m_maxSubmittedFrames > 0) {
+            m_haltedOnError = true;
+        }
         emit frameFailed();
         return false;
     }
@@ -94,6 +123,9 @@ bool IndependentFrameLoop::processNextFrame() {
         Q_UNUSED(gbm.releaseBufferToAvailable(bufferId));
         Q_UNUSED(m_waylandCoordinator.completeFrame(false));
         ++m_failedCommitCount;
+        if (m_maxSubmittedFrames > 0) {
+            m_haltedOnError = true;
+        }
         emit frameFailed();
         return false;
     }
@@ -141,7 +173,7 @@ void IndependentFrameLoop::onPageFlipCompleted(quint64, quint64 userData) {
         emit frameFailed();
     }
 
-    if (m_renderPending && !m_suspended && !m_shuttingDown) {
+    if (m_renderPending && !m_suspended && !m_shuttingDown && !m_frameLimitReached && !m_haltedOnError) {
         scheduleQueuedProcess();
     }
 }
@@ -170,9 +202,13 @@ void IndependentFrameLoop::onPageFlipTimedOut(quint64 pendingToken) {
 
     m_presenter.markFlipTimedOut(bufferId);
     Q_UNUSED(m_waylandCoordinator.completeFrame(false));
+    if (m_maxSubmittedFrames > 0) {
+        m_haltedOnError = true;
+        m_renderPending = false;
+    }
     emit frameFailed();
 
-    if (m_renderPending && !m_suspended && !m_shuttingDown) {
+    if (m_renderPending && !m_suspended && !m_shuttingDown && !m_frameLimitReached && !m_haltedOnError) {
         scheduleQueuedProcess();
     }
 }

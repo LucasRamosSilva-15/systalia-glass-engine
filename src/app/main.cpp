@@ -295,6 +295,23 @@ int main(int argc, char *argv[]) {
             QCoreApplication::exit(2);
         });
 
+        if (frameLoop.maxSubmittedFrames() > 0) {
+            QObject::connect(&frameLoop, &Systalia::Platform::Drm::IndependentFrameLoop::framePresented,
+                             &app, [&frameLoop](quint64) {
+                if (frameLoop.isFrameLimitReached()) {
+                    qInfo() << "[SGE-DRM-EXPERIMENTAL] Limite experimental concluído após page-flip real; encerrando com segurança.";
+                    QCoreApplication::exit(0);
+                }
+            });
+            QObject::connect(&frameLoop, &Systalia::Platform::Drm::IndependentFrameLoop::frameFailed,
+                             &app, [&frameLoop]() {
+                if (frameLoop.isHaltedByFailure() || frameLoop.isFrameLimitReached()) {
+                    qCritical() << "[SGE-DRM-EXPERIMENTAL] Falha controlada durante execução limitada; encerrando com segurança.";
+                    QCoreApplication::exit(1);
+                }
+            });
+        }
+
         frameLoop.requestFrame();
         const int exitCode = app.exec();
         frameLoop.shutdown();

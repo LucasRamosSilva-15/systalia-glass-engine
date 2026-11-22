@@ -45,6 +45,7 @@ public:
     IndependentFrameLoop &operator=(const IndependentFrameLoop &) = delete;
 
     void setFlipTimeoutMs(int timeoutMs) noexcept { m_flipTimeoutMs = timeoutMs; }
+    void setMaxSubmittedFrames(uint64_t maxFrames) noexcept { m_maxSubmittedFrames = maxFrames; }
 
     void requestFrame();
     [[nodiscard]] bool processNextFrame();
@@ -57,6 +58,10 @@ public:
     [[nodiscard]] bool hasPendingRender() const noexcept { return m_renderPending; }
     [[nodiscard]] bool isSuspended() const noexcept { return m_suspended; }
     [[nodiscard]] bool isDeviceLost() const noexcept { return m_deviceLost; }
+    [[nodiscard]] bool isFrameLimitReached() const noexcept { return m_frameLimitReached; }
+    [[nodiscard]] bool isHaltedByFailure() const noexcept { return m_haltedOnError; }
+    [[nodiscard]] uint64_t maxSubmittedFrames() const noexcept { return m_maxSubmittedFrames; }
+    [[nodiscard]] uint64_t submittedFrameCount() const noexcept { return m_submittedFrameCount; }
     [[nodiscard]] uint64_t activeFlipBufferId() const noexcept { return m_activeFlipBufferId; }
     [[nodiscard]] uint64_t presentedCount() const noexcept { return m_presentedCount; }
     [[nodiscard]] uint64_t failedRenderCount() const noexcept { return m_failedRenderCount; }
@@ -66,6 +71,7 @@ public:
 signals:
     void framePresented(quint64 totalPresented);
     void frameFailed();
+    void frameLimitReached(quint64 submittedFrames);
 
 private slots:
     void onPageFlipCompleted(quint64 sequence, quint64 userData);
@@ -84,9 +90,13 @@ private:
     bool m_suspended = false;
     bool m_deviceLost = false;
     bool m_shuttingDown = false;
+    bool m_frameLimitReached = false;
+    bool m_haltedOnError = false;
     bool m_flipInFlight = false;
     bool m_renderPending = false;
     bool m_scheduled = false;
+    uint64_t m_maxSubmittedFrames = 0;
+    uint64_t m_submittedFrameCount = 0;
     uint64_t m_activeFlipBufferId = 0;
     uint64_t m_activeFlipCommitId = 0;
     uint64_t m_presentedCount = 0;
