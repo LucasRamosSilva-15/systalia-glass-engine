@@ -831,14 +831,43 @@ bool VulkanQuickRenderer::observeSyncFdCompletion(uint64_t frameId, int syncFd, 
                                        QStringLiteral("SYNC_FD inválido para observação."));
         return false;
     }
+    const int boundedTimeoutMs = qMax(0, timeoutMs);
+    QElapsedTimer timer;
+    timer.start();
+    int rc = 0;
     pollfd pfd{syncFd, POLLIN, 0};
-    const int rc = ::poll(&pfd, 1, timeoutMs);
-    if (rc > 0 && (pfd.revents & POLLIN) != 0) {
-        const bool marked = m_submissionTracker.markCompleted(frameId);
-        if (marked && graphicsDiagnosticsEnabled()) {
-            qInfo() << "[SGE-DIAG] GPU_EXECUTION_COMPLETED frameId=" << frameId << "syncFd=" << syncFd;
+    while (true) {
+        const int elapsed = static_cast<int>(timer.elapsed());
+        const int remaining = qMax(0, boundedTimeoutMs - elapsed);
+        pfd.revents = 0;
+        rc = ::poll(&pfd, 1, remaining);
+        if (rc < 0 && errno == EINTR && timer.elapsed() < boundedTimeoutMs) {
+            continue;
         }
-        return marked;
+        break;
+    }
+
+    if (rc > 0) {
+        if ((pfd.revents & (POLLERR | POLLNVAL | POLLHUP)) != 0) {
+            m_submissionTracker.markFailed(
+                frameId, GpuSubmissionState::Unknown,
+                QStringLiteral("poll() retornou POLLERR/POLLNVAL/POLLHUP em SYNC_FD."));
+            return false;
+        }
+        if ((pfd.revents & POLLIN) != 0) {
+            const bool marked = m_submissionTracker.markCompleted(frameId);
+            if (marked && graphicsDiagnosticsEnabled()) {
+                const auto *rec = m_submissionTracker.find(frameId);
+                const qint64 elapsedNs = (rec && rec->completedAtNs >= rec->submittedAtNs)
+                                             ? (rec->completedAtNs - rec->submittedAtNs)
+                                             : 0;
+                qInfo() << "[SGE-DIAG] GPU_EXECUTION_COMPLETED frameId=" << frameId
+                        << "slotId=" << (rec ? rec->slotId : 0)
+                        << "syncFd=" << syncFd
+                        << "gpuLatencyUs=" << (elapsedNs / 1000);
+            }
+            return marked;
+        }
     }
     if (rc == 0) {
         Q_UNUSED(m_submissionTracker.markTimedOut(frameId));
@@ -857,7 +886,9 @@ void VulkanQuickRenderer::destroySharedPoolSlots(GbmBufferManager &pool) {
                                      ? m_vulkanInstance.deviceFunctions(m_device)
                                      : nullptr;
     if (df && !m_deviceLost) {
-        df->vkDeviceWaitIdle(m_device);
+        if (df->vkDeviceWaitIdle(m_device) == VK_ERROR_DEVICE_LOST) {
+            m_deviceLost = true;
+        }
     }
     flushQuarantinedSemaphores();
     for (auto &slot : pool.buffers()) {
@@ -1063,9 +1094,24 @@ bool VulkanQuickRenderer::isSyncFdSignaled(int fenceFd, int timeoutMs) {
     if (fenceFd < 0) {
         return false;
     }
+    const int boundedTimeoutMs = qMax(0, timeoutMs);
+    QElapsedTimer timer;
+    timer.start();
     pollfd pfd{fenceFd, POLLIN, 0};
-    const int rc = ::poll(&pfd, 1, timeoutMs);
-    return rc > 0 && (pfd.revents & POLLIN) != 0;
+    int rc = 0;
+    while (true) {
+        const int elapsed = static_cast<int>(timer.elapsed());
+        const int remaining = qMax(0, boundedTimeoutMs - elapsed);
+        pfd.revents = 0;
+        rc = ::poll(&pfd, 1, remaining);
+        if (rc < 0 && errno == EINTR && timer.elapsed() < boundedTimeoutMs) {
+            continue;
+        }
+        break;
+    }
+    return rc > 0
+           && (pfd.revents & (POLLERR | POLLNVAL | POLLHUP)) == 0
+           && (pfd.revents & POLLIN) != 0;
 }
 
 void VulkanQuickRenderer::shutdown() {

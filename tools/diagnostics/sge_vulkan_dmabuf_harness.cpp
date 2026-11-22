@@ -108,7 +108,7 @@ ScenarioSpec specForId(const QString &id) {
     const QString u = id.trimmed().toUpper();
     if (u == QLatin1String("A")) return {u, QSize(128, 128), false, false, false, false};
     if (u == QLatin1String("B")) return {u, QSize(128, 128), true, false, false, false};
-    if (u == QLatin1String("C")) return {u, QSize(128, 128), true, false, true, false};
+    if (u == QLatin1String("C")) return {u, QSize(128, 128), true, false, true, true};
     if (u == QLatin1String("D")) return {u, QSize(1920, 1080), false, false, false, true};
     if (u == QLatin1String("E")) return {u, QSize(1920, 1080), true, true, false, true};
     if (u == QLatin1String("F")) return {u, QSize(1920, 1080), true, false, false, true};

@@ -228,8 +228,15 @@ void tst_VulkanDmabufAudit::submissionTrackerDistinguishesSubmittedTimedOutAndRe
     const int unsignaledFd = makeUnsignaledPipeFd(&writeEnd);
     QVERIFY(!renderer.observeSyncFdCompletion(frameId2, unsignaledFd, 5));
     QCOMPARE(renderer.submissionTracker().find(frameId2)->state, GpuSubmissionState::CompletionTimedOut);
+
+    // 4. POLLHUP (ponta de escrita fechada sem dados) e FD fechado/inválido (POLLNVAL) nunca viram Completed
     ::close(writeEnd);
+    QVERIFY(!VulkanQuickRenderer::isSyncFdSignaled(unsignaledFd, 5));
+    QVERIFY(!renderer.observeSyncFdCompletion(frameId2, unsignaledFd, 5));
     ::close(unsignaledFd);
+    QVERIFY(!renderer.observeSyncFdCompletion(frameId2, unsignaledFd, 5)); // POLLNVAL
+    QVERIFY(!renderer.observeSyncFdCompletion(frameId2, -1, 5));
+
     if (slot1->acquireFenceFd >= 0) {
         ::close(slot1->acquireFenceFd);
         slot1->acquireFenceFd = -1;
