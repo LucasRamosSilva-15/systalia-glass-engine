@@ -373,6 +373,11 @@ bool AtomicKmsPresenter::submitBufferForScanout(uint64_t bufferId, int acquireFe
                 << "inFenceFd=" << req.inFenceFd
                 << "outFenceFd=" << res.outFenceFd
                 << "succeeded=" << res.succeeded;
+        if (res.succeeded) {
+            qInfo() << "[SGE-DIAG] RELEASE_FENCE_CREATED commitId=" << flipCtx->commitId
+                    << "bufferId=" << bufferId
+                    << "outFenceFd=" << res.outFenceFd;
+        }
     }
 
     // Após commitAtomic, o FD de entrada nunca deve ser reutilizado em commits futuros.
@@ -400,6 +405,10 @@ bool AtomicKmsPresenter::submitBufferForScanout(uint64_t bufferId, int acquireFe
     }
 
     if (m_pendingOutFenceFd >= 0) {
+        if (VulkanQuickRenderer::graphicsDiagnosticsEnabled()) {
+            qInfo() << "[SGE-DIAG] RELEASE_FENCE_CLOSED slotId=" << m_pendingFlipBufferId
+                    << "releaseFenceFd=" << m_pendingOutFenceFd;
+        }
         ::close(m_pendingOutFenceFd);
         m_pendingOutFenceFd = -1;
     }
@@ -446,6 +455,10 @@ void AtomicKmsPresenter::suspendPresentation() {
     }
     m_flipRegistry->advanceGeneration();
     if (m_pendingOutFenceFd >= 0) {
+        if (VulkanQuickRenderer::graphicsDiagnosticsEnabled()) {
+            qInfo() << "[SGE-DIAG] RELEASE_FENCE_CLOSED slotId=" << m_pendingFlipBufferId
+                    << "releaseFenceFd=" << m_pendingOutFenceFd;
+        }
         ::close(m_pendingOutFenceFd);
         m_pendingOutFenceFd = -1;
     }
@@ -483,6 +496,10 @@ void AtomicKmsPresenter::releaseKmsFramebuffers() {
 
 void AtomicKmsPresenter::shutdown() {
     if (m_pendingOutFenceFd >= 0) {
+        if (VulkanQuickRenderer::graphicsDiagnosticsEnabled()) {
+            qInfo() << "[SGE-DIAG] RELEASE_FENCE_CLOSED slotId=" << m_pendingFlipBufferId
+                    << "releaseFenceFd=" << m_pendingOutFenceFd;
+        }
         ::close(m_pendingOutFenceFd);
         m_pendingOutFenceFd = -1;
     }

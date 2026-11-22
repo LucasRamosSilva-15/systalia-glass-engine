@@ -446,6 +446,11 @@ bool VulkanQuickRenderer::renderIntoBuffer(GbmExportedBuffer &slot) {
 
     const uint64_t frameId = ++m_frameCounter;
     if (graphicsDiagnosticsEnabled()) {
+        qInfo() << "[SGE-DIAG] FRAME_START frameId=" << frameId
+                << "slotId=" << slot.id
+                << "mode=dmabufPool size=" << m_pixelSize
+                << "vkFormat=" << static_cast<int>(m_vkFormat)
+                << "modifier=0x" << QString::number(slot.modifier, 16);
         qInfo() << "[SGE-DIAG] frameId=" << frameId
                 << "slotId=" << slot.id
                 << "size=" << m_pixelSize
@@ -475,21 +480,41 @@ bool VulkanQuickRenderer::renderIntoBuffer(GbmExportedBuffer &slot) {
                 importInfo.fd = slot.releaseFenceFd;
                 const VkResult importRc = fnImportSemFd(m_device, &importInfo);
                 if (importRc == VK_SUCCESS) {
+                    if (graphicsDiagnosticsEnabled()) {
+                        qInfo() << "[SGE-DIAG] RELEASE_FENCE_IMPORTED frameId=" << frameId
+                                << "slotId=" << slot.id
+                                << "releaseFenceFd=" << slot.releaseFenceFd;
+                    }
                     // Ownership do FD transferido ao Vulkan em caso de sucesso.
                     slot.releaseFenceFd = -1;
                     hasImportedWaitSemaphore = true;
                 } else if (importRc == VK_ERROR_DEVICE_LOST) {
+                    const int closedFd = slot.releaseFenceFd;
                     ::close(slot.releaseFenceFd);
                     slot.releaseFenceFd = -1;
+                    if (graphicsDiagnosticsEnabled()) {
+                        qInfo() << "[SGE-DIAG] RELEASE_FENCE_CLOSED slotId=" << slot.id
+                                << "releaseFenceFd=" << closedFd;
+                    }
                     simulateDeviceLostForTest(QStringLiteral("VK_ERROR_DEVICE_LOST em vkImportSemaphoreFdKHR"));
                     return false;
                 }
             }
         }
         if (slot.releaseFenceFd >= 0) {
-            const bool signaled = isSyncFdSignaled(slot.releaseFenceFd, 2000);
+            const int observedFd = slot.releaseFenceFd;
+            const bool signaled = isSyncFdSignaled(observedFd, 2000);
+            if (signaled && graphicsDiagnosticsEnabled()) {
+                qInfo() << "[SGE-DIAG] RELEASE_FENCE_SIGNALED frameId=" << frameId
+                        << "slotId=" << slot.id
+                        << "releaseFenceFd=" << observedFd;
+            }
             ::close(slot.releaseFenceFd);
             slot.releaseFenceFd = -1;
+            if (graphicsDiagnosticsEnabled()) {
+                qInfo() << "[SGE-DIAG] RELEASE_FENCE_CLOSED slotId=" << slot.id
+                        << "releaseFenceFd=" << observedFd;
+            }
             if (!signaled) {
                 m_lastError = QStringLiteral("Timeout aguardando releaseFenceFd antes de reutilizar slot.");
                 return false;

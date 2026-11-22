@@ -144,6 +144,7 @@ private slots:
     void reorderedLogindEventsControlFrameLoop();
     void rendersRealOffscreenVulkanSceneWithReadback();
     void strictOneFrameHomologLimitBlocksSecondFrameAndHaltsOnFailure();
+    void threeFrameHomologLimitAlternatesSlotsAndBlocksFourthSubmission();
 };
 
 void tst_IndependentFrameLoop::singleAndMultipleFramesWithBackpressureAndDuplicateFlip() {
@@ -444,6 +445,70 @@ void tst_IndependentFrameLoop::strictOneFrameHomologLimitBlocksSecondFrameAndHal
         h.loop.requestFrame();
         QCoreApplication::processEvents();
         QCOMPARE(h.atomic.commitCalls, 1);
+        h.loop.shutdown();
+    }
+}
+
+void tst_IndependentFrameLoop::threeFrameHomologLimitAlternatesSlotsAndBlocksFourthSubmission() {
+    // 1. Valores arbitrários na variável de ambiente recuam para 1 (fail-safe)
+    {
+        qputenv("SGE_HOMOLOG_MAX_FRAMES", "99");
+        LoopHarness h;
+        QCOMPARE(h.loop.maxSubmittedFrames(), 1ULL);
+        qunsetenv("SGE_HOMOLOG_MAX_FRAMES");
+    }
+
+    // 2. SGE_HOMOLOG_MAX_FRAMES=3 alterna slots 1 -> 2 -> 1 e bloqueia a quarta submissão
+    {
+        qputenv("SGE_HOMOLOG_MAX_FRAMES", "3");
+        LoopHarness h;
+        QVERIFY(h.init(10));
+        QCOMPARE(h.loop.maxSubmittedFrames(), 3ULL);
+        QSignalSpy limitSpy(&h.loop, &IndependentFrameLoop::frameLimitReached);
+        QSignalSpy presentedSpy(&h.loop, &IndependentFrameLoop::framePresented);
+
+        for (int f = 0; f < 3; ++f) {
+            h.loop.requestFrame();
+            QTRY_VERIFY(h.loop.isFlipInFlight());
+            QCOMPARE(h.loop.submittedFrameCount(), static_cast<uint64_t>(f + 1));
+            h.dispatcher.dispatchSimulatedPageFlip(static_cast<uint64_t>(f + 1), 0);
+        }
+
+        QVERIFY(h.loop.isFrameLimitReached());
+        QCOMPARE(limitSpy.count(), 1);
+        QCOMPARE(presentedSpy.count(), 3);
+        QCOMPARE(h.loop.presentedCount(), 3ULL);
+        QCOMPARE(h.render.renderCalls, 3);
+        QCOMPARE(h.atomic.commitCalls, 3);
+
+        // Quarta submissão deve ser bloqueada mesmo com requestFrame() explícito
+        h.loop.requestFrame();
+        QCoreApplication::processEvents();
+        QVERIFY(!h.loop.isFlipInFlight());
+        QCOMPARE(h.render.renderCalls, 3);
+        QCOMPARE(h.atomic.commitCalls, 3);
+        h.loop.shutdown();
+        qunsetenv("SGE_HOMOLOG_MAX_FRAMES");
+    }
+
+    // 3. Rejeição no commit 2 ou 3 interrompe imediatamente sem retry automático
+    for (int failAt : {2, 3}) {
+        LoopHarness h;
+        QVERIFY(h.init(10));
+        h.loop.setMaxSubmittedFrames(3);
+        for (int f = 1; f < failAt; ++f) {
+            h.loop.requestFrame();
+            QTRY_VERIFY(h.loop.isFlipInFlight());
+            h.dispatcher.dispatchSimulatedPageFlip(static_cast<uint64_t>(f), 0);
+        }
+        h.atomic.failCommit = true;
+        h.loop.requestFrame();
+        QTRY_VERIFY(h.loop.isHaltedByFailure());
+        QCOMPARE(h.atomic.commitCalls, failAt);
+        h.atomic.failCommit = false;
+        h.loop.requestFrame();
+        QCoreApplication::processEvents();
+        QCOMPARE(h.atomic.commitCalls, failAt);
         h.loop.shutdown();
     }
 }

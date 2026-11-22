@@ -615,8 +615,14 @@ void XWaylandManager::stop() {
 }
 
 void XWaylandManager::onProcessFinished(int exitCode, QProcess::ExitStatus exitStatus) {
-    qInfo().noquote() << "[SGE-XWAYLAND] Processo Xwayland finalizado. Código:" << exitCode
-                      << "| Status:" << (exitStatus == QProcess::CrashExit ? "CrashExit" : "NormalExit");
+    if (m_stopping) {
+        qInfo().noquote() << "[SGE-XWAYLAND] Processo Xwayland encerrado intencionalmente durante shutdown. Código:"
+                          << exitCode
+                          << "| Status:" << (exitStatus == QProcess::CrashExit ? "ForcedSignal" : "NormalExit");
+    } else {
+        qInfo().noquote() << "[SGE-XWAYLAND] Processo Xwayland finalizado. Código:" << exitCode
+                          << "| Status:" << (exitStatus == QProcess::CrashExit ? "CrashExit" : "NormalExit");
+    }
 
     m_ready = false;
     m_waylandClient = nullptr;

@@ -28,10 +28,11 @@ IndependentFrameLoop::IndependentFrameLoop(IControlledRenderSource &renderSource
             this, &IndependentFrameLoop::onPageFlipTimedOut);
     m_eventDispatcher.setFlipContextRegistry(m_presenter.flipContextRegistry());
 
-    bool ok = false;
-    const int envLimit = qEnvironmentVariableIntValue("SGE_HOMOLOG_MAX_FRAMES", &ok);
-    if (ok && envLimit > 0) {
-        m_maxSubmittedFrames = static_cast<uint64_t>(envLimit);
+    if (qEnvironmentVariableIsSet("SGE_HOMOLOG_MAX_FRAMES")) {
+        bool ok = false;
+        const int envLimit = qEnvironmentVariableIntValue("SGE_HOMOLOG_MAX_FRAMES", &ok);
+        // Aceita apenas limites controlados (1 ou 3); valores inválidos ou arbitrários recuam para 1 (fail-safe).
+        m_maxSubmittedFrames = (ok && (envLimit == 1 || envLimit == 3)) ? static_cast<uint64_t>(envLimit) : 1ULL;
     }
 }
 

@@ -10,6 +10,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RUN_TTY3 = REPO_ROOT / "tools" / "homologation" / "run_tty3_homolog.sh"
+RUN_TTY3_3FRAMES = REPO_ROOT / "tools" / "homologation" / "run_tty3_3frames_homolog.sh"
 VERIFY_ENV = REPO_ROOT / "tools" / "homologation" / "verify_homolog_env.sh"
 
 
@@ -211,6 +212,29 @@ exit 1
         res = self._run_tty3(env)
         self.assertEqual(res.returncode, 1)
         self.assertFalse(self.engine_calls_log.exists())
+
+    def test_three_frame_executor_requires_explicit_flag_and_forces_3_frames(self) -> None:
+        # Mesmo com SGE_HOMOLOG_MAX_FRAMES=3 herdado, sem --authorize-3frames deve bloquear (exit 3)
+        env = self._clean_env()
+        env["SGE_HOMOLOG_MAX_FRAMES"] = "3"
+        blocked = subprocess.run(
+            ["bash", str(RUN_TTY3_3FRAMES)], env=env, capture_output=True, text=True, timeout=15
+        )
+        self.assertEqual(blocked.returncode, 3)
+        self.assertIn("BLOCKED", blocked.stderr)
+        self.assertFalse(self.engine_calls_log.exists())
+
+        # Com --authorize-3frames, força MAX=3 DIAG=1 DRM=1
+        env["SGE_HOMOLOG_MAX_FRAMES"] = "0"
+        ok = subprocess.run(
+            ["bash", str(RUN_TTY3_3FRAMES), "--authorize-3frames"],
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+        self.assertEqual(ok.returncode, 0, msg=ok.stdout + ok.stderr)
+        self.assertIn("MAX=3 DIAG=1 DRM=1", self.engine_calls_log.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":
