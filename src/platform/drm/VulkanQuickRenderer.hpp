@@ -24,6 +24,14 @@ namespace Systalia::Platform::Drm {
 
 class GbmBufferManager;
 
+struct DrmModifierCapability {
+    uint64_t modifier = 0;
+    uint32_t planeCount = 0;
+    uint32_t tilingFeatures = 0;
+    bool dmabufExportable = false;
+    bool dmabufImportable = false;
+};
+
 struct VulkanDeviceCapabilities {
     QString deviceName;
     uint32_t vendorId = 0;
@@ -66,6 +74,7 @@ public:
     [[nodiscard]] int exportDmabufFd();
 
     [[nodiscard]] QList<uint64_t> querySupportedDrmModifiers() const;
+    [[nodiscard]] QList<DrmModifierCapability> queryDrmModifierCapabilities() const;
     [[nodiscard]] bool createSharedPoolSlots(GbmBufferManager &pool,
                                              const QSize &pixelSize,
                                              int slotCount = 2,
@@ -132,6 +141,7 @@ private:
     bool m_initialized = false;
     bool m_suspended = false;
     bool m_deviceLost = false;
+    uint64_t m_frameCounter = 0;
 };
 
 } // namespace Systalia::Platform::Drm

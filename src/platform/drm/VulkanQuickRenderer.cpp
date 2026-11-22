@@ -246,8 +246,12 @@ bool VulkanQuickRenderer::renderIntoBuffer(GbmExportedBuffer &slot) {
         return renderFrame();
     }
 
+    const uint64_t frameId = ++m_frameCounter;
     if (graphicsDiagnosticsEnabled()) {
-        qInfo() << "[SGE-DIAG] renderIntoBuffer start bufferId=" << slot.id
+        qInfo() << "[SGE-DIAG] renderIntoBuffer start frameId=" << frameId
+                << "bufferId=" << slot.id
+                << "size=" << m_pixelSize
+                << "modifier=0x" << QString::number(slot.modifier, 16)
                 << "thread=" << QThread::currentThread()
                 << "vkImage=" << Qt::hex << slot.vkImageHandle << Qt::dec
                 << "releaseFenceFd=" << slot.releaseFenceFd;
@@ -364,8 +368,8 @@ bool VulkanQuickRenderer::renderIntoBuffer(GbmExportedBuffer &slot) {
     return true;
 }
 
-QList<uint64_t> VulkanQuickRenderer::querySupportedDrmModifiers() const {
-    QList<uint64_t> result;
+QList<DrmModifierCapability> VulkanQuickRenderer::queryDrmModifierCapabilities() const {
+    QList<DrmModifierCapability> result;
     if (!m_initialized || !m_capabilities.supportsDrmFormatModifier) {
         return result;
     }
@@ -376,6 +380,8 @@ QList<uint64_t> VulkanQuickRenderer::querySupportedDrmModifiers() const {
 
     auto fnGetProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceFormatProperties2>(
         vkGetInstanceProcAddr(m_vulkanInstance.vkInstance(), "vkGetPhysicalDeviceFormatProperties2"));
+    auto fnGetImgProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceImageFormatProperties2>(
+        vkGetInstanceProcAddr(m_vulkanInstance.vkInstance(), "vkGetPhysicalDeviceImageFormatProperties2"));
     if (!fnGetProps2) {
         return result;
     }
@@ -396,9 +402,55 @@ QList<uint64_t> VulkanQuickRenderer::querySupportedDrmModifiers() const {
     fnGetProps2(m_physicalDevice, m_vkFormat, &fmtProps);
 
     for (const auto &entry : props) {
-        if ((entry.drmFormatModifierTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) != 0
-            && entry.drmFormatModifierPlaneCount == 1) {
-            result.append(entry.drmFormatModifier);
+        DrmModifierCapability cap;
+        cap.modifier = entry.drmFormatModifier;
+        cap.planeCount = entry.drmFormatModifierPlaneCount;
+        cap.tilingFeatures = entry.drmFormatModifierTilingFeatures;
+
+        if (fnGetImgProps2) {
+            VkPhysicalDeviceImageDrmFormatModifierInfoEXT modInfo{};
+            modInfo.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_DRM_FORMAT_MODIFIER_INFO_EXT;
+            modInfo.drmFormatModifier = entry.drmFormatModifier;
+            modInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+            VkPhysicalDeviceExternalImageFormatInfo extImgFmtInfo{};
+            extImgFmtInfo.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_IMAGE_FORMAT_INFO;
+            extImgFmtInfo.pNext = &modInfo;
+            extImgFmtInfo.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT;
+
+            VkPhysicalDeviceImageFormatInfo2 imgFmtInfo{};
+            imgFmtInfo.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2;
+            imgFmtInfo.pNext = &extImgFmtInfo;
+            imgFmtInfo.format = m_vkFormat;
+            imgFmtInfo.type = VK_IMAGE_TYPE_2D;
+            imgFmtInfo.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
+            imgFmtInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT
+                               | VK_IMAGE_USAGE_SAMPLED_BIT;
+
+            VkExternalImageFormatProperties extImgProps{};
+            extImgProps.sType = VK_STRUCTURE_TYPE_EXTERNAL_IMAGE_FORMAT_PROPERTIES;
+            VkImageFormatProperties2 outProps{};
+            outProps.sType = VK_STRUCTURE_TYPE_IMAGE_FORMAT_PROPERTIES_2;
+            outProps.pNext = &extImgProps;
+
+            if (fnGetImgProps2(m_physicalDevice, &imgFmtInfo, &outProps) == VK_SUCCESS) {
+                const auto feats = extImgProps.externalMemoryProperties.externalMemoryFeatures;
+                cap.dmabufExportable = (feats & VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT) != 0;
+                cap.dmabufImportable = (feats & VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT) != 0;
+            }
+        }
+        result.append(cap);
+    }
+    return result;
+}
+
+QList<uint64_t> VulkanQuickRenderer::querySupportedDrmModifiers() const {
+    QList<uint64_t> result;
+    for (const auto &cap : queryDrmModifierCapabilities()) {
+        if ((cap.tilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) != 0
+            && cap.planeCount == 1
+            && cap.dmabufExportable) {
+            result.append(cap.modifier);
         }
     }
     return result;
@@ -481,8 +533,24 @@ bool VulkanQuickRenderer::createSharedPoolSlots(GbmBufferManager &pool,
             return false;
         }
 
-        VkMemoryRequirements memReq{};
-        df->vkGetImageMemoryRequirements(m_device, slotImage, &memReq);
+        VkMemoryDedicatedRequirements dedicatedReqs{};
+        dedicatedReqs.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS;
+        VkMemoryRequirements2 memReq2{};
+        memReq2.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
+        memReq2.pNext = &dedicatedReqs;
+
+        auto fnGetImgMemReqs2 = reinterpret_cast<PFN_vkGetImageMemoryRequirements2>(
+            f->vkGetDeviceProcAddr(m_device, "vkGetImageMemoryRequirements2"));
+        if (fnGetImgMemReqs2) {
+            VkImageMemoryRequirementsInfo2 reqInfo{};
+            reqInfo.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2;
+            reqInfo.image = slotImage;
+            fnGetImgMemReqs2(m_device, &reqInfo, &memReq2);
+        } else {
+            df->vkGetImageMemoryRequirements(m_device, slotImage, &memReq2.memoryRequirements);
+        }
+
+        const VkMemoryRequirements &memReq = memReq2.memoryRequirements;
         const uint32_t memType = findMemoryType(memReq.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
         if (memType == UINT32_MAX) {
             df->vkDestroyImage(m_device, slotImage, nullptr);
@@ -579,6 +647,18 @@ bool VulkanQuickRenderer::createSharedPoolSlots(GbmBufferManager &pool,
             }
         }
 
+        if (graphicsDiagnosticsEnabled()) {
+            qInfo() << "[SGE-DIAG] slot created index=" << i
+                    << "size=" << pixelSize
+                    << "modifier=0x" << QString::number(chosenModifier, 16)
+                    << "stride=" << slot.stride
+                    << "offset=" << slot.offset
+                    << "allocBytes=" << memReq.size
+                    << "memType=" << memType
+                    << "requiresDedicated=" << (dedicatedReqs.requiresDedicatedAllocation == VK_TRUE)
+                    << "prefersDedicated=" << (dedicatedReqs.prefersDedicatedAllocation == VK_TRUE)
+                    << "dmabufFd=" << dmabufFd;
+        }
         Q_UNUSED(pool.registerExternalSlot(std::move(slot)));
     }
     return true;

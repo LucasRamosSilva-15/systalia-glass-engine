@@ -74,3 +74,14 @@ qt_add_executable(sge_vulkan_quick_poc
 target_link_libraries(sge_vulkan_quick_poc PRIVATE
     sge_drm_poc
 )
+
+qt_add_executable(sge_vulkan_dmabuf_harness
+    tools/diagnostics/sge_vulkan_dmabuf_harness.cpp
+)
+
+target_link_libraries(sge_vulkan_dmabuf_harness PRIVATE
+    sge_drm_poc
+    -Wl,--whole-archive sge_core -Wl,--no-whole-archive
+)
+
+add_dependencies(sge_vulkan_dmabuf_harness sge_vulkan_offscreen)
