@@ -80,13 +80,14 @@ bool VulkanQuickRenderer::initialize(const QSize &pixelSize) {
     m_window->setRenderTarget(QQuickRenderTarget::fromVulkanImage(
         m_colorImage, VK_IMAGE_LAYOUT_UNDEFINED, m_vkFormat, m_pixelSize, 1));
 
-    m_qmlEngine = std::make_unique<QQmlEngine>();
+    m_ownedQmlEngine = std::make_unique<QQmlEngine>();
+    m_activeEngine = m_ownedQmlEngine.get();
     m_initialized = true;
     return true;
 }
 
 bool VulkanQuickRenderer::loadQmlSource(const QByteArray &qmlSource) {
-    if (!m_initialized || !m_qmlEngine || !m_window) {
+    if (!m_initialized || !m_activeEngine || !m_window) {
         m_lastError = QStringLiteral("Renderer não inicializado para carregar QML.");
         return false;
     }
@@ -96,7 +97,7 @@ bool VulkanQuickRenderer::loadQmlSource(const QByteArray &qmlSource) {
         delete m_rootItem;
         m_rootItem = nullptr;
     }
-    m_qmlComponent = std::make_unique<QQmlComponent>(m_qmlEngine.get());
+    m_qmlComponent = std::make_unique<QQmlComponent>(m_activeEngine);
     m_qmlComponent->setData(qmlSource, QUrl());
     if (m_qmlComponent->isError()) {
         m_lastError = m_qmlComponent->errorString();
@@ -108,6 +109,53 @@ bool VulkanQuickRenderer::loadQmlSource(const QByteArray &qmlSource) {
     if (!item) {
         delete obj;
         m_lastError = QStringLiteral("Objeto raiz QML não é QQuickItem.");
+        return false;
+    }
+
+    m_rootItem = item;
+    m_rootItem->setParentItem(m_window->contentItem());
+    m_rootItem->setSize(QSizeF(m_pixelSize));
+    return true;
+}
+
+bool VulkanQuickRenderer::loadQmlUrl(const QUrl &qmlUrl, QQmlEngine *externalEngine) {
+    if (!m_initialized || !m_window) {
+        m_lastError = QStringLiteral("Renderer não inicializado para carregar URL QML.");
+        return false;
+    }
+    if (externalEngine) {
+        m_activeEngine = externalEngine;
+        m_ownedQmlEngine.reset();
+    }
+    if (!m_activeEngine) {
+        m_lastError = QStringLiteral("QQmlEngine indisponível.");
+        return false;
+    }
+
+    if (m_rootItem) {
+        m_rootItem->setParentItem(nullptr);
+        delete m_rootItem;
+        m_rootItem = nullptr;
+    }
+
+    m_qmlComponent = std::make_unique<QQmlComponent>(m_activeEngine, qmlUrl);
+    if (m_qmlComponent->isError()) {
+        m_lastError = m_qmlComponent->errorString();
+        return false;
+    }
+
+    QObject *obj = m_qmlComponent->createWithInitialProperties(
+        {{QStringLiteral("hostWindow"), QVariant::fromValue(static_cast<QObject *>(m_window.get()))}});
+    if (m_qmlComponent->isError()) {
+        delete obj;
+        m_lastError = m_qmlComponent->errorString();
+        return false;
+    }
+
+    auto *item = qobject_cast<QQuickItem *>(obj);
+    if (!item) {
+        delete obj;
+        m_lastError = QStringLiteral("Objeto raiz QML não é QQuickItem (verifique ShellRoot.qml).");
         return false;
     }
 
@@ -337,7 +385,8 @@ void VulkanQuickRenderer::shutdown() {
         m_rootItem = nullptr;
     }
     m_qmlComponent.reset();
-    m_qmlEngine.reset();
+    m_ownedQmlEngine.reset();
+    m_activeEngine = nullptr;
 
     if (m_renderControl) {
         m_renderControl->invalidate();

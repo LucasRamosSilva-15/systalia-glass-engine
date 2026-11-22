@@ -15,6 +15,7 @@ endforeach()
 
 # Preserva aliases QRC públicos (:/qt/qml/Systalia/Engine/src/qml/...) após reorganização hierárquica
 set_source_files_properties(src/shell/core/main.qml PROPERTIES QT_RESOURCE_ALIAS "src/qml/main.qml")
+set_source_files_properties(src/shell/core/ShellRoot.qml PROPERTIES QT_RESOURCE_ALIAS "src/qml/ShellRoot.qml")
 set_source_files_properties(src/shell/core/WorkspaceViewport.qml PROPERTIES QT_RESOURCE_ALIAS "src/qml/WorkspaceViewport.qml")
 set_source_files_properties(src/shell/core/WaylandClientView.qml PROPERTIES QT_RESOURCE_ALIAS "src/qml/WaylandClientView.qml")
 set_source_files_properties(src/shell/core/WaylandWindowContainer.qml PROPERTIES QT_RESOURCE_ALIAS "src/qml/WaylandWindowContainer.qml")
@@ -73,6 +74,7 @@ qt_add_qml_module(sge_core
     RESOURCE_PREFIX "/qt/qml"
     QML_FILES
         src/shell/core/main.qml
+        src/shell/core/ShellRoot.qml
         src/shell/core/WorkspaceViewport.qml
         src/theme/compatibility/v1/SystaliaTheme.qml
         src/theme/qml/ValoTheme.qml

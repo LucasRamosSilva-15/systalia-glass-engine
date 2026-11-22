@@ -4,8 +4,10 @@
 #include <QQmlEngine>
 #include <QQuickWindow>
 #include <QQuickGraphicsConfiguration>
+#include <QQuickRenderControl>
 #include <QSocketNotifier>
 #include <QUrl>
+#include <QWaylandQuickOutput>
 #include <QDebug>
 #include <csignal>
 #include <memory>
@@ -24,8 +26,11 @@
 #include "LogindSessionService.hpp"
 #include "AtomicKmsPresenter.hpp"
 #include "DrmBackendController.hpp"
+#include "DrmEventDispatcher.hpp"
+#include "IndependentFrameLoop.hpp"
 #include "LogindDrmProvider.hpp"
 #include "VulkanQuickRenderer.hpp"
+#include "WaylandFrameCoordinator.hpp"
 #include "diagnostics/ValoStabilityProbe.hpp"
 
 void qml_register_types_Systalia_Engine();
@@ -182,6 +187,82 @@ int main(int argc, char *argv[]) {
                                  &logindSessionService);
     qmlRegisterSingletonInstance("Systalia.System", 1, 0, "InputDeviceManager",
                                  &inputDeviceManager);
+
+    if (platformCfg.mode == InputDeviceManager::SessionBareMetalKms
+        && platformCfg.useExperimentalDrmBackend) {
+        QQmlEngine shellQmlEngine;
+        shellQmlEngine.addImageProvider(QStringLiteral("desktopIcons"), new DesktopIconProvider());
+
+        Systalia::Platform::Drm::VulkanQuickRenderer vulkanRenderer;
+        const QSize targetSize(1920, 1080);
+        if (!vulkanRenderer.initialize(targetSize)) {
+            qCritical() << "[SGE-DRM-EXPERIMENTAL] Falha ao inicializar VulkanQuickRenderer:"
+                        << vulkanRenderer.lastError();
+            drmController->shutdown();
+            inputDeviceManager.shutdownHardwareContext();
+            logindSessionService.releaseControl();
+            return 1;
+        }
+
+        const QUrl shellRootUrl(QStringLiteral("qrc:/qt/qml/Systalia/Engine/src/qml/ShellRoot.qml"));
+        if (!vulkanRenderer.loadQmlUrl(shellRootUrl, &shellQmlEngine)) {
+            qWarning() << "[SGE-DRM-EXPERIMENTAL] Tentando ShellRoot.qml local:"
+                       << vulkanRenderer.lastError();
+            if (!vulkanRenderer.loadQmlUrl(
+                    QUrl::fromLocalFile(QStringLiteral("src/shell/core/ShellRoot.qml")),
+                    &shellQmlEngine)) {
+                qCritical() << "[SGE-DRM-EXPERIMENTAL] Falha ao carregar ShellRoot.qml:"
+                            << vulkanRenderer.lastError();
+                vulkanRenderer.shutdown();
+                drmController->shutdown();
+                inputDeviceManager.shutdownHardwareContext();
+                logindSessionService.releaseControl();
+                return 1;
+            }
+        }
+
+        auto *waylandOutput = vulkanRenderer.rootItem()
+                                  ? vulkanRenderer.rootItem()->findChild<QWaylandQuickOutput *>()
+                                  : nullptr;
+        Systalia::Platform::Drm::QWaylandOutputFrameSink frameSink(waylandOutput);
+        Systalia::Platform::Drm::WaylandFrameCoordinator waylandCoord(frameSink);
+        Systalia::Platform::Drm::DrmEventDispatcher drmEvents;
+        drmEvents.attachFd(drmController->activeFd());
+
+        Systalia::Platform::Drm::IndependentFrameLoop frameLoop(
+            vulkanRenderer, *atomicPresenter, waylandCoord, drmEvents);
+
+        if (auto *rc = vulkanRenderer.renderControl()) {
+            QObject::connect(rc, &QQuickRenderControl::renderRequested,
+                             &frameLoop, &Systalia::Platform::Drm::IndependentFrameLoop::requestFrame);
+            QObject::connect(rc, &QQuickRenderControl::sceneChanged,
+                             &frameLoop, &Systalia::Platform::Drm::IndependentFrameLoop::requestFrame);
+        }
+
+        QObject::connect(&logindSessionService, &LogindSessionService::devicePaused, &frameLoop,
+                         [&frameLoop, &vulkanRenderer](quint32 majorNum, quint32) {
+            if (majorNum == LogindSessionService::kDrmMajorNumber) {
+                vulkanRenderer.setSuspended(true);
+                frameLoop.suspend();
+            }
+        });
+        QObject::connect(&logindSessionService, &LogindSessionService::deviceResumed, &frameLoop,
+                         [&frameLoop, &vulkanRenderer](quint32 majorNum, quint32, int fd) {
+            if (majorNum == LogindSessionService::kDrmMajorNumber) {
+                vulkanRenderer.setSuspended(false);
+                frameLoop.resume(fd);
+            }
+        });
+
+        frameLoop.requestFrame();
+        const int exitCode = app.exec();
+        frameLoop.shutdown();
+        vulkanRenderer.shutdown();
+        drmController->shutdown();
+        inputDeviceManager.shutdownHardwareContext();
+        logindSessionService.releaseControl();
+        return exitCode;
+    }
 
     QQmlApplicationEngine engine;
     engine.addImageProvider(QStringLiteral("desktopIcons"), new DesktopIconProvider());

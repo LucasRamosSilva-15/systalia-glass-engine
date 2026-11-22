@@ -482,3 +482,17 @@ set_tests_properties(tst_independent_frame_loop PROPERTIES
     TIMEOUT 45
     ENVIRONMENT "QT_QPA_PLATFORM=sge_vulkan_offscreen;QT_QPA_PLATFORM_PLUGIN_PATH=${CMAKE_BINARY_DIR}/platforms"
 )
+
+qt_add_executable(tst_shell_root_integration unit/tst_ShellRootIntegration.cpp)
+target_link_libraries(tst_shell_root_integration PRIVATE
+    sge_drm_poc
+    -Wl,--whole-archive sge_core -Wl,--no-whole-archive
+    Qt6::Test
+)
+add_dependencies(tst_shell_root_integration sge_vulkan_offscreen)
+add_test(NAME tst_shell_root_integration COMMAND tst_shell_root_integration)
+set_tests_properties(tst_shell_root_integration PROPERTIES
+    LABELS "integration"
+    TIMEOUT 60
+    ENVIRONMENT "QT_QPA_PLATFORM=sge_vulkan_offscreen;QT_QPA_PLATFORM_PLUGIN_PATH=${CMAKE_BINARY_DIR}/platforms"
+)

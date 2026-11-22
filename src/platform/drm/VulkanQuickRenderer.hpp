@@ -1,10 +1,13 @@
 #pragma once
 
+#include "IndependentFrameLoop.hpp"
+
 #include <QByteArray>
 #include <QImage>
 #include <QObject>
 #include <QSize>
 #include <QString>
+#include <QUrl>
 #include <QVulkanInstance>
 #include <vulkan/vulkan.h>
 
@@ -33,9 +36,10 @@ struct VulkanDeviceCapabilities {
 /**
  * @brief Ponte isolada entre Vulkan (QVulkanInstance/VkDevice) e Qt Quick (QQuickRenderControl).
  *
- * Renderiza cenas QML em uma VkImage offscreen sem abrir /dev/dri/card* e sem usar eglfs_kms.
+ * Renderiza cenas QML (incluindo ShellRoot.qml) em uma VkImage offscreen sem abrir
+ * /dev/dri/card* e sem usar eglfs_kms.
  */
-class VulkanQuickRenderer final : public QObject {
+class VulkanQuickRenderer final : public QObject, public IControlledRenderSource {
     Q_OBJECT
 
 public:
@@ -47,8 +51,10 @@ public:
 
     [[nodiscard]] bool initialize(const QSize &pixelSize);
     [[nodiscard]] bool loadQmlSource(const QByteArray &qmlSource);
+    [[nodiscard]] bool loadQmlUrl(const QUrl &qmlUrl, QQmlEngine *externalEngine = nullptr);
     [[nodiscard]] bool resize(const QSize &pixelSize);
     [[nodiscard]] bool renderFrame();
+    [[nodiscard]] bool renderControlledFrame() override { return renderFrame(); }
     [[nodiscard]] QImage readbackImage();
     [[nodiscard]] int exportDmabufFd();
 
@@ -62,6 +68,10 @@ public:
     [[nodiscard]] VkFormat colorFormat() const noexcept { return m_vkFormat; }
     [[nodiscard]] VulkanDeviceCapabilities capabilities() const noexcept { return m_capabilities; }
     [[nodiscard]] QString lastError() const noexcept { return m_lastError; }
+    [[nodiscard]] QQuickWindow *window() const noexcept { return m_window.get(); }
+    [[nodiscard]] QQuickItem *rootItem() const noexcept { return m_rootItem; }
+    [[nodiscard]] QQuickRenderControl *renderControl() const noexcept { return m_renderControl.get(); }
+    [[nodiscard]] QQmlEngine *qmlEngine() const noexcept { return m_activeEngine; }
 
 private:
     bool createVulkanDevice();
@@ -87,7 +97,8 @@ private:
 
     std::unique_ptr<QQuickRenderControl> m_renderControl;
     std::unique_ptr<QQuickWindow> m_window;
-    std::unique_ptr<QQmlEngine> m_qmlEngine;
+    std::unique_ptr<QQmlEngine> m_ownedQmlEngine;
+    QQmlEngine *m_activeEngine = nullptr;
     std::unique_ptr<QQmlComponent> m_qmlComponent;
     QQuickItem *m_rootItem = nullptr;
 
