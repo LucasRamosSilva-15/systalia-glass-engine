@@ -121,6 +121,36 @@ AtomicCommitResult LibdrmAtomicKmsBackend::commitAtomic(int drmFd, const AtomicC
     drmModeAtomicAddProperty(atomicReq, req.planeId, crtcWProp, req.srcWidth);
     drmModeAtomicAddProperty(atomicReq, req.planeId, crtcHProp, req.srcHeight);
 
+    uint32_t modeBlobId = 0;
+    if (req.allowModeset) {
+        if (const uint32_t srcXProp = findPropertyId(drmFd, req.planeId, DRM_MODE_OBJECT_PLANE, "SRC_X")) {
+            drmModeAtomicAddProperty(atomicReq, req.planeId, srcXProp, 0);
+        }
+        if (const uint32_t srcYProp = findPropertyId(drmFd, req.planeId, DRM_MODE_OBJECT_PLANE, "SRC_Y")) {
+            drmModeAtomicAddProperty(atomicReq, req.planeId, srcYProp, 0);
+        }
+        if (const uint32_t crtcXProp = findPropertyId(drmFd, req.planeId, DRM_MODE_OBJECT_PLANE, "CRTC_X")) {
+            drmModeAtomicAddProperty(atomicReq, req.planeId, crtcXProp, 0);
+        }
+        if (const uint32_t crtcYProp = findPropertyId(drmFd, req.planeId, DRM_MODE_OBJECT_PLANE, "CRTC_Y")) {
+            drmModeAtomicAddProperty(atomicReq, req.planeId, crtcYProp, 0);
+        }
+        if (req.connectorId != 0) {
+            if (const uint32_t connCrtcProp = findPropertyId(drmFd, req.connectorId, DRM_MODE_OBJECT_CONNECTOR, "CRTC_ID")) {
+                drmModeAtomicAddProperty(atomicReq, req.connectorId, connCrtcProp, req.crtcId);
+            }
+        }
+        if (!req.modeInfoBlob.isEmpty()) {
+            if (drmModeCreatePropertyBlob(drmFd, req.modeInfoBlob.constData(),
+                                          static_cast<size_t>(req.modeInfoBlob.size()), &modeBlobId) == 0
+                && modeBlobId != 0) {
+                if (const uint32_t modeIdProp = findPropertyId(drmFd, req.crtcId, DRM_MODE_OBJECT_CRTC, "MODE_ID")) {
+                    drmModeAtomicAddProperty(atomicReq, req.crtcId, modeIdProp, modeBlobId);
+                }
+            }
+        }
+    }
+
     if (req.inFenceFd >= 0) {
         if (const uint32_t inFenceProp = findPropertyId(drmFd, req.planeId, DRM_MODE_OBJECT_PLANE, "IN_FENCE_FD")) {
             drmModeAtomicAddProperty(atomicReq, req.planeId, inFenceProp, static_cast<uint64_t>(req.inFenceFd));
@@ -145,6 +175,9 @@ AtomicCommitResult LibdrmAtomicKmsBackend::commitAtomic(int drmFd, const AtomicC
     result.succeeded = (drmModeAtomicCommit(drmFd, atomicReq, flags, req.userData) == 0);
     result.outFenceFd = result.succeeded ? outFenceFd : -1;
     drmModeAtomicFree(atomicReq);
+    if (modeBlobId != 0) {
+        drmModeDestroyPropertyBlob(drmFd, modeBlobId);
+    }
     return result;
 }
 
@@ -218,7 +251,23 @@ bool AtomicKmsPresenter::configureOutput(const DrmOutputMode &mode) {
         return false;
     }
     m_activeMode = mode;
+    m_activeModeBlob.clear();
+    if (const KmsConnectorInfo *primary = m_snapshot.primaryConnector()) {
+        for (int i = 0; i < primary->modes.size() && i < primary->rawModeInfos.size(); ++i) {
+            const auto &cand = primary->modes.at(i);
+            if (cand.width == mode.width && cand.height == mode.height && cand.refreshHz == mode.refreshHz) {
+                m_activeModeBlob = primary->rawModeInfos.at(i);
+                break;
+            }
+        }
+    }
     m_modesetState = KmsModesetState::InitialModesetPending;
+    if (VulkanQuickRenderer::graphicsDiagnosticsEnabled()) {
+        qInfo() << "[SGE-DIAG] KMS_MODE_DISCOVERED connector=" << mode.connectorName
+                << "width=" << mode.width << "height=" << mode.height
+                << "refreshHz=" << mode.refreshHz
+                << "hasModeBlob=" << !m_activeModeBlob.isEmpty();
+    }
     if (m_useExternalVulkanPool) {
         // Pool unificado Vulkan->DMA-BUF será registrado por VulkanQuickRenderer::createSharedPoolSlots().
         return true;
@@ -284,6 +333,14 @@ bool AtomicKmsPresenter::submitBufferForScanout(uint64_t bufferId, int acquireFe
     req.inFenceFd = -1;
     req.userData = flipCtx;
     req.allowModeset = (m_modesetState == KmsModesetState::InitialModesetPending);
+    if (req.allowModeset) {
+        req.modeInfoBlob = m_activeModeBlob;
+        if (VulkanQuickRenderer::graphicsDiagnosticsEnabled()) {
+            qInfo() << "[SGE-DIAG] KMS_INITIAL_MODESET_REQUESTED connectorId=" << m_connectorId
+                    << "crtcId=" << m_crtcId << "planeId=" << m_planeId
+                    << "commitId=" << flipCtx->commitId;
+        }
+    }
 
     if (effectiveInFenceFd >= 0) {
         if (m_fenceCaps.supportsInFenceFd) {
@@ -329,6 +386,11 @@ bool AtomicKmsPresenter::submitBufferForScanout(uint64_t bufferId, int acquireFe
     }
 
     if (!res.succeeded) {
+        if (VulkanQuickRenderer::graphicsDiagnosticsEnabled()) {
+            qWarning() << "[SGE-DIAG] KMS_COMMIT_REJECTED bufferId=" << bufferId
+                       << "commitId=" << flipCtx->commitId
+                       << "allowModeset=" << req.allowModeset;
+        }
         m_flipRegistry->discardContext(flipCtx->commitId);
         if (res.outFenceFd >= 0) {
             ::close(res.outFenceFd);

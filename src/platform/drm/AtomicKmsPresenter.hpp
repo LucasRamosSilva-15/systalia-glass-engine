@@ -4,6 +4,7 @@
 #include "GbmBufferManager.hpp"
 #include "KmsOutputDiscovery.hpp"
 
+#include <QByteArray>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -23,6 +24,7 @@ struct AtomicCommitRequest {
     void *userData = nullptr;
     bool testOnly = false;
     bool allowModeset = false;
+    QByteArray modeInfoBlob;
 };
 
 struct AtomicCommitResult {
@@ -131,6 +133,7 @@ private:
     uint32_t m_crtcId = 0;
     uint32_t m_planeId = 0;
     DrmOutputMode m_activeMode;
+    QByteArray m_activeModeBlob;
     KmsFenceCapabilities m_fenceCaps;
     QList<uint64_t> m_primaryPlaneModifiers;
     uint64_t m_pendingFlipBufferId = 0;

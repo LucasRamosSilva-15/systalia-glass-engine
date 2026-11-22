@@ -222,6 +222,7 @@ KmsDiscoverySnapshot LibdrmResourceBackend::probeResources(int drmFd) {
             mode.refreshHz = modeRefreshHz(rawMode);
             mode.preferred = (rawMode.type & DRM_MODE_TYPE_PREFERRED) != 0;
             info.modes.append(mode);
+            info.rawModeInfos.append(QByteArray(reinterpret_cast<const char *>(&rawMode), sizeof(rawMode)));
         }
 
         info.preferredMode = KmsOutputDiscovery::selectBestMode(info.modes);

@@ -16,6 +16,8 @@ public:
     [[nodiscard]] qreal refreshRate() const override { return static_cast<qreal>(m_refreshHz); }
     [[nodiscard]] QString name() const override { return QStringLiteral("sge-vulkan-offscreen"); }
 
+    void updateOutputMode(const QSize &size, int refreshHz);
+
 private:
     QRect m_geometry;
     int m_refreshHz = 60;

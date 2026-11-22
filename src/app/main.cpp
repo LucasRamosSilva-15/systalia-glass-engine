@@ -196,6 +196,8 @@ int main(int argc, char *argv[]) {
         Systalia::Platform::Drm::VulkanQuickRenderer vulkanRenderer;
         const auto &activeMode = atomicPresenter->activeMode();
         const QSize targetSize(activeMode.width, activeMode.height);
+        app.setProperty("sgeKmsOutputRefreshHz", activeMode.refreshHz);
+        app.setProperty("sgeKmsOutputSize", targetSize);
         if (!targetSize.isValid() || !vulkanRenderer.initialize(targetSize)) {
             qCritical() << "[SGE-DRM-EXPERIMENTAL] Falha ao inicializar VulkanQuickRenderer:"
                         << vulkanRenderer.lastError();

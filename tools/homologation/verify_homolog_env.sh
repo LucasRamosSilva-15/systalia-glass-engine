@@ -61,4 +61,9 @@ if ldd "$HOMOLOG_DIR/bin/platforms/libsge_vulkan_offscreen.so" | grep -q "not fo
     exit 1
 fi
 echo "[OK] Todas as bibliotecas compartilhadas resolvidas."
+echo "=== Sessões systemd-logind (leitura não invasiva) ==="
+loginctl list-sessions --no-legend 2>/dev/null || echo "[WARN] loginctl indisponível."
+if command -v journalctl >/dev/null 2>&1; then
+    echo "[OK] journalctl disponível para captura persistente pós-teste."
+fi
 echo "=== Verificação concluída com sucesso ==="

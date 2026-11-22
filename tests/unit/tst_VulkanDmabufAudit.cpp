@@ -8,7 +8,9 @@
 #include "VulkanQuickRenderer.hpp"
 #include "WaylandFrameCoordinator.hpp"
 
+#include <QGuiApplication>
 #include <QQuickWindow>
+#include <QScreen>
 #include <QSGRendererInterface>
 #include <drm_fourcc.h>
 #include <drm_mode.h>
@@ -55,6 +57,7 @@ private slots:
     void fiveFrameSlotAlternationWithReleaseFenceAndShutdownPending();
     void firstModesetStateMachineAndModeChangeContract();
     void inFormatsBlobParsingValidEmptyMalformedAndNoIntersection();
+    void firstModesetModeBlobOutFenceReleaseAndQpaSync();
 };
 
 void tst_VulkanDmabufAudit::auditsExternalMemoryAndDrmModifierCapabilitiesOnRadv() {
@@ -601,6 +604,131 @@ void tst_VulkanDmabufAudit::inFormatsBlobParsingValidEmptyMalformedAndNoIntersec
         DRM_FORMAT_XRGB8888, parsed, {DRM_FORMAT_MOD_LINEAR});
     QVERIFY(!neg.compatible);
     QVERIFY(neg.negotiatedModifiers.isEmpty());
+}
+
+void tst_VulkanDmabufAudit::firstModesetModeBlobOutFenceReleaseAndQpaSync() {
+    // 1. Paridade QPA vs. modo físico descoberto (sem recriar QGuiApplication/Vulkan)
+    if (QGuiApplication::platformName() == QLatin1String("sge_vulkan_offscreen")) {
+        QScreen *screen = QGuiApplication::primaryScreen();
+        QVERIFY(screen != nullptr);
+        const QSize origSize = screen->size();
+        const qreal origHz = screen->refreshRate();
+        qGuiApp->setProperty("sgeKmsOutputRefreshHz", 144);
+        qGuiApp->setProperty("sgeKmsOutputSize", QSize(2560, 1440));
+        QTRY_COMPARE(screen->size(), QSize(2560, 1440));
+        QCOMPARE(screen->refreshRate(), 144.0);
+        qGuiApp->setProperty("sgeKmsOutputRefreshHz", static_cast<int>(origHz));
+        qGuiApp->setProperty("sgeKmsOutputSize", origSize);
+        QTRY_COMPARE(screen->size(), origSize);
+    }
+
+    // 2. Mode blob no primeiro modeset + OUT_FENCE_PTR + releaseFenceFd não sinalizada + flip atrasado
+    class BlobMockKms final : public IKmsResourceBackend {
+    public:
+        KmsDiscoverySnapshot probeResources(int drmFd) override {
+            KmsDiscoverySnapshot snap;
+            if (drmFd < 0) return snap;
+            snap.valid = true;
+            snap.atomicSupported = true;
+            snap.crtcs.append(KmsCrtcInfo{55, 0, true, 0, 0, 2560, 1440});
+            snap.planes.append(KmsPlaneInfo{77, 0x1, 55, KmsPlaneType::Primary, {DRM_FORMAT_XRGB8888}});
+            KmsConnectorInfo dp;
+            dp.connectorId = 20;
+            dp.name = QStringLiteral("DP-1");
+            dp.connected = true;
+            dp.possibleCrtcs = 0x1;
+            const DrmOutputMode mode{QStringLiteral("DP-1"), 2560, 1440, 144, true};
+            dp.modes.append(mode);
+            drm_mode_modeinfo raw{};
+            raw.hdisplay = 2560;
+            raw.vdisplay = 1440;
+            dp.rawModeInfos.append(QByteArray(reinterpret_cast<const char *>(&raw), sizeof(raw)));
+            dp.preferredMode = mode;
+            snap.connectors.append(dp);
+            return snap;
+        }
+    };
+    class OutFenceMockAtomic final : public IAtomicKmsBackend {
+    public:
+        QList<AtomicCommitRequest> commits;
+        int nextOutFenceFd = -1;
+        bool failCommit = false;
+        uint32_t addFramebuffer(int, const GbmExportedBuffer &) override { return 901; }
+        void removeFramebuffer(int, uint32_t) override {}
+        AtomicCommitResult commitAtomic(int, const AtomicCommitRequest &req) override {
+            commits.append(req);
+            if (failCommit) {
+                const int leakedCandidate = nextOutFenceFd;
+                nextOutFenceFd = -1;
+                return {false, leakedCandidate};
+            }
+            const int outFd = nextOutFenceFd;
+            nextOutFenceFd = -1;
+            return {true, outFd};
+        }
+    };
+
+    BlobMockKms kms;
+    AuditMockGbm gbm;
+    OutFenceMockAtomic atomic;
+    AtomicKmsPresenter presenter(kms, gbm, atomic);
+    QVERIFY(presenter.initializeOnFd(10));
+    QVERIFY(presenter.configureOutput(DrmOutputMode{QStringLiteral("DP-1"), 2560, 1440, 144, true}));
+
+    // Falha simulada (ex.: perda de DRM master) fecha outFenceFd retornado e mantém InitialModesetPending
+    int failPipe[2] = {-1, -1};
+    QCOMPARE(::pipe(failPipe), 0);
+    ::close(failPipe[1]);
+    atomic.failCommit = true;
+    atomic.nextOutFenceFd = failPipe[0];
+    QVERIFY(!presenter.presentFrame(1, 10));
+    QCOMPARE(::fcntl(failPipe[0], F_GETFD), -1);
+    QCOMPARE(presenter.modesetState(), KmsModesetState::InitialModesetPending);
+
+    // Commit 1 (modeset): deve incluir modeInfoBlob
+    atomic.failCommit = false;
+    QVERIFY(presenter.presentFrame(2, 10));
+    QCOMPARE(atomic.commits.last().allowModeset, true);
+    QCOMPARE(atomic.commits.last().modeInfoBlob.size(), static_cast<qsizetype>(sizeof(drm_mode_modeinfo)));
+    const uint64_t buf1Id = presenter.bufferManager().buffers().at(0).id;
+    QVERIFY(presenter.onPageFlipCompleted(buf1Id));
+    QCOMPARE(presenter.bufferManager().findBuffer(buf1Id)->state, GbmBufferState::Presented);
+
+    // Commit 2 (Active): allowModeset=false, modeInfoBlob vazio, OUT_FENCE_PTR não sinalizada
+    int unsignaledPipe[2] = {-1, -1};
+    QCOMPARE(::pipe(unsignaledPipe), 0);
+    atomic.nextOutFenceFd = unsignaledPipe[0];
+    QVERIFY(presenter.presentFrame(3, 10));
+    QCOMPARE(atomic.commits.last().allowModeset, false);
+    QVERIFY(atomic.commits.last().modeInfoBlob.isEmpty());
+    const uint64_t buf2Id = presenter.bufferManager().buffers().at(1).id;
+    QVERIFY(presenter.onPageFlipCompleted(buf2Id));
+
+    // buf1 volta para Available carregando unsignaledPipe[0] como releaseFenceFd (ainda não sinalizada)
+    auto *buf1 = presenter.bufferManager().findBuffer(buf1Id);
+    QCOMPARE(buf1->state, GbmBufferState::Available);
+    QCOMPARE(buf1->releaseFenceFd, unsignaledPipe[0]);
+    QVERIFY(!VulkanQuickRenderer::isSyncFdSignaled(buf1->releaseFenceFd, 5));
+
+    // Sinaliza outFence e verifica que agora é observada como sinalizada
+    const char sig = 1;
+    QCOMPARE(::write(unsignaledPipe[1], &sig, 1), 1);
+    QVERIFY(VulkanQuickRenderer::isSyncFdSignaled(buf1->releaseFenceFd, 50));
+    ::close(unsignaledPipe[1]);
+
+    // Flip atrasado após timeout emite latePageFlipCompleted sem liberar buffer ativo
+    DrmEventDispatcher dispatcher;
+    dispatcher.setFlipContextRegistry(presenter.flipContextRegistry());
+    QSignalSpy lateSpy(&dispatcher, &DrmEventDispatcher::latePageFlipCompleted);
+    QVERIFY(presenter.presentFrame(4, 10));
+    void *timedOutUserData = atomic.commits.last().userData;
+    presenter.markFlipTimedOut(buf1Id);
+    dispatcher.dispatchKernelPageFlipForTest(99, 55, timedOutUserData);
+    QCOMPARE(lateSpy.count(), 1);
+    QCOMPARE(presenter.bufferManager().findBuffer(buf2Id)->state, GbmBufferState::Presented);
+
+    presenter.shutdown();
+    QCOMPARE(::fcntl(unsignaledPipe[0], F_GETFD), -1);
 }
 
 QTEST_MAIN(tst_VulkanDmabufAudit)

@@ -209,6 +209,8 @@ void DrmEventDispatcher::handleKernelPageFlip(uint64_t sequence, uint32_t, void 
         qInfo() << "[SGE-DIAG] KMS_PAGE_FLIP_COMPLETED seq=" << sequence
                 << "commitId=" << resolution.commitId
                 << "bufferId=" << resolution.bufferId;
+        qInfo() << "[SGE-DIAG] KMS_BUFFER_RELEASED commitId=" << resolution.commitId
+                << "newActiveBufferId=" << resolution.bufferId;
     }
     emit pageFlipCompleted(static_cast<quint64>(sequence), static_cast<quint64>(resolution.commitId));
 }

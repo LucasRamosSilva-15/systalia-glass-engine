@@ -734,6 +734,10 @@ bool VulkanQuickRenderer::createSharedPoolSlots(GbmBufferManager &pool,
         for (uint64_t mod : neg.negotiatedModifiers) {
             candidateMods.push_back(mod);
         }
+        if (graphicsDiagnosticsEnabled()) {
+            qInfo() << "[SGE-DIAG] KMS_MODIFIER_NEGOTIATED count=" << candidateMods.size()
+                    << "preferred=0x" << QString::number(candidateMods.front(), 16);
+        }
     } else {
         for (uint64_t mod : vkMods) {
             candidateMods.push_back(mod);

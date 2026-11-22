@@ -2,6 +2,7 @@
 
 #include "DrmSessionTypes.hpp"
 
+#include <QByteArray>
 #include <QList>
 #include <QString>
 #include <cstdint>
@@ -43,6 +44,7 @@ struct KmsConnectorInfo {
     uint32_t possibleCrtcs = 0;
     uint32_t activeCrtcId = 0;
     QList<DrmOutputMode> modes;
+    QList<QByteArray> rawModeInfos;
     DrmOutputMode preferredMode;
 };
 
