@@ -469,3 +469,16 @@ set_tests_properties(tst_independent_vulkan_session PROPERTIES
     TIMEOUT 45
     ENVIRONMENT "QT_QPA_PLATFORM=sge_vulkan_offscreen;QT_QPA_PLATFORM_PLUGIN_PATH=${CMAKE_BINARY_DIR}/platforms"
 )
+
+qt_add_executable(tst_independent_frame_loop unit/tst_IndependentFrameLoop.cpp)
+target_link_libraries(tst_independent_frame_loop PRIVATE
+    sge_drm_poc
+    Qt6::Test
+)
+add_dependencies(tst_independent_frame_loop sge_vulkan_offscreen)
+add_test(NAME tst_independent_frame_loop COMMAND tst_independent_frame_loop)
+set_tests_properties(tst_independent_frame_loop PROPERTIES
+    LABELS "unit"
+    TIMEOUT 45
+    ENVIRONMENT "QT_QPA_PLATFORM=sge_vulkan_offscreen;QT_QPA_PLATFORM_PLUGIN_PATH=${CMAKE_BINARY_DIR}/platforms"
+)

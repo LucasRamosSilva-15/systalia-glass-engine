@@ -22,6 +22,10 @@ add_library(sge_drm_poc STATIC
     src/platform/drm/WaylandFrameCoordinator.cpp
     src/platform/drm/DrmVulkanMatcher.hpp
     src/platform/drm/DrmVulkanMatcher.cpp
+    src/platform/drm/DrmEventDispatcher.hpp
+    src/platform/drm/DrmEventDispatcher.cpp
+    src/platform/drm/IndependentFrameLoop.hpp
+    src/platform/drm/IndependentFrameLoop.cpp
 )
 
 target_include_directories(sge_drm_poc PUBLIC
