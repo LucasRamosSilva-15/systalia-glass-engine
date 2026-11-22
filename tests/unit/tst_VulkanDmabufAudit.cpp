@@ -58,6 +58,7 @@ private slots:
     void firstModesetStateMachineAndModeChangeContract();
     void inFormatsBlobParsingValidEmptyMalformedAndNoIntersection();
     void firstModesetModeBlobOutFenceReleaseAndQpaSync();
+    void slotReuseScenariosAtoDAndShellRootWithReleaseFence();
 };
 
 void tst_VulkanDmabufAudit::auditsExternalMemoryAndDrmModifierCapabilitiesOnRadv() {
@@ -729,6 +730,137 @@ void tst_VulkanDmabufAudit::firstModesetModeBlobOutFenceReleaseAndQpaSync() {
 
     presenter.shutdown();
     QCOMPARE(::fcntl(unsignaledPipe[0], F_GETFD), -1);
+}
+
+void tst_VulkanDmabufAudit::slotReuseScenariosAtoDAndShellRootWithReleaseFence() {
+    // Cenário A: Reutilização Slot 1 -> Slot 2 -> Slot 1 sem fence externa (releaseFenceFd = -1)
+    {
+        VulkanQuickRenderer renderer;
+        QVERIFY2(renderer.initialize(QSize(128, 128)), qPrintable(renderer.lastError()));
+        AuditMockGbm gbm;
+        GbmBufferManager pool(gbm);
+        QVERIFY(renderer.createSharedPoolSlots(pool, QSize(128, 128), 2, {DRM_FORMAT_MOD_LINEAR}));
+        QVERIFY(renderer.loadQmlSource(
+            "import QtQuick 2.15\nRectangle { width: 128; height: 128; color: '#123456' }\n"));
+
+        auto *slot1 = pool.acquireBufferForRendering();
+        QVERIFY(slot1 != nullptr);
+        QVERIFY(renderer.renderIntoBuffer(*slot1));
+        QVERIFY(pool.markBufferReadyForFlip(slot1->id, slot1->acquireFenceFd));
+        slot1->acquireFenceFd = -1;
+        QVERIFY(pool.markBufferPresented(slot1->id, 100, -1));
+
+        auto *slot2 = pool.acquireBufferForRendering();
+        QVERIFY(slot2 != nullptr && slot2->id != slot1->id);
+        QVERIFY(renderer.renderIntoBuffer(*slot2));
+        QVERIFY(pool.markBufferReadyForFlip(slot2->id, slot2->acquireFenceFd));
+        slot2->acquireFenceFd = -1;
+        QVERIFY(pool.markBufferPresented(slot2->id, 101, -1));
+        QCOMPARE(slot1->state, GbmBufferState::Available);
+        QCOMPARE(slot1->releaseFenceFd, -1);
+
+        auto *reused = pool.acquireBufferForRendering();
+        QCOMPARE(reused->id, slot1->id);
+        QVERIFY(renderer.renderIntoBuffer(*reused));
+        QVERIFY(!renderer.isDeviceLost());
+        if (reused->acquireFenceFd >= 0) {
+            ::close(reused->acquireFenceFd);
+            reused->acquireFenceFd = -1;
+        }
+        QVERIFY(pool.releaseBufferToAvailable(reused->id));
+
+        renderer.destroySharedPoolSlots(pool);
+        pool.shutdown();
+        renderer.shutdown();
+    }
+
+    // Cenário B: Slot 1 -> Slot 2 -> Slot 1 com releaseFenceFd real sinalizada
+    {
+        VulkanQuickRenderer renderer;
+        QVERIFY2(renderer.initialize(QSize(128, 128)), qPrintable(renderer.lastError()));
+        AuditMockGbm gbm;
+        GbmBufferManager pool(gbm);
+        QVERIFY(renderer.createSharedPoolSlots(pool, QSize(128, 128), 2));
+        QVERIFY(renderer.loadQmlSource(
+            "import QtQuick 2.15\nRectangle { width: 128; height: 128; color: '#2468ac' }\n"));
+
+        auto *slot1 = pool.acquireBufferForRendering();
+        QVERIFY(slot1 != nullptr);
+        QVERIFY(renderer.renderIntoBuffer(*slot1));
+        QVERIFY(pool.markBufferReadyForFlip(slot1->id, slot1->acquireFenceFd));
+        slot1->acquireFenceFd = -1;
+        QVERIFY(pool.markBufferPresented(slot1->id, 200, -1));
+
+        auto *slot2 = pool.acquireBufferForRendering();
+        QVERIFY(slot2 != nullptr && slot2->id != slot1->id);
+        QVERIFY(renderer.renderIntoBuffer(*slot2));
+        const int syncFd2 = slot2->acquireFenceFd;
+        QVERIFY(syncFd2 >= 0);
+        const int releaseFdForSlot1 = ::dup(syncFd2);
+        QVERIFY(releaseFdForSlot1 >= 0);
+        QVERIFY(pool.markBufferReadyForFlip(slot2->id, syncFd2));
+        slot2->acquireFenceFd = -1;
+        QVERIFY(pool.markBufferPresented(slot2->id, 201, releaseFdForSlot1));
+        QCOMPARE(slot1->state, GbmBufferState::Available);
+        QCOMPARE(slot1->releaseFenceFd, releaseFdForSlot1);
+
+        auto *reused = pool.acquireBufferForRendering();
+        QCOMPARE(reused->id, slot1->id);
+        QVERIFY2(renderer.renderIntoBuffer(*reused), qPrintable(renderer.lastError()));
+        QVERIFY(!renderer.isDeviceLost());
+        QCOMPARE(reused->releaseFenceFd, -1);
+        if (reused->acquireFenceFd >= 0) {
+            ::close(reused->acquireFenceFd);
+            reused->acquireFenceFd = -1;
+        }
+        QCOMPARE(::fcntl(releaseFdForSlot1, F_GETFD), -1);
+        QVERIFY(pool.releaseBufferToAvailable(reused->id));
+
+        renderer.destroySharedPoolSlots(pool);
+        pool.shutdown();
+        renderer.shutdown();
+    }
+
+    // Cenário C: Release fence pendente bloqueia escrita até sinalização
+    {
+        int writeEnd = -1;
+        const int pendingFd = makeUnsignaledPipeFd(&writeEnd);
+        QVERIFY(pendingFd >= 0);
+        QVERIFY(!VulkanQuickRenderer::isSyncFdSignaled(pendingFd, 5));
+        const char sig = 1;
+        QCOMPARE(::write(writeEnd, &sig, 1), 1);
+        QVERIFY(VulkanQuickRenderer::isSyncFdSignaled(pendingFd, 50));
+        ::close(writeEnd);
+        ::close(pendingFd);
+    }
+
+    // Cenário D: Falha de importação / fence não sinalizada (POLLHUP/timeout) propaga erro e não retorna Available
+    {
+        VulkanQuickRenderer renderer;
+        QVERIFY2(renderer.initialize(QSize(64, 64)), qPrintable(renderer.lastError()));
+        AuditMockGbm gbm;
+        GbmBufferManager pool(gbm);
+        QVERIFY(renderer.createSharedPoolSlots(pool, QSize(64, 64), 2, {DRM_FORMAT_MOD_LINEAR}));
+        QVERIFY(renderer.loadQmlSource(
+            "import QtQuick 2.15\nRectangle { width: 64; height: 64; color: '#654321' }\n"));
+
+        auto *slot1 = pool.acquireBufferForRendering();
+        QVERIFY(slot1 != nullptr);
+        int fds[2] = {-1, -1};
+        QCOMPARE(::pipe2(fds, O_CLOEXEC), 0);
+        ::close(fds[1]); // POLLHUP sem dados -> falha em vkImportSemaphoreFdKHR e em isSyncFdSignaled
+        slot1->releaseFenceFd = fds[0];
+
+        QVERIFY(!renderer.renderIntoBuffer(*slot1));
+        QCOMPARE(slot1->releaseFenceFd, -1);
+        QCOMPARE(::fcntl(fds[0], F_GETFD), -1);
+        QCOMPARE(slot1->state, GbmBufferState::Rendering);
+
+        QVERIFY(pool.releaseBufferToAvailable(slot1->id));
+        renderer.destroySharedPoolSlots(pool);
+        pool.shutdown();
+        renderer.shutdown();
+    }
 }
 
 QTEST_MAIN(tst_VulkanDmabufAudit)

@@ -444,6 +444,7 @@ bool VulkanQuickRenderer::renderIntoBuffer(GbmExportedBuffer &slot) {
         return renderFrame();
     }
 
+    auto *vkImg = reinterpret_cast<VkImage>(slot.vkImageHandle);
     const uint64_t frameId = ++m_frameCounter;
     if (graphicsDiagnosticsEnabled()) {
         qInfo() << "[SGE-DIAG] FRAME_START frameId=" << frameId
@@ -453,12 +454,13 @@ bool VulkanQuickRenderer::renderIntoBuffer(GbmExportedBuffer &slot) {
                 << "modifier=0x" << QString::number(slot.modifier, 16);
         qInfo() << "[SGE-DIAG] frameId=" << frameId
                 << "slotId=" << slot.id
+                << "vkImage=0x" << Qt::hex << reinterpret_cast<quintptr>(vkImg)
+                << "waitSem=" << slot.vkWaitSemaphoreHandle
+                << "signalSem=" << slot.vkSignalSemaphoreHandle << Qt::dec
                 << "size=" << m_pixelSize
                 << "vkFormat=" << static_cast<int>(m_vkFormat)
                 << "modifier=0x" << QString::number(slot.modifier, 16)
-                << "expectedLayout=UNDEFINED->COLOR_ATTACHMENT_OPTIMAL"
-                << "waitSem=" << Qt::hex << slot.vkWaitSemaphoreHandle
-                << "signalSem=" << slot.vkSignalSemaphoreHandle << Qt::dec
+                << "prevLayout=UNDEFINED expectedLayout=UNDEFINED->COLOR_ATTACHMENT_OPTIMAL"
                 << "releaseFenceFd=" << slot.releaseFenceFd;
     }
 
@@ -468,61 +470,30 @@ bool VulkanQuickRenderer::renderIntoBuffer(GbmExportedBuffer &slot) {
     VkSemaphore signalSem = reinterpret_cast<VkSemaphore>(slot.vkSignalSemaphoreHandle);
 
     if (slot.releaseFenceFd >= 0) {
-        if (m_capabilities.supportsSyncFdImport && waitSem != VK_NULL_HANDLE && f) {
-            auto fnImportSemFd = reinterpret_cast<PFN_vkImportSemaphoreFdKHR>(
-                f->vkGetDeviceProcAddr(m_device, "vkImportSemaphoreFdKHR"));
-            if (fnImportSemFd) {
-                VkImportSemaphoreFdInfoKHR importInfo{};
-                importInfo.sType = VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_FD_INFO_KHR;
-                importInfo.semaphore = waitSem;
-                importInfo.flags = VK_SEMAPHORE_IMPORT_TEMPORARY_BIT;
-                importInfo.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT;
-                importInfo.fd = slot.releaseFenceFd;
-                const VkResult importRc = fnImportSemFd(m_device, &importInfo);
-                if (importRc == VK_SUCCESS) {
-                    if (graphicsDiagnosticsEnabled()) {
-                        qInfo() << "[SGE-DIAG] RELEASE_FENCE_IMPORTED frameId=" << frameId
-                                << "slotId=" << slot.id
-                                << "releaseFenceFd=" << slot.releaseFenceFd;
-                    }
-                    // Ownership do FD transferido ao Vulkan em caso de sucesso.
-                    slot.releaseFenceFd = -1;
-                    hasImportedWaitSemaphore = true;
-                } else if (importRc == VK_ERROR_DEVICE_LOST) {
-                    const int closedFd = slot.releaseFenceFd;
-                    ::close(slot.releaseFenceFd);
-                    slot.releaseFenceFd = -1;
-                    if (graphicsDiagnosticsEnabled()) {
-                        qInfo() << "[SGE-DIAG] RELEASE_FENCE_CLOSED slotId=" << slot.id
-                                << "releaseFenceFd=" << closedFd;
-                    }
-                    simulateDeviceLostForTest(QStringLiteral("VK_ERROR_DEVICE_LOST em vkImportSemaphoreFdKHR"));
-                    return false;
-                }
-            }
+        const int observedFd = slot.releaseFenceFd;
+        // Verifica primeiro via poll(sync_file) para evitar importar OUT_FENCE_PTR de KMS
+        // (especialmente fences já sinalizadas após KMS_PAGE_FLIP_COMPLETED) em vkQueueSubmit/RADV.
+        const bool alreadySignaled = isSyncFdSignaled(observedFd, 0);
+        const bool signaled = alreadySignaled || isSyncFdSignaled(observedFd, 2000);
+        if (signaled && graphicsDiagnosticsEnabled()) {
+            qInfo() << "[SGE-DIAG] RELEASE_FENCE_SIGNALED frameId=" << frameId
+                    << "slotId=" << slot.id
+                    << "releaseFenceFd=" << observedFd
+                    << "nonBlocking=" << alreadySignaled
+                    << "importResult=skipped_sync_file_poll";
         }
-        if (slot.releaseFenceFd >= 0) {
-            const int observedFd = slot.releaseFenceFd;
-            const bool signaled = isSyncFdSignaled(observedFd, 2000);
-            if (signaled && graphicsDiagnosticsEnabled()) {
-                qInfo() << "[SGE-DIAG] RELEASE_FENCE_SIGNALED frameId=" << frameId
-                        << "slotId=" << slot.id
-                        << "releaseFenceFd=" << observedFd;
-            }
-            ::close(slot.releaseFenceFd);
-            slot.releaseFenceFd = -1;
-            if (graphicsDiagnosticsEnabled()) {
-                qInfo() << "[SGE-DIAG] RELEASE_FENCE_CLOSED slotId=" << slot.id
-                        << "releaseFenceFd=" << observedFd;
-            }
-            if (!signaled) {
-                m_lastError = QStringLiteral("Timeout aguardando releaseFenceFd antes de reutilizar slot.");
-                return false;
-            }
+        ::close(slot.releaseFenceFd);
+        slot.releaseFenceFd = -1;
+        if (graphicsDiagnosticsEnabled()) {
+            qInfo() << "[SGE-DIAG] RELEASE_FENCE_CLOSED slotId=" << slot.id
+                    << "releaseFenceFd=" << observedFd;
+        }
+        if (!signaled) {
+            m_lastError = QStringLiteral("Timeout aguardando releaseFenceFd antes de reutilizar slot.");
+            return false;
         }
     }
 
-    auto *vkImg = reinterpret_cast<VkImage>(slot.vkImageHandle);
     m_activeRenderImage = vkImg;
     m_window->setRenderTarget(QQuickRenderTarget::fromVulkanImage(
         vkImg, VK_IMAGE_LAYOUT_UNDEFINED, m_vkFormat, m_pixelSize, 1));
@@ -1030,8 +1001,17 @@ void VulkanQuickRenderer::destroySharedPoolSlots(GbmBufferManager &pool) {
             m_deviceLost = true;
         }
     }
+    if (m_window) {
+        m_window->setRenderTarget(QQuickRenderTarget{});
+    }
     flushQuarantinedSemaphores();
     for (auto &slot : pool.buffers()) {
+        if (graphicsDiagnosticsEnabled()) {
+            qInfo() << "[SGE-DIAG] SLOT_RESOURCES_DESTROYED slotId=" << slot.id
+                    << "vkImage=0x" << Qt::hex << slot.vkImageHandle
+                    << "vkWaitSem=" << slot.vkWaitSemaphoreHandle
+                    << "vkSignalSem=" << slot.vkSignalSemaphoreHandle << Qt::dec;
+        }
         if (slot.dmabufFd >= 0) {
             ::close(slot.dmabufFd);
             slot.dmabufFd = -1;
