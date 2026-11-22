@@ -105,37 +105,10 @@ QList<uint64_t> queryPlaneModifiersForFourcc(int drmFd, uint32_t planeId, uint32
         return mods;
     }
     drmModePropertyBlobPtr blob = drmModeGetPropertyBlob(drmFd, blobId);
-    if (!blob || !blob->data || blob->length < sizeof(drm_format_modifier_blob)) {
-        if (blob) {
-            drmModeFreePropertyBlob(blob);
-        }
+    if (!blob) {
         return mods;
     }
-    const auto *hdr = static_cast<const drm_format_modifier_blob *>(blob->data);
-    const auto *formats = reinterpret_cast<const uint32_t *>(
-        static_cast<const uint8_t *>(blob->data) + hdr->formats_offset);
-    const auto *modEntries = reinterpret_cast<const drm_format_modifier *>(
-        static_cast<const uint8_t *>(blob->data) + hdr->modifiers_offset);
-
-    int xrgbIdx = -1;
-    for (uint32_t i = 0; i < hdr->count_formats; ++i) {
-        if (formats[i] == drmFourcc) {
-            xrgbIdx = static_cast<int>(i);
-            break;
-        }
-    }
-    if (xrgbIdx >= 0) {
-        for (uint32_t m = 0; m < hdr->count_modifiers; ++m) {
-            const auto &entry = modEntries[m];
-            if (xrgbIdx >= static_cast<int>(entry.offset)
-                && xrgbIdx < static_cast<int>(entry.offset) + 64) {
-                const uint64_t bit = 1ULL << static_cast<uint32_t>(xrgbIdx - static_cast<int>(entry.offset));
-                if ((entry.formats & bit) != 0 && !mods.contains(entry.modifier)) {
-                    mods.append(entry.modifier);
-                }
-            }
-        }
-    }
+    mods = KmsOutputDiscovery::parseInFormatsBlob(blob->data, static_cast<size_t>(blob->length), drmFourcc);
     drmModeFreePropertyBlob(blob);
     return mods;
 }
@@ -288,6 +261,59 @@ KmsDiscoverySnapshot KmsOutputDiscovery::discover(int drmFd) {
         return KmsDiscoverySnapshot{};
     }
     return m_backend.probeResources(drmFd);
+}
+
+QList<uint64_t> KmsOutputDiscovery::parseInFormatsBlob(const void *data, size_t length, uint32_t drmFourcc) {
+    QList<uint64_t> mods;
+    if (!data || drmFourcc == 0 || length < sizeof(drm_format_modifier_blob)) {
+        return mods;
+    }
+
+    const auto *bytes = static_cast<const uint8_t *>(data);
+    drm_format_modifier_blob hdr{};
+    std::memcpy(&hdr, bytes, sizeof(hdr));
+
+    if (hdr.count_formats == 0 || hdr.count_modifiers == 0) {
+        return mods;
+    }
+    if (hdr.formats_offset < sizeof(drm_format_modifier_blob)
+        || hdr.formats_offset > length
+        || static_cast<uint64_t>(hdr.count_formats) * sizeof(uint32_t) > length - hdr.formats_offset) {
+        return mods;
+    }
+    if (hdr.modifiers_offset < sizeof(drm_format_modifier_blob)
+        || hdr.modifiers_offset > length
+        || static_cast<uint64_t>(hdr.count_modifiers) * sizeof(drm_format_modifier) > length - hdr.modifiers_offset) {
+        return mods;
+    }
+
+    int fourccIdx = -1;
+    for (uint32_t i = 0; i < hdr.count_formats; ++i) {
+        uint32_t fmt = 0;
+        std::memcpy(&fmt, bytes + hdr.formats_offset + static_cast<size_t>(i) * sizeof(uint32_t), sizeof(fmt));
+        if (fmt == drmFourcc) {
+            fourccIdx = static_cast<int>(i);
+            break;
+        }
+    }
+    if (fourccIdx < 0) {
+        return mods;
+    }
+
+    for (uint32_t m = 0; m < hdr.count_modifiers; ++m) {
+        drm_format_modifier entry{};
+        std::memcpy(&entry,
+                    bytes + hdr.modifiers_offset + static_cast<size_t>(m) * sizeof(drm_format_modifier),
+                    sizeof(entry));
+        if (fourccIdx >= static_cast<int>(entry.offset)
+            && fourccIdx < static_cast<int>(entry.offset) + 64) {
+            const uint64_t bit = 1ULL << static_cast<uint32_t>(fourccIdx - static_cast<int>(entry.offset));
+            if ((entry.formats & bit) != 0 && !mods.contains(entry.modifier)) {
+                mods.append(entry.modifier);
+            }
+        }
+    }
+    return mods;
 }
 
 QList<uint64_t> KmsOutputDiscovery::queryPlaneModifiers(int drmFd, uint32_t planeId, uint32_t drmFourcc) {

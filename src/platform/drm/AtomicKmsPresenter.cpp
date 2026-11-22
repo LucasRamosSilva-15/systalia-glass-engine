@@ -137,6 +137,9 @@ AtomicCommitResult LibdrmAtomicKmsBackend::commitAtomic(int drmFd, const AtomicC
     uint32_t flags = req.testOnly ? DRM_MODE_ATOMIC_TEST_ONLY : (DRM_MODE_ATOMIC_NONBLOCK | DRM_MODE_PAGE_FLIP_EVENT);
     if (req.allowModeset) {
         flags |= DRM_MODE_ATOMIC_ALLOW_MODESET;
+        if (const uint32_t activeProp = findPropertyId(drmFd, req.crtcId, DRM_MODE_OBJECT_CRTC, "ACTIVE")) {
+            drmModeAtomicAddProperty(atomicReq, req.crtcId, activeProp, 1);
+        }
     }
 
     result.succeeded = (drmModeAtomicCommit(drmFd, atomicReq, flags, req.userData) == 0);
@@ -188,6 +191,7 @@ bool AtomicKmsPresenter::initializeOnFd(int drmFd) {
     m_fenceCaps = m_atomicBackend.probeFenceCapabilities(m_drmFd, m_planeId, m_crtcId);
     m_initialized = true;
     m_suspended = false;
+    m_modesetState = KmsModesetState::InitialModesetPending;
     return true;
 }
 
@@ -214,6 +218,7 @@ bool AtomicKmsPresenter::configureOutput(const DrmOutputMode &mode) {
         return false;
     }
     m_activeMode = mode;
+    m_modesetState = KmsModesetState::InitialModesetPending;
     if (m_useExternalVulkanPool) {
         // Pool unificado Vulkan->DMA-BUF será registrado por VulkanQuickRenderer::createSharedPoolSlots().
         return true;
@@ -278,6 +283,7 @@ bool AtomicKmsPresenter::submitBufferForScanout(uint64_t bufferId, int acquireFe
     req.srcHeight = static_cast<uint32_t>(m_activeMode.height);
     req.inFenceFd = -1;
     req.userData = flipCtx;
+    req.allowModeset = (m_modesetState == KmsModesetState::InitialModesetPending);
 
     if (effectiveInFenceFd >= 0) {
         if (m_fenceCaps.supportsInFenceFd) {
@@ -338,6 +344,9 @@ bool AtomicKmsPresenter::submitBufferForScanout(uint64_t bufferId, int acquireFe
     m_pendingFlipBufferId = bufferId;
     m_pendingFlipCommitId = flipCtx->commitId;
     m_pendingOutFenceFd = res.outFenceFd;
+    if (m_modesetState == KmsModesetState::InitialModesetPending) {
+        m_modesetState = KmsModesetState::Active;
+    }
     return true;
 }
 
@@ -370,6 +379,9 @@ void AtomicKmsPresenter::markFlipTimedOut(uint64_t bufferId) {
 
 void AtomicKmsPresenter::suspendPresentation() {
     m_suspended = true;
+    if (m_initialized) {
+        m_modesetState = KmsModesetState::Suspended;
+    }
     m_flipRegistry->advanceGeneration();
     if (m_pendingOutFenceFd >= 0) {
         ::close(m_pendingOutFenceFd);
@@ -392,6 +404,7 @@ bool AtomicKmsPresenter::resumePresentation(int drmFd) {
     m_drmFd = drmFd;
     m_fenceCaps = m_atomicBackend.probeFenceCapabilities(m_drmFd, m_planeId, m_crtcId);
     m_suspended = false;
+    m_modesetState = KmsModesetState::InitialModesetPending;
     return true;
 }
 
@@ -422,6 +435,7 @@ void AtomicKmsPresenter::shutdown() {
     m_planeId = 0;
     m_initialized = false;
     m_suspended = false;
+    m_modesetState = KmsModesetState::Unconfigured;
 }
 
 } // namespace Systalia::Platform::Drm

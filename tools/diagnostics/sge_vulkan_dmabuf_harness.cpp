@@ -141,10 +141,13 @@ int main(int argc, char *argv[]) {
                                     QStringLiteral("Lista capacidades de modificadores DRM sem renderizar."));
     QCommandLineOption optAllowRisk(QStringLiteral("allow-gpu-risk"),
                                     QStringLiteral("Autoriza explicitamente cenários D..H (1920x1080)."));
+    QCommandLineOption optKeepXWayland(QStringLiteral("keep-xwayland"),
+                                       QStringLiteral("Mantém XWayland ativo para paridade física (opt-in)."));
     parser.addOption(optScenario);
     parser.addOption(optFrames);
     parser.addOption(optProbeMods);
     parser.addOption(optAllowRisk);
+    parser.addOption(optKeepXWayland);
     parser.process(app);
 
     if (parser.isSet(optProbeMods)) {
@@ -265,8 +268,10 @@ int main(int argc, char *argv[]) {
             renderer.shutdown();
             return 1;
         }
-        if (auto *comp = renderer.rootItem()->findChild<SystaliaCompositor *>()) {
-            comp->stopXWayland();
+        if (!parser.isSet(optKeepXWayland)) {
+            if (auto *comp = renderer.rootItem()->findChild<SystaliaCompositor *>()) {
+                comp->stopXWayland();
+            }
         }
     } else {
         if (!renderer.loadQmlSource(
@@ -330,8 +335,21 @@ int main(int argc, char *argv[]) {
                 mockAtomic.lastObservedSyncFd = -1;
             }
             if (ok && !mockAtomic.commits.isEmpty()) {
+                uint64_t previouslyPresentedSlotId = 0;
+                for (const auto &b : presenter.bufferManager().buffers()) {
+                    if (b.state == GbmBufferState::Presented) {
+                        previouslyPresentedSlotId = b.id;
+                        break;
+                    }
+                }
                 drmEvents.dispatchKernelPageFlipForTest(
                     static_cast<uint64_t>(i + 1), 55, mockAtomic.commits.last().userData);
+                if (VulkanQuickRenderer::graphicsDiagnosticsEnabled() && previouslyPresentedSlotId != 0) {
+                    const auto *releasedSlot = presenter.bufferManager().findBuffer(previouslyPresentedSlotId);
+                    qInfo() << "[SGE-DIAG] MOCK_BUFFER_RELEASED slotId=" << previouslyPresentedSlotId
+                            << "stateAfter=" << (releasedSlot ? static_cast<int>(releasedSlot->state) : -1)
+                            << "releaseFenceFd=" << (releasedSlot ? releasedSlot->releaseFenceFd : -1);
+                }
             }
         } else {
             ok = renderer.renderFrame();

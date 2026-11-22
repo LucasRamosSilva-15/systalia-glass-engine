@@ -3,13 +3,19 @@
 #include "AtomicKmsPresenter.hpp"
 #include "DrmEventDispatcher.hpp"
 #include "GbmBufferManager.hpp"
+#include "IndependentFrameLoop.hpp"
+#include "KmsOutputDiscovery.hpp"
 #include "VulkanQuickRenderer.hpp"
+#include "WaylandFrameCoordinator.hpp"
 
 #include <QQuickWindow>
 #include <QSGRendererInterface>
 #include <drm_fourcc.h>
+#include <drm_mode.h>
+#include <cstring>
 #include <fcntl.h>
 #include <unistd.h>
+#include <vector>
 
 using namespace Systalia::Platform::Drm;
 
@@ -46,6 +52,9 @@ private slots:
     void submissionTrackerDistinguishesSubmittedTimedOutAndRealGpuCompletion();
     void sharedPoolSlotsPreserveInternalOffscreenImageWithoutDoubleFree();
     void atomicPresenterNegotiatesModifiersAndHandlesCommitFailureAndLateFlip();
+    void fiveFrameSlotAlternationWithReleaseFenceAndShutdownPending();
+    void firstModesetStateMachineAndModeChangeContract();
+    void inFormatsBlobParsingValidEmptyMalformedAndNoIntersection();
 };
 
 void tst_VulkanDmabufAudit::auditsExternalMemoryAndDrmModifierCapabilitiesOnRadv() {
@@ -355,6 +364,243 @@ void tst_VulkanDmabufAudit::atomicPresenterNegotiatesModifiersAndHandlesCommitFa
     QCOMPARE(presenter.flipContextRegistry()->liveContextCount(), size_t(0));
 
     presenter.shutdown();
+}
+
+void tst_VulkanDmabufAudit::fiveFrameSlotAlternationWithReleaseFenceAndShutdownPending() {
+    class MultiFrameKms final : public IKmsResourceBackend {
+    public:
+        KmsDiscoverySnapshot probeResources(int drmFd) override {
+            KmsDiscoverySnapshot snap;
+            if (drmFd < 0) return snap;
+            snap.valid = true;
+            snap.atomicSupported = true;
+            snap.crtcs.append(KmsCrtcInfo{55, 0, true, 0, 0, 1920, 1080});
+            snap.planes.append(KmsPlaneInfo{77, 0x1, 55, KmsPlaneType::Primary, {DRM_FORMAT_XRGB8888}});
+            KmsConnectorInfo hdmi;
+            hdmi.connectorId = 20;
+            hdmi.name = QStringLiteral("HDMI-A-1");
+            hdmi.connected = true;
+            hdmi.possibleCrtcs = 0x1;
+            hdmi.modes.append(DrmOutputMode{QStringLiteral("HDMI-A-1"), 1920, 1080, 60, true});
+            hdmi.preferredMode = hdmi.modes.first();
+            snap.connectors.append(hdmi);
+            return snap;
+        }
+    };
+    class MultiFrameAtomic final : public IAtomicKmsBackend {
+    public:
+        QList<AtomicCommitRequest> requests;
+        uint32_t nextFb = 700;
+        uint32_t addFramebuffer(int, const GbmExportedBuffer &b) override {
+            return b.stride > 0 ? nextFb++ : 0;
+        }
+        void removeFramebuffer(int, uint32_t) override {}
+        AtomicCommitResult commitAtomic(int, const AtomicCommitRequest &req) override {
+            requests.append(req);
+            int p[2] = {-1, -1};
+            if (::pipe(p) == 0) {
+                ::close(p[1]); // sinalizado imediatamente como outFence simulado
+                return {true, p[0]};
+            }
+            return {true, -1};
+        }
+    };
+    class MultiFrameRenderSource final : public IControlledRenderSource {
+    public:
+        QList<uint64_t> renderedSlots;
+        bool renderControlledFrame() override { return true; }
+        bool renderIntoBuffer(GbmExportedBuffer &slot) override {
+            renderedSlots.append(slot.id);
+            if (slot.releaseFenceFd >= 0) {
+                ::close(slot.releaseFenceFd);
+                slot.releaseFenceFd = -1;
+            }
+            return true;
+        }
+    };
+    class MultiFrameSink final : public IWaylandOutputFrameSink {
+    public:
+        int callbacksSent = 0;
+        void setAutomaticCallbacks(bool) override {}
+        void notifyFrameStarted() override {}
+        void notifySendFrameCallbacks() override { ++callbacksSent; }
+    };
+
+    MultiFrameKms kms;
+    AuditMockGbm gbm;
+    MultiFrameAtomic atomic;
+    AtomicKmsPresenter presenter(kms, gbm, atomic);
+    presenter.setUseExternalVulkanPool(true);
+    QVERIFY(presenter.initializeOnFd(10));
+    QVERIFY(presenter.configureOutput(DrmOutputMode{QStringLiteral("HDMI-A-1"), 1920, 1080, 60, true}));
+
+    for (int i = 0; i < 2; ++i) {
+        GbmExportedBuffer slot;
+        slot.width = 1920;
+        slot.height = 1080;
+        slot.format = DRM_FORMAT_XRGB8888;
+        slot.stride = 1920 * 4;
+        slot.modifier = DRM_FORMAT_MOD_LINEAR;
+        QVERIFY(presenter.bufferManager().registerExternalSlot(slot) != nullptr);
+    }
+
+    MultiFrameRenderSource renderSource;
+    MultiFrameSink sink;
+    WaylandFrameCoordinator wayland(sink);
+    DrmEventDispatcher dispatcher;
+    IndependentFrameLoop loop(renderSource, presenter, wayland, dispatcher);
+
+    for (int f = 0; f < 5; ++f) {
+        loop.requestFrame();
+        QVERIFY(loop.processNextFrame());
+        const uint64_t activeSlot = renderSource.renderedSlots.last();
+        void *userData = atomic.requests.last().userData;
+
+        // Flip duplicado não deve causar erro nem double-release
+        dispatcher.dispatchKernelPageFlipForTest(static_cast<uint64_t>(f + 1), 55, userData);
+        dispatcher.dispatchKernelPageFlipForTest(static_cast<uint64_t>(f + 1), 55, userData);
+
+        QCOMPARE(presenter.bufferManager().findBuffer(activeSlot)->state, GbmBufferState::Presented);
+        if (f >= 1) {
+            const uint64_t prevSlot = renderSource.renderedSlots.at(f - 1);
+            QVERIFY(prevSlot != activeSlot);
+            QCOMPARE(presenter.bufferManager().findBuffer(prevSlot)->state, GbmBufferState::Available);
+        }
+    }
+    QCOMPARE(renderSource.renderedSlots.size(), 5);
+    QCOMPARE(loop.presentedCount(), 5ULL);
+    QCOMPARE(sink.callbacksSent, 5);
+
+    // Shutdown com commit pendente
+    loop.requestFrame();
+    QVERIFY(loop.processNextFrame());
+    QVERIFY(loop.isFlipInFlight());
+    loop.shutdown();
+    presenter.releaseKmsFramebuffers();
+    presenter.shutdown();
+}
+
+void tst_VulkanDmabufAudit::firstModesetStateMachineAndModeChangeContract() {
+    class ModesetMockKms final : public IKmsResourceBackend {
+    public:
+        KmsDiscoverySnapshot probeResources(int drmFd) override {
+            KmsDiscoverySnapshot snap;
+            if (drmFd < 0) return snap;
+            snap.valid = true;
+            snap.atomicSupported = true;
+            snap.crtcs.append(KmsCrtcInfo{55, 0, true, 0, 0, 1920, 1080});
+            snap.planes.append(KmsPlaneInfo{77, 0x1, 55, KmsPlaneType::Primary, {DRM_FORMAT_XRGB8888}});
+            KmsConnectorInfo hdmi;
+            hdmi.connectorId = 20;
+            hdmi.name = QStringLiteral("HDMI-A-1");
+            hdmi.connected = true;
+            hdmi.possibleCrtcs = 0x1;
+            hdmi.modes.append(DrmOutputMode{QStringLiteral("HDMI-A-1"), 1920, 1080, 60, true});
+            hdmi.preferredMode = hdmi.modes.first();
+            snap.connectors.append(hdmi);
+            return snap;
+        }
+    };
+    class ModesetMockAtomic final : public IAtomicKmsBackend {
+    public:
+        bool failNextCommit = false;
+        QList<bool> allowModesetFlags;
+        uint32_t addFramebuffer(int, const GbmExportedBuffer &) override { return 900; }
+        void removeFramebuffer(int, uint32_t) override {}
+        AtomicCommitResult commitAtomic(int, const AtomicCommitRequest &req) override {
+            allowModesetFlags.append(req.allowModeset);
+            if (failNextCommit) {
+                failNextCommit = false;
+                return {false, -1};
+            }
+            return {true, -1};
+        }
+    };
+
+    ModesetMockKms kms;
+    AuditMockGbm gbm;
+    ModesetMockAtomic atomic;
+    AtomicKmsPresenter presenter(kms, gbm, atomic);
+    QCOMPARE(presenter.modesetState(), KmsModesetState::Unconfigured);
+
+    QVERIFY(presenter.initializeOnFd(10));
+    QCOMPARE(presenter.modesetState(), KmsModesetState::InitialModesetPending);
+    QVERIFY(presenter.configureOutput(DrmOutputMode{QStringLiteral("HDMI-A-1"), 1920, 1080, 60, true}));
+    QCOMPARE(presenter.modesetState(), KmsModesetState::InitialModesetPending);
+
+    // Falha no primeiro modeset mantém InitialModesetPending
+    atomic.failNextCommit = true;
+    QVERIFY(!presenter.presentFrame(1, 10));
+    QCOMPARE(presenter.modesetState(), KmsModesetState::InitialModesetPending);
+    QCOMPARE(atomic.allowModesetFlags.last(), true);
+
+    // Sucesso no primeiro modeset transiciona para Active
+    QVERIFY(presenter.presentFrame(2, 10));
+    QCOMPARE(presenter.modesetState(), KmsModesetState::Active);
+    QCOMPARE(atomic.allowModesetFlags.last(), true);
+
+    // Segundo frame em Active não usa allowModeset
+    const auto buf2 = presenter.bufferManager().buffers().at(1).id;
+    QVERIFY(presenter.onPageFlipCompleted(presenter.bufferManager().buffers().at(0).id));
+    QVERIFY(presenter.presentFrame(3, 10));
+    QCOMPARE(atomic.allowModesetFlags.last(), false);
+    QVERIFY(presenter.onPageFlipCompleted(buf2));
+
+    // Mudança de modo após inicialização retorna para InitialModesetPending
+    QVERIFY(presenter.configureOutput(DrmOutputMode{QStringLiteral("HDMI-A-1"), 1280, 720, 60, false}));
+    QCOMPARE(presenter.modesetState(), KmsModesetState::InitialModesetPending);
+    QVERIFY(presenter.presentFrame(4, 10));
+    QCOMPARE(atomic.allowModesetFlags.last(), true);
+    QCOMPARE(presenter.modesetState(), KmsModesetState::Active);
+
+    // Suspensão e retomada
+    presenter.suspendPresentation();
+    QCOMPARE(presenter.modesetState(), KmsModesetState::Suspended);
+    QVERIFY(presenter.resumePresentation(11));
+    QCOMPARE(presenter.modesetState(), KmsModesetState::InitialModesetPending);
+    presenter.shutdown();
+    QCOMPARE(presenter.modesetState(), KmsModesetState::Unconfigured);
+}
+
+void tst_VulkanDmabufAudit::inFormatsBlobParsingValidEmptyMalformedAndNoIntersection() {
+    // 1. Blob nulo ou menor que o cabeçalho
+    QVERIFY(KmsOutputDiscovery::parseInFormatsBlob(nullptr, 0, DRM_FORMAT_XRGB8888).isEmpty());
+    const uint8_t tiny[4] = {1, 2, 3, 4};
+    QVERIFY(KmsOutputDiscovery::parseInFormatsBlob(tiny, sizeof(tiny), DRM_FORMAT_XRGB8888).isEmpty());
+
+    // 2. Blob válido com XRGB8888 (index 1) suportando LINEAR e modifier tiled 0x200000000401a01
+    struct ValidBlob {
+        drm_format_modifier_blob hdr{};
+        uint32_t formats[2]{};
+        drm_format_modifier mods[2]{};
+    } valid;
+    valid.hdr.version = FORMAT_BLOB_CURRENT;
+    valid.hdr.count_formats = 2;
+    valid.hdr.formats_offset = offsetof(ValidBlob, formats);
+    valid.hdr.count_modifiers = 2;
+    valid.hdr.modifiers_offset = offsetof(ValidBlob, mods);
+    valid.formats[0] = DRM_FORMAT_RGB565;
+    valid.formats[1] = DRM_FORMAT_XRGB8888;
+    valid.mods[0] = drm_format_modifier{0x1ULL, 0, 0, DRM_FORMAT_MOD_LINEAR};          // só RGB565
+    valid.mods[1] = drm_format_modifier{0x2ULL, 0, 0, 0x200000000401a01ULL};         // só XRGB8888
+
+    const auto parsed = KmsOutputDiscovery::parseInFormatsBlob(&valid, sizeof(valid), DRM_FORMAT_XRGB8888);
+    QCOMPARE(parsed, QList<uint64_t>({0x200000000401a01ULL}));
+
+    // 3. Blob malformado com offsets/contagens fora dos limites
+    ValidBlob malformed = valid;
+    malformed.hdr.count_formats = 999999U;
+    QVERIFY(KmsOutputDiscovery::parseInFormatsBlob(&malformed, sizeof(malformed), DRM_FORMAT_XRGB8888).isEmpty());
+
+    malformed = valid;
+    malformed.hdr.modifiers_offset = sizeof(valid) + 64U;
+    QVERIFY(KmsOutputDiscovery::parseInFormatsBlob(&malformed, sizeof(malformed), DRM_FORMAT_XRGB8888).isEmpty());
+
+    // 4. Sem interseção entre KMS e Vulkan não faz fallback silencioso
+    const auto neg = GbmBufferManager::negotiateModifiers(
+        DRM_FORMAT_XRGB8888, parsed, {DRM_FORMAT_MOD_LINEAR});
+    QVERIFY(!neg.compatible);
+    QVERIFY(neg.negotiatedModifiers.isEmpty());
 }
 
 QTEST_MAIN(tst_VulkanDmabufAudit)

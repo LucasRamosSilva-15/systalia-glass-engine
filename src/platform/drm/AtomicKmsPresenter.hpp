@@ -30,6 +30,13 @@ struct AtomicCommitResult {
     int outFenceFd = -1;
 };
 
+enum class KmsModesetState {
+    Unconfigured,
+    InitialModesetPending,
+    Active,
+    Suspended
+};
+
 struct KmsFenceCapabilities {
     bool supportsInFenceFd = false;
     bool supportsOutFencePtr = false;
@@ -101,6 +108,7 @@ public:
     [[nodiscard]] uint32_t activeCrtcId() const noexcept { return m_crtcId; }
     [[nodiscard]] uint32_t activePlaneId() const noexcept { return m_planeId; }
     [[nodiscard]] bool isSuspended() const noexcept { return m_suspended; }
+    [[nodiscard]] KmsModesetState modesetState() const noexcept { return m_modesetState; }
     [[nodiscard]] KmsFenceCapabilities fenceCapabilities() const noexcept { return m_fenceCaps; }
     [[nodiscard]] int pendingOutFenceFd() const noexcept { return m_pendingOutFenceFd; }
     [[nodiscard]] uint64_t pendingFlipCommitId() const noexcept { return m_pendingFlipCommitId; }
@@ -131,6 +139,7 @@ private:
     bool m_useExternalVulkanPool = false;
     bool m_initialized = false;
     bool m_suspended = false;
+    KmsModesetState m_modesetState = KmsModesetState::Unconfigured;
 };
 
 } // namespace Systalia::Platform::Drm
