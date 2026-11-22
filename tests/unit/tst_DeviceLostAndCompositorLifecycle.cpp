@@ -119,6 +119,8 @@ private slots:
     void initTestCase();
     void deviceLostBlocksSubmissionsAndShutsDownFailClosed();
     void waylandCompositorOutputTeardownClearsWindowSafely();
+    void lateCallbacksAfterOutputDestructionAreIgnoredSafely();
+    void partialFailureAndRepeatedSafeCreateDestroyCycles();
 
 private:
     QTemporaryDir m_runtimeDir;
@@ -191,6 +193,21 @@ void tst_DeviceLostAndCompositorLifecycle::deviceLostBlocksSubmissionsAndShutsDo
 }
 
 void tst_DeviceLostAndCompositorLifecycle::waylandCompositorOutputTeardownClearsWindowSafely() {
+    static QStringList capturedWarnings;
+    capturedWarnings.clear();
+    static QtMessageHandler prevHandler = nullptr;
+    prevHandler = qInstallMessageHandler([](QtMsgType type, const QMessageLogContext &ctx, const QString &msg) {
+        if (type == QtWarningMsg || type == QtCriticalMsg) {
+            capturedWarnings.append(msg);
+        }
+        if (prevHandler) {
+            prevHandler(type, ctx, msg);
+        }
+    });
+    const auto restoreHandler = qScopeGuard([]() {
+        qInstallMessageHandler(prevHandler);
+    });
+
     QQmlEngine engine;
     VulkanQuickRenderer renderer;
     QVERIFY2(renderer.initialize(QSize(640, 360)), qPrintable(renderer.lastError()));
@@ -209,10 +226,81 @@ void tst_DeviceLostAndCompositorLifecycle::waylandCompositorOutputTeardownClears
     QCOMPARE(output->window(), renderer.window());
 
     QVERIFY(renderer.renderFrame());
+    const auto *rec = renderer.submissionTracker().find(renderer.lastSubmittedFrameId());
+    QVERIFY(rec != nullptr);
+    QCOMPARE(rec->state, GpuSubmissionState::Completed);
 
-    // Shutdown limpa hostWindow e primaryWaylandOutput.window sem segfault em QWaylandOutput::initialize
+    // Shutdown destrói a árvore QML/QWaylandQuickOutput antes de m_window sem reatribuir window=null
     renderer.shutdown();
     QVERIFY(!renderer.isInitialized());
+
+    for (const QString &w : capturedWarnings) {
+        QVERIFY2(!w.contains(QStringLiteral("Unable to assign [undefined] to QWindow*")), qPrintable(w));
+        QVERIFY2(!w.contains(QStringLiteral("is not supported after QWaylandOutput has been initialized")),
+                 qPrintable(w));
+    }
+}
+
+void tst_DeviceLostAndCompositorLifecycle::lateCallbacksAfterOutputDestructionAreIgnoredSafely() {
+    QQmlEngine engine;
+    VulkanQuickRenderer renderer;
+    QVERIFY2(renderer.initialize(QSize(320, 240)), qPrintable(renderer.lastError()));
+    QVERIFY2(renderer.loadQmlUrl(QUrl(QStringLiteral("qrc:/qt/qml/Systalia/Engine/src/qml/ShellRoot.qml")),
+                                 &engine),
+             qPrintable(renderer.lastError()));
+
+    QQuickItem *root = renderer.rootItem();
+    QVERIFY(root != nullptr);
+    if (auto *comp = root->findChild<SystaliaCompositor *>()) {
+        comp->stopXWayland();
+    }
+    auto *output = root->findChild<QWaylandQuickOutput *>();
+    QVERIFY(output != nullptr);
+
+    QWaylandOutputFrameSink sink(output);
+    WaylandFrameCoordinator coord(sink);
+    QVERIFY(renderer.renderFrame());
+
+    renderer.shutdown();
+    QVERIFY(!renderer.isInitialized());
+
+    // Callbacks tardios após destruição de QWaylandQuickOutput e QQuickWindow não causam UAF/segfault
+    QVERIFY(coord.beginFrame());
+    QVERIFY(coord.completeFrame(true));
+    sink.setAutomaticCallbacks(false);
+    sink.notifyFrameStarted();
+    sink.notifySendFrameCallbacks();
+}
+
+void tst_DeviceLostAndCompositorLifecycle::partialFailureAndRepeatedSafeCreateDestroyCycles() {
+    // Falha parcial ao carregar QML inexistente seguida de shutdown limpo
+    {
+        QQmlEngine engine;
+        VulkanQuickRenderer renderer;
+        QVERIFY2(renderer.initialize(QSize(128, 128), false), qPrintable(renderer.lastError()));
+        QVERIFY(!renderer.capabilities().dmabufExportImageCreated);
+        QVERIFY(!renderer.loadQmlUrl(QUrl(QStringLiteral("qrc:/nonexistent_shell_root.qml")), &engine));
+        renderer.shutdown();
+        QVERIFY(!renderer.isInitialized());
+        // Shutdown idempotente
+        renderer.shutdown();
+    }
+
+    // Ciclos repetidos seguros em 128x128 interno sem DMA-BUF e sem VALO V2
+    for (int i = 0; i < 3; ++i) {
+        VulkanQuickRenderer renderer;
+        QVERIFY2(renderer.initialize(QSize(128, 128), false), qPrintable(renderer.lastError()));
+        QVERIFY(!renderer.capabilities().dmabufExportImageCreated);
+        QVERIFY2(renderer.loadQmlSource(
+                     "import QtQuick 2.15\nRectangle { anchors.fill: parent; color: '#0b1e36' }\n"),
+                 qPrintable(renderer.lastError()));
+        QVERIFY(renderer.renderFrame());
+        const auto *rec = renderer.submissionTracker().find(renderer.lastSubmittedFrameId());
+        QVERIFY(rec != nullptr);
+        QCOMPARE(rec->state, GpuSubmissionState::Completed);
+        renderer.shutdown();
+        QVERIFY(!renderer.isInitialized());
+    }
 }
 
 QTEST_MAIN(tst_DeviceLostAndCompositorLifecycle)

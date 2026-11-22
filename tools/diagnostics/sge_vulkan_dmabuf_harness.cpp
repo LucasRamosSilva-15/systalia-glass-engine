@@ -16,6 +16,8 @@
 #include "SystemControlService.hpp"
 #include "SystemTelemetryService.hpp"
 #include "WorkspaceManagerService.hpp"
+#include "graphics/v2/backdrop/ValoBackdropProviderV2.hpp"
+#include "graphics/v2/materials/ValoGlassItemV2.hpp"
 
 #include <QCommandLineParser>
 #include <QCoreApplication>
@@ -191,7 +193,7 @@ int main(int argc, char *argv[]) {
     }
 
     VulkanQuickRenderer renderer;
-    if (!renderer.initialize(spec.size)) {
+    if (!renderer.initialize(spec.size, spec.useDmabufPool)) {
         std::cerr << "[FAIL] initialize: " << renderer.lastError().toStdString() << "\n";
         return 1;
     }
@@ -277,6 +279,34 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    const auto valoProviders = renderer.rootItem()
+        ? renderer.rootItem()->findChildren<Systalia::Gfx::V2::ValoBackdropProviderV2 *>()
+        : QList<Systalia::Gfx::V2::ValoBackdropProviderV2 *>{};
+    const auto valoGlassItems = renderer.rootItem()
+        ? renderer.rootItem()->findChildren<Systalia::Gfx::V2::ValoGlassItemV2 *>()
+        : QList<Systalia::Gfx::V2::ValoGlassItemV2 *>{};
+    if (!spec.loadValoShell && (!valoProviders.isEmpty() || !valoGlassItems.isEmpty())) {
+        std::cerr << "[FAIL] Efeitos VALO V2 ativos inesperadamente no cenário "
+                  << spec.id.toStdString() << " (providers=" << valoProviders.size()
+                  << ", glassItems=" << valoGlassItems.size() << ").\n";
+        renderer.shutdown();
+        return 1;
+    }
+
+    if (VulkanQuickRenderer::graphicsDiagnosticsEnabled()) {
+        qInfo() << "[SGE-DIAG] SCENARIO_CONFIG scenario=" << spec.id
+                << "size=" << spec.size
+                << "backend=Vulkan/RADV"
+                << "renderTarget=" << (spec.useDmabufPool ? "dmabufPool" : "internal")
+                << "dmabuf=" << spec.useDmabufPool
+                << "dmabufExportImage=" << renderer.capabilities().dmabufExportImageCreated
+                << "externalModifiers=" << spec.forceLinearModifier
+                << "valoShell=" << spec.loadValoShell
+                << "valoPasses=" << valoProviders.size()
+                << "valoGlassItems=" << valoGlassItems.size()
+                << "atomicKms=false drmMaster=false takeDevice=false";
+    }
+
     auto *waylandOutput = renderer.rootItem()
                               ? renderer.rootItem()->findChild<QWaylandQuickOutput *>()
                               : nullptr;
@@ -285,7 +315,8 @@ int main(int argc, char *argv[]) {
     DrmEventDispatcher drmEvents;
     IndependentFrameLoop frameLoop(renderer, presenter, waylandCoord, drmEvents);
 
-    const int frames = qMax(1, parser.value(optFrames).toInt());
+    const int defaultFrames = (spec.id == QLatin1String("D")) ? 1 : 2;
+    const int frames = parser.isSet(optFrames) ? qMax(1, parser.value(optFrames).toInt()) : defaultFrames;
     for (int i = 0; i < frames; ++i) {
         bool ok = false;
         if (spec.useDmabufPool) {
@@ -314,6 +345,14 @@ int main(int argc, char *argv[]) {
             renderer.shutdown();
             return 1;
         }
+    }
+
+    if (VulkanQuickRenderer::graphicsDiagnosticsEnabled()) {
+        const auto *rec = renderer.submissionTracker().find(renderer.lastSubmittedFrameId());
+        qInfo() << "[SGE-DIAG] RENDERER_FINAL_STATE deviceLost=" << renderer.isDeviceLost()
+                << "initialized=" << renderer.isInitialized()
+                << "lastFrameId=" << renderer.lastSubmittedFrameId()
+                << "submissionState=" << (rec ? static_cast<int>(rec->state) : -1);
     }
 
     frameLoop.shutdown();

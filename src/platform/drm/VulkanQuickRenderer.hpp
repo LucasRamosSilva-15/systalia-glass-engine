@@ -6,6 +6,7 @@
 #include <QByteArray>
 #include <QImage>
 #include <QObject>
+#include <QPointer>
 #include <QSize>
 #include <QString>
 #include <QUrl>
@@ -105,7 +106,7 @@ public:
     VulkanQuickRenderer(const VulkanQuickRenderer &) = delete;
     VulkanQuickRenderer &operator=(const VulkanQuickRenderer &) = delete;
 
-    [[nodiscard]] bool initialize(const QSize &pixelSize);
+    [[nodiscard]] bool initialize(const QSize &pixelSize, bool allowDmabufExport = true);
     [[nodiscard]] bool loadQmlSource(const QByteArray &qmlSource);
     [[nodiscard]] bool loadQmlUrl(const QUrl &qmlUrl, QQmlEngine *externalEngine = nullptr);
     [[nodiscard]] bool resize(const QSize &pixelSize);
@@ -146,15 +147,16 @@ public:
     [[nodiscard]] VulkanDeviceCapabilities capabilities() const noexcept { return m_capabilities; }
     [[nodiscard]] QString lastError() const noexcept { return m_lastError; }
     [[nodiscard]] QQuickWindow *window() const noexcept { return m_window.get(); }
-    [[nodiscard]] QQuickItem *rootItem() const noexcept { return m_rootItem; }
+    [[nodiscard]] QQuickItem *rootItem() const noexcept;
     [[nodiscard]] QQuickRenderControl *renderControl() const noexcept { return m_renderControl.get(); }
-    [[nodiscard]] QQmlEngine *qmlEngine() const noexcept { return m_activeEngine; }
+    [[nodiscard]] QQmlEngine *qmlEngine() const noexcept;
     [[nodiscard]] uint64_t lastSubmittedFrameId() const noexcept { return m_frameCounter; }
     [[nodiscard]] const GpuSubmissionTracker &submissionTracker() const noexcept { return m_submissionTracker; }
     [[nodiscard]] GpuSubmissionTracker &submissionTracker() noexcept { return m_submissionTracker; }
     [[nodiscard]] size_t quarantinedSemaphoreCount() const noexcept { return m_quarantinedSemaphores.size(); }
 
 private:
+    [[nodiscard]] bool observeInternalGpuCompletion(uint64_t frameId, uint64_t timeoutNs = 2000000000ULL);
     void quarantineSemaphore(VkSemaphore sem);
     void flushQuarantinedSemaphores();
     bool createVulkanDevice();
@@ -181,15 +183,17 @@ private:
     std::unique_ptr<QQuickRenderControl> m_renderControl;
     std::unique_ptr<QQuickWindow> m_window;
     std::unique_ptr<QQmlEngine> m_ownedQmlEngine;
-    QQmlEngine *m_activeEngine = nullptr;
+    QPointer<QQmlEngine> m_activeEngine;
     std::unique_ptr<QQmlComponent> m_qmlComponent;
-    QQuickItem *m_rootItem = nullptr;
+    QPointer<QQuickItem> m_rootItem;
 
     VulkanDeviceCapabilities m_capabilities;
     QString m_lastError;
     bool m_initialized = false;
     bool m_suspended = false;
     bool m_deviceLost = false;
+    bool m_shuttingDown = false;
+    bool m_allowDmabufExportOnInternalImage = true;
     uint64_t m_frameCounter = 0;
     GpuSubmissionTracker m_submissionTracker;
     QList<VkSemaphore> m_quarantinedSemaphores;

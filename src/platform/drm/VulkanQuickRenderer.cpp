@@ -132,8 +132,16 @@ VulkanQuickRenderer::~VulkanQuickRenderer() {
     shutdown();
 }
 
-bool VulkanQuickRenderer::initialize(const QSize &pixelSize) {
-    if (m_initialized) {
+QQuickItem *VulkanQuickRenderer::rootItem() const noexcept {
+    return m_rootItem.data();
+}
+
+QQmlEngine *VulkanQuickRenderer::qmlEngine() const noexcept {
+    return m_activeEngine.data();
+}
+
+bool VulkanQuickRenderer::initialize(const QSize &pixelSize, bool allowDmabufExport) {
+    if (m_initialized || m_shuttingDown) {
         return false;
     }
     if (!pixelSize.isValid() || pixelSize.width() <= 0 || pixelSize.height() <= 0) {
@@ -143,6 +151,7 @@ bool VulkanQuickRenderer::initialize(const QSize &pixelSize) {
 
     m_lastError.clear();
     m_pixelSize = pixelSize;
+    m_allowDmabufExportOnInternalImage = allowDmabufExport;
 
     if (!createVulkanDevice()) {
         shutdown();
@@ -177,6 +186,11 @@ bool VulkanQuickRenderer::initialize(const QSize &pixelSize) {
     m_ownedQmlEngine = std::make_unique<QQmlEngine>();
     m_activeEngine = m_ownedQmlEngine.get();
     m_initialized = true;
+    if (graphicsDiagnosticsEnabled()) {
+        qInfo() << "[SGE-DIAG] INTERNAL_RENDER_TARGET_CREATED size=" << m_pixelSize
+                << "vkFormat=" << static_cast<int>(m_vkFormat)
+                << "dmabufExport=" << m_capabilities.dmabufExportImageCreated;
+    }
     return true;
 }
 
@@ -304,8 +318,16 @@ void VulkanQuickRenderer::simulateDeviceLostForTest(const QString &reason) {
 }
 
 bool VulkanQuickRenderer::renderFrame() {
-    if (!m_initialized || m_suspended || m_deviceLost || !m_renderControl || m_colorImage == VK_NULL_HANDLE) {
+    if (!m_initialized || m_shuttingDown || m_suspended || m_deviceLost || !m_renderControl || m_colorImage == VK_NULL_HANDLE) {
         return false;
+    }
+
+    const uint64_t frameId = ++m_frameCounter;
+    if (graphicsDiagnosticsEnabled()) {
+        qInfo() << "[SGE-DIAG] FRAME_START frameId=" << frameId
+                << "mode=internal size=" << m_pixelSize
+                << "vkFormat=" << static_cast<int>(m_vkFormat)
+                << "dmabufExport=" << m_capabilities.dmabufExportImageCreated;
     }
 
     m_renderControl->polishItems();
@@ -313,14 +335,101 @@ bool VulkanQuickRenderer::renderFrame() {
     const bool synced = m_renderControl->sync();
     if (synced) {
         m_renderControl->render();
+        m_submissionTracker.markRecorded(frameId, 0, 0);
+        if (graphicsDiagnosticsEnabled()) {
+            qInfo() << "[SGE-DIAG] CPU_COMMAND_RECORDED frameId=" << frameId << "mode=internal";
+        }
     }
     m_renderControl->endFrame();
 
     if (m_window && m_window->rhi() && m_window->rhi()->isDeviceLost()) {
+        m_submissionTracker.markFailed(frameId, GpuSubmissionState::DeviceLost,
+                                       QStringLiteral("QRhi::isDeviceLost() após endFrame()"));
         simulateDeviceLostForTest(QStringLiteral("QRhi::isDeviceLost() após endFrame()"));
         return false;
     }
-    return synced;
+    if (!synced) {
+        return false;
+    }
+
+    Q_UNUSED(m_submissionTracker.markSubmitted(frameId, -1));
+    if (graphicsDiagnosticsEnabled()) {
+        qInfo() << "[SGE-DIAG] GPU_SUBMITTED frameId=" << frameId << "mode=internal syncFd=-1";
+    }
+    return observeInternalGpuCompletion(frameId);
+}
+
+bool VulkanQuickRenderer::observeInternalGpuCompletion(uint64_t frameId, uint64_t timeoutNs) {
+    if (m_deviceLost || m_device == VK_NULL_HANDLE || m_graphicsQueue == VK_NULL_HANDLE) {
+        m_submissionTracker.markFailed(frameId, GpuSubmissionState::DeviceLost,
+                                       QStringLiteral("Dispositivo Vulkan indisponível para VkFence."));
+        return false;
+    }
+    QVulkanDeviceFunctions *df = m_vulkanInstance.deviceFunctions(m_device);
+    if (!df) {
+        m_submissionTracker.markFailed(frameId, GpuSubmissionState::SubmissionFailed,
+                                       QStringLiteral("QVulkanDeviceFunctions indisponível para VkFence."));
+        return false;
+    }
+
+    VkFenceCreateInfo fenceInfo{};
+    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    VkFence fence = VK_NULL_HANDLE;
+    const VkResult createRc = df->vkCreateFence(m_device, &fenceInfo, nullptr, &fence);
+    if (createRc != VK_SUCCESS || fence == VK_NULL_HANDLE) {
+        if (createRc == VK_ERROR_DEVICE_LOST) {
+            m_submissionTracker.markFailed(frameId, GpuSubmissionState::DeviceLost,
+                                           QStringLiteral("VK_ERROR_DEVICE_LOST em vkCreateFence"));
+            simulateDeviceLostForTest(QStringLiteral("VK_ERROR_DEVICE_LOST em vkCreateFence"));
+        } else {
+            m_submissionTracker.markFailed(frameId, GpuSubmissionState::SubmissionFailed,
+                                           QStringLiteral("Falha em vkCreateFence"));
+        }
+        return false;
+    }
+
+    QElapsedTimer timer;
+    timer.start();
+    const VkResult submitRc = df->vkQueueSubmit(m_graphicsQueue, 0, nullptr, fence);
+    if (submitRc != VK_SUCCESS) {
+        df->vkDestroyFence(m_device, fence, nullptr);
+        if (submitRc == VK_ERROR_DEVICE_LOST) {
+            m_submissionTracker.markFailed(frameId, GpuSubmissionState::DeviceLost,
+                                           QStringLiteral("VK_ERROR_DEVICE_LOST em vkQueueSubmit(fence)"));
+            simulateDeviceLostForTest(QStringLiteral("VK_ERROR_DEVICE_LOST em vkQueueSubmit(fence)"));
+        } else {
+            m_submissionTracker.markFailed(frameId, GpuSubmissionState::SubmissionFailed,
+                                           QStringLiteral("Falha em vkQueueSubmit(fence)"));
+        }
+        return false;
+    }
+
+    const VkResult waitRc = df->vkWaitForFences(m_device, 1, &fence, VK_TRUE, timeoutNs);
+    df->vkDestroyFence(m_device, fence, nullptr);
+
+    if (waitRc == VK_SUCCESS) {
+        const qint64 gpuLatencyUs = timer.nsecsElapsed() / 1000;
+        Q_UNUSED(m_submissionTracker.markCompleted(frameId));
+        if (graphicsDiagnosticsEnabled()) {
+            qInfo() << "[SGE-DIAG] GPU_EXECUTION_COMPLETED frameId=" << frameId
+                    << "slotId=0 method=VkFence gpuLatencyUs=" << gpuLatencyUs;
+        }
+        return true;
+    }
+    if (waitRc == VK_ERROR_DEVICE_LOST) {
+        m_submissionTracker.markFailed(frameId, GpuSubmissionState::DeviceLost,
+                                       QStringLiteral("VK_ERROR_DEVICE_LOST em vkWaitForFences"));
+        simulateDeviceLostForTest(QStringLiteral("VK_ERROR_DEVICE_LOST em vkWaitForFences"));
+        return false;
+    }
+
+    Q_UNUSED(m_submissionTracker.markTimedOut(frameId));
+    m_lastError = QStringLiteral("Timeout/falha aguardando VkFence no caminho Vulkan interno.");
+    if (graphicsDiagnosticsEnabled()) {
+        qWarning() << "[SGE-DIAG] GPU_COMPLETION_TIMED_OUT frameId=" << frameId
+                   << "method=VkFence vkResult=" << static_cast<int>(waitRc);
+    }
+    return false;
 }
 
 bool VulkanQuickRenderer::renderIntoBuffer(GbmExportedBuffer &slot) {
@@ -1115,18 +1224,24 @@ bool VulkanQuickRenderer::isSyncFdSignaled(int fenceFd, int timeoutMs) {
 }
 
 void VulkanQuickRenderer::shutdown() {
+    if (m_shuttingDown) {
+        return;
+    }
+    m_shuttingDown = true;
     m_initialized = false;
     m_suspended = false;
 
+    // Destruir a árvore QML (incluindo QWaylandQuickOutput e SystaliaCompositor)
+    // enquanto m_window ainda é válida, sem reatribuir hostWindow/window=null
+    // após a inicialização do QWaylandOutput.
     if (m_rootItem) {
-        m_rootItem->setProperty("hostWindow", QVariant());
         m_rootItem->setParentItem(nullptr);
-        delete m_rootItem;
-        m_rootItem = nullptr;
+        delete m_rootItem.data();
+        m_rootItem.clear();
     }
     m_qmlComponent.reset();
     m_ownedQmlEngine.reset();
-    m_activeEngine = nullptr;
+    m_activeEngine.clear();
 
     if (m_window) {
         m_window->setRenderTarget(QQuickRenderTarget{});
@@ -1139,7 +1254,9 @@ void VulkanQuickRenderer::shutdown() {
 
     if (m_device != VK_NULL_HANDLE && !m_deviceLost) {
         if (QVulkanDeviceFunctions *df = m_vulkanInstance.deviceFunctions(m_device)) {
-            df->vkDeviceWaitIdle(m_device);
+            if (df->vkDeviceWaitIdle(m_device) == VK_ERROR_DEVICE_LOST) {
+                m_deviceLost = true;
+            }
         }
     }
     flushQuarantinedSemaphores();
@@ -1159,6 +1276,10 @@ void VulkanQuickRenderer::shutdown() {
         }
         m_ownedVkInstance = VK_NULL_HANDLE;
     }
+    if (graphicsDiagnosticsEnabled()) {
+        qInfo() << "[SGE-DIAG] RENDERER_SHUTDOWN_COMPLETE deviceLost=" << m_deviceLost;
+    }
+    m_shuttingDown = false;
 }
 
 bool VulkanQuickRenderer::createVulkanDevice() {
@@ -1389,8 +1510,10 @@ bool VulkanQuickRenderer::createOffscreenImage(const QSize &pixelSize) {
         return false;
     }
 
-    const bool tryDmabufExport = m_capabilities.supportsExternalMemoryFd
+    const bool tryDmabufExport = m_allowDmabufExportOnInternalImage
+                                 && m_capabilities.supportsExternalMemoryFd
                                  && m_capabilities.supportsExternalMemoryDmabuf;
+    m_capabilities.dmabufExportImageCreated = false;
 
     VkExternalMemoryImageCreateInfo extImageInfo{};
     extImageInfo.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO;

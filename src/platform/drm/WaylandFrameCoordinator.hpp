@@ -1,5 +1,7 @@
 #pragma once
 
+#include <QPointer>
+
 #include <cstdint>
 
 class QWaylandQuickOutput;
@@ -30,7 +32,7 @@ public:
     void notifySendFrameCallbacks() override;
 
 private:
-    QWaylandQuickOutput *m_output = nullptr;
+    QPointer<QWaylandQuickOutput> m_output;
 };
 
 /**
