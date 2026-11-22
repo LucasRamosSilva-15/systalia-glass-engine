@@ -386,6 +386,7 @@ void tst_IndependentFrameLoop::strictOneFrameHomologLimitBlocksSecondFrameAndHal
         QVERIFY(h.init(10));
         QCOMPARE(h.loop.maxSubmittedFrames(), 1ULL);
         QSignalSpy limitSpy(&h.loop, &IndependentFrameLoop::frameLimitReached);
+        QSignalSpy presentedSpy(&h.loop, &IndependentFrameLoop::framePresented);
 
         h.loop.requestFrame();
         h.loop.requestFrame();
@@ -396,10 +397,13 @@ void tst_IndependentFrameLoop::strictOneFrameHomologLimitBlocksSecondFrameAndHal
         QCOMPARE(h.render.renderCalls, 1);
         QCOMPARE(h.atomic.commitCalls, 1);
         QCOMPARE(limitSpy.count(), 1);
+        QCOMPARE(presentedSpy.count(), 0);
 
-        // Pedido adicional após flip real não dispara segundo commit
+        // Pedido adicional após flip real não dispara segundo commit; framePresented é emitido exatamente 1 vez
         h.dispatcher.dispatchSimulatedPageFlip(1, 0);
         QCOMPARE(h.loop.presentedCount(), 1ULL);
+        QCOMPARE(presentedSpy.count(), 1);
+        QCOMPARE(presentedSpy.at(0).at(0).toULongLong(), 1ULL);
         h.loop.requestFrame();
         QCoreApplication::processEvents();
         QVERIFY(!h.loop.isFlipInFlight());
