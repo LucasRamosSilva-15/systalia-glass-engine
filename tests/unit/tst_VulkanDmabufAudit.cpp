@@ -12,6 +12,7 @@
 #include <QQuickWindow>
 #include <QScreen>
 #include <QSGRendererInterface>
+#include <QThread>
 #include <drm_fourcc.h>
 #include <drm_mode.h>
 #include <cstring>
@@ -59,6 +60,7 @@ private slots:
     void inFormatsBlobParsingValidEmptyMalformedAndNoIntersection();
     void firstModesetModeBlobOutFenceReleaseAndQpaSync();
     void slotReuseScenariosAtoDAndShellRootWithReleaseFence();
+    void auditPollSemanticsAndFailClosedSlotReuse();
 };
 
 void tst_VulkanDmabufAudit::auditsExternalMemoryAndDrmModifierCapabilitiesOnRadv() {
@@ -861,6 +863,66 @@ void tst_VulkanDmabufAudit::slotReuseScenariosAtoDAndShellRootWithReleaseFence()
         pool.shutdown();
         renderer.shutdown();
     }
+}
+
+void tst_VulkanDmabufAudit::auditPollSemanticsAndFailClosedSlotReuse() {
+    // 1. FD inválido (-1) e timeout
+    QVERIFY(!VulkanQuickRenderer::isSyncFdSignaled(-1, 0));
+    int writeEnd = -1;
+    const int pendingFd = makeUnsignaledPipeFd(&writeEnd);
+    QVERIFY(pendingFd >= 0);
+    QVERIFY(!VulkanQuickRenderer::isSyncFdSignaled(pendingFd, 5));
+
+    // 2. Sinalização após espera limitada (sem busy-wait)
+    auto *signaler = QThread::create([writeEnd]() {
+        QThread::msleep(20);
+        const char sig = 1;
+        Q_UNUSED(::write(writeEnd, &sig, 1));
+    });
+    signaler->start();
+    QVERIFY(VulkanQuickRenderer::isSyncFdSignaled(pendingFd, 500));
+    signaler->wait();
+    delete signaler;
+
+    // 3. Sinalização imediata (timeout=0)
+    QVERIFY(VulkanQuickRenderer::isSyncFdSignaled(pendingFd, 0));
+    ::close(writeEnd);
+    ::close(pendingFd);
+
+    // 4. POLLNVAL (FD fechado)
+    QVERIFY(!VulkanQuickRenderer::isSyncFdSignaled(pendingFd, 0));
+
+    // 5. POLLHUP (read end com write end fechado sem dados)
+    int hupPipe[2] = {-1, -1};
+    QCOMPARE(::pipe2(hupPipe, O_CLOEXEC), 0);
+    ::close(hupPipe[1]);
+    QVERIFY(!VulkanQuickRenderer::isSyncFdSignaled(hupPipe[0], 5));
+    ::close(hupPipe[0]);
+
+    // 6. POLLERR (write end com read end fechado)
+    int errPipe[2] = {-1, -1};
+    QCOMPARE(::pipe2(errPipe, O_CLOEXEC), 0);
+    ::close(errPipe[0]);
+    QVERIFY(!VulkanQuickRenderer::isSyncFdSignaled(errPipe[1], 5));
+    ::close(errPipe[1]);
+
+    // 7. Slot indisponível após timeout e dupla tentativa de transição
+    AuditMockGbm gbm;
+    GbmBufferManager pool(gbm);
+    GbmExportedBuffer slot;
+    slot.width = 64;
+    slot.height = 64;
+    slot.format = DRM_FORMAT_XRGB8888;
+    slot.stride = 256;
+    QVERIFY(pool.registerExternalSlot(std::move(slot)) != nullptr);
+    auto *buf = pool.acquireBufferForRendering();
+    QVERIFY(buf != nullptr);
+    QVERIFY(pool.acquireBufferForRendering() == nullptr); // Ocupado em Rendering
+    QVERIFY(pool.markBufferReadyForFlip(buf->id, -1));
+    QVERIFY(pool.markBufferTimedOut(buf->id));
+    QVERIFY(!pool.markBufferTimedOut(buf->id)); // Dupla tentativa rejeitada
+    QVERIFY(pool.acquireBufferForRendering() == nullptr); // TimedOutInScanout indisponível
+    pool.shutdown();
 }
 
 QTEST_MAIN(tst_VulkanDmabufAudit)
