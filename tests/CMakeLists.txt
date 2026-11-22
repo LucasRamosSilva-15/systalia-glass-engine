@@ -522,3 +522,16 @@ set_tests_properties(tst_vulkan_kms_sync PROPERTIES
     TIMEOUT 45
     ENVIRONMENT "QT_QPA_PLATFORM=sge_vulkan_offscreen;QT_QPA_PLATFORM_PLUGIN_PATH=${CMAKE_BINARY_DIR}/platforms"
 )
+
+qt_add_executable(tst_page_flip_and_unified_startup unit/tst_PageFlipAndUnifiedStartup.cpp)
+target_link_libraries(tst_page_flip_and_unified_startup PRIVATE
+    sge_drm_poc
+    Qt6::Test
+)
+add_dependencies(tst_page_flip_and_unified_startup sge_vulkan_offscreen)
+add_test(NAME tst_page_flip_and_unified_startup COMMAND tst_page_flip_and_unified_startup)
+set_tests_properties(tst_page_flip_and_unified_startup PROPERTIES
+    LABELS "integration"
+    TIMEOUT 45
+    ENVIRONMENT "QT_QPA_PLATFORM=sge_vulkan_offscreen;QT_QPA_PLATFORM_PLUGIN_PATH=${CMAKE_BINARY_DIR}/platforms"
+)

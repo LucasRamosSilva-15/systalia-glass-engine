@@ -20,8 +20,11 @@ IndependentFrameLoop::IndependentFrameLoop(IControlledRenderSource &renderSource
       m_eventDispatcher(eventDispatcher) {
     connect(&m_eventDispatcher, &DrmEventDispatcher::pageFlipCompleted,
             this, &IndependentFrameLoop::onPageFlipCompleted);
+    connect(&m_eventDispatcher, &DrmEventDispatcher::latePageFlipCompleted,
+            this, &IndependentFrameLoop::onLatePageFlipCompleted);
     connect(&m_eventDispatcher, &DrmEventDispatcher::pageFlipTimedOut,
             this, &IndependentFrameLoop::onPageFlipTimedOut);
+    m_eventDispatcher.setFlipContextRegistry(m_presenter.flipContextRegistry());
 }
 
 IndependentFrameLoop::~IndependentFrameLoop() {
@@ -95,18 +98,24 @@ bool IndependentFrameLoop::processNextFrame() {
 
     m_flipInFlight = true;
     m_activeFlipBufferId = bufferId;
+    m_activeFlipCommitId = m_presenter.pendingFlipCommitId();
     m_eventDispatcher.armFlipTimeout(m_flipTimeoutMs, bufferId);
     return true;
 }
 
-void IndependentFrameLoop::onPageFlipCompleted(quint64, quint64) {
+void IndependentFrameLoop::onPageFlipCompleted(quint64, quint64 userData) {
     if (!m_flipInFlight || m_activeFlipBufferId == 0) {
         // Evento duplicado ou fora de ordem: ignorar com segurança
+        return;
+    }
+    if (userData != 0 && m_activeFlipCommitId != 0 && userData != m_activeFlipCommitId) {
+        // Commit ID não corresponde ao flip ativo: ignorar evento atrasado/de outra geração
         return;
     }
 
     const uint64_t bufferId = m_activeFlipBufferId;
     m_activeFlipBufferId = 0;
+    m_activeFlipCommitId = 0;
     m_flipInFlight = false;
     m_eventDispatcher.clearFlipTimeout();
 
@@ -131,6 +140,17 @@ void IndependentFrameLoop::onPageFlipCompleted(quint64, quint64) {
     }
 }
 
+void IndependentFrameLoop::onLatePageFlipCompleted(quint64, quint64 bufferId) {
+    if (m_shuttingDown || m_suspended || bufferId == 0) {
+        return;
+    }
+    if (auto *buf = m_presenter.bufferManager().findBuffer(bufferId)) {
+        if (buf->state == GbmBufferState::TimedOutInScanout) {
+            Q_UNUSED(m_presenter.bufferManager().releaseBufferToAvailable(bufferId));
+        }
+    }
+}
+
 void IndependentFrameLoop::onPageFlipTimedOut(quint64 pendingToken) {
     if (!m_flipInFlight || m_activeFlipBufferId == 0 || pendingToken != m_activeFlipBufferId) {
         return;
@@ -138,10 +158,11 @@ void IndependentFrameLoop::onPageFlipTimedOut(quint64 pendingToken) {
 
     const uint64_t bufferId = m_activeFlipBufferId;
     m_activeFlipBufferId = 0;
+    m_activeFlipCommitId = 0;
     m_flipInFlight = false;
     ++m_timedOutCount;
 
-    Q_UNUSED(m_presenter.bufferManager().markBufferTimedOut(bufferId));
+    m_presenter.markFlipTimedOut(bufferId);
     Q_UNUSED(m_waylandCoordinator.completeFrame(false));
     emit frameFailed();
 
@@ -159,6 +180,7 @@ void IndependentFrameLoop::suspend() {
     if (m_flipInFlight && m_activeFlipBufferId != 0) {
         Q_UNUSED(m_presenter.bufferManager().releaseBufferToAvailable(m_activeFlipBufferId));
         m_activeFlipBufferId = 0;
+        m_activeFlipCommitId = 0;
         m_flipInFlight = false;
     }
 

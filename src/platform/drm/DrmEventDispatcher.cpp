@@ -10,37 +10,116 @@ namespace Systalia::Platform::Drm {
 
 namespace {
 
-struct DrmFlipDispatchBridge {
-    const DrmEventDispatcher::PageFlipCallback *callback = nullptr;
-};
+thread_local std::function<void(uint64_t, uint32_t, void *)> *t_activeKernelFlipHandler = nullptr;
 
 void onLibdrmPageFlipEvent(int,
                            unsigned int sequence,
                            unsigned int,
                            unsigned int,
                            void *userData) {
-    auto *bridge = static_cast<DrmFlipDispatchBridge *>(userData);
-    if (bridge && bridge->callback && *bridge->callback) {
-        (*bridge->callback)(static_cast<uint64_t>(sequence), 0);
+    if (t_activeKernelFlipHandler && *t_activeKernelFlipHandler) {
+        (*t_activeKernelFlipHandler)(static_cast<uint64_t>(sequence), 0U, userData);
     }
 }
 
-bool defaultReadDrmEvents(int drmFd, const DrmEventDispatcher::PageFlipCallback &onFlip) {
+void onLibdrmPageFlipEvent2(int,
+                            unsigned int sequence,
+                            unsigned int,
+                            unsigned int,
+                            unsigned int crtcId,
+                            void *userData) {
+    if (t_activeKernelFlipHandler && *t_activeKernelFlipHandler) {
+        (*t_activeKernelFlipHandler)(static_cast<uint64_t>(sequence), crtcId, userData);
+    }
+}
+
+bool defaultReadDrmEvents(int drmFd, const DrmEventDispatcher::PageFlipCallback &) {
     if (drmFd < 0) {
         return false;
     }
-    DrmFlipDispatchBridge bridge{&onFlip};
     drmEventContext evCtx{};
     evCtx.version = DRM_EVENT_CONTEXT_VERSION;
     evCtx.page_flip_handler = onLibdrmPageFlipEvent;
+    evCtx.page_flip_handler2 = onLibdrmPageFlipEvent2;
 
-    //Nota: drmHandleEvent lê eventos do FD DRM sem abrir novo descritor.
-    Q_UNUSED(bridge);
     const int rc = drmHandleEvent(drmFd, &evCtx);
     return rc == 0 || errno == EAGAIN;
 }
 
 } // namespace
+
+PendingFlipContext *DrmFlipContextRegistry::createContext(uint64_t bufferId, uint32_t crtcId) {
+    auto ctx = std::make_unique<PendingFlipContext>();
+    ctx->commitId = m_nextCommitId++;
+    ctx->generation = m_generation;
+    ctx->bufferId = bufferId;
+    ctx->crtcId = crtcId;
+    PendingFlipContext *raw = ctx.get();
+    m_contexts.emplace(raw, std::move(ctx));
+    return raw;
+}
+
+void DrmFlipContextRegistry::discardContext(uint64_t commitId) {
+    for (auto it = m_contexts.begin(); it != m_contexts.end(); ++it) {
+        if (it->second->commitId == commitId) {
+            m_contexts.erase(it);
+            return;
+        }
+    }
+}
+
+bool DrmFlipContextRegistry::markTimedOut(uint64_t commitId) {
+    for (auto &kv : m_contexts) {
+        if (kv.second->commitId == commitId) {
+            kv.second->timedOut = true;
+            return true;
+        }
+    }
+    return false;
+}
+
+void DrmFlipContextRegistry::advanceGeneration() noexcept {
+    ++m_generation;
+}
+
+void DrmFlipContextRegistry::clearAll() noexcept {
+    m_contexts.clear();
+}
+
+bool DrmFlipContextRegistry::hasPendingContext(uint64_t commitId) const noexcept {
+    for (const auto &kv : m_contexts) {
+        if (kv.second->commitId == commitId) {
+            return true;
+        }
+    }
+    return false;
+}
+
+DrmFlipContextRegistry::Resolution DrmFlipContextRegistry::resolveRawUserData(void *userData) {
+    auto it = m_contexts.find(static_cast<PendingFlipContext *>(userData));
+    if (it == m_contexts.end()) {
+        return Resolution{};
+    }
+    PendingFlipContext *ctx = it->second.get();
+    if (ctx->completed) {
+        return Resolution{};
+    }
+    ctx->completed = true;
+
+    Resolution res;
+    res.commitId = ctx->commitId;
+    res.bufferId = ctx->bufferId;
+    if (ctx->generation != m_generation) {
+        res.status = Resolution::Status::Ignore;
+    } else if (ctx->timedOut) {
+        res.status = Resolution::Status::LateTimedOutFlip;
+    } else {
+        res.status = Resolution::Status::NormalFlip;
+    }
+
+    m_contexts.erase(it);
+    return res;
+}
 
 DrmEventDispatcher::DrmEventDispatcher(ReadEventsFn readEventsFn, QObject *parent)
     : QObject(parent),
@@ -87,9 +166,38 @@ void DrmEventDispatcher::clearFlipTimeout() {
     m_timeoutTimer.stop();
 }
 
+void DrmEventDispatcher::setFlipContextRegistry(std::shared_ptr<DrmFlipContextRegistry> registry) noexcept {
+    m_registry = std::move(registry);
+}
+
 void DrmEventDispatcher::dispatchSimulatedPageFlip(uint64_t sequence, uint64_t userData) {
     clearFlipTimeout();
     emit pageFlipCompleted(static_cast<quint64>(sequence), static_cast<quint64>(userData));
+}
+
+void DrmEventDispatcher::dispatchKernelPageFlipForTest(uint64_t sequence, uint32_t crtcId, void *userData) {
+    handleKernelPageFlip(sequence, crtcId, userData);
+}
+
+void DrmEventDispatcher::handleKernelPageFlip(uint64_t sequence, uint32_t, void *userData) {
+    if (!m_registry) {
+        clearFlipTimeout();
+        emit pageFlipCompleted(static_cast<quint64>(sequence), 0ULL);
+        return;
+    }
+
+    const auto resolution = m_registry->resolveRawUserData(userData);
+    if (resolution.status == DrmFlipContextRegistry::Resolution::Status::Ignore) {
+        return;
+    }
+    if (resolution.status == DrmFlipContextRegistry::Resolution::Status::LateTimedOutFlip) {
+        emit latePageFlipCompleted(static_cast<quint64>(resolution.commitId),
+                                   static_cast<quint64>(resolution.bufferId));
+        return;
+    }
+
+    clearFlipTimeout();
+    emit pageFlipCompleted(static_cast<quint64>(sequence), static_cast<quint64>(resolution.commitId));
 }
 
 void DrmEventDispatcher::onFdReadable() {
@@ -99,10 +207,20 @@ void DrmEventDispatcher::onFdReadable() {
     if (m_notifier) {
         m_notifier->setEnabled(false);
     }
+
+    std::function<void(uint64_t, uint32_t, void *)> kernelHandler =
+        [this](uint64_t seq, uint32_t crtcId, void *userData) {
+            handleKernelPageFlip(seq, crtcId, userData);
+        };
+    auto *prevHandler = t_activeKernelFlipHandler;
+    t_activeKernelFlipHandler = &kernelHandler;
+
     Q_UNUSED(m_readEventsFn(m_drmFd, [this](uint64_t seq, uint64_t userData) {
         clearFlipTimeout();
         emit pageFlipCompleted(static_cast<quint64>(seq), static_cast<quint64>(userData));
     }));
+
+    t_activeKernelFlipHandler = prevHandler;
     if (m_notifier && m_drmFd >= 0) {
         m_notifier->setEnabled(true);
     }

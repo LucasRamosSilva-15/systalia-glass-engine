@@ -18,7 +18,7 @@ bool DrmBackendController::initialize(const QString &devicePath, const DrmOutput
         return false;
     }
 
-    if (devicePath.trimmed().isEmpty() || !initialMode.isValid() || !m_sessionProvider.isSessionActive()) {
+    if (devicePath.trimmed().isEmpty() || !m_sessionProvider.isSessionActive()) {
         m_state = DrmOwnershipState::Failed;
         return false;
     }
@@ -31,7 +31,20 @@ bool DrmBackendController::initialize(const QString &devicePath, const DrmOutput
 
     m_descriptor = std::move(*acquired);
 
-    if (!m_presenter.initializeOnFd(m_descriptor.fd) || !m_presenter.configureOutput(initialMode)) {
+    if (!m_presenter.initializeOnFd(m_descriptor.fd)) {
+        m_presenter.shutdown();
+        releaseDescriptorIfHeld();
+        m_state = DrmOwnershipState::Failed;
+        return false;
+    }
+
+    DrmOutputMode effectiveMode = initialMode;
+    if (!effectiveMode.isValid()) {
+        if (auto discovered = m_presenter.discoverPreferredMode()) {
+            effectiveMode = *discovered;
+        }
+    }
+    if (!effectiveMode.isValid() || !m_presenter.configureOutput(effectiveMode)) {
         m_presenter.shutdown();
         releaseDescriptorIfHeld();
         m_state = DrmOwnershipState::Failed;

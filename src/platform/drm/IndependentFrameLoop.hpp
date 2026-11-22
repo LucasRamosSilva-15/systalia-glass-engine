@@ -67,6 +67,7 @@ signals:
 
 private slots:
     void onPageFlipCompleted(quint64 sequence, quint64 userData);
+    void onLatePageFlipCompleted(quint64 commitId, quint64 bufferId);
     void onPageFlipTimedOut(quint64 pendingToken);
 
 private:
@@ -84,6 +85,7 @@ private:
     bool m_renderPending = false;
     bool m_scheduled = false;
     uint64_t m_activeFlipBufferId = 0;
+    uint64_t m_activeFlipCommitId = 0;
     uint64_t m_presentedCount = 0;
     uint64_t m_failedRenderCount = 0;
     uint64_t m_failedCommitCount = 0;

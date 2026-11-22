@@ -1,5 +1,6 @@
 #pragma once
 
+#include "DrmVulkanMatcher.hpp"
 #include "IndependentFrameLoop.hpp"
 
 #include <QByteArray>
@@ -35,6 +36,7 @@ struct VulkanDeviceCapabilities {
     bool supportsSyncFdExport = false;
     bool supportsSyncFdImport = false;
     bool dmabufExportImageCreated = false;
+    DrmVulkanDeviceIds drmDeviceIds;
 };
 
 /**

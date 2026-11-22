@@ -1,4 +1,5 @@
 #include "AtomicKmsPresenter.hpp"
+#include "DrmEventDispatcher.hpp"
 
 #include <drm_fourcc.h>
 #include <poll.h>
@@ -135,7 +136,7 @@ AtomicCommitResult LibdrmAtomicKmsBackend::commitAtomic(int drmFd, const AtomicC
         flags |= DRM_MODE_ATOMIC_ALLOW_MODESET;
     }
 
-    result.succeeded = (drmModeAtomicCommit(drmFd, atomicReq, flags, nullptr) == 0);
+    result.succeeded = (drmModeAtomicCommit(drmFd, atomicReq, flags, req.userData) == 0);
     result.outFenceFd = result.succeeded ? outFenceFd : -1;
     drmModeAtomicFree(atomicReq);
     return result;
@@ -146,7 +147,8 @@ AtomicKmsPresenter::AtomicKmsPresenter(IKmsResourceBackend &kmsBackend,
                                        IAtomicKmsBackend &atomicBackend) noexcept
     : m_discovery(kmsBackend),
       m_bufferManager(gbmBackend),
-      m_atomicBackend(atomicBackend) {}
+      m_atomicBackend(atomicBackend),
+      m_flipRegistry(std::make_shared<DrmFlipContextRegistry>()) {}
 
 AtomicKmsPresenter::~AtomicKmsPresenter() {
     shutdown();
@@ -185,11 +187,33 @@ bool AtomicKmsPresenter::initializeOnFd(int drmFd) {
     return true;
 }
 
+std::optional<DrmOutputMode> AtomicKmsPresenter::discoverPreferredMode() const {
+    if (!m_initialized) {
+        return std::nullopt;
+    }
+    const KmsConnectorInfo *primary = m_snapshot.primaryConnector();
+    if (!primary || !primary->connected) {
+        return std::nullopt;
+    }
+    DrmOutputMode mode = primary->preferredMode;
+    if (!mode.isValid()) {
+        mode = KmsOutputDiscovery::selectBestMode(primary->modes);
+    }
+    if (!mode.isValid()) {
+        return std::nullopt;
+    }
+    return mode;
+}
+
 bool AtomicKmsPresenter::configureOutput(const DrmOutputMode &mode) {
     if (!m_initialized || !mode.isValid()) {
         return false;
     }
     m_activeMode = mode;
+    if (m_useExternalVulkanPool) {
+        // Pool unificado Vulkan->DMA-BUF será registrado por VulkanQuickRenderer::createSharedPoolSlots().
+        return true;
+    }
     const GbmBufferAllocationRequest req{
         static_cast<uint32_t>(mode.width),
         static_cast<uint32_t>(mode.height),
@@ -239,6 +263,8 @@ bool AtomicKmsPresenter::submitBufferForScanout(uint64_t bufferId, int acquireFe
     int effectiveInFenceFd = (acquireFenceFd >= 0) ? acquireFenceFd : target->acquireFenceFd;
     const bool inFenceFromTarget = (acquireFenceFd < 0 && target->acquireFenceFd >= 0);
 
+    PendingFlipContext *flipCtx = m_flipRegistry->createContext(bufferId, m_crtcId);
+
     AtomicCommitRequest req;
     req.connectorId = m_connectorId;
     req.crtcId = m_crtcId;
@@ -247,6 +273,7 @@ bool AtomicKmsPresenter::submitBufferForScanout(uint64_t bufferId, int acquireFe
     req.srcWidth = static_cast<uint32_t>(m_activeMode.width);
     req.srcHeight = static_cast<uint32_t>(m_activeMode.height);
     req.inFenceFd = -1;
+    req.userData = flipCtx;
 
     if (effectiveInFenceFd >= 0) {
         if (m_fenceCaps.supportsInFenceFd) {
@@ -263,6 +290,7 @@ bool AtomicKmsPresenter::submitBufferForScanout(uint64_t bufferId, int acquireFe
             }
             effectiveInFenceFd = -1;
             if (pollRc <= 0 || (pfd.revents & POLLIN) == 0) {
+                m_flipRegistry->discardContext(flipCtx->commitId);
                 Q_UNUSED(m_bufferManager.releaseBufferToAvailable(bufferId));
                 return false;
             }
@@ -282,6 +310,7 @@ bool AtomicKmsPresenter::submitBufferForScanout(uint64_t bufferId, int acquireFe
     }
 
     if (!res.succeeded) {
+        m_flipRegistry->discardContext(flipCtx->commitId);
         if (res.outFenceFd >= 0) {
             ::close(res.outFenceFd);
         }
@@ -294,6 +323,7 @@ bool AtomicKmsPresenter::submitBufferForScanout(uint64_t bufferId, int acquireFe
         m_pendingOutFenceFd = -1;
     }
     m_pendingFlipBufferId = bufferId;
+    m_pendingFlipCommitId = flipCtx->commitId;
     m_pendingOutFenceFd = res.outFenceFd;
     return true;
 }
@@ -309,23 +339,38 @@ bool AtomicKmsPresenter::onPageFlipCompleted(uint64_t bufferId, int releaseFence
             m_pendingOutFenceFd = -1;
         }
         m_pendingFlipBufferId = 0;
+        m_pendingFlipCommitId = 0;
     }
     return m_bufferManager.markBufferPresented(bufferId, 0, effectiveReleaseFd);
 }
 
+void AtomicKmsPresenter::markFlipTimedOut(uint64_t bufferId) {
+    if (m_pendingFlipCommitId != 0) {
+        Q_UNUSED(m_flipRegistry->markTimedOut(m_pendingFlipCommitId));
+        m_pendingFlipCommitId = 0;
+    }
+    if (m_pendingFlipBufferId == bufferId) {
+        m_pendingFlipBufferId = 0;
+    }
+    Q_UNUSED(m_bufferManager.markBufferTimedOut(bufferId));
+}
+
 void AtomicKmsPresenter::suspendPresentation() {
     m_suspended = true;
+    m_flipRegistry->advanceGeneration();
     if (m_pendingOutFenceFd >= 0) {
         ::close(m_pendingOutFenceFd);
         m_pendingOutFenceFd = -1;
     }
     m_pendingFlipBufferId = 0;
+    m_pendingFlipCommitId = 0;
 }
 
 bool AtomicKmsPresenter::resumePresentation(int drmFd) {
     if (!m_initialized || drmFd < 0) {
         return false;
     }
+    m_flipRegistry->advanceGeneration();
     if (drmFd != m_drmFd) {
         for (auto &buf : m_bufferManager.buffers()) {
             buf.kmsFramebufferId = 0;
@@ -337,12 +382,7 @@ bool AtomicKmsPresenter::resumePresentation(int drmFd) {
     return true;
 }
 
-void AtomicKmsPresenter::shutdown() {
-    if (m_pendingOutFenceFd >= 0) {
-        ::close(m_pendingOutFenceFd);
-        m_pendingOutFenceFd = -1;
-    }
-    m_pendingFlipBufferId = 0;
+void AtomicKmsPresenter::releaseKmsFramebuffers() {
     if (m_drmFd >= 0) {
         for (auto &buf : m_bufferManager.buffers()) {
             if (buf.kmsFramebufferId != 0) {
@@ -351,6 +391,17 @@ void AtomicKmsPresenter::shutdown() {
             }
         }
     }
+}
+
+void AtomicKmsPresenter::shutdown() {
+    if (m_pendingOutFenceFd >= 0) {
+        ::close(m_pendingOutFenceFd);
+        m_pendingOutFenceFd = -1;
+    }
+    m_pendingFlipBufferId = 0;
+    m_pendingFlipCommitId = 0;
+    m_flipRegistry->clearAll();
+    releaseKmsFramebuffers();
     m_bufferManager.shutdown();
     m_drmFd = -1;
     m_connectorId = 0;

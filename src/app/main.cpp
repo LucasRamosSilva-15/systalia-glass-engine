@@ -105,14 +105,14 @@ int main(int argc, char *argv[]) {
         atomicBackend = std::make_unique<Systalia::Platform::Drm::LibdrmAtomicKmsBackend>();
         atomicPresenter = std::make_unique<Systalia::Platform::Drm::AtomicKmsPresenter>(
             *kmsBackend, *gbmBackend, *atomicBackend);
+        atomicPresenter->setUseExternalVulkanPool(true);
         drmController = std::make_unique<Systalia::Platform::Drm::DrmBackendController>(
             *drmProvider, *atomicPresenter);
         drmProvider->bindController(drmController.get());
 
-        const Systalia::Platform::Drm::DrmOutputMode initialMode{
-            QStringLiteral("DP-1"), 1920, 1080, 60, true};
-        if (!drmController->initialize(inputDeviceManager.activeDrmDevice(), initialMode)) {
-            qCritical() << "[SGE-DRM-EXPERIMENTAL] Falha ao adquirir/inicializar DRM único:"
+        // Seleção dinâmica de conector, modo preferencial, CRTC e plano primário via KmsOutputDiscovery.
+        if (!drmController->initialize(inputDeviceManager.activeDrmDevice(), {})) {
+            qCritical() << "[SGE-DRM-EXPERIMENTAL] Falha ao adquirir/inicializar DRM ou descobrir modo KMS válido:"
                         << inputDeviceManager.activeDrmDevice();
             drmController->shutdown();
             logindSessionService.releaseControl();
@@ -194,10 +194,36 @@ int main(int argc, char *argv[]) {
         shellQmlEngine.addImageProvider(QStringLiteral("desktopIcons"), new DesktopIconProvider());
 
         Systalia::Platform::Drm::VulkanQuickRenderer vulkanRenderer;
-        const QSize targetSize(1920, 1080);
-        if (!vulkanRenderer.initialize(targetSize)) {
+        const auto &activeMode = atomicPresenter->activeMode();
+        const QSize targetSize(activeMode.width, activeMode.height);
+        if (!targetSize.isValid() || !vulkanRenderer.initialize(targetSize)) {
             qCritical() << "[SGE-DRM-EXPERIMENTAL] Falha ao inicializar VulkanQuickRenderer:"
                         << vulkanRenderer.lastError();
+            drmController->shutdown();
+            inputDeviceManager.shutdownHardwareContext();
+            logindSessionService.releaseControl();
+            return 1;
+        }
+
+        uint32_t drmMaj = 0;
+        uint32_t drmMin = 0;
+        const auto &vkCaps = vulkanRenderer.capabilities();
+        if (Systalia::Platform::Drm::queryDrmFdMajorMinor(drmController->activeFd(), &drmMaj, &drmMin)
+            && (vkCaps.drmDeviceIds.hasPrimary || vkCaps.drmDeviceIds.hasRender)
+            && !Systalia::Platform::Drm::matchesDrmDevice(vkCaps.drmDeviceIds, drmMaj, drmMin)) {
+            qCritical() << "[SGE-DRM-EXPERIMENTAL] Dispositivo Vulkan não corresponde ao nó DRM adquirido.";
+            vulkanRenderer.shutdown();
+            drmController->shutdown();
+            inputDeviceManager.shutdownHardwareContext();
+            logindSessionService.releaseControl();
+            return 1;
+        }
+
+        if (!vulkanRenderer.createSharedPoolSlots(atomicPresenter->bufferManager(), targetSize, 2)) {
+            qCritical() << "[SGE-DRM-EXPERIMENTAL] Falha ao criar pool unificado Vulkan->DMA-BUF:"
+                        << vulkanRenderer.lastError();
+            vulkanRenderer.destroySharedPoolSlots(atomicPresenter->bufferManager());
+            vulkanRenderer.shutdown();
             drmController->shutdown();
             inputDeviceManager.shutdownHardwareContext();
             logindSessionService.releaseControl();
@@ -213,6 +239,8 @@ int main(int argc, char *argv[]) {
                     &shellQmlEngine)) {
                 qCritical() << "[SGE-DRM-EXPERIMENTAL] Falha ao carregar ShellRoot.qml:"
                             << vulkanRenderer.lastError();
+                atomicPresenter->releaseKmsFramebuffers();
+                vulkanRenderer.destroySharedPoolSlots(atomicPresenter->bufferManager());
                 vulkanRenderer.shutdown();
                 drmController->shutdown();
                 inputDeviceManager.shutdownHardwareContext();
@@ -257,6 +285,8 @@ int main(int argc, char *argv[]) {
         frameLoop.requestFrame();
         const int exitCode = app.exec();
         frameLoop.shutdown();
+        atomicPresenter->releaseKmsFramebuffers();
+        vulkanRenderer.destroySharedPoolSlots(atomicPresenter->bufferManager());
         vulkanRenderer.shutdown();
         drmController->shutdown();
         inputDeviceManager.shutdownHardwareContext();

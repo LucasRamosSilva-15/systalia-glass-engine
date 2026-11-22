@@ -114,6 +114,7 @@ public:
     virtual ~IDrmPresenter() = default;
 
     [[nodiscard]] virtual bool initializeOnFd(int drmFd) = 0;
+    [[nodiscard]] virtual std::optional<DrmOutputMode> discoverPreferredMode() const { return std::nullopt; }
     [[nodiscard]] virtual bool configureOutput(const DrmOutputMode &mode) = 0;
     [[nodiscard]] virtual bool presentFrame(uint64_t frameIndex, int drmFd) = 0;
     virtual void suspendPresentation() = 0;

@@ -5,8 +5,12 @@
 #include "KmsOutputDiscovery.hpp"
 
 #include <cstdint>
+#include <memory>
+#include <optional>
 
 namespace Systalia::Platform::Drm {
+
+class DrmFlipContextRegistry;
 
 struct AtomicCommitRequest {
     uint32_t connectorId = 0;
@@ -16,6 +20,7 @@ struct AtomicCommitRequest {
     uint32_t srcWidth = 0;
     uint32_t srcHeight = 0;
     int inFenceFd = -1;
+    void *userData = nullptr;
     bool testOnly = false;
     bool allowModeset = false;
 };
@@ -76,28 +81,38 @@ public:
     ~AtomicKmsPresenter() override;
 
     [[nodiscard]] bool initializeOnFd(int drmFd) override;
+    [[nodiscard]] std::optional<DrmOutputMode> discoverPreferredMode() const override;
     [[nodiscard]] bool configureOutput(const DrmOutputMode &mode) override;
     [[nodiscard]] bool presentFrame(uint64_t frameIndex, int drmFd) override;
     void suspendPresentation() override;
     [[nodiscard]] bool resumePresentation(int drmFd) override;
+    void releaseKmsFramebuffers();
     void shutdown() override;
 
+    void setUseExternalVulkanPool(bool enabled) noexcept { m_useExternalVulkanPool = enabled; }
     [[nodiscard]] bool submitBufferForScanout(uint64_t bufferId, int acquireFenceFd = -1);
     [[nodiscard]] bool onPageFlipCompleted(uint64_t bufferId, int releaseFenceFd = -1);
+    void markFlipTimedOut(uint64_t bufferId);
 
     [[nodiscard]] GbmBufferManager &bufferManager() noexcept { return m_bufferManager; }
     [[nodiscard]] const KmsDiscoverySnapshot &snapshot() const noexcept { return m_snapshot; }
+    [[nodiscard]] const DrmOutputMode &activeMode() const noexcept { return m_activeMode; }
     [[nodiscard]] uint32_t activeConnectorId() const noexcept { return m_connectorId; }
     [[nodiscard]] uint32_t activeCrtcId() const noexcept { return m_crtcId; }
     [[nodiscard]] uint32_t activePlaneId() const noexcept { return m_planeId; }
     [[nodiscard]] bool isSuspended() const noexcept { return m_suspended; }
     [[nodiscard]] KmsFenceCapabilities fenceCapabilities() const noexcept { return m_fenceCaps; }
     [[nodiscard]] int pendingOutFenceFd() const noexcept { return m_pendingOutFenceFd; }
+    [[nodiscard]] uint64_t pendingFlipCommitId() const noexcept { return m_pendingFlipCommitId; }
+    [[nodiscard]] std::shared_ptr<DrmFlipContextRegistry> flipContextRegistry() const noexcept {
+        return m_flipRegistry;
+    }
 
 private:
     KmsOutputDiscovery m_discovery;
     GbmBufferManager m_bufferManager;
     IAtomicKmsBackend &m_atomicBackend;
+    std::shared_ptr<DrmFlipContextRegistry> m_flipRegistry;
 
     int m_drmFd = -1;
     KmsDiscoverySnapshot m_snapshot;
@@ -107,7 +122,9 @@ private:
     DrmOutputMode m_activeMode;
     KmsFenceCapabilities m_fenceCaps;
     uint64_t m_pendingFlipBufferId = 0;
+    uint64_t m_pendingFlipCommitId = 0;
     int m_pendingOutFenceFd = -1;
+    bool m_useExternalVulkanPool = false;
     bool m_initialized = false;
     bool m_suspended = false;
 };

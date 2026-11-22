@@ -910,6 +910,25 @@ bool VulkanQuickRenderer::createVulkanDevice() {
     m_capabilities.supportsDrmFormatModifier = hasExtension(devExts, VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
     m_capabilities.supportsExternalSemaphoreFd = hasExtension(devExts, VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME);
 
+    if (hasExtension(devExts, VK_EXT_PHYSICAL_DEVICE_DRM_EXTENSION_NAME)) {
+        auto fnGetProps2 = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2>(
+            vkGetInstanceProcAddr(m_vulkanInstance.vkInstance(), "vkGetPhysicalDeviceProperties2"));
+        if (fnGetProps2) {
+            VkPhysicalDeviceDrmPropertiesEXT drmProps{};
+            drmProps.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRM_PROPERTIES_EXT;
+            VkPhysicalDeviceProperties2 props2{};
+            props2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+            props2.pNext = &drmProps;
+            fnGetProps2(m_physicalDevice, &props2);
+            m_capabilities.drmDeviceIds.hasPrimary = (drmProps.hasPrimary == VK_TRUE);
+            m_capabilities.drmDeviceIds.primaryMajor = static_cast<uint32_t>(drmProps.primaryMajor);
+            m_capabilities.drmDeviceIds.primaryMinor = static_cast<uint32_t>(drmProps.primaryMinor);
+            m_capabilities.drmDeviceIds.hasRender = (drmProps.hasRender == VK_TRUE);
+            m_capabilities.drmDeviceIds.renderMajor = static_cast<uint32_t>(drmProps.renderMajor);
+            m_capabilities.drmDeviceIds.renderMinor = static_cast<uint32_t>(drmProps.renderMinor);
+        }
+    }
+
     if (m_capabilities.supportsExternalSemaphoreFd) {
         auto fnGetExtSemProps = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalSemaphoreProperties>(
             vkGetInstanceProcAddr(m_vulkanInstance.vkInstance(), "vkGetPhysicalDeviceExternalSemaphoreProperties"));
