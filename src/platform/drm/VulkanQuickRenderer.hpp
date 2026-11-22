@@ -175,6 +175,7 @@ private:
     VkCommandPool m_commandPool = VK_NULL_HANDLE;
 
     VkImage m_colorImage = VK_NULL_HANDLE;
+    VkImage m_activeRenderImage = VK_NULL_HANDLE;
     VkDeviceMemory m_colorMemory = VK_NULL_HANDLE;
     VkFormat m_vkFormat = VK_FORMAT_B8G8R8A8_UNORM;
     VkDeviceSize m_imageAllocationSize = 0;

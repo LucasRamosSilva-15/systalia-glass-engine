@@ -80,6 +80,66 @@ KmsPlaneType queryPlaneType(int drmFd, uint32_t planeId) {
     return result;
 }
 
+QList<uint64_t> queryPlaneModifiersForFourcc(int drmFd, uint32_t planeId, uint32_t drmFourcc) {
+    QList<uint64_t> mods;
+    drmModeObjectPropertiesPtr props = drmModeObjectGetProperties(drmFd, planeId, DRM_MODE_OBJECT_PLANE);
+    if (!props) {
+        return mods;
+    }
+    uint32_t blobId = 0;
+    for (uint32_t i = 0; i < props->count_props; ++i) {
+        drmModePropertyPtr prop = drmModeGetProperty(drmFd, props->props[i]);
+        if (!prop) {
+            continue;
+        }
+        if (std::strcmp(prop->name, "IN_FORMATS") == 0 && (prop->flags & DRM_MODE_PROP_BLOB) != 0) {
+            blobId = static_cast<uint32_t>(props->prop_values[i]);
+            drmModeFreeProperty(prop);
+            break;
+        }
+        drmModeFreeProperty(prop);
+    }
+    drmModeFreeObjectProperties(props);
+
+    if (blobId == 0) {
+        return mods;
+    }
+    drmModePropertyBlobPtr blob = drmModeGetPropertyBlob(drmFd, blobId);
+    if (!blob || !blob->data || blob->length < sizeof(drm_format_modifier_blob)) {
+        if (blob) {
+            drmModeFreePropertyBlob(blob);
+        }
+        return mods;
+    }
+    const auto *hdr = static_cast<const drm_format_modifier_blob *>(blob->data);
+    const auto *formats = reinterpret_cast<const uint32_t *>(
+        static_cast<const uint8_t *>(blob->data) + hdr->formats_offset);
+    const auto *modEntries = reinterpret_cast<const drm_format_modifier *>(
+        static_cast<const uint8_t *>(blob->data) + hdr->modifiers_offset);
+
+    int xrgbIdx = -1;
+    for (uint32_t i = 0; i < hdr->count_formats; ++i) {
+        if (formats[i] == drmFourcc) {
+            xrgbIdx = static_cast<int>(i);
+            break;
+        }
+    }
+    if (xrgbIdx >= 0) {
+        for (uint32_t m = 0; m < hdr->count_modifiers; ++m) {
+            const auto &entry = modEntries[m];
+            if (xrgbIdx >= static_cast<int>(entry.offset)
+                && xrgbIdx < static_cast<int>(entry.offset) + 64) {
+                const uint64_t bit = 1ULL << static_cast<uint32_t>(xrgbIdx - static_cast<int>(entry.offset));
+                if ((entry.formats & bit) != 0 && !mods.contains(entry.modifier)) {
+                    mods.append(entry.modifier);
+                }
+            }
+        }
+    }
+    drmModeFreePropertyBlob(blob);
+    return mods;
+}
+
 } // namespace
 
 QList<KmsConnectorInfo> KmsDiscoverySnapshot::connectedConnectors() const {
@@ -228,6 +288,13 @@ KmsDiscoverySnapshot KmsOutputDiscovery::discover(int drmFd) {
         return KmsDiscoverySnapshot{};
     }
     return m_backend.probeResources(drmFd);
+}
+
+QList<uint64_t> KmsOutputDiscovery::queryPlaneModifiers(int drmFd, uint32_t planeId, uint32_t drmFourcc) {
+    if (drmFd < 0 || planeId == 0 || drmFourcc == 0) {
+        return {};
+    }
+    return queryPlaneModifiersForFourcc(drmFd, planeId, drmFourcc);
 }
 
 DrmOutputMode KmsOutputDiscovery::selectBestMode(const QList<DrmOutputMode> &modes) {

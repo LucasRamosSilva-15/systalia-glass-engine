@@ -87,6 +87,7 @@ public:
     [[nodiscard]] static DrmOutputMode selectBestMode(const QList<DrmOutputMode> &modes);
     [[nodiscard]] static uint32_t selectCompatibleCrtc(const KmsConnectorInfo &connector,
                                                          const QList<KmsCrtcInfo> &crtcs);
+    [[nodiscard]] static QList<uint64_t> queryPlaneModifiers(int drmFd, uint32_t planeId, uint32_t drmFourcc);
 
 private:
     IKmsResourceBackend &m_backend;

@@ -219,7 +219,10 @@ int main(int argc, char *argv[]) {
             return 1;
         }
 
-        if (!vulkanRenderer.createSharedPoolSlots(atomicPresenter->bufferManager(), targetSize, 2)) {
+        if (!vulkanRenderer.createSharedPoolSlots(atomicPresenter->bufferManager(),
+                                                targetSize,
+                                                2,
+                                                atomicPresenter->primaryPlaneModifiers())) {
             qCritical() << "[SGE-DRM-EXPERIMENTAL] Falha ao criar pool unificado Vulkan->DMA-BUF:"
                         << vulkanRenderer.lastError();
             vulkanRenderer.destroySharedPoolSlots(atomicPresenter->bufferManager());

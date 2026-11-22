@@ -254,6 +254,7 @@ int main(int argc, char *argv[]) {
     qmlRegisterSingletonInstance("Systalia.System", 1, 0, "InputDeviceManager", &input);
 
     QQmlEngine qmlEngine;
+    qmlEngine.addImageProvider(QStringLiteral("desktopIcons"), new DesktopIconProvider());
     if (spec.loadValoShell) {
         if (!renderer.loadQmlUrl(QUrl(QStringLiteral("qrc:/qt/qml/Systalia/Engine/src/qml/ShellRoot.qml")),
                                  &qmlEngine)) {

@@ -1,5 +1,8 @@
 #include "AtomicKmsPresenter.hpp"
 #include "DrmEventDispatcher.hpp"
+#include "VulkanQuickRenderer.hpp"
+
+#include <QDebug>
 
 #include <drm_fourcc.h>
 #include <poll.h>
@@ -181,6 +184,7 @@ bool AtomicKmsPresenter::initializeOnFd(int drmFd) {
     m_connectorId = primary->connectorId;
     m_crtcId = crtcId;
     m_planeId = plane->planeId;
+    m_primaryPlaneModifiers = KmsOutputDiscovery::queryPlaneModifiers(m_drmFd, m_planeId, DRM_FORMAT_XRGB8888);
     m_fenceCaps = m_atomicBackend.probeFenceCapabilities(m_drmFd, m_planeId, m_crtcId);
     m_initialized = true;
     m_suspended = false;
@@ -298,6 +302,15 @@ bool AtomicKmsPresenter::submitBufferForScanout(uint64_t bufferId, int acquireFe
     }
 
     const AtomicCommitResult res = m_atomicBackend.commitAtomic(m_drmFd, req);
+    if (VulkanQuickRenderer::graphicsDiagnosticsEnabled()) {
+        qInfo() << "[SGE-DIAG] KMS_COMMIT_SUBMITTED bufferId=" << bufferId
+                << "fbId=" << target->kmsFramebufferId
+                << "commitId=" << flipCtx->commitId
+                << "modifier=0x" << QString::number(target->modifier, 16)
+                << "inFenceFd=" << req.inFenceFd
+                << "outFenceFd=" << res.outFenceFd
+                << "succeeded=" << res.succeeded;
+    }
 
     // Após commitAtomic, o FD de entrada nunca deve ser reutilizado em commits futuros.
     if (effectiveInFenceFd >= 0) {

@@ -330,6 +330,9 @@ bool VulkanQuickRenderer::renderFrame() {
                 << "dmabufExport=" << m_capabilities.dmabufExportImageCreated;
     }
 
+    m_activeRenderImage = m_colorImage;
+    m_window->setRenderTarget(QQuickRenderTarget::fromVulkanImage(
+        m_colorImage, VK_IMAGE_LAYOUT_UNDEFINED, m_vkFormat, m_pixelSize, 1));
     m_renderControl->polishItems();
     m_renderControl->beginFrame();
     const bool synced = m_renderControl->sync();
@@ -495,8 +498,7 @@ bool VulkanQuickRenderer::renderIntoBuffer(GbmExportedBuffer &slot) {
     }
 
     auto *vkImg = reinterpret_cast<VkImage>(slot.vkImageHandle);
-    m_colorImage = vkImg;
-    m_colorMemory = reinterpret_cast<VkDeviceMemory>(slot.vkMemoryHandle);
+    m_activeRenderImage = vkImg;
     m_window->setRenderTarget(QQuickRenderTarget::fromVulkanImage(
         vkImg, VK_IMAGE_LAYOUT_UNDEFINED, m_vkFormat, m_pixelSize, 1));
 
@@ -1022,9 +1024,8 @@ void VulkanQuickRenderer::destroySharedPoolSlots(GbmBufferManager &pool) {
             slot.vkWaitSemaphoreHandle = 0;
         }
         if (df && slot.vkImageHandle != 0) {
-            if (reinterpret_cast<VkImage>(slot.vkImageHandle) == m_colorImage) {
-                m_colorImage = VK_NULL_HANDLE;
-                m_colorMemory = VK_NULL_HANDLE;
+            if (reinterpret_cast<VkImage>(slot.vkImageHandle) == m_activeRenderImage) {
+                m_activeRenderImage = m_colorImage;
             }
             df->vkDestroyImage(m_device, reinterpret_cast<VkImage>(slot.vkImageHandle), nullptr);
             slot.vkImageHandle = 0;
@@ -1105,7 +1106,8 @@ QImage VulkanQuickRenderer::readbackImage() {
     toTransfer.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
     toTransfer.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     toTransfer.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    toTransfer.image = m_colorImage;
+    const VkImage readbackTarget = (m_activeRenderImage != VK_NULL_HANDLE) ? m_activeRenderImage : m_colorImage;
+    toTransfer.image = readbackTarget;
     toTransfer.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     toTransfer.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     toTransfer.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
@@ -1119,7 +1121,7 @@ QImage VulkanQuickRenderer::readbackImage() {
     region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     region.imageExtent = {static_cast<uint32_t>(m_pixelSize.width()),
                           static_cast<uint32_t>(m_pixelSize.height()), 1};
-    df->vkCmdCopyImageToBuffer(cmd, m_colorImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+    df->vkCmdCopyImageToBuffer(cmd, readbackTarget, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                                stagingBuffer, 1, &region);
 
     VkImageMemoryBarrier toColor = toTransfer;
@@ -1489,6 +1491,13 @@ bool VulkanQuickRenderer::createVulkanDevice() {
         return false;
     }
     df->vkGetDeviceQueue(m_device, m_graphicsQueueFamily, 0, &m_graphicsQueue);
+    if (m_graphicsQueue != VK_NULL_HANDLE && graphicsDiagnosticsEnabled()) {
+        qInfo() << "[SGE-DIAG] VULKAN_DEVICE_SELECTED deviceName=" << m_capabilities.deviceName
+                << "vendorId=0x" << QString::number(m_capabilities.vendorId, 16)
+                << "deviceId=0x" << QString::number(m_capabilities.deviceId, 16)
+                << "queueFamily=" << m_graphicsQueueFamily
+                << "driverVersion=" << chosenProps.driverVersion;
+    }
     return m_graphicsQueue != VK_NULL_HANDLE;
 }
 
@@ -1570,10 +1579,15 @@ bool VulkanQuickRenderer::createOffscreenImage(const QSize &pixelSize) {
     }
 
     m_imageAllocationSize = memReq.size;
-    return df->vkBindImageMemory(m_device, m_colorImage, m_colorMemory, 0) == VK_SUCCESS;
+    if (df->vkBindImageMemory(m_device, m_colorImage, m_colorMemory, 0) != VK_SUCCESS) {
+        return false;
+    }
+    m_activeRenderImage = m_colorImage;
+    return true;
 }
 
 void VulkanQuickRenderer::destroyOffscreenImage() {
+    m_activeRenderImage = VK_NULL_HANDLE;
     if (m_device == VK_NULL_HANDLE) {
         return;
     }

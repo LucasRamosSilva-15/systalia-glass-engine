@@ -1,5 +1,7 @@
 #include <QtTest>
 
+#include "AtomicKmsPresenter.hpp"
+#include "DrmEventDispatcher.hpp"
 #include "GbmBufferManager.hpp"
 #include "VulkanQuickRenderer.hpp"
 
@@ -42,6 +44,8 @@ private slots:
     void rejectsUnsignaledReleaseFenceAndIncompatibleModifiersSafely();
     void recyclesWaitSemaphoreWhenFrameAbortedAfterImport();
     void submissionTrackerDistinguishesSubmittedTimedOutAndRealGpuCompletion();
+    void sharedPoolSlotsPreserveInternalOffscreenImageWithoutDoubleFree();
+    void atomicPresenterNegotiatesModifiersAndHandlesCommitFailureAndLateFlip();
 };
 
 void tst_VulkanDmabufAudit::auditsExternalMemoryAndDrmModifierCapabilitiesOnRadv() {
@@ -246,6 +250,111 @@ void tst_VulkanDmabufAudit::submissionTrackerDistinguishesSubmittedTimedOutAndRe
     renderer.destroySharedPoolSlots(pool);
     pool.shutdown();
     renderer.shutdown();
+}
+
+void tst_VulkanDmabufAudit::sharedPoolSlotsPreserveInternalOffscreenImageWithoutDoubleFree() {
+    VulkanQuickRenderer renderer;
+    QVERIFY2(renderer.initialize(QSize(128, 128)), qPrintable(renderer.lastError()));
+    const VkImage initialColorImage = renderer.colorImage();
+    QVERIFY(initialColorImage != VK_NULL_HANDLE);
+    QVERIFY(renderer.loadQmlSource(
+        "import QtQuick 2.15\nRectangle { width: 128; height: 128; color: '#0b1e36' }\n"));
+
+    AuditMockGbm gbm;
+    GbmBufferManager pool(gbm);
+    QVERIFY(renderer.createSharedPoolSlots(pool, QSize(128, 128), 2, {DRM_FORMAT_MOD_LINEAR}));
+    auto *slot0 = pool.acquireBufferForRendering();
+    QVERIFY(slot0 != nullptr);
+    QVERIFY(renderer.renderIntoBuffer(*slot0));
+    // O slot externo não deve sobrescrever m_colorImage interno (evita leak + double-free no shutdown)
+    QCOMPARE(renderer.colorImage(), initialColorImage);
+
+    if (slot0->acquireFenceFd >= 0) {
+        ::close(slot0->acquireFenceFd);
+        slot0->acquireFenceFd = -1;
+    }
+    QVERIFY(pool.releaseBufferToAvailable(slot0->id));
+
+    renderer.destroySharedPoolSlots(pool);
+    pool.shutdown();
+    renderer.shutdown();
+    renderer.shutdown(); // Shutdown idempotente
+}
+
+void tst_VulkanDmabufAudit::atomicPresenterNegotiatesModifiersAndHandlesCommitFailureAndLateFlip() {
+    class ParityMockKms final : public IKmsResourceBackend {
+    public:
+        KmsDiscoverySnapshot probeResources(int drmFd) override {
+            KmsDiscoverySnapshot snap;
+            if (drmFd < 0) return snap;
+            snap.valid = true;
+            snap.atomicSupported = true;
+            snap.crtcs.append(KmsCrtcInfo{55, 0, true, 0, 0, 1920, 1080});
+            snap.planes.append(KmsPlaneInfo{77, 0x1, 55, KmsPlaneType::Primary, {DRM_FORMAT_XRGB8888}});
+            KmsConnectorInfo hdmi;
+            hdmi.connectorId = 20;
+            hdmi.name = QStringLiteral("HDMI-A-1");
+            hdmi.connected = true;
+            hdmi.possibleCrtcs = 0x1;
+            hdmi.modes.append(DrmOutputMode{QStringLiteral("HDMI-A-1"), 1920, 1080, 60, true});
+            hdmi.preferredMode = hdmi.modes.first();
+            snap.connectors.append(hdmi);
+            return snap;
+        }
+    };
+    class ParityMockAtomic final : public IAtomicKmsBackend {
+    public:
+        bool failCommits = false;
+        uint32_t nextFb = 500;
+        uint32_t addFramebuffer(int, const GbmExportedBuffer &b) override {
+            return b.stride > 0 ? nextFb++ : 0;
+        }
+        void removeFramebuffer(int, uint32_t) override {}
+        AtomicCommitResult commitAtomic(int, const AtomicCommitRequest &) override {
+            return { !failCommits, -1 };
+        }
+    };
+
+    ParityMockKms kms;
+    AuditMockGbm gbm;
+    ParityMockAtomic atomic;
+    AtomicKmsPresenter presenter(kms, gbm, atomic);
+    presenter.setUseExternalVulkanPool(true);
+    QVERIFY(presenter.initializeOnFd(10));
+
+    const auto badNeg = GbmBufferManager::negotiateModifiers(
+        DRM_FORMAT_XRGB8888, {DRM_FORMAT_MOD_LINEAR}, {DRM_FORMAT_MOD_INVALID});
+    QVERIFY(!badNeg.compatible);
+
+    QVERIFY(presenter.configureOutput(DrmOutputMode{QStringLiteral("HDMI-A-1"), 1920, 1080, 60, true}));
+    GbmExportedBuffer extSlot;
+    extSlot.width = 1920;
+    extSlot.height = 1080;
+    extSlot.format = DRM_FORMAT_XRGB8888;
+    extSlot.stride = 1920 * 4;
+    extSlot.modifier = DRM_FORMAT_MOD_LINEAR;
+    auto *registered = presenter.bufferManager().registerExternalSlot(extSlot);
+    QVERIFY(registered != nullptr);
+
+    int pipeFds[2] = {-1, -1};
+    QCOMPARE(::pipe(pipeFds), 0);
+    ::close(pipeFds[1]); // sinalizado/fechado apenas como FD válido para ownership check
+    auto *acquired = presenter.bufferManager().acquireBufferForRendering();
+    QVERIFY(acquired != nullptr);
+    QVERIFY(presenter.bufferManager().markBufferReadyForScanout(acquired->id, pipeFds[0]));
+
+    atomic.failCommits = true;
+    QVERIFY(!presenter.submitBufferForScanout(acquired->id));
+    QCOMPARE(acquired->state, GbmBufferState::Available);
+    QCOMPARE(::fcntl(pipeFds[0], F_GETFD), -1); // FD fechado em falha de commit
+
+    // Page-flip tardio ou com userData inválido é ignorado com segurança
+    DrmEventDispatcher dispatcher;
+    dispatcher.setFlipContextRegistry(presenter.flipContextRegistry());
+    dispatcher.dispatchKernelPageFlipForTest(1, 55, nullptr);
+    QCOMPARE(presenter.flipContextRegistry()->liveContextCount(), size_t(0));
+
+    presenter.shutdown();
 }
 
 QTEST_MAIN(tst_VulkanDmabufAudit)

@@ -104,6 +104,9 @@ public:
     [[nodiscard]] KmsFenceCapabilities fenceCapabilities() const noexcept { return m_fenceCaps; }
     [[nodiscard]] int pendingOutFenceFd() const noexcept { return m_pendingOutFenceFd; }
     [[nodiscard]] uint64_t pendingFlipCommitId() const noexcept { return m_pendingFlipCommitId; }
+    [[nodiscard]] const QList<uint64_t> &primaryPlaneModifiers() const noexcept {
+        return m_primaryPlaneModifiers;
+    }
     [[nodiscard]] std::shared_ptr<DrmFlipContextRegistry> flipContextRegistry() const noexcept {
         return m_flipRegistry;
     }
@@ -121,6 +124,7 @@ private:
     uint32_t m_planeId = 0;
     DrmOutputMode m_activeMode;
     KmsFenceCapabilities m_fenceCaps;
+    QList<uint64_t> m_primaryPlaneModifiers;
     uint64_t m_pendingFlipBufferId = 0;
     uint64_t m_pendingFlipCommitId = 0;
     int m_pendingOutFenceFd = -1;
