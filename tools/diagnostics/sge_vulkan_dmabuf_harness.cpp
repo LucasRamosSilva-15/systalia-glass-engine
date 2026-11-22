@@ -68,6 +68,13 @@ class HarnessMockAtomic final : public IAtomicKmsBackend {
 public:
     uint32_t nextFb = 800;
     QList<AtomicCommitRequest> commits;
+    int lastObservedSyncFd = -1;
+
+    ~HarnessMockAtomic() override {
+        if (lastObservedSyncFd >= 0) {
+            ::close(lastObservedSyncFd);
+        }
+    }
     KmsFenceCapabilities probeFenceCapabilities(int, uint32_t, uint32_t) override {
         return {true, true};
     }
@@ -77,6 +84,13 @@ public:
     void removeFramebuffer(int, uint32_t) override {}
     AtomicCommitResult commitAtomic(int, const AtomicCommitRequest &req) override {
         commits.append(req);
+        if (lastObservedSyncFd >= 0) {
+            ::close(lastObservedSyncFd);
+            lastObservedSyncFd = -1;
+        }
+        if (req.inFenceFd >= 0) {
+            lastObservedSyncFd = ::dup(req.inFenceFd);
+        }
         return {true, -1};
     }
 };
@@ -277,6 +291,12 @@ int main(int argc, char *argv[]) {
         if (spec.useDmabufPool) {
             frameLoop.requestFrame();
             ok = frameLoop.processNextFrame();
+            if (ok && mockAtomic.lastObservedSyncFd >= 0) {
+                ok = renderer.observeSyncFdCompletion(
+                    renderer.lastSubmittedFrameId(), mockAtomic.lastObservedSyncFd, 2000);
+                ::close(mockAtomic.lastObservedSyncFd);
+                mockAtomic.lastObservedSyncFd = -1;
+            }
             if (ok && !mockAtomic.commits.isEmpty()) {
                 drmEvents.dispatchKernelPageFlipForTest(
                     static_cast<uint64_t>(i + 1), 55, mockAtomic.commits.last().userData);

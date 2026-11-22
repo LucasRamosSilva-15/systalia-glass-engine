@@ -24,6 +24,48 @@ namespace Systalia::Platform::Drm {
 
 class GbmBufferManager;
 
+enum class GpuSubmissionState {
+    Recorded,
+    Submitted,
+    Completed,
+    SubmissionFailed,
+    CompletionTimedOut,
+    DeviceLost,
+    Unknown
+};
+
+struct GpuSubmissionRecord {
+    uint64_t frameId = 0;
+    uint64_t slotId = 0;
+    uint64_t generation = 1;
+    uint64_t semaphoreHandle = 0;
+    int syncFd = -1;
+    qint64 submittedAtNs = 0;
+    qint64 completedAtNs = 0;
+    GpuSubmissionState state = GpuSubmissionState::Unknown;
+    QString failureReason;
+};
+
+class GpuSubmissionTracker final {
+public:
+    void reset(uint64_t newGeneration = 1) noexcept;
+    void markRecorded(uint64_t frameId, uint64_t slotId, uint64_t semaphoreHandle);
+    [[nodiscard]] bool markSubmitted(uint64_t frameId, int syncFd);
+    [[nodiscard]] bool markCompleted(uint64_t frameId);
+    [[nodiscard]] bool markTimedOut(uint64_t frameId);
+    void markFailed(uint64_t frameId, GpuSubmissionState failureState, const QString &reason);
+
+    [[nodiscard]] const GpuSubmissionRecord *find(uint64_t frameId) const noexcept;
+    [[nodiscard]] uint64_t generation() const noexcept { return m_generation; }
+    [[nodiscard]] size_t recordCount() const noexcept { return m_records.size(); }
+
+private:
+    GpuSubmissionRecord *findMutable(uint64_t frameId) noexcept;
+
+    uint64_t m_generation = 1;
+    QList<GpuSubmissionRecord> m_records;
+};
+
 struct DrmModifierCapability {
     uint64_t modifier = 0;
     uint32_t planeCount = 0;
@@ -86,6 +128,7 @@ public:
 
     [[nodiscard]] static bool isSyncFdSignaled(int fenceFd, int timeoutMs = 0);
     [[nodiscard]] static bool graphicsDiagnosticsEnabled() noexcept;
+    [[nodiscard]] bool observeSyncFdCompletion(uint64_t frameId, int syncFd, int timeoutMs = 2000);
 
     /// Apenas para testes determinísticos de fail-closed sem provocar device lost físico.
     void simulateDeviceLostForTest(const QString &reason = QStringLiteral("Simulated VK_ERROR_DEVICE_LOST"));
@@ -106,8 +149,14 @@ public:
     [[nodiscard]] QQuickItem *rootItem() const noexcept { return m_rootItem; }
     [[nodiscard]] QQuickRenderControl *renderControl() const noexcept { return m_renderControl.get(); }
     [[nodiscard]] QQmlEngine *qmlEngine() const noexcept { return m_activeEngine; }
+    [[nodiscard]] uint64_t lastSubmittedFrameId() const noexcept { return m_frameCounter; }
+    [[nodiscard]] const GpuSubmissionTracker &submissionTracker() const noexcept { return m_submissionTracker; }
+    [[nodiscard]] GpuSubmissionTracker &submissionTracker() noexcept { return m_submissionTracker; }
+    [[nodiscard]] size_t quarantinedSemaphoreCount() const noexcept { return m_quarantinedSemaphores.size(); }
 
 private:
+    void quarantineSemaphore(VkSemaphore sem);
+    void flushQuarantinedSemaphores();
     bool createVulkanDevice();
     bool createOffscreenImage(const QSize &pixelSize);
     void destroyOffscreenImage();
@@ -142,6 +191,8 @@ private:
     bool m_suspended = false;
     bool m_deviceLost = false;
     uint64_t m_frameCounter = 0;
+    GpuSubmissionTracker m_submissionTracker;
+    QList<VkSemaphore> m_quarantinedSemaphores;
 };
 
 } // namespace Systalia::Platform::Drm

@@ -135,10 +135,6 @@ void IndependentFrameLoop::onPageFlipCompleted(quint64, quint64 userData) {
     Q_UNUSED(m_waylandCoordinator.completeFrame(presented));
     if (presented) {
         ++m_presentedCount;
-        if (VulkanQuickRenderer::graphicsDiagnosticsEnabled()) {
-            qInfo() << "[SGE-DIAG] GPU_COMPLETED pageFlip bufferId=" << bufferId
-                    << "presentedCount=" << m_presentedCount;
-        }
         emit framePresented(static_cast<quint64>(m_presentedCount));
     } else {
         Q_UNUSED(m_presenter.bufferManager().releaseBufferToAvailable(bufferId));

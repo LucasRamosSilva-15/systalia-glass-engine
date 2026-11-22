@@ -3,6 +3,7 @@
 
 #include <drm_fourcc.h>
 #include <QDebug>
+#include <QElapsedTimer>
 #include <QQmlComponent>
 #include <QQmlEngine>
 #include <QQuickGraphicsDevice>
@@ -28,6 +29,14 @@ namespace Systalia::Platform::Drm {
 
 namespace {
 
+qint64 monotonicNs() noexcept {
+    static QElapsedTimer s_timer;
+    if (!s_timer.isValid()) {
+        s_timer.start();
+    }
+    return s_timer.nsecsElapsed();
+}
+
 bool hasExtension(const std::vector<VkExtensionProperties> &exts, const char *name) {
     for (const auto &ext : exts) {
         if (std::strcmp(ext.extensionName, name) == 0) {
@@ -38,6 +47,83 @@ bool hasExtension(const std::vector<VkExtensionProperties> &exts, const char *na
 }
 
 } // namespace
+
+void GpuSubmissionTracker::reset(uint64_t newGeneration) noexcept {
+    m_generation = newGeneration;
+    m_records.clear();
+}
+
+void GpuSubmissionTracker::markRecorded(uint64_t frameId, uint64_t slotId, uint64_t semaphoreHandle) {
+    if (m_records.size() >= 64) {
+        m_records.removeFirst();
+    }
+    GpuSubmissionRecord rec;
+    rec.frameId = frameId;
+    rec.slotId = slotId;
+    rec.generation = m_generation;
+    rec.semaphoreHandle = semaphoreHandle;
+    rec.state = GpuSubmissionState::Recorded;
+    m_records.append(rec);
+}
+
+bool GpuSubmissionTracker::markSubmitted(uint64_t frameId, int syncFd) {
+    GpuSubmissionRecord *rec = findMutable(frameId);
+    if (!rec || rec->state != GpuSubmissionState::Recorded) {
+        return false;
+    }
+    rec->syncFd = syncFd;
+    rec->submittedAtNs = monotonicNs();
+    rec->state = GpuSubmissionState::Submitted;
+    return true;
+}
+
+bool GpuSubmissionTracker::markCompleted(uint64_t frameId) {
+    GpuSubmissionRecord *rec = findMutable(frameId);
+    if (!rec || rec->state != GpuSubmissionState::Submitted) {
+        return false;
+    }
+    rec->completedAtNs = monotonicNs();
+    rec->state = GpuSubmissionState::Completed;
+    return true;
+}
+
+bool GpuSubmissionTracker::markTimedOut(uint64_t frameId) {
+    GpuSubmissionRecord *rec = findMutable(frameId);
+    if (!rec || rec->state != GpuSubmissionState::Submitted) {
+        return false;
+    }
+    rec->state = GpuSubmissionState::CompletionTimedOut;
+    return true;
+}
+
+void GpuSubmissionTracker::markFailed(uint64_t frameId,
+                                      GpuSubmissionState failureState,
+                                      const QString &reason) {
+    GpuSubmissionRecord *rec = findMutable(frameId);
+    if (!rec) {
+        return;
+    }
+    rec->state = failureState;
+    rec->failureReason = reason;
+}
+
+const GpuSubmissionRecord *GpuSubmissionTracker::find(uint64_t frameId) const noexcept {
+    for (const auto &rec : m_records) {
+        if (rec.frameId == frameId) {
+            return &rec;
+        }
+    }
+    return nullptr;
+}
+
+GpuSubmissionRecord *GpuSubmissionTracker::findMutable(uint64_t frameId) noexcept {
+    for (auto &rec : m_records) {
+        if (rec.frameId == frameId) {
+            return &rec;
+        }
+    }
+    return nullptr;
+}
 
 VulkanQuickRenderer::VulkanQuickRenderer(QObject *parent)
     : QObject(parent) {}
@@ -310,6 +396,7 @@ bool VulkanQuickRenderer::renderIntoBuffer(GbmExportedBuffer &slot) {
     const bool synced = m_renderControl->sync();
     if (synced) {
         m_renderControl->render();
+        m_submissionTracker.markRecorded(frameId, slot.id, slot.vkSignalSemaphoreHandle);
         if (graphicsDiagnosticsEnabled()) {
             qInfo() << "[SGE-DIAG] CPU_COMMAND_RECORDED frameId=" << frameId << "slotId=" << slot.id;
         }
@@ -331,15 +418,17 @@ bool VulkanQuickRenderer::renderIntoBuffer(GbmExportedBuffer &slot) {
     }
 
     if (rhi && rhi->isDeviceLost()) {
+        m_submissionTracker.markFailed(frameId, GpuSubmissionState::DeviceLost,
+                                       QStringLiteral("QRhi::isDeviceLost() após endFrame()"));
         simulateDeviceLostForTest(QStringLiteral("QRhi::isDeviceLost() após renderIntoBuffer::endFrame()"));
         return false;
     }
 
     if (!synced) {
-        // Se importamos um SYNC_FD temporário mas não submetemos, recria waitSem para descartar payload não consumido.
+        // Se importamos um SYNC_FD temporário mas não submetemos, coloca waitSem em quarentena e cria novo.
         if (hasImportedWaitSemaphore && waitSem != VK_NULL_HANDLE) {
+            quarantineSemaphore(waitSem);
             if (QVulkanDeviceFunctions *df = m_vulkanInstance.deviceFunctions(m_device)) {
-                df->vkDestroySemaphore(m_device, waitSem, nullptr);
                 VkSemaphoreCreateInfo waitSemInfo{};
                 waitSemInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
                 VkSemaphore freshWait = VK_NULL_HANDLE;
@@ -362,6 +451,7 @@ bool VulkanQuickRenderer::renderIntoBuffer(GbmExportedBuffer &slot) {
             f->vkGetDeviceProcAddr(m_device, "vkGetSemaphoreFdKHR"));
         if (!fnGetSemFd) {
             m_lastError = QStringLiteral("vkGetSemaphoreFdKHR indisponível no dispositivo Vulkan.");
+            m_submissionTracker.markFailed(frameId, GpuSubmissionState::SubmissionFailed, m_lastError);
             return false;
         }
         VkSemaphoreGetFdInfoKHR getFdInfo{};
@@ -371,13 +461,15 @@ bool VulkanQuickRenderer::renderIntoBuffer(GbmExportedBuffer &slot) {
         int syncFd = -1;
         const VkResult fdRc = fnGetSemFd(m_device, &getFdInfo, &syncFd);
         if (fdRc == VK_ERROR_DEVICE_LOST) {
+            m_submissionTracker.markFailed(frameId, GpuSubmissionState::DeviceLost,
+                                           QStringLiteral("VK_ERROR_DEVICE_LOST em vkGetSemaphoreFdKHR"));
             simulateDeviceLostForTest(QStringLiteral("VK_ERROR_DEVICE_LOST em vkGetSemaphoreFdKHR"));
             return false;
         }
         if (fdRc != VK_SUCCESS || syncFd < 0) {
-            // Recria semáforo sinalizado para não re-submeter semáforo binário em estado sinalizado.
+            // signalSem pode estar referenciado pela submissão pendente na GPU: nunca destruir imediatamente!
+            quarantineSemaphore(signalSem);
             if (QVulkanDeviceFunctions *df = m_vulkanInstance.deviceFunctions(m_device)) {
-                df->vkDestroySemaphore(m_device, signalSem, nullptr);
                 VkExportSemaphoreCreateInfo exportSemInfo{};
                 exportSemInfo.sType = VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO;
                 exportSemInfo.handleTypes = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT;
@@ -392,17 +484,21 @@ bool VulkanQuickRenderer::renderIntoBuffer(GbmExportedBuffer &slot) {
                 }
             }
             m_lastError = QStringLiteral("Falha ao exportar SYNC_FD após endFrame() do Qt Quick.");
+            m_submissionTracker.markFailed(frameId, GpuSubmissionState::SubmissionFailed, m_lastError);
             return false;
         }
         if (slot.acquireFenceFd >= 0) {
             ::close(slot.acquireFenceFd);
         }
         slot.acquireFenceFd = syncFd;
+        Q_UNUSED(m_submissionTracker.markSubmitted(frameId, syncFd));
         if (graphicsDiagnosticsEnabled()) {
             qInfo() << "[SGE-DIAG] SYNC_FD exported frameId=" << frameId
                     << "slotId=" << slot.id
                     << "acquireFenceFd=" << syncFd;
         }
+    } else {
+        Q_UNUSED(m_submissionTracker.markSubmitted(frameId, -1));
     }
 
     return true;
@@ -704,6 +800,58 @@ bool VulkanQuickRenderer::createSharedPoolSlots(GbmBufferManager &pool,
     return true;
 }
 
+void VulkanQuickRenderer::quarantineSemaphore(VkSemaphore sem) {
+    if (sem != VK_NULL_HANDLE && !m_quarantinedSemaphores.contains(sem)) {
+        m_quarantinedSemaphores.append(sem);
+    }
+}
+
+void VulkanQuickRenderer::flushQuarantinedSemaphores() {
+    if (m_device == VK_NULL_HANDLE || m_quarantinedSemaphores.isEmpty()) {
+        return;
+    }
+    if (QVulkanDeviceFunctions *df = m_vulkanInstance.deviceFunctions(m_device)) {
+        for (VkSemaphore sem : m_quarantinedSemaphores) {
+            if (sem != VK_NULL_HANDLE) {
+                df->vkDestroySemaphore(m_device, sem, nullptr);
+            }
+        }
+    }
+    m_quarantinedSemaphores.clear();
+}
+
+bool VulkanQuickRenderer::observeSyncFdCompletion(uint64_t frameId, int syncFd, int timeoutMs) {
+    if (m_deviceLost) {
+        m_submissionTracker.markFailed(frameId, GpuSubmissionState::DeviceLost,
+                                       QStringLiteral("Dispositivo perdido antes da confirmação."));
+        return false;
+    }
+    if (syncFd < 0) {
+        m_submissionTracker.markFailed(frameId, GpuSubmissionState::Unknown,
+                                       QStringLiteral("SYNC_FD inválido para observação."));
+        return false;
+    }
+    pollfd pfd{syncFd, POLLIN, 0};
+    const int rc = ::poll(&pfd, 1, timeoutMs);
+    if (rc > 0 && (pfd.revents & POLLIN) != 0) {
+        const bool marked = m_submissionTracker.markCompleted(frameId);
+        if (marked && graphicsDiagnosticsEnabled()) {
+            qInfo() << "[SGE-DIAG] GPU_EXECUTION_COMPLETED frameId=" << frameId << "syncFd=" << syncFd;
+        }
+        return marked;
+    }
+    if (rc == 0) {
+        Q_UNUSED(m_submissionTracker.markTimedOut(frameId));
+        if (graphicsDiagnosticsEnabled()) {
+            qInfo() << "[SGE-DIAG] GPU_COMPLETION_TIMED_OUT frameId=" << frameId << "syncFd=" << syncFd;
+        }
+        return false;
+    }
+    m_submissionTracker.markFailed(frameId, GpuSubmissionState::Unknown,
+                                   QStringLiteral("Erro em poll() do SYNC_FD."));
+    return false;
+}
+
 void VulkanQuickRenderer::destroySharedPoolSlots(GbmBufferManager &pool) {
     QVulkanDeviceFunctions *df = (m_device != VK_NULL_HANDLE)
                                      ? m_vulkanInstance.deviceFunctions(m_device)
@@ -711,6 +859,7 @@ void VulkanQuickRenderer::destroySharedPoolSlots(GbmBufferManager &pool) {
     if (df && !m_deviceLost) {
         df->vkDeviceWaitIdle(m_device);
     }
+    flushQuarantinedSemaphores();
     for (auto &slot : pool.buffers()) {
         if (slot.dmabufFd >= 0) {
             ::close(slot.dmabufFd);
@@ -947,6 +1096,7 @@ void VulkanQuickRenderer::shutdown() {
             df->vkDeviceWaitIdle(m_device);
         }
     }
+    flushQuarantinedSemaphores();
     destroyOffscreenImage();
     if (m_commandPool != VK_NULL_HANDLE && m_device != VK_NULL_HANDLE) {
         if (QVulkanDeviceFunctions *df = m_vulkanInstance.deviceFunctions(m_device)) {

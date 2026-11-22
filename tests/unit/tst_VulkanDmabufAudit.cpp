@@ -41,6 +41,7 @@ private slots:
     void runsSafeMatrixScenariosAandBWithDeterministicCleanup();
     void rejectsUnsignaledReleaseFenceAndIncompatibleModifiersSafely();
     void recyclesWaitSemaphoreWhenFrameAbortedAfterImport();
+    void submissionTrackerDistinguishesSubmittedTimedOutAndRealGpuCompletion();
 };
 
 void tst_VulkanDmabufAudit::auditsExternalMemoryAndDrmModifierCapabilitiesOnRadv() {
@@ -179,6 +180,61 @@ void tst_VulkanDmabufAudit::recyclesWaitSemaphoreWhenFrameAbortedAfterImport() {
         slot0->acquireFenceFd = -1;
     }
     QCOMPARE(::fcntl(realSyncFd, F_GETFD), -1);
+
+    renderer.destroySharedPoolSlots(pool);
+    pool.shutdown();
+    renderer.shutdown();
+}
+
+void tst_VulkanDmabufAudit::submissionTrackerDistinguishesSubmittedTimedOutAndRealGpuCompletion() {
+    // 1. Transições inválidas são rejeitadas (impossível ir para Completed sem Submitted)
+    GpuSubmissionTracker tracker;
+    tracker.markRecorded(1, 10, 0x1234);
+    QVERIFY(!tracker.markCompleted(1));
+    QVERIFY(tracker.markSubmitted(1, 99));
+    QCOMPARE(tracker.find(1)->state, GpuSubmissionState::Submitted);
+    QVERIFY(tracker.markCompleted(1));
+    QCOMPARE(tracker.find(1)->state, GpuSubmissionState::Completed);
+    QVERIFY(!tracker.markTimedOut(1)); // Já concluído
+
+    // 2. Observação real de SYNC_FD em RADV vs fence não sinalizada (timeout)
+    VulkanQuickRenderer renderer;
+    QVERIFY2(renderer.initialize(QSize(64, 64)), qPrintable(renderer.lastError()));
+    AuditMockGbm gbm;
+    GbmBufferManager pool(gbm);
+    QVERIFY(renderer.createSharedPoolSlots(pool, QSize(64, 64), 2, {DRM_FORMAT_MOD_LINEAR}));
+    QVERIFY(renderer.loadQmlSource(
+        "import QtQuick 2.15\nRectangle { width: 64; height: 64; color: '#226688' }\n"));
+
+    auto *slot0 = pool.acquireBufferForRendering();
+    QVERIFY(slot0 != nullptr);
+    QVERIFY(renderer.renderIntoBuffer(*slot0));
+    const uint64_t frameId1 = renderer.lastSubmittedFrameId();
+    QCOMPARE(renderer.submissionTracker().find(frameId1)->state, GpuSubmissionState::Submitted);
+
+    // Observa conclusão real no SYNC_FD exportado
+    QVERIFY(renderer.observeSyncFdCompletion(frameId1, slot0->acquireFenceFd, 2000));
+    QCOMPARE(renderer.submissionTracker().find(frameId1)->state, GpuSubmissionState::Completed);
+    ::close(slot0->acquireFenceFd);
+    slot0->acquireFenceFd = -1;
+    QVERIFY(pool.releaseBufferToAvailable(slot0->id));
+
+    // 3. Exportação presente, mas fence ainda não sinalizada -> CompletionTimedOut (não vira Completed)
+    auto *slot1 = pool.acquireBufferForRendering();
+    QVERIFY(slot1 != nullptr);
+    QVERIFY(renderer.renderIntoBuffer(*slot1));
+    const uint64_t frameId2 = renderer.lastSubmittedFrameId();
+    int writeEnd = -1;
+    const int unsignaledFd = makeUnsignaledPipeFd(&writeEnd);
+    QVERIFY(!renderer.observeSyncFdCompletion(frameId2, unsignaledFd, 5));
+    QCOMPARE(renderer.submissionTracker().find(frameId2)->state, GpuSubmissionState::CompletionTimedOut);
+    ::close(writeEnd);
+    ::close(unsignaledFd);
+    if (slot1->acquireFenceFd >= 0) {
+        ::close(slot1->acquireFenceFd);
+        slot1->acquireFenceFd = -1;
+    }
+    QVERIFY(pool.releaseBufferToAvailable(slot1->id));
 
     renderer.destroySharedPoolSlots(pool);
     pool.shutdown();

@@ -1,5 +1,7 @@
 #include "DrmEventDispatcher.hpp"
+#include "VulkanQuickRenderer.hpp"
 
+#include <QDebug>
 #include <xf86drm.h>
 #include <xf86drmMode.h>
 
@@ -172,10 +174,16 @@ void DrmEventDispatcher::setFlipContextRegistry(std::shared_ptr<DrmFlipContextRe
 
 void DrmEventDispatcher::dispatchSimulatedPageFlip(uint64_t sequence, uint64_t userData) {
     clearFlipTimeout();
+    if (VulkanQuickRenderer::graphicsDiagnosticsEnabled()) {
+        qInfo() << "[SGE-DIAG] MOCK_PAGE_FLIP_COMPLETED seq=" << sequence << "userData=" << userData;
+    }
     emit pageFlipCompleted(static_cast<quint64>(sequence), static_cast<quint64>(userData));
 }
 
 void DrmEventDispatcher::dispatchKernelPageFlipForTest(uint64_t sequence, uint32_t crtcId, void *userData) {
+    if (VulkanQuickRenderer::graphicsDiagnosticsEnabled()) {
+        qInfo() << "[SGE-DIAG] MOCK_PAGE_FLIP_COMPLETED (test bridge) seq=" << sequence << "crtc=" << crtcId;
+    }
     handleKernelPageFlip(sequence, crtcId, userData);
 }
 
@@ -197,6 +205,11 @@ void DrmEventDispatcher::handleKernelPageFlip(uint64_t sequence, uint32_t, void 
     }
 
     clearFlipTimeout();
+    if (t_activeKernelFlipHandler && VulkanQuickRenderer::graphicsDiagnosticsEnabled()) {
+        qInfo() << "[SGE-DIAG] KMS_PAGE_FLIP_COMPLETED seq=" << sequence
+                << "commitId=" << resolution.commitId
+                << "bufferId=" << resolution.bufferId;
+    }
     emit pageFlipCompleted(static_cast<quint64>(sequence), static_cast<quint64>(resolution.commitId));
 }
 
