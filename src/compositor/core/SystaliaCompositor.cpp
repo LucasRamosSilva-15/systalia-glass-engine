@@ -103,6 +103,7 @@ SystaliaCompositor::SystaliaCompositor(QObject *parent)
 }
 
 SystaliaCompositor::~SystaliaCompositor() {
+    stopXWayland();
     qInfo().noquote() << "[SGE-WAYLAND] Servidor finalizado no socket:" << socketName();
 }
 

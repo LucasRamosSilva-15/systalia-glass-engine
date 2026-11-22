@@ -3,7 +3,9 @@
 #include "AtomicKmsPresenter.hpp"
 #include "DrmEventDispatcher.hpp"
 #include "GbmBufferManager.hpp"
+#include "VulkanQuickRenderer.hpp"
 
+#include <QDebug>
 #include <QMetaObject>
 
 namespace Systalia::Platform::Drm {
@@ -32,7 +34,7 @@ IndependentFrameLoop::~IndependentFrameLoop() {
 }
 
 void IndependentFrameLoop::requestFrame() {
-    if (m_shuttingDown || m_suspended) {
+    if (m_shuttingDown || m_suspended || m_deviceLost) {
         return;
     }
     m_renderPending = true;
@@ -42,7 +44,7 @@ void IndependentFrameLoop::requestFrame() {
 }
 
 void IndependentFrameLoop::scheduleQueuedProcess() {
-    if (m_scheduled || m_shuttingDown || m_suspended || m_flipInFlight) {
+    if (m_scheduled || m_shuttingDown || m_suspended || m_deviceLost || m_flipInFlight) {
         return;
     }
     m_scheduled = true;
@@ -53,7 +55,7 @@ void IndependentFrameLoop::scheduleQueuedProcess() {
 }
 
 bool IndependentFrameLoop::processNextFrame() {
-    if (m_shuttingDown || m_suspended || m_flipInFlight || !m_renderPending) {
+    if (m_shuttingDown || m_suspended || m_deviceLost || m_flipInFlight || !m_renderPending) {
         return false;
     }
     m_renderPending = false;
@@ -100,6 +102,10 @@ bool IndependentFrameLoop::processNextFrame() {
     m_activeFlipBufferId = bufferId;
     m_activeFlipCommitId = m_presenter.pendingFlipCommitId();
     m_eventDispatcher.armFlipTimeout(m_flipTimeoutMs, bufferId);
+    if (VulkanQuickRenderer::graphicsDiagnosticsEnabled()) {
+        qInfo() << "[SGE-DIAG] commit submitted bufferId=" << bufferId
+                << "commitId=" << m_activeFlipCommitId;
+    }
     return true;
 }
 
@@ -189,7 +195,7 @@ void IndependentFrameLoop::suspend() {
 }
 
 void IndependentFrameLoop::resume(int drmFd) {
-    if (m_shuttingDown || drmFd < 0) {
+    if (m_shuttingDown || m_deviceLost || drmFd < 0) {
         return;
     }
     if (!m_presenter.resumePresentation(drmFd)) {
@@ -198,7 +204,33 @@ void IndependentFrameLoop::resume(int drmFd) {
     m_waylandCoordinator.setSuspended(false);
     m_eventDispatcher.attachFd(drmFd);
     m_suspended = false;
+    if (VulkanQuickRenderer::graphicsDiagnosticsEnabled()) {
+        qInfo() << "[SGE-DIAG] VT resumed on drmFd=" << drmFd;
+    }
     requestFrame();
+}
+
+void IndependentFrameLoop::handleDeviceLost() {
+    if (m_deviceLost) {
+        return;
+    }
+    m_deviceLost = true;
+    m_suspended = true;
+    m_renderPending = false;
+    m_scheduled = false;
+    m_eventDispatcher.detachFd();
+
+    if (m_flipInFlight && m_activeFlipBufferId != 0) {
+        // Não retorna buffer incerto para Available após device lost.
+        m_presenter.markFlipTimedOut(m_activeFlipBufferId);
+        m_activeFlipBufferId = 0;
+        m_activeFlipCommitId = 0;
+        m_flipInFlight = false;
+    }
+    Q_UNUSED(m_waylandCoordinator.completeFrame(false));
+    m_waylandCoordinator.setSuspended(true);
+    m_presenter.suspendPresentation();
+    emit frameFailed();
 }
 
 void IndependentFrameLoop::shutdown() {

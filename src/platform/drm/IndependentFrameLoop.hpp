@@ -50,11 +50,13 @@ public:
     [[nodiscard]] bool processNextFrame();
     void suspend();
     void resume(int drmFd);
+    void handleDeviceLost();
     void shutdown();
 
     [[nodiscard]] bool isFlipInFlight() const noexcept { return m_flipInFlight; }
     [[nodiscard]] bool hasPendingRender() const noexcept { return m_renderPending; }
     [[nodiscard]] bool isSuspended() const noexcept { return m_suspended; }
+    [[nodiscard]] bool isDeviceLost() const noexcept { return m_deviceLost; }
     [[nodiscard]] uint64_t activeFlipBufferId() const noexcept { return m_activeFlipBufferId; }
     [[nodiscard]] uint64_t presentedCount() const noexcept { return m_presentedCount; }
     [[nodiscard]] uint64_t failedRenderCount() const noexcept { return m_failedRenderCount; }
@@ -80,6 +82,7 @@ private:
 
     int m_flipTimeoutMs = 250;
     bool m_suspended = false;
+    bool m_deviceLost = false;
     bool m_shuttingDown = false;
     bool m_flipInFlight = false;
     bool m_renderPending = false;

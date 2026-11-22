@@ -282,6 +282,14 @@ int main(int argc, char *argv[]) {
             }
         });
 
+        QObject::connect(&vulkanRenderer, &Systalia::Platform::Drm::VulkanQuickRenderer::deviceLost,
+                         &frameLoop, [&frameLoop](const QString &reason) {
+            qCritical() << "[SGE-DRM-EXPERIMENTAL] VK_ERROR_DEVICE_LOST fatal; encerrando sessão com segurança:"
+                        << reason;
+            frameLoop.handleDeviceLost();
+            QCoreApplication::exit(2);
+        });
+
         frameLoop.requestFrame();
         const int exitCode = app.exec();
         frameLoop.shutdown();

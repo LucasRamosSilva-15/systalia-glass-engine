@@ -483,6 +483,12 @@ Item {
         window: shellRoot.hostWindow
     }
 
+    Component.onDestruction: {
+        if (primaryWaylandOutput) {
+            primaryWaylandOutput.window = null
+        }
+    }
+
     Item {
         id: wallpaperBackdropRoot
         anchors.fill: parent

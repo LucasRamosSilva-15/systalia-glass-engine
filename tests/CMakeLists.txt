@@ -535,3 +535,17 @@ set_tests_properties(tst_page_flip_and_unified_startup PROPERTIES
     TIMEOUT 45
     ENVIRONMENT "QT_QPA_PLATFORM=sge_vulkan_offscreen;QT_QPA_PLATFORM_PLUGIN_PATH=${CMAKE_BINARY_DIR}/platforms"
 )
+
+qt_add_executable(tst_device_lost_and_compositor_lifecycle unit/tst_DeviceLostAndCompositorLifecycle.cpp)
+target_link_libraries(tst_device_lost_and_compositor_lifecycle PRIVATE
+    sge_drm_poc
+    -Wl,--whole-archive sge_core -Wl,--no-whole-archive
+    Qt6::Test
+)
+add_dependencies(tst_device_lost_and_compositor_lifecycle sge_vulkan_offscreen)
+add_test(NAME tst_device_lost_and_compositor_lifecycle COMMAND tst_device_lost_and_compositor_lifecycle)
+set_tests_properties(tst_device_lost_and_compositor_lifecycle PROPERTIES
+    LABELS "integration"
+    TIMEOUT 45
+    ENVIRONMENT "QT_QPA_PLATFORM=sge_vulkan_offscreen;QT_QPA_PLATFORM_PLUGIN_PATH=${CMAKE_BINARY_DIR}/platforms"
+)

@@ -2,6 +2,7 @@
 #include "GbmBufferManager.hpp"
 
 #include <drm_fourcc.h>
+#include <QDebug>
 #include <QQmlComponent>
 #include <QQmlEngine>
 #include <QQuickGraphicsDevice>
@@ -9,6 +10,7 @@
 #include <QQuickRenderControl>
 #include <QQuickRenderTarget>
 #include <QQuickWindow>
+#include <QThread>
 #include <QUrl>
 #include <QVulkanDeviceFunctions>
 #include <QVulkanFunctions>
@@ -200,8 +202,23 @@ bool VulkanQuickRenderer::resize(const QSize &pixelSize) {
     return true;
 }
 
+bool VulkanQuickRenderer::graphicsDiagnosticsEnabled() noexcept {
+    static const bool enabled = qEnvironmentVariableIntValue("SGE_GRAPHICS_DIAGNOSTICS") > 0;
+    return enabled;
+}
+
+void VulkanQuickRenderer::simulateDeviceLostForTest(const QString &reason) {
+    if (m_deviceLost) {
+        return;
+    }
+    m_deviceLost = true;
+    m_lastError = reason;
+    qCritical() << "[SGE-VULKAN] Device lost:" << m_lastError;
+    emit deviceLost(m_lastError);
+}
+
 bool VulkanQuickRenderer::renderFrame() {
-    if (!m_initialized || m_suspended || !m_renderControl || m_colorImage == VK_NULL_HANDLE) {
+    if (!m_initialized || m_suspended || m_deviceLost || !m_renderControl || m_colorImage == VK_NULL_HANDLE) {
         return false;
     }
 
@@ -212,16 +229,28 @@ bool VulkanQuickRenderer::renderFrame() {
         m_renderControl->render();
     }
     m_renderControl->endFrame();
+
+    if (m_window && m_window->rhi() && m_window->rhi()->isDeviceLost()) {
+        simulateDeviceLostForTest(QStringLiteral("QRhi::isDeviceLost() após endFrame()"));
+        return false;
+    }
     return synced;
 }
 
 bool VulkanQuickRenderer::renderIntoBuffer(GbmExportedBuffer &slot) {
-    if (!m_initialized || m_suspended || !m_window || !m_renderControl) {
+    if (!m_initialized || m_suspended || m_deviceLost || !m_window || !m_renderControl) {
         return false;
     }
     if (slot.vkImageHandle == 0) {
         // Fallback para buffers simulados sem VkImage dedicada
         return renderFrame();
+    }
+
+    if (graphicsDiagnosticsEnabled()) {
+        qInfo() << "[SGE-DIAG] renderIntoBuffer start bufferId=" << slot.id
+                << "thread=" << QThread::currentThread()
+                << "vkImage=" << Qt::hex << slot.vkImageHandle << Qt::dec
+                << "releaseFenceFd=" << slot.releaseFenceFd;
     }
 
     QVulkanFunctions *f = m_vulkanInstance.functions();
@@ -240,10 +269,16 @@ bool VulkanQuickRenderer::renderIntoBuffer(GbmExportedBuffer &slot) {
                 importInfo.flags = VK_SEMAPHORE_IMPORT_TEMPORARY_BIT;
                 importInfo.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT;
                 importInfo.fd = slot.releaseFenceFd;
-                if (fnImportSemFd(m_device, &importInfo) == VK_SUCCESS) {
+                const VkResult importRc = fnImportSemFd(m_device, &importInfo);
+                if (importRc == VK_SUCCESS) {
                     // Ownership do FD transferido ao Vulkan em caso de sucesso.
                     slot.releaseFenceFd = -1;
                     hasImportedWaitSemaphore = true;
+                } else if (importRc == VK_ERROR_DEVICE_LOST) {
+                    ::close(slot.releaseFenceFd);
+                    slot.releaseFenceFd = -1;
+                    simulateDeviceLostForTest(QStringLiteral("VK_ERROR_DEVICE_LOST em vkImportSemaphoreFdKHR"));
+                    return false;
                 }
             }
         }
@@ -286,6 +321,11 @@ bool VulkanQuickRenderer::renderIntoBuffer(GbmExportedBuffer &slot) {
         rhi->setQueueSubmitParams(nullptr);
     }
 
+    if (rhi && rhi->isDeviceLost()) {
+        simulateDeviceLostForTest(QStringLiteral("QRhi::isDeviceLost() após renderIntoBuffer::endFrame()"));
+        return false;
+    }
+
     if (!synced) {
         return false;
     }
@@ -302,7 +342,12 @@ bool VulkanQuickRenderer::renderIntoBuffer(GbmExportedBuffer &slot) {
         getFdInfo.semaphore = signalSem;
         getFdInfo.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT;
         int syncFd = -1;
-        if (fnGetSemFd(m_device, &getFdInfo, &syncFd) != VK_SUCCESS || syncFd < 0) {
+        const VkResult fdRc = fnGetSemFd(m_device, &getFdInfo, &syncFd);
+        if (fdRc == VK_ERROR_DEVICE_LOST) {
+            simulateDeviceLostForTest(QStringLiteral("VK_ERROR_DEVICE_LOST em vkGetSemaphoreFdKHR"));
+            return false;
+        }
+        if (fdRc != VK_SUCCESS || syncFd < 0) {
             m_lastError = QStringLiteral("Falha ao exportar SYNC_FD após endFrame() do Qt Quick.");
             return false;
         }
@@ -310,6 +355,10 @@ bool VulkanQuickRenderer::renderIntoBuffer(GbmExportedBuffer &slot) {
             ::close(slot.acquireFenceFd);
         }
         slot.acquireFenceFd = syncFd;
+        if (graphicsDiagnosticsEnabled()) {
+            qInfo() << "[SGE-DIAG] renderIntoBuffer done bufferId=" << slot.id
+                    << "exportedSyncFd=" << syncFd;
+        }
     }
 
     return true;
@@ -441,8 +490,13 @@ bool VulkanQuickRenderer::createSharedPoolSlots(GbmBufferManager &pool,
             return false;
         }
 
+        VkMemoryDedicatedAllocateInfo dedicatedAlloc{};
+        dedicatedAlloc.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO;
+        dedicatedAlloc.image = slotImage;
+
         VkExportMemoryAllocateInfo exportAlloc{};
         exportAlloc.sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO;
+        exportAlloc.pNext = &dedicatedAlloc;
         exportAlloc.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT;
 
         VkMemoryAllocateInfo allocInfo{};
@@ -534,7 +588,7 @@ void VulkanQuickRenderer::destroySharedPoolSlots(GbmBufferManager &pool) {
     QVulkanDeviceFunctions *df = (m_device != VK_NULL_HANDLE)
                                      ? m_vulkanInstance.deviceFunctions(m_device)
                                      : nullptr;
-    if (df) {
+    if (df && !m_deviceLost) {
         df->vkDeviceWaitIdle(m_device);
     }
     for (auto &slot : pool.buffers()) {
@@ -750,6 +804,7 @@ void VulkanQuickRenderer::shutdown() {
     m_suspended = false;
 
     if (m_rootItem) {
+        m_rootItem->setProperty("hostWindow", QVariant());
         m_rootItem->setParentItem(nullptr);
         delete m_rootItem;
         m_rootItem = nullptr;
@@ -758,13 +813,16 @@ void VulkanQuickRenderer::shutdown() {
     m_ownedQmlEngine.reset();
     m_activeEngine = nullptr;
 
+    if (m_window) {
+        m_window->setRenderTarget(QQuickRenderTarget{});
+    }
     if (m_renderControl) {
         m_renderControl->invalidate();
     }
     m_window.reset();
     m_renderControl.reset();
 
-    if (m_device != VK_NULL_HANDLE) {
+    if (m_device != VK_NULL_HANDLE && !m_deviceLost) {
         if (QVulkanDeviceFunctions *df = m_vulkanInstance.deviceFunctions(m_device)) {
             df->vkDeviceWaitIdle(m_device);
         }

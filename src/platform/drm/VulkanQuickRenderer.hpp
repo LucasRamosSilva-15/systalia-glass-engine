@@ -76,9 +76,18 @@ public:
     void shutdown();
 
     [[nodiscard]] static bool isSyncFdSignaled(int fenceFd, int timeoutMs = 0);
+    [[nodiscard]] static bool graphicsDiagnosticsEnabled() noexcept;
 
+    /// Apenas para testes determinísticos de fail-closed sem provocar device lost físico.
+    void simulateDeviceLostForTest(const QString &reason = QStringLiteral("Simulated VK_ERROR_DEVICE_LOST"));
+
+signals:
+    void deviceLost(const QString &reason);
+
+public:
     [[nodiscard]] bool isInitialized() const noexcept { return m_initialized; }
     [[nodiscard]] bool isSuspended() const noexcept { return m_suspended; }
+    [[nodiscard]] bool isDeviceLost() const noexcept { return m_deviceLost; }
     [[nodiscard]] QSize pixelSize() const noexcept { return m_pixelSize; }
     [[nodiscard]] VkImage colorImage() const noexcept { return m_colorImage; }
     [[nodiscard]] VkFormat colorFormat() const noexcept { return m_vkFormat; }
@@ -122,6 +131,7 @@ private:
     QString m_lastError;
     bool m_initialized = false;
     bool m_suspended = false;
+    bool m_deviceLost = false;
 };
 
 } // namespace Systalia::Platform::Drm
