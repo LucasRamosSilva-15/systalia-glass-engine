@@ -46,12 +46,23 @@ fi
 if [[ -f "$HOMOLOG_DIR/share/systalia/BUILD_IDENTITY.txt" ]]; then
     echo "[OK] Identidade instalada:"
     sed 's/^/  /' "$HOMOLOG_DIR/share/systalia/BUILD_IDENTITY.txt"
+    if ! grep -q '^branch=valo-graphics-2\.0$' "$HOMOLOG_DIR/share/systalia/BUILD_IDENTITY.txt" \
+        || ! grep -q '^build_type=Release$' "$HOMOLOG_DIR/share/systalia/BUILD_IDENTITY.txt" \
+        || ! grep -Eq '^base_commit=[0-9a-f]{7,}$' "$HOMOLOG_DIR/share/systalia/BUILD_IDENTITY.txt"; then
+        echo "[FAIL] BUILD_IDENTITY.txt inválido ou incompleto." >&2
+        exit 1
+    fi
 else
-    echo "[WARN] BUILD_IDENTITY.txt ausente em $HOMOLOG_DIR/share/systalia/"
+    echo "[FAIL] BUILD_IDENTITY.txt ausente em $HOMOLOG_DIR/share/systalia/." >&2
+    exit 1
 fi
 
-echo "[OK] Limite de frame padrão no script TTY3: SGE_HOMOLOG_MAX_FRAMES=${SGE_HOMOLOG_MAX_FRAMES:-1}"
-echo "[OK] Diagnóstico gráfico no script TTY3: SGE_GRAPHICS_DIAGNOSTICS=${SGE_GRAPHICS_DIAGNOSTICS:-1}"
+if ! grep -aq "SGE_HOMOLOG_MAX_FRAMES" "$HOMOLOG_DIR/bin/systalia_glass_engine"; then
+    echo "[FAIL] Mecanismo SGE_HOMOLOG_MAX_FRAMES ausente em $HOMOLOG_DIR/bin/systalia_glass_engine." >&2
+    exit 1
+fi
+echo "[OK] Mecanismo SGE_HOMOLOG_MAX_FRAMES presente no binário instalado."
+echo "[OK] Política do executor TTY3: força SGE_HOMOLOG_MAX_FRAMES=1 e SGE_GRAPHICS_DIAGNOSTICS=1 (ignora sobrescritas)."
 
 if [[ -n "${SGE_USE_DRM_BACKEND:-}" ]]; then
     echo "[WARN] SGE_USE_DRM_BACKEND está definido no ambiente atual ($SGE_USE_DRM_BACKEND)."

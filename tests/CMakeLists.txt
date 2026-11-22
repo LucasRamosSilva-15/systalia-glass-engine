@@ -421,6 +421,11 @@ add_test(NAME tst_evidence_cleanup
 )
 set_tests_properties(tst_evidence_cleanup PROPERTIES LABELS "unit")
 
+add_test(NAME tst_tty3_homolog_scripts
+    COMMAND Python3::Interpreter "${CMAKE_CURRENT_SOURCE_DIR}/unit/tst_Tty3HomologScripts.py"
+)
+set_tests_properties(tst_tty3_homolog_scripts PROPERTIES LABELS "unit")
+
 qt_add_executable(tst_drm_backend_poc unit/tst_DrmBackendPoc.cpp)
 target_link_libraries(tst_drm_backend_poc PRIVATE
     sge_drm_poc
