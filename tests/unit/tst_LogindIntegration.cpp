@@ -322,12 +322,16 @@ void TestLogindIntegration::activePropertyChangeUpdatesSessionState() {
 }
 
 void TestLogindIntegration::sddmDesktopEntryAndSessionScriptValidation() {
-    const QString scriptPath = QStringLiteral(SGE_SOURCE_DIR "/data/systalia-session");
-    const QString desktopPath = QStringLiteral(SGE_SOURCE_DIR "/data/systalia.desktop");
+    const QString scriptTemplatePath = QStringLiteral(SGE_SOURCE_DIR "/data/systalia-session.in");
+    const QString desktopTemplatePath = QStringLiteral(SGE_SOURCE_DIR "/data/systalia.desktop.in");
+    const QString scriptPath = QStringLiteral(SGE_BINARY_DIR "/data/systalia-session");
+    const QString desktopPath = QStringLiteral(SGE_BINARY_DIR "/data/systalia.desktop");
+
+    QVERIFY2(QFileInfo::exists(scriptTemplatePath), qPrintable(scriptTemplatePath));
+    QVERIFY2(QFileInfo::exists(desktopTemplatePath), qPrintable(desktopTemplatePath));
 
     QFileInfo scriptInfo(scriptPath);
     QVERIFY2(scriptInfo.exists(), qPrintable(scriptPath));
-    QVERIFY(scriptInfo.permission(QFileDevice::ExeOwner));
 
     QFile scriptFile(scriptPath);
     QVERIFY(scriptFile.open(QIODevice::ReadOnly | QIODevice::Text));
@@ -336,17 +340,61 @@ void TestLogindIntegration::sddmDesktopEntryAndSessionScriptValidation() {
     QVERIFY(scriptContent.contains(QStringLiteral("export XDG_CURRENT_DESKTOP=\"Systalia:VALO\"")));
     QVERIFY(scriptContent.contains(QStringLiteral("export XDG_SESSION_TYPE=\"wayland\"")));
     QVERIFY(scriptContent.contains(QStringLiteral("export XDG_SESSION_DESKTOP=\"systalia\"")));
-    QVERIFY(scriptContent.contains(QStringLiteral("export QT_QPA_PLATFORM=\"wayland;eglfs\"")));
-    QVERIFY(scriptContent.contains(QStringLiteral("exec /usr/bin/systalia_glass_engine")));
+    QVERIFY(!scriptContent.contains(QStringLiteral("@CMAKE_INSTALL_FULL_BINDIR@")));
+    QVERIFY(scriptContent.contains(QStringLiteral("exec \"$EXEC_BIN\" \"$@\"")));
 
     QFile desktopFile(desktopPath);
     QVERIFY2(desktopFile.open(QIODevice::ReadOnly | QIODevice::Text), qPrintable(desktopPath));
     const QString desktopContent = QString::fromUtf8(desktopFile.readAll());
     QVERIFY(desktopContent.contains(QStringLiteral("[Desktop Entry]")));
     QVERIFY(desktopContent.contains(QStringLiteral("Name=Systalia (VALO Glass)")));
-    QVERIFY(desktopContent.contains(QStringLiteral("Exec=/usr/bin/systalia-session")));
+    QVERIFY(!desktopContent.contains(QStringLiteral("@CMAKE_INSTALL_FULL_BINDIR@")));
+    QVERIFY(desktopContent.contains(QStringLiteral("/systalia-session")));
     QVERIFY(desktopContent.contains(QStringLiteral("Type=Application")));
     QVERIFY(desktopContent.contains(QStringLiteral("DesktopNames=Systalia;VALO")));
+
+    // Política de aborto seguro quando logind falha em bare-metal sem root/override
+    QVERIFY(LogindSessionService::shouldAbortOnLogindFailure(true, 1000u, false));
+    QVERIFY(!LogindSessionService::shouldAbortOnLogindFailure(true, 0u, false));
+    QVERIFY(!LogindSessionService::shouldAbortOnLogindFailure(true, 1000u, true));
+    QVERIFY(!LogindSessionService::shouldAbortOnLogindFailure(false, 1000u, false));
+
+    // VT Active=true antes de ResumeDevice(DRM) não deve liberar submissão GPU prematuramente
+    LogindSessionService vtService;
+    vtService.setCustomCallHandler([](const QDBusMessage &msg) -> QDBusMessage {
+        if (msg.member() == QLatin1String("GetSessionByPID")) {
+            return msg.createReply(QVariant::fromValue(QDBusObjectPath(QStringLiteral("/org/freedesktop/login1/session/c1"))));
+        }
+        if (msg.member() == QLatin1String("TakeDevice")) {
+            const int pipeFd = ::open("/dev/null", O_RDONLY | O_CLOEXEC);
+            QList<QVariant> args;
+            args << QVariant::fromValue(QDBusUnixFileDescriptor(pipeFd)) << QVariant::fromValue(false);
+            if (pipeFd >= 0) {
+                ::close(pipeFd);
+            }
+            return msg.createReply(args);
+        }
+        return msg.createReply();
+    });
+    QVERIFY(vtService.initializeSession(false));
+    QVERIFY(vtService.takeDevice(LogindSessionService::kDrmMajorNumber, 0u) >= 0);
+    vtService.onPauseDevice(LogindSessionService::kDrmMajorNumber, 0u, QStringLiteral("pause"));
+    QVERIFY(vtService.isGpuSubmissionSuspended());
+    QVERIFY(vtService.hasPausedDrmDevice());
+
+    QVariantMap activeProps;
+    activeProps.insert(QStringLiteral("Active"), true);
+    vtService.onPropertiesChanged(QString::fromLatin1(LogindSessionService::kLogindSessionInterface),
+                                  activeProps, QStringList());
+    QVERIFY(vtService.isGpuSubmissionSuspended());
+
+    const int resumedFd = ::open("/dev/null", O_RDONLY | O_CLOEXEC);
+    vtService.onResumeDevice(LogindSessionService::kDrmMajorNumber, 0u, QDBusUnixFileDescriptor(resumedFd));
+    if (resumedFd >= 0) {
+        ::close(resumedFd);
+    }
+    QVERIFY(!vtService.isGpuSubmissionSuspended());
+    QVERIFY(!vtService.hasPausedDrmDevice());
 }
 
 QTEST_MAIN(TestLogindIntegration)

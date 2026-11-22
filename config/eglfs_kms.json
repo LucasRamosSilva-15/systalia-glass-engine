@@ -1,5 +1,4 @@
 {
-    "device": "/dev/dri/card0",
     "hwcursor": true,
     "pbuffers": true,
     "separateScreens": false,

@@ -1,0 +1,196 @@
+[0/1] Re-running CMake...
+CMake Warning at /usr/lib64/cmake/Qt6/QtPublicDependencyHelpers.cmake:339 (message):
+  This project is using headers of the GuiPrivate module and will therefore
+  be tied to this specific Qt module build version.  Running this project
+  against other versions of the Qt modules may crash at any arbitrary point.
+  This is not a bug, but a result of using Qt internals.  You have been
+  warned!
+
+  You can disable this warning by setting QT_NO_PRIVATE_MODULE_WARNING to ON.
+Call Stack (most recent call first):
+  /usr/lib64/cmake/Qt6GuiPrivate/Qt6GuiPrivateConfig.cmake:58 (_qt_internal_show_private_module_warning)
+  /usr/lib64/cmake/Qt6/Qt6Config.cmake:267 (find_package)
+  CMakeLists.txt:16 (find_package)
+
+
+-- Found Wayland: /usr/lib64/libwayland-client.so;/usr/lib64/libwayland-server.so;/usr/lib64/libwayland-cursor.so;/usr/lib64/libwayland-egl.so (found suitable version "1.26.0", minimum required is "1.15")
+shaders/valo_optical.vert -> valo_optical.vert.qsb exposed as :/shaders/valo_optical.vert.qsb
+shaders/valo_optical.frag -> valo_optical.frag.qsb exposed as :/shaders/valo_optical.frag.qsb
+shaders/v2/valo_optical_v2.vert -> valo_optical_v2.vert.qsb exposed as :/shaders/v2/valo_optical_v2.vert.qsb
+shaders/v2/valo_optical_v2.frag -> valo_optical_v2.frag.qsb exposed as :/shaders/v2/valo_optical_v2.frag.qsb
+shaders/v2/valo_backdrop_copy.frag -> valo_backdrop_copy.frag.qsb exposed as :/shaders/v2/valo_backdrop_copy.frag.qsb
+shaders/v2/valo_particles.frag -> valo_particles.frag.qsb exposed as :/shaders/v2/valo_particles.frag.qsb
+shaders/v2/valo_kawase_down.vert -> valo_kawase_down.vert.qsb exposed as :/shaders/v2/valo_kawase_down.vert.qsb
+shaders/v2/valo_kawase_down.frag -> valo_kawase_down.frag.qsb exposed as :/shaders/v2/valo_kawase_down.frag.qsb
+shaders/v2/valo_kawase_up.vert -> valo_kawase_up.vert.qsb exposed as :/shaders/v2/valo_kawase_up.vert.qsb
+shaders/v2/valo_kawase_up.frag -> valo_kawase_up.frag.qsb exposed as :/shaders/v2/valo_kawase_up.frag.qsb
+shaders/v2/valo_diag_sdf.frag -> valo_diag_sdf.frag.qsb exposed as :/shaders/v2/valo_diag_sdf.frag.qsb
+shaders/v2/valo_diag_mask.frag -> valo_diag_mask.frag.qsb exposed as :/shaders/v2/valo_diag_mask.frag.qsb
+shaders/v2/valo_diag_volume.frag -> valo_diag_volume.frag.qsb exposed as :/shaders/v2/valo_diag_volume.frag.qsb
+shaders/v2/valo_diag_refraction.frag -> valo_diag_refraction.frag.qsb exposed as :/shaders/v2/valo_diag_refraction.frag.qsb
+shaders/v2/valo_diag_blur.frag -> valo_diag_blur.frag.qsb exposed as :/shaders/v2/valo_diag_blur.frag.qsb
+shaders/v2/valo_diag_specular.frag -> valo_diag_specular.frag.qsb exposed as :/shaders/v2/valo_diag_specular.frag.qsb
+shaders/v2/valo_diag_caustics.frag -> valo_diag_caustics.frag.qsb exposed as :/shaders/v2/valo_diag_caustics.frag.qsb
+shaders/v2/valo_diag_reflection.frag -> valo_diag_reflection.frag.qsb exposed as :/shaders/v2/valo_diag_reflection.frag.qsb
+shaders/v2/valo_diag_basic.frag -> valo_diag_basic.frag.qsb exposed as :/shaders/v2/valo_diag_basic.frag.qsb
+shaders/v2/valo_shadow_v2.vert -> valo_shadow_v2.vert.qsb exposed as :/shaders/v2/valo_shadow_v2.vert.qsb
+shaders/v2/valo_shadow_v2.frag -> valo_shadow_v2.frag.qsb exposed as :/shaders/v2/valo_shadow_v2.frag.qsb
+tools/raw_render_diagnostics/shaders/raw_t2_minimal.vert -> raw_t2_minimal.vert.qsb exposed as :/raw_shaders/raw_t2_minimal.vert.qsb
+tools/raw_render_diagnostics/shaders/raw_t2_minimal.frag -> raw_t2_minimal.frag.qsb exposed as :/raw_shaders/raw_t2_minimal.frag.qsb
+tools/raw_render_diagnostics/shaders/raw_t3_ubo.vert -> raw_t3_ubo.vert.qsb exposed as :/raw_shaders/raw_t3_ubo.vert.qsb
+tools/raw_render_diagnostics/shaders/raw_t3_ubo.frag -> raw_t3_ubo.frag.qsb exposed as :/raw_shaders/raw_t3_ubo.frag.qsb
+tools/raw_render_diagnostics/shaders/raw_t4_sdf.vert -> raw_t4_sdf.vert.qsb exposed as :/raw_shaders/raw_t4_sdf.vert.qsb
+tools/raw_render_diagnostics/shaders/raw_t4_sdf.frag -> raw_t4_sdf.frag.qsb exposed as :/raw_shaders/raw_t4_sdf.frag.qsb
+-- Found Wayland: /usr/lib64/libwayland-client.so;/usr/lib64/libwayland-server.so;/usr/lib64/libwayland-cursor.so;/usr/lib64/libwayland-egl.so (found version "1.26.0")
+-- Configuring done (1.9s)
+-- Generating done (0.3s)
+-- Build files have been written to: /tmp/systalia-cmake-modular
+[1/277] Automatic MOC and UIC for target tst_optical_physics
+[2/275] Automatic MOC and UIC for target tst_sdf_geometry
+[3/273] Automatic MOC and UIC for target sge_shaders
+[4/271] Running AUTOMOC file extraction for target sge_shaders
+[5/270] Automatic MOC and UIC for target sge_core
+[6/270] Running AUTOMOC file extraction for target sge_core
+[7/270] Running moc --collect-json for target sge_core
+[8/201] Building CXX object CMakeFiles/sge_core.dir/src/gfx/v2/ValoGeometryEngineV2.cpp.o
+[9/201] Building CXX object CMakeFiles/sge_core.dir/src/gfx/SystaliaGlassMaterial.cpp.o
+[10/201] Building CXX object CMakeFiles/sge_core.dir/src/gfx/SystaliaGlassItem.cpp.o
+[11/201] Building CXX object CMakeFiles/sge_core.dir/sge_core_autogen/mocs_compilation.cpp.o
+[12/201] Building CXX object CMakeFiles/sge_core.dir/src/gfx/v2/ValoGlassMaterialV2.cpp.o
+[13/201] Building CXX object CMakeFiles/sge_core.dir/src/gfx/v2/ValoShadowItemV2.cpp.o
+[14/201] Building CXX object CMakeFiles/sge_core.dir/src/gfx/v2/ValoGlassItemV2.cpp.o
+[15/201] Building CXX object CMakeFiles/sge_core.dir/sge_core_qmltyperegistrations.cpp.o
+[16/201] Linking CXX static library libsge_core.a
+[17/201] Automatic MOC and UIC for target systalia_glass_engine
+[18/200] Automatic MOC and UIC for target valo_gpu_benchmark
+[19/199] Automatic MOC and UIC for target valo_dock_v2_artifacts
+[20/198] Automatic MOC and UIC for target valo_stage_05_1_artifacts
+[21/197] Automatic MOC and UIC for target raw_render_diagnostics
+[22/196] Automatic MOC and UIC for target valo_shell_v2_artifacts
+[23/195] Automatic MOC and UIC for target tst_systalia_engine
+[24/194] Automatic MOC and UIC for target tst_xdg_resize
+[25/193] Automatic MOC and UIC for target tst_wayland_socket
+[26/192] Automatic MOC and UIC for target tst_item_geometry
+[27/191] Automatic MOC and UIC for target tst_backdrop_binding
+[28/190] Automatic MOC and UIC for target tst_xdg_shell
+[29/189] Automatic MOC and UIC for target tst_xdg_decorations
+[30/188] Automatic MOC and UIC for target tst_telemetry
+[31/187] Automatic MOC and UIC for target tst_process_launcher
+[32/186] Automatic MOC and UIC for target tst_app_registry
+[33/185] Automatic MOC and UIC for target tst_notification_server
+[34/184] Automatic MOC and UIC for target tst_sdf_geometry_math
+[35/183] Automatic MOC and UIC for target tst_unified_composition
+[36/182] Automatic MOC and UIC for target tst_linux_parsers
+[37/181] Automatic MOC and UIC for target tst_task_switcher
+[38/180] Automatic MOC and UIC for target tst_systalia_protocol
+[39/179] Automatic MOC and UIC for target tst_workspace_manager
+[40/178] Automatic MOC and UIC for target tst_memory_alignment
+[41/177] Automatic MOC and UIC for target tst_resource_leak_audit
+[42/176] Automatic MOC and UIC for target tst_output_manager
+[43/175] Automatic MOC and UIC for target tst_input_hardware_backend
+[44/174] Automatic MOC and UIC for target tst_liquid_tiling
+[45/173] Automatic MOC and UIC for target tst_logind_integration
+[46/172] Automatic MOC and UIC for target tst_xwayland_integration
+[47/171] Automatic MOC and UIC for target tst_valo_theme
+[48/170] Automatic MOC and UIC for target tst_phase4_audit
+[49/169] Automatic MOC and UIC for target tst_valo_glass
+[50/168] Automatic MOC and UIC for target tst_valo_decorations
+[51/167] Automatic MOC and UIC for target tst_valo_organic_transform_v2
+[52/166] Automatic MOC and UIC for target tst_sdf_geometry_math_v2
+[53/165] Automatic MOC and UIC for target tst_surface_props_alignment_v2
+[54/164] Automatic MOC and UIC for target tst_valo_glass_shader_v2
+[55/163] Automatic MOC and UIC for target tst_valo_glass_rendering_v2
+[56/162] Automatic MOC and UIC for target tst_valo_gpu_blur_pipeline_v2
+[57/161] Automatic MOC and UIC for target tst_valo_backdrop_blur_v2
+[58/160] Automatic MOC and UIC for target tst_valo_refraction_optics_v2
+[59/159] Automatic MOC and UIC for target tst_protocol_roundtrip
+[60/158] Automatic MOC and UIC for target tst_valo_dock_v2
+[61/157] Automatic MOC and UIC for target tst_app_model_filtering
+[62/156] Automatic MOC and UIC for target tst_valo_shell_v2
+[63/155] Automatic MOC and UIC for target tst_xdg_shell_decoration
+[64/154] Automatic MOC and UIC for target tst_wayland_client_lifecycle_e2e
+[65/153] Automatic MOC and UIC for target tst_valo_optical_contract_v2
+[66/152] Building CXX object tests/CMakeFiles/tst_xdg_resize.dir/tst_XdgResize.cpp.o
+[67/152] Linking CXX executable tests/tst_xdg_resize
+[68/152] Automatic MOC and UIC for target tst_shell_state_regression
+[69/151] Building CXX object CMakeFiles/valo_dock_v2_artifacts.dir/tools/generate_dock_v2_artifacts.cpp.o
+[70/151] Automatic MOC and UIC for target tst_client_surface_visibility
+[71/150] Building CXX object CMakeFiles/valo_shell_v2_artifacts.dir/tools/generate_shell_v2_artifacts.cpp.o
+[72/150] Building CXX object CMakeFiles/systalia_glass_engine.dir/src/main.cpp.o
+[73/150] Building CXX object CMakeFiles/raw_render_diagnostics.dir/tools/raw_render_diagnostics/raw_render_diagnostics.cpp.o
+[74/150] Building CXX object CMakeFiles/valo_stage_05_1_artifacts.dir/tools/generate_stage_05_1_artifacts.cpp.o
+[75/150] Building CXX object tests/CMakeFiles/tst_systalia_engine.dir/tst_SystaliaEngine.cpp.o
+[76/150] Building CXX object tests/CMakeFiles/tst_item_geometry.dir/tst_ItemGeometry.cpp.o
+[77/150] Building CXX object tests/CMakeFiles/tst_backdrop_binding.dir/tst_BackdropBinding.cpp.o
+[78/150] Building CXX object tests/CMakeFiles/tst_unified_composition.dir/tst_UnifiedComposition.cpp.o
+[79/150] Building CXX object tests/CMakeFiles/tst_memory_alignment.dir/unit/tst_MemoryAlignment.cpp.o
+[80/150] Building CXX object tests/CMakeFiles/tst_systalia_protocol.dir/tst_SystaliaProtocol.cpp.o
+[81/150] Building CXX object tests/CMakeFiles/tst_resource_leak_audit.dir/unit/tst_ResourceLeakAudit.cpp.o
+[82/150] Building CXX object tests/CMakeFiles/tst_liquid_tiling.dir/unit/tst_LiquidTiling.cpp.o
+[83/150] Building CXX object tests/CMakeFiles/tst_phase4_audit.dir/unit/tst_Phase4Audit.cpp.o
+[84/150] Building CXX object tests/CMakeFiles/tst_output_manager.dir/unit/tst_OutputManager.cpp.o
+[85/150] Building CXX object tests/CMakeFiles/tst_valo_glass.dir/unit/tst_ValoGlass.cpp.o
+[86/150] Building CXX object tests/CMakeFiles/tst_valo_decorations.dir/unit/tst_ValoDecorations.cpp.o
+[87/150] Building CXX object tests/CMakeFiles/tst_surface_props_alignment_v2.dir/unit/tst_SurfacePropsAlignmentV2.cpp.o
+[88/150] Building CXX object tests/CMakeFiles/tst_sdf_geometry_math_v2.dir/unit/tst_SdfGeometryMathV2.cpp.o
+[89/150] Building CXX object tests/CMakeFiles/tst_valo_glass_shader_v2.dir/unit/tst_ValoGlassShaderV2.cpp.o
+[90/150] Building CXX object tests/CMakeFiles/tst_valo_glass_rendering_v2.dir/unit/tst_ValoGlassRenderingV2.cpp.o
+[91/150] Building CXX object tests/CMakeFiles/tst_valo_backdrop_blur_v2.dir/unit/tst_ValoBackdropBlurV2.cpp.o
+[92/150] Building CXX object tests/CMakeFiles/tst_valo_refraction_optics_v2.dir/unit/tst_ValoRefractionOpticsV2.cpp.o
+[93/150] Building CXX object tests/CMakeFiles/tst_valo_dock_v2.dir/unit/tst_ValoDockV2.cpp.o
+[94/150] Building CXX object tests/CMakeFiles/tst_valo_shell_v2.dir/unit/tst_ValoShellV2.cpp.o
+[95/150] Building CXX object tests/CMakeFiles/tst_xdg_shell_decoration.dir/integration/tst_XdgShellDecoration.cpp.o
+[96/150] Building CXX object tests/CMakeFiles/tst_wayland_client_lifecycle_e2e.dir/e2e/tst_WaylandClientLifecycleE2E.cpp.o
+[97/150] Linking CXX executable systalia_glass_engine
+[98/150] Linking CXX executable valo_gpu_benchmark
+[99/150] Linking CXX executable valo_dock_v2_artifacts
+[100/150] Linking CXX executable valo_shell_v2_artifacts
+[101/150] Linking CXX executable valo_stage_05_1_artifacts
+[102/150] Building CXX object tests/CMakeFiles/tst_shell_state_regression.dir/integration/tst_ShellStateRegression.cpp.o
+[103/150] Building CXX object tests/CMakeFiles/tst_client_surface_visibility.dir/integration/tst_ClientSurfaceVisibility.cpp.o
+[104/150] Linking CXX executable raw_render_diagnostics
+[105/150] Linking CXX executable tests/tst_systalia_engine
+[106/150] Building CXX object tests/CMakeFiles/tst_valo_optical_contract_v2.dir/unit/tst_ValoOpticalContractV2.cpp.o
+[107/150] Linking CXX executable tests/tst_item_geometry
+[108/150] Linking CXX executable tests/tst_backdrop_binding
+[109/150] Linking CXX executable tests/tst_wayland_socket
+[110/150] Linking CXX executable tests/tst_xdg_shell
+[111/150] Linking CXX executable tests/tst_xdg_decorations
+[112/150] Linking CXX executable tests/tst_unified_composition
+[113/150] Linking CXX executable tests/tst_systalia_protocol
+[114/150] Linking CXX executable tests/tst_telemetry
+[115/150] Linking CXX executable tests/tst_process_launcher
+[116/150] Linking CXX executable tests/tst_app_registry
+[117/150] Linking CXX executable tests/tst_notification_server
+[118/150] Linking CXX executable tests/tst_sdf_geometry_math
+[119/150] Linking CXX executable tests/tst_memory_alignment
+[120/150] Linking CXX executable tests/tst_linux_parsers
+[121/150] Linking CXX executable tests/tst_task_switcher
+[122/150] Linking CXX executable tests/tst_resource_leak_audit
+[123/150] Linking CXX executable tests/tst_workspace_manager
+[124/150] Linking CXX executable tests/tst_liquid_tiling
+[125/150] Linking CXX executable tests/tst_output_manager
+[126/150] Linking CXX executable tests/tst_phase4_audit
+[127/150] Linking CXX executable tests/tst_input_hardware_backend
+[128/150] Linking CXX executable tests/tst_logind_integration
+[129/150] Linking CXX executable tests/tst_xwayland_integration
+[130/150] Linking CXX executable tests/tst_valo_theme
+[131/150] Linking CXX executable tests/tst_valo_glass
+[132/150] Linking CXX executable tests/tst_valo_decorations
+[133/150] Linking CXX executable tests/tst_sdf_geometry_math_v2
+[134/150] Linking CXX executable tests/tst_surface_props_alignment_v2
+[135/150] Linking CXX executable tests/tst_valo_organic_transform_v2
+[136/150] Linking CXX executable tests/tst_valo_glass_shader_v2
+[137/150] Linking CXX executable tests/tst_valo_glass_rendering_v2
+[138/150] Linking CXX executable tests/tst_valo_backdrop_blur_v2
+[139/150] Linking CXX executable tests/tst_valo_refraction_optics_v2
+[140/150] Linking CXX executable tests/tst_valo_gpu_blur_pipeline_v2
+[141/150] Linking CXX executable tests/tst_valo_dock_v2
+[142/150] Linking CXX executable tests/tst_valo_shell_v2
+[143/150] Linking CXX executable tests/tst_protocol_roundtrip
+[144/150] Linking CXX executable tests/tst_app_model_filtering
+[145/150] Linking CXX executable tests/tst_xdg_shell_decoration
+[146/150] Linking CXX executable tests/tst_wayland_client_lifecycle_e2e
+[147/150] Linking CXX executable tests/tst_shell_state_regression
+[148/150] Linking CXX executable tests/tst_valo_optical_contract_v2
+[149/150] Linking CXX executable tests/tst_client_surface_visibility

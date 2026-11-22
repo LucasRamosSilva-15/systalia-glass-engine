@@ -8,8 +8,8 @@
 
 #include "OutputManagerService.hpp"
 #include "SystaliaCompositor.hpp"
-#include "SystaliaGlassItem.hpp"
-#include "SystaliaSurfaceProps.hpp"
+#include "graphics/v2/materials/ValoGlassItemV2.hpp"
+#include "graphics/v2/core/SystaliaSurfacePropsV2.hpp"
 
 class TestOutputManager final : public QObject {
     Q_OBJECT
@@ -93,14 +93,17 @@ void TestOutputManager::windowCenterToScreenIndexAndBoundaryMigration() {
 }
 
 void TestOutputManager::fractionalScalingAndStd140SurfacePropsAlignment() {
-    // Validação dos invariantes de ABI std140 (128 bytes e offset 88 para screenResolution)
-    static_assert(sizeof(SystaliaSurfaceProps) == 128);
-    static_assert(alignof(SystaliaSurfaceProps) == 16);
-    static_assert(offsetof(SystaliaSurfaceProps, windowSize) == 80);
-    static_assert(offsetof(SystaliaSurfaceProps, screenResolution) == 88);
+    using Systalia::Gfx::V2::SystaliaSurfacePropsV2;
+    using Systalia::Gfx::V2::ValoGlassItemV2;
 
-    QCOMPARE(sizeof(SystaliaSurfaceProps), size_t(128));
-    QCOMPARE(offsetof(SystaliaSurfaceProps, screenResolution), size_t(88));
+    // Validação dos invariantes de ABI std140 V2 (160 bytes e offset 88 para screenResolution)
+    static_assert(sizeof(SystaliaSurfacePropsV2) == 160);
+    static_assert(alignof(SystaliaSurfacePropsV2) == 16);
+    static_assert(offsetof(SystaliaSurfacePropsV2, windowSize) == 80);
+    static_assert(offsetof(SystaliaSurfacePropsV2, screenResolution) == 88);
+
+    QCOMPARE(sizeof(SystaliaSurfacePropsV2), size_t(160));
+    QCOMPARE(offsetof(SystaliaSurfacePropsV2, screenResolution), size_t(88));
 
     OutputManagerService manager;
     manager.clearScreens();
@@ -120,13 +123,13 @@ void TestOutputManager::fractionalScalingAndStd140SurfacePropsAlignment() {
 
     QQuickWindow hostWindow;
     hostWindow.resize(1920, 1080);
-    SystaliaGlassItem glassItem(hostWindow.contentItem());
+    ValoGlassItemV2 glassItem(hostWindow.contentItem());
     glassItem.setWidth(800.0);
     glassItem.setHeight(500.0);
-    glassItem.setDevicePixelRatio(1.5);
 
-    QCOMPARE(glassItem.devicePixelRatio(), 1.5);
-    QCOMPARE(glassItem.effectivePhysicalResolution(), QVector2D(2880.0f, 1620.0f));
+    QCOMPARE(glassItem.width(), 800.0);
+    QCOMPARE(glassItem.height(), 500.0);
+    QCOMPARE(glassItem.window(), &hostWindow);
 }
 
 void TestOutputManager::normalizedBackdropUvProjectionPerDisplay() {

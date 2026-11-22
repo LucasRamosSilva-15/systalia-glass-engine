@@ -6,7 +6,7 @@
 #include <QJsonObject>
 #include <QFile>
 
-#include "tokens/ValoTokens.hpp"
+#include "theme/tokens/ValoTokens.hpp"
 
 class TestValoTheme final : public QObject {
     Q_OBJECT
@@ -220,6 +220,8 @@ void TestValoTheme::qmlSystaliaThemeBackwardsCompatibility() {
         "    readonly property color ocean: SystaliaTheme.ocean\n"
         "    readonly property color textMuted: SystaliaTheme.textMuted\n"
         "    readonly property string family: SystaliaTheme.fontFamily\n"
+        "    readonly property color valoOcean: ValoTheme.primitiveNavy950\n"
+        "    readonly property string valoFamily: ValoTheme.fontFamily\n"
         "    readonly property bool hasValo: SystaliaTheme.valo !== undefined\n"
         "}\n",
         QUrl()
@@ -231,6 +233,8 @@ void TestValoTheme::qmlSystaliaThemeBackwardsCompatibility() {
     QCOMPARE(obj->property("ocean").value<QColor>(), QColor("#061426"));
     QCOMPARE(obj->property("textMuted").value<QColor>(), QColor("#9CBAD3"));
     QCOMPARE(obj->property("family").toString(), QStringLiteral("Inter"));
+    QCOMPARE(obj->property("ocean").value<QColor>(), obj->property("valoOcean").value<QColor>());
+    QCOMPARE(obj->property("family").toString(), obj->property("valoFamily").toString());
     QVERIFY(obj->property("hasValo").toBool());
 }
 

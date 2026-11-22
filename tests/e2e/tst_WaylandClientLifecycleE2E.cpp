@@ -13,7 +13,8 @@
 #include <memory>
 
 #include "SystaliaCompositor.hpp"
-#include "SystaliaGlassItem.hpp"
+
+void qml_register_types_Systalia_Engine();
 
 class LifecycleClientWindow final : public QRasterWindow {
 protected:
@@ -53,7 +54,7 @@ private:
 void TestWaylandClientLifecycleE2E::initTestCase() {
     QVERIFY(m_runtime.isValid());
     qputenv("XDG_RUNTIME_DIR", m_runtime.path().toUtf8());
-    qmlRegisterType<SystaliaGlassItem>("Systalia.Engine", 1, 0, "SystaliaGlassItem");
+    qml_register_types_Systalia_Engine();
 }
 
 void TestWaylandClientLifecycleE2E::init() {

@@ -1,0 +1,104 @@
+Test project /home/lucasramos/Documentos/systalia-glass-engine/build
+      Start 47: tst_valo_optical_contract_v2
+      Start  9: tst_xdg_resize
+ 1/47 Test  #9: tst_xdg_resize .....................   Passed    8.23 sec
+      Start 45: tst_shell_state_regression
+ 2/47 Test #45: tst_shell_state_regression .........   Passed    5.69 sec
+      Start 46: tst_client_surface_visibility
+ 3/47 Test #46: tst_client_surface_visibility ......   Passed    3.46 sec
+      Start 39: tst_valo_dock_v2
+ 4/47 Test #39: tst_valo_dock_v2 ...................   Passed    1.50 sec
+      Start 20: tst_resource_leak_audit
+ 5/47 Test #47: tst_valo_optical_contract_v2 .......   Passed   20.75 sec
+      Start 40: tst_valo_shell_v2
+ 6/47 Test #40: tst_valo_shell_v2 ..................   Passed    0.44 sec
+      Start 35: tst_valo_glass_rendering_v2
+ 7/47 Test #20: tst_resource_leak_audit ............   Passed    2.82 sec
+      Start 12: tst_telemetry
+ 8/47 Test #35: tst_valo_glass_rendering_v2 ........   Passed    0.65 sec
+      Start 21: tst_workspace_manager
+ 9/47 Test #21: tst_workspace_manager ..............   Passed    0.76 sec
+      Start 44: tst_wayland_client_lifecycle_e2e
+10/47 Test #12: tst_telemetry ......................   Passed    1.05 sec
+      Start 42: tst_xdg_shell_decoration
+11/47 Test #42: tst_xdg_shell_decoration ...........   Passed    0.51 sec
+      Start 13: tst_process_launcher
+12/47 Test #44: tst_wayland_client_lifecycle_e2e ...   Passed    0.68 sec
+      Start 30: tst_valo_decorations
+13/47 Test #30: tst_valo_decorations ...............   Passed    0.30 sec
+      Start 38: tst_valo_gpu_blur_pipeline_v2
+14/47 Test #13: tst_process_launcher ...............   Passed    0.48 sec
+      Start 36: tst_valo_backdrop_blur_v2
+15/47 Test #38: tst_valo_gpu_blur_pipeline_v2 ......   Passed    0.16 sec
+      Start 29: tst_valo_glass
+16/47 Test #36: tst_valo_backdrop_blur_v2 ..........   Passed    0.16 sec
+      Start 10: tst_systalia_protocol
+17/47 Test #29: tst_valo_glass .....................   Passed    0.20 sec
+      Start 15: tst_notification_server
+18/47 Test #10: tst_systalia_protocol ..............   Passed    0.10 sec
+      Start 28: tst_valo_theme
+19/47 Test #15: tst_notification_server ............   Passed    0.09 sec
+      Start 37: tst_valo_refraction_optics_v2
+20/47 Test #28: tst_valo_theme .....................   Passed    0.05 sec
+      Start 31: tst_sdf_geometry_math_v2
+21/47 Test #37: tst_valo_refraction_optics_v2 ......   Passed    0.04 sec
+      Start 27: tst_xwayland_integration
+22/47 Test #31: tst_sdf_geometry_math_v2 ...........   Passed    0.04 sec
+      Start 22: tst_liquid_tiling
+23/47 Test #27: tst_xwayland_integration ...........   Passed    0.04 sec
+      Start 34: tst_valo_glass_shader_v2
+24/47 Test #34: tst_valo_glass_shader_v2 ...........   Passed    0.03 sec
+      Start 32: tst_surface_props_alignment_v2
+25/47 Test #22: tst_liquid_tiling ..................   Passed    0.05 sec
+      Start 26: tst_logind_integration
+26/47 Test #32: tst_surface_props_alignment_v2 .....   Passed    0.03 sec
+      Start 33: tst_valo_organic_transform_v2
+27/47 Test #26: tst_logind_integration .............   Passed    0.03 sec
+      Start  8: tst_xdg_decorations
+28/47 Test #33: tst_valo_organic_transform_v2 ......   Passed    0.03 sec
+      Start 25: tst_input_hardware_backend
+29/47 Test  #8: tst_xdg_decorations ................   Passed    0.05 sec
+      Start 24: tst_phase4_audit
+30/47 Test #25: tst_input_hardware_backend .........   Passed    0.04 sec
+      Start 23: tst_output_manager
+31/47 Test #24: tst_phase4_audit ...................   Passed    0.04 sec
+      Start 41: tst_protocol_roundtrip
+32/47 Test #23: tst_output_manager .................   Passed    0.04 sec
+      Start  7: tst_xdg_shell
+33/47 Test #41: tst_protocol_roundtrip .............   Passed    0.04 sec
+      Start  6: tst_wayland_socket
+34/47 Test  #7: tst_xdg_shell ......................   Passed    0.04 sec
+      Start 19: tst_task_switcher
+35/47 Test #19: tst_task_switcher ..................   Passed    0.03 sec
+      Start  4: tst_backdrop_binding
+36/47 Test  #6: tst_wayland_socket .................   Passed    0.04 sec
+      Start  2: tst_item_geometry
+37/47 Test  #4: tst_backdrop_binding ...............   Passed    0.03 sec
+38/47 Test  #2: tst_item_geometry ..................   Passed    0.03 sec
+      Start  1: tst_systalia_engine
+      Start 43: tst_app_model_filtering
+39/47 Test #43: tst_app_model_filtering ............   Passed    0.03 sec
+      Start 14: tst_app_registry
+40/47 Test  #1: tst_systalia_engine ................   Passed    0.03 sec
+      Start 18: tst_linux_parsers
+41/47 Test #18: tst_linux_parsers ..................   Passed    0.02 sec
+      Start 17: tst_memory_alignment
+42/47 Test #14: tst_app_registry ...................   Passed    0.03 sec
+      Start 16: tst_sdf_geometry_math
+43/47 Test #17: tst_memory_alignment ...............   Passed    0.02 sec
+44/47 Test #16: tst_sdf_geometry_math ..............   Passed    0.02 sec
+      Start 11: tst_unified_composition
+      Start  3: tst_sdf_geometry
+45/47 Test  #3: tst_sdf_geometry ...................   Passed    0.02 sec
+      Start  5: tst_optical_physics
+46/47 Test #11: tst_unified_composition ............   Passed    0.02 sec
+47/47 Test  #5: tst_optical_physics ................   Passed    0.02 sec
+
+100% tests passed, 0 tests failed out of 47
+
+Label Time Summary:
+e2e            =   0.68 sec*proc (1 test)
+integration    =  19.82 sec*proc (14 tests)
+unit           =  28.44 sec*proc (32 tests)
+
+Total Test time (real) =  24.49 sec

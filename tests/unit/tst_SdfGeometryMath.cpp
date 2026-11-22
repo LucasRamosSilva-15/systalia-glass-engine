@@ -87,12 +87,13 @@ void TestSdfGeometryMath::distantExteriorHasPositiveDistance() {
 }
 
 void TestSdfGeometryMath::shaderDeclaresDerivativeAndDiscardContract() {
-    QFile shader(QStringLiteral(SGE_SOURCE_DIR "/shaders/valo_optical.frag"));
+    QFile shader(QStringLiteral(SGE_SOURCE_DIR "/shaders/v2/valo_optical_v2.frag"));
     QVERIFY2(shader.open(QIODevice::ReadOnly | QIODevice::Text),
              qPrintable(shader.errorString()));
     const QByteArray source = shader.readAll();
     QVERIFY(source.contains("fwidth(dist)"));
-    QVERIFY(source.contains("if (alphaMask <= 0.001) discard;"));
+    QVERIFY(source.contains("if (coverage <= 0.0001)"));
+    QVERIFY(source.contains("discard;"));
 }
 
 void TestSdfGeometryMath::alphaCoverage_data() {

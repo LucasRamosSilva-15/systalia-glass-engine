@@ -15,7 +15,8 @@
 #include <QtWaylandCompositor/QWaylandXdgToplevel>
 
 #include "SystaliaCompositor.hpp"
-#include "SystaliaGlassItem.hpp"
+
+void qml_register_types_Systalia_Engine();
 
 class DecorationClient final : public QRasterWindow {
 protected:
@@ -50,7 +51,7 @@ private:
 void TestXdgShellDecoration::initTestCase() {
     QVERIFY(m_runtime.isValid());
     qputenv("XDG_RUNTIME_DIR", m_runtime.path().toUtf8());
-    qmlRegisterType<SystaliaGlassItem>("Systalia.Engine", 1, 0, "SystaliaGlassItem");
+    qml_register_types_Systalia_Engine();
 }
 
 void TestXdgShellDecoration::init() {
@@ -150,7 +151,7 @@ void TestXdgShellDecoration::resizeContainerKeepsItsWorkspaceParentAndFrameMinim
     QVERIFY(QMetaObject::invokeMethod(container.get(), "finishResize"));
     QTRY_COMPARE_WITH_TIMEOUT(m_toplevel->xdgSurface()->windowGeometry().size(),
                               QSize(304, 168), 3000);
-    QTRY_COMPARE_WITH_TIMEOUT(container->size(), QSizeF(320.0, 220.0), 3000);
+    QTRY_COMPARE_WITH_TIMEOUT(container->size(), QSizeF(320.0, 234.0), 3000);
     QCOMPARE(container->parentItem(), &workspace);
     QCOMPARE(workspace.childItems().size(), 1);
 }

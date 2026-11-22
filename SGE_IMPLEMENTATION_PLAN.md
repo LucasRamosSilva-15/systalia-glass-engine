@@ -1,228 +1,174 @@
-# Plano Técnico de Implementação — Redesign Systalia — VALO
+# Plano Técnico de Implementação — SYSTALIA Alpha 0.1 (Etapa 03)
 
-**Documento alinhado a:** `SGE_MASTER_BLUEPRINT.md` v3.0
-**Projeto Figma:** `SYSTALIA — VALO | Desktop Concept`
-**Repositório:** `LucasRamosSilva-15/systalia-glass-engine`
-**Estado:** Frame principal refinado em QML em 27 de outubro de 2026; build e captura visual em 1662 × 975 concluídos, validação no host gráfico alvo pendente.
+**Alinhado a:** [`SGE_MASTER_BLUEPRINT.md`](SGE_MASTER_BLUEPRINT.md) v4.0  
+**Pacote de contexto:** [`Context/README.md`](Context/README.md)  
+**Repositório:** `LucasRamosSilva-15/systalia-glass-engine`  
+**Branch e commit de referência:** `valo-graphics-2.0` @ `c8e4912`  
+**Objetivo:** orientar a implementação incremental, os testes em sessão real e a homologação da **SYSTALIA Alpha 0.1**, substituindo o antigo plano focado exclusivamente no redesign Figma de outubro de 2026.
 
-## 1. Objetivo
+> **Regra de estado:** nenhuma atividade abaixo pode ser marcada como **homologada** apenas com testes `offscreen`, capturas sintéticas ou leitura de código. Cada atividade exige evidências reproduzíveis no ambiente alvo.
 
-Traduzir a reformulação visual completa do Systalia Desktop Environment para a shell QtQuick e o compositor existentes. A implementação deverá seguir o Figma como fonte de verdade para aparência e interação, preservando os contratos de GPU, Wayland, input e serviços definidos no `SGE_MASTER_BLUEPRINT.md`.
+---
 
-As medidas e estilos observados estão registados na seção 3 como evidência do frame estático; ainda não são tokens de produção aprovados. Onde o Figma não mostra estados, componentes ou comportamento, o plano marca a lacuna em vez de inferir uma solução.
+## 1. Visão geral da sequência técnica (03.1 → 03.7)
 
-## 2. Estado técnico de partida
+```mermaid
+flowchart LR
+    A["03.1 / 03.1.1<br/>Auditoria e Blueprint v4.0"] --> B["03.2<br/>Sessão Fedora Independente"]
+    B --> C["03.3<br/>Compositor, Apps e Workspaces"]
+    C --> D["03.4<br/>Shell, VALO V2 e Acessibilidade"]
+    C --> E["03.5<br/>Matriz Qt Quick, Widgets e GTK"]
+    D --> F["03.6<br/>Benchmarks e Hardware"]
+    E --> F
+    F --> G["03.7<br/>Testes com Usuários e Gate Alpha 0.1"]
+```
 
-O branch já contém:
+---
 
-- Item de vidro óptico, shader GLSL 450, recorte Squircle G2 e `SystaliaSurfaceProps` de 128 bytes.
-- Compositor XDG, SSD, resize, protocolo `z_systalia_surface_v1`, foco MRU e Alt+Tab.
-- `WaylandWindowContainer.qml` com apresentação do cliente e controlos da janela.
-- TopBar, dock, Flow Launcher, control center, host D-Bus de notificações e task switcher.
-- Telemetria, catálogo de aplicações, launcher de processos e controlos de sistema.
-- Wallpaper Carina Nebula 3840×2160 na raiz, com `PreserveAspectCrop` e captura para refração.
-- 23 entradas declaradas no CTest, entre unitárias, integração e E2E.
+## 2. Detalhamento das atividades (03.1 a 03.7)
 
-O estado de código não prova homologação gráfica. Logs de execução reportaram ausência de `EGL_WL_bind_wayland_display` e falha de identificação de dispositivo Mesa. A visibilidade de aplicações aceleradas precisa ser validada em uma sessão representativa. O nome D-Bus de notificações também pode pertencer a outro daemon no barramento do desktop hospedeiro.
+### Atividade 03.1 — Auditoria e inventário técnico
+- **Dependências:** Conclusão das Etapas 01 e 02 (`Context/`).
+- **Requisitos envolvidos:** `RNF-07` (reprodutibilidade), governança `02.6`.
+- **O que já existe:**
+  - Auditoria inicial 03.1 registrada em [`Context/ETAPA_03_ESTADO_E_PROXIMAS_ACOES.md`](Context/ETAPA_03_ESTADO_E_PROXIMAS_ACOES.md).
+  - Auditoria detalhada do código real e modernização documental para v4.0 concluídas nesta Etapa **03.1.1** (`SGE_MASTER_BLUEPRINT.md` e este plano).
+  - Baseline técnico herdado da Consolidação `06.6E`: árvore organizada (`src/`, `tests/`, `tools/`, `cmake/`, `shaders/v2/`, `assets/figma/`), 48 alvos CTest e 25 `.qsb`.
+- **O que falta:** manter inventário sincronizado caso ocorram mudanças antes da 03.2.
+- **Critérios de aceitação:** documentação v4.0 coerente com `Context/` e com o código real no HEAD, sem referências obsoletas ao renderer V1 ou caminhos antigos.
+- **Testes necessários:** verificação documental de consistência de símbolos, caminhos e contratos contra o repositório.
+- **Riscos:** divergência se alterações de código ocorrerem sem atualização de `docs/`/`Context/`.
+- **Evidências esperadas:** `SGE_MASTER_BLUEPRINT.md` v4.0 e `SGE_IMPLEMENTATION_PLAN.md` atualizados e commitados.
+- **Condição de conclusão:** **Concluída com a entrega da Etapa 03.1.1.**
 
-Após a auditoria, a janela principal passou a usar o wallpaper VALO local descrito na seção 3.4; a imagem Carina permanece no repositório como recurso legado.
+---
 
-## 3. Inventário visual obrigatório antes de implementar
+### Atividade 03.2 — Sessão Fedora independente
+- **Dependências:** 03.1 / 03.1.1.
+- **Requisitos envolvidos:** `RF-01` (P0), `RNF-01`, `RNF-05`, `RNF-07`, decisão `02.2-B` (Fedora como referência).
+- **O que já existe:**
+  - `InputDeviceManager::evaluatePlatformEnvironment` e `configureProcessPlatformEnvironment` (`eglfs_kms` + `vulkan`).
+  - `LogindSessionService` (`org.freedesktop.login1.Session`: `TakeControl`, `TakeDevice`, `PauseDevice`/`ResumeDevice`) e conexão `gpuSubmissionSuspendedChanged` em `src/app/main.cpp`.
+  - `data/systalia-session`, `data/systalia.desktop`, `config/eglfs_kms.json` e `cmake/SgeInstall.cmake`.
+  - Testes unitários/mock `tst_input_hardware_backend` e `tst_logind_integration`.
+- **O que falta implementar / homologar:**
+  - Definir edição e versão oficial do **Fedora** de referência para a Alpha 0.1.
+  - Resolver risco de caminho relativo `"config/eglfs_kms.json"` em `src/app/main.cpp` (resolução em diretório instalado/XDG além do CWD).
+  - Validar caminhos de instalação em `data/systalia-session` e `data/systalia.desktop` (`/usr/bin` vs prefixos configuráveis / empacotamento RPM).
+  - Testar login real via SDDM/TTY, aquisição de DRM/KMS e `libinput`, troca de VT (`Ctrl+Alt+F*` com pausa/retomada de GPU), encerramento limpo e recuperação de falha.
+- **Critérios de aceitação:** usuário inicia sessão Fedora autônoma pelo gerenciador de login ou TTY, interage com teclado/mouse físicos, alterna VT e retorna sem travamento de GPU ou perda de entrada, e encerra a sessão limpamente.
+- **Testes necessários:** bateria CTest existente + roteiro manual documentado em hardware/VM Fedora real (fora de modo aninhado).
+- **Riscos:** incompatibilidades de driver DRM/Vulkan/EGLFS no Fedora alvo; permissões de dispositivo sem `logind` ativo; conflito com `config/eglfs_kms.json` ausente no diretório de trabalho.
+- **Evidências esperadas:** especificação da edição Fedora + spec/guia de instalação reproduzível + logs de `logind`/DRM/input de sessão independente real.
+- **Condição de conclusão:** sessão autônoma inicializa, opera entrada/saída e troca de VT com sucesso em ambiente Fedora real documentado.
 
-Para cada frame do Figma que faça parte do redesign, registrar:
+---
 
-| Item | O que levantar |
-|---|---|
-| Tela e contexto | Nome do frame, resolução, escala e estado da aplicação |
-| Layout | Ancoragens, dimensões, alinhamento, margens e comportamento responsivo |
-| Tokens | Cores, tipografia, pesos, espaçamentos, raios, bordas, opacidade, sombras e materiais |
-| Componentes | Variações, estados normal/hover/focus/pressed/disabled e conteúdo |
-| Interação | Atalhos, abertura/fechamento, navegação, foco, drag, resize e transições |
-| Assets | Ícones, imagens, formatos, nomes e licenças/origem quando aplicável |
-| Acessibilidade | Contraste, navegação por teclado, foco visível e escalonamento |
+### Atividade 03.3 — Compositor, aplicações e workspaces
+- **Dependências:** 03.2 (sessão independente operacional).
+- **Requisitos envolvidos:** `RF-02`, `RF-03`, `RF-04`, `RF-09` (P0), `RNF-01`, `RNF-06`.
+- **O que já existe:**
+  - `SystaliaCompositor`, `WindowStackModel`, `OutputManagerService`, `SystaliaSurfaceExtension` (`z_systalia_surface_v1`).
+  - `WaylandWindowContainer.qml` com `ShellSurfaceItem` direto, SSD `ValoMaterialSurfaceV2`, resize 8 bordas, minimizar/maximizar/fechar.
+  - `WorkspaceManagerService` (4 workspaces, atalhos `Super+*`, culling) e `LiquidTilingService` (snap magnético e `TileSplitter`).
+- **O que falta implementar / homologar:**
+  - Exercitar ciclos longos de abertura, movimentação, resize, maximização, minimização e fechamento com aplicativos reais acelerados por GPU em sessão independente (não apenas `alacritty` em sessão aninhada).
+  - Completar funcionalidades mínimas de **workspaces por atividade** aprovadas na Decisão 07 (ex.: nomeação/identificação por atividade e movimentação previsível de janelas sem automações intrusivas).
+  - Validar popups, subsurfaces, menus contextuais, diálogos modais e clipboard entre múltiplos clientes Wayland na sessão real.
+  - Verificar comportamento com mudança de escala/resolução e documentar limites de multi-monitor se aplicável.
+- **Critérios de aceitação:** zero crashes ou travamentos críticos em sessão prolongada de desenvolvimento; foco, empilhamento MRU, teclado, mouse, popups, clipboard e workspaces por atividade funcionando de forma previsível.
+- **Testes necessários:** CTest (`tst_xdg_*`, `tst_systalia_protocol`, `tst_workspace_manager`, `tst_liquid_tiling`, `tst_wayland_client_lifecycle_e2e`, `tst_shell_state_regression`, `tst_client_surface_visibility`) + testes manuais prolongados na sessão Fedora.
+- **Riscos:** vazamento de buffers/texturas em clientes reais, perda de foco em popups/diálogos, dessincronização de resize sob carga.
+- **Evidências esperadas:** relatório de sessão prolongada com lista de aplicativos executados, logs sem erros fatais e cobertura de todos os fluxos de janela/workspace.
+- **Condição de conclusão:** compositor e workspaces estáveis e aprovados nos fluxos de uso contínuo em sessão Fedora.
 
-O inventário deve cobrir pelo menos desktop/wallpaper, TopBar, dock, launcher, painel de controlos, notificações, task switcher, moldura SSD, janela Systalia Files e estados com clientes externos. Se um componente não aparecer no Figma, marcar como decisão aberta em vez de lhe atribuir um visual presumido.
+---
 
-### 3.1 Auditoria realizada — `Page 1`
+### Atividade 03.4 — Shell, VALO V2 e acessibilidade
+- **Dependências:** 03.3 (ou em paralelo após estabilização inicial do compositor).
+- **Requisitos envolvidos:** `RF-05`, `RF-06`, `RF-07`, `RF-08`, `RF-09` (P0), `RF-10` (P1 opcional), `RNF-02`, `RNF-04`.
+- **O que já existe:**
+  - TopBar V2, Dock V2, Flow Launcher, NotificationHost D-Bus, TaskSwitcher, Control Center V2, Material Window.
+  - `ValoOpticalContext` (`highContrastEnabled`, `prefersReducedMotion`, `ambientLuminance`, `adaptiveOpacityOffset`, `energySavingFactor`).
+  - Perfis `Performance` (0), `Balanced` (1), `Quality` (2).
+  - 4 primitivas em `src/controls/`.
+- **O que falta implementar / homologar:**
+  - Implementar **perfis básicos de acessibilidade** reais, persistentes localmente (`RNF-05`), com preservação de ajustes individuais ao trocar perfil (Decisão 03).
+  - Garantir **navegação 100% por teclado** e **estados de foco visíveis** em TopBar, Dock, Launcher, Task Switcher, Control Center e molduras de janela.
+  - Consolidar **VALO Controls internos** (`RF-08`, Decisão 16) para eliminar controles Qt sem identidade/estados acessíveis dentro da própria shell.
+  - Validar degradação do VALO Graphics V2 no perfil `Performance` e em `prefersReducedMotion` / `highContrastEnabled`, garantindo que a legibilidade nunca seja comprometida.
+  - Avaliar inclusão opcional de **Quick Actions** (`RF-10`) abrindo terminal homologado com comando preparado **sem autoexecução** (ou copiar comando).
+  - Validar comportamento responsivo da shell fora do canvas de referência `1662 × 975`.
+- **Critérios de aceitação:** todas as funções essenciais da shell operam apenas com teclado e com mouse; alto contraste, movimento reduzido e perfis gráficos alternam sem reiniciar sessão nem perder preferências; contraste e legibilidade mantidos em resoluções variadas.
+- **Testes necessários:** CTest (`tst_valo_*_v2`, `tst_valo_shell_v2`, `tst_valo_decorations`, `tst_valo_theme`) + checklist manual de acessibilidade (teclado, foco, contraste, escala, movimento reduzido).
+- **Riscos:** regressões visuais em resoluções menores que 1662 × 975; conflito de `NotificationServer` D-Bus; atalhos globais capturados incorretamente.
+- **Evidências esperadas:** matriz de estados de acessibilidade e controles internos + capturas reais na sessão Fedora nos 3 perfis gráficos e em alto contraste.
+- **Condição de conclusão:** perfis básicos de acessibilidade, keyboard-only e consistência VALO da shell implementados e validados.
 
-Fonte: [SYSTALIA — VALO | Desktop Concept](https://www.figma.com/design/kax6aiYKgM2Fk7dllyZRRF/SYSTALIA-%E2%80%94-VALO-%7C-Desktop-Concept), página `Page 1`, frame `SYSTALIA / VALO — Main Desktop` (`2:2`), **1662 × 975 px**. As posições são relativas ao frame. O arquivo expõe uma única composição desktop; não foram encontrados frames separados de estados ou protótipo de interação.
+---
 
-| Nó Figma | Posição/tamanho | Conteúdo e tratamento visível |
-|---|---:|---|
-| `2:3` Vibrant / Luminous ocean atmosphere | (0, 0), 1662 × 975 | Fundo vetorial azul profundo, halos cianos, raios volumétricos e partículas bioluminescentes; não usa a foto Carina. |
-| `2:81` Top System Bar | (8, 4), 1646 × 45, raio 22 | Cápsula translúcida `rgba(7,22,40,0.86)`, borda `rgba(116,213,238,0.24)` e sombra ciano. Marca SYSTALIA, `SDE-KWIN | VALO`, CPU 15%, RAM 4.8GB, FPS 100, `MON 19 OCT > 15:30:22` e seis glifos. |
-| `2:88` Systalia Files — editable window | (113, 193), 701 × 534, raio 20 | Vidro com blur de 18 px. Badge `ABYSSUS VES`; navegação lateral com Home selecionado; breadcrumb, pesquisa, alternador de vista e grade de seis itens. |
-| `2:134` Systalia Control Center — editable window | (864, 193), 700 × 534, raio 20 | Badge `VALO & SOAR Engine`; navegação General/Status/Control Center/Software/Drivers/About; painel `Live Material Controls` com toggle ligado e seis sliders. |
-| `2:194` Floating Dock / organic glass | (555, 817), 555 × 125, raio 47 | Cápsula com cinco slots 78 × 78: pasta, alto-falante, terminal, código e estrela magenta. |
+### Atividade 03.5 — Homologação de Qt Quick, Qt Widgets e GTK
+- **Dependências:** 03.2 e 03.3.
+- **Requisitos envolvidos:** `RF-11` (P0), `RF-12` (P1 — fora do gate obrigatório da Alpha 0.1), `RNF-06`, políticas `02.2-D` e `02.2-E`.
+- **O que já existe:**
+  - Infraestrutura XDG Shell, SSD, Viewporter e `XWaylandManager` experimental.
+  - Evidências anteriores de execução aninhada de `alacritty` (Wayland) e validação parcial em `06.5` (`gtk3-demo`, `kdialog`, `alacritty`).
+- **O que falta implementar / homologar:**
+  - Fechar a **matriz oficial de aplicativos por toolkit** para a Alpha 0.1 cobrindo o núcleo obrigatório:
+    - **Qt Quick (Qt 6)** sob Wayland nativo;
+    - **Qt Widgets (Qt 6)** sob Wayland nativo;
+    - **GTK (GTK 3 e/ou GTK 4)** sob Wayland nativo.
+  - Executar, para cada aplicativo do núcleo, todos os cenários aplicáveis: inicialização/encerramento, renderização/buffers, teclado/mouse, foco/empilhamento, mover/resize/maximizar/restaurar, menus/popups/diálogos, clipboard interno e entre clientes, workspaces e ciclo de vida.
+  - Registrar separadamente testes exploratórios XWayland (`RF-12`) e documentar limitações não críticas / clientes não suportados (`02.2-E`), sem prometer XWayland universal nem tema GTK/Qt Widgets externo na Alpha.
+- **Critérios de aceitação:** 100% dos fluxos críticos do núcleo obrigatório por toolkit (Qt Quick, Qt Widgets, GTK em Wayland nativo) aprovados sem defeitos bloqueadores; limitações secundárias documentadas em lista pública de problemas conhecidos.
+- **Testes necessários:** suíte de integração/E2E + matriz executada manualmente na sessão Fedora com registro por versão de aplicativo, toolkit e driver.
+- **Riscos:** falhas de popups `xdg_popup` em GTK/Qt Widgets, divergências de clipboard entre toolkits, CSD vs. SSD em aplicativos GTK.
+- **Evidências esperadas:** tabela preenchida da matriz de compatibilidade (app, versão, toolkit, protocolo, driver, resultado por cenário, bugs abertos).
+- **Condição de conclusão:** núcleo obrigatório dos 3 toolkits homologado em Wayland nativo na sessão Fedora.
 
-**Estilos observados:** Inter; marca da TopBar 19 px, telemetry 17 px, títulos das janelas 20–21 px, navegação 16 px e labels dos sliders 16 px. Texto usa `#c6e5f8`, `#9cbad3`, `#d5e2ee` e `#f4fcff`; seleção ciano `#42e9ee`; progresso de slider `#14c4e7` → `#17f5df`. As janelas combinam contornos claros, sombras ciano/preta, gloss superior e gradientes azul-petróleo. `get_variable_defs` não retornou variáveis para o frame; os estilos estão aplicados diretamente nas camadas.
+---
 
-**Estado estático:** Home e Control Center estão selecionados; a chave do material aparece ligada. Os valores ilustrados são 65%, 100, 75%, On, 10 e 100%. Não os tratar como defaults de runtime. Os assets visíveis incluem grupo vetorial de fundo, prisma/fita/refração VALO, ícones de arquivo acrílicos, controles de janela e ícones customizados da dock. A origem/licença dos SVGs ainda não foi verificada.
+### Atividade 03.6 — Benchmarks e hardware básico/recomendado
+- **Dependências:** 03.2, 03.3, 03.4 e 03.5.
+- **Requisitos envolvidos:** `RNF-03`, decisão `02.2-C` (categorias básico e recomendado).
+- **O que já existe:**
+  - Ferramenta `valo_gpu_benchmark` (`tools/benchmarks/bench_and_artifacts.cpp`) e telemetria FPS/CPU/RAM em `SystemTelemetryService`.
+  - Suporte a `QQuickGraphicsConfiguration::setTimestamps(true)` via `SGE_VALO_BACKDROP_BENCHMARK` em `src/app/main.cpp`.
+- **O que falta implementar / homologar:**
+  - Selecionar os equipamentos reais representantes das categorias **hardware básico** e **hardware recomendado** (GPU, CPU, RAM, driver Mesa/Vulkan).
+  - Medir em sessão real (idle, múltiplas janelas VALO, clientes Wayland ativos, troca de workspace e resize): frametime, FPS, custo do Dual-Kawase / `backdropProvider`, CPU, RAM e VRAM.
+  - Definir limiares mínimos quantitativos baseados nos dados medidos e calibrar a seleção padrão de perfil (`Performance` / `Balanced` / `Quality`).
+- **Critérios de aceitação:** medições reproduzíveis registradas para ambas as categorias; desempenho utilizável para programação/estudo sem degradação crítica nem violação de acessibilidade no hardware básico.
+- **Testes necessários:** execução controlada de `valo_gpu_benchmark` + coleta de métricas em sessão Fedora real com cenários padronizados.
+- **Riscos:** custo elevado de passes Dual-Kawase ou `ShaderEffectSource` em GPUs integradas antigas; falta de hardware físico variado disponível.
+- **Evidências esperadas:** relatório de benchmarks com especificação exata de hardware, versão de driver/kernel/Qt, metodologia, resultados e requisitos mínimos/recomendados derivados.
+- **Condição de conclusão:** categorias básico e recomendado quantificadas por dados reais e perfil padrão calibrado.
 
-### 3.2 Cobertura do frame e lacunas
+---
 
-| Componente/estado | Cobertura no Figma | Resultado da auditoria |
+### Atividade 03.7 — Testes com usuários e decisão de lançamento (Alpha 0.1)
+- **Dependências:** 03.2 a 03.6 aprovadas internamente.
+- **Requisitos envolvidos:** todos os P0 (`RF-01..09`, `RF-11`, `RNF-01..07`), decisões `02.4-A/B` e Decisões 12, 22, 23.
+- **O que já existe:** diretrizes de grupo pequeno e diverso (Decisão 22), modelo de 3 pilares (`02.4-A`) e gate de 5 eixos (`02.4-B`).
+- **O que falta implementar / homologar:**
+  - **Definir licença** do repositório e política de contribuições/privacidade antes de distribuir pacotes a terceiros (Decisão 12).
+  - Preparar pacote/guia de instalação reproduzível no Fedora de referência e lista transparente de problemas conhecidos e escopo da Alpha.
+  - Recrutar voluntariamente grupo pequeno e diverso (desenvolvedores, estudantes e pessoas com diferentes necessidades de acessibilidade) com consentimento explícito e coleta local/voluntária de feedback.
+  - Executar tarefas reais de programação e estudo (discoverability, teclado, conforto visual, estabilidade) e triar bloqueadores críticos.
+  - Avaliar o **Gate de lançamento da Alpha 0.1** (nenhum defeito crítico aberto nos 5 eixos: Estabilidade, Acessibilidade, Desempenho, VALO/Legibilidade, Compatibilidade do núcleo).
+- **Critérios de aceitação:** licença publicada; 0 bloqueadores críticos nos 5 eixos obrigatórios; documentação de instalação, uso e limitações revisada; aprovação explícita do responsável pelo projeto.
+- **Testes necessários:** pacote completo dos 3 pilares (48+ CTest verdes, sessão Fedora verificada, relatórios de sessões de usuários).
+- **Riscos:** exposição prematura de usuários a bugs graves de sessão/input; ausência de licença impedindo distribuição; viés de avaliação apenas técnica sem usuários com necessidades de acessibilidade.
+- **Evidências esperadas:** registro consolidado dos testes com usuários (anonimizado), checklist de gate assinado pelo responsável, decisão Go/No-Go para Alpha 0.1.
+- **Condição de conclusão:** decisão formal de lançamento da **SYSTALIA Alpha 0.1** registrada em Git (e eventual atualização do Blueprint para a v5.0 após o marco).
+
+---
+
+## 3. Resumo de rastreabilidade rápida (para a próxima IA)
+
+| Se o foco for... | Consultar primeiro | Próxima ação recomendada |
 |---|---|---|
-| Desktop, wallpaper, TopBar, Files, janela VALO/SOAR e dock | Visíveis em `Page 1` | Medidas e aparência estática registadas acima. |
-| Launcher, notificações e task switcher | Não aparecem | Pedir frames/estados ou confirmar que ficam fora do redesign. |
-| Moldura SSD e clientes externos | Não aparecem | Aplicar ao chrome a linguagem das janelas VALO; o conteúdo e a transparência interna continuam sob controle da aplicação cliente. |
-| Hover, focus, pressed, disabled, teclado, animações e responsividade | Não especificados | Não inferir aparência ou comportamento a partir do código atual. |
-| Variáveis e estilos compartilhados | Nenhuma variável devolvida para `2:2` | Consolidar valores em tema QML depois de fechar decisões de arte e escala. |
-
-### 3.3 Correspondência inicial com o branch
-
-| Área | Figma observado | Código atual | Decisão/ação |
-|---|---|---|---|
-| Wallpaper | Atmosfera vetorial luminosa. | PNG 3324 × 1950 rasterizado do SVG exportado diretamente do nó Figma `2:3`; o SVG original está mantido no projeto. | Capturado no runtime no mesmo canvas 1662 × 975. |
-| TopBar | Cápsula 1646 × 45 em (8, 4), raio 22; seis glifos. | `SystaliaTopBar.qml`: medidas, marca `SDE-KWIN \| VALO`, telemetria real e seis glifos. | Captura confere a geometria; todos os glifos abrem o quick panel existente. |
-| Desktop e janelas | Duas janelas lado a lado, 701 × 534 e 700 × 534. | Canvases em `main.qml` usam escala uniforme baseada em 1662 × 975; a janela inicia nessa dimensão. | Geometria conferida em captura 1662 × 975; escalas menores aguardam comparação. |
-| Systalia Files | Navegação + grade de arquivos em janela editável. | `SystaliaFilesWindow.qml`: Home ativo, busca, seis itens e ações da janela; arte e botões usam vetores exportados do frame. | Navegação real de arquivos não fazia parte do componente anterior; estado inicial confere a composição do frame. |
-| Control Center | Janela de ajustes ópticos VALO/SOAR com seis sliders. | `SystaliaMaterialWindow.qml` controla seis propriedades reais do `SystaliaGlassItem`; `SystaliaControlCenter.qml` preserva os ajustes de sistema. | Mapeamento separado do quick panel, sem sliders para parâmetros sem suporte. |
-| Dock | 555 × 125; slots 78 × 78 e cinco ícones ilustrados. | `SystaliaDock.qml`: dimensões, raio 47, ícones PNG 4× rasterizados dos vetores Figma e cinco ações reais. | Geometria e arte conferidas na captura. |
-| Launcher, notificações e task switcher | Sem referências no frame disponível. | Componentes e serviços já existem. | Não redesenhar sem referências ou decisão explícita de escopo. |
-| Janelas externas | Sem clientes no frame disponível. | `WaylandWindowContainer.qml` compartilha o cabeçalho e os botões VALO, com raio padrão 20 px, contorno branco de 1,5 px, sombra 9-slice e barra de título de 50 px. | A moldura unificada é uma decisão visual derivada dos tokens Figma; a área de conteúdo segue o buffer original do aplicativo. |
-| Material VALO | Gloss, refrações e assets vetoriais visíveis. | Material/shader nativos com ABI `std140` de 128 bytes e geometria G2. | Manter contratos; mapear parâmetros visuais somente depois de validar o design e os valores do motor. |
-
-O frame mede 1662 × 975 px e não mostra uma escala alternativa. A aplicação inicia nessa dimensão e usa escala uniforme calculada pelo menor fator entre largura e altura da janela. A captura nessa dimensão foi conferida; resoluções menores seguem pendentes.
-
-## 4. Mapeamento do design para o código
-
-| Área | Implementação principal | Regra e divergência observada |
-|---|---|---|
-| Tokens compartilhados | `src/qml/theme/SystaliaTheme.qml` | Singleton QML com paleta e tipografia base observadas; revisão de contraste em runtime pendente. |
-| Desktop e wallpaper | `src/qml/main.qml` e `src/qml/assets/figma/valo-ocean-atmosphere.png` | PNG 2× exportado do vetor Figma `2:3` e `backdropGrab` para as superfícies de vidro. Qt não decodifica SVG neste runtime mínimo. |
-| Barra superior | `src/qml/shell/SystaliaTopBar.qml` | Geometria Figma, seis glifos e bindings reais de telemetria/data/hora; glifos preservam abertura do quick panel. |
-| Dock | `src/qml/shell/SystaliaDock.qml` | Geometria do frame, raio 47 e cinco ações com ícones PNG 4× rasterizados dos vetores Figma. |
-| Systalia Files | `src/qml/shell/SystaliaFilesWindow.qml` | Janela 701 × 534 com navegação, pesquisa, seis itens e ações de janela. |
-| Control Center VALO/SOAR | `src/qml/shell/SystaliaMaterialWindow.qml` | Janela 700 × 534 ligada a seis propriedades do material. O quick panel de sistema permanece em `SystaliaControlCenter.qml`. |
-| Flow Launcher | `src/qml/shell/SystaliaFlowMenu.qml` | Não aparece no frame. Preservar busca/modelo/execução; solicitar referência antes de mudar aparência. |
-| Notificações | `src/qml/shell/SystaliaNotificationHost.qml` | Não aparece no frame. Preservar D-Bus, timers, fechar e ordem; solicitar referência antes de mudar aparência. |
-| Alternador | `src/qml/shell/SystaliaTaskSwitcher.qml` | Não aparece no frame. Preservar seleção MRU e atalhos; solicitar referência antes de mudar aparência. |
-| Janelas clientes | `src/qml/WaylandWindowContainer.qml` | Clientes não aparecem no Figma. Compartilhar `SystaliaWindowHeader.qml` e `SystaliaWindowAction.qml` com as janelas da shell; preservar buffer, foco, resize e ações XDG. A área de conteúdo continua sendo fornecida pelo aplicativo. |
-| Motor óptico | `src/gfx/` e `shaders/` | ABI `std140` de 128 bytes e geometria G2 preservadas. `fwidth`/`smoothstep` filtram o contorno óptico e o recorte de cliente; cada componente fornece quatro raios independentes para vidro e moldura, que acompanha a inclinação. |
-
-`SystaliaTheme.qml` é singleton QML e reúne cores e família tipográfica base observadas. O build do executável e a captura em Xvfb/Vulkan a 1662 × 975 passaram; o runtime registrou sessão D-Bus indisponível e falha EGL do compositor Wayland. A captura não valida GPU física, clientes Wayland externos ou escalas menores. CTest não foi executado.
-
-### 3.4 Implementação visual inicial
-
-- `main.qml` inicia em 1662 × 975 e organiza o frame em canvases escalados; clientes Wayland permanecem em coordenadas lógicas da janela raiz.
-- `SystaliaFilesWindow.qml` e `SystaliaMaterialWindow.qml` seguem as posições do frame. O painel Material mantém controles reais para opacidade, IOR, dispersão cromática, cáusticas, raio e slant do glass item.
-- `SystaliaTopBar.qml` usa as medidas do frame e mantém CPU/RAM/FPS/hora ligados a `SystemTelemetry`.
-- `SystaliaDock.qml` usa as dimensões ilustradas e mantém os cinco launchers existentes.
-- `SystaliaWindowHeader.qml` e `SystaliaWindowAction.qml` fornecem o mesmo título, badge e botões VALO às janelas internas e externas. `WaylandWindowContainer.qml` alinha o raio do shader e da borda a 20 px por padrão, usa contorno branco de 1,5 px e sombra 9-slice. O `titleBarHeight` uniforme de 50 px mantém a origem do buffer cliente e o recorte do shader alinhados.
-- O build do alvo principal passou. A inicialização QML em modo offscreen não encontrou erros após remover propriedades inválidas das sombras `BorderImage`; a criação do socket Wayland foi bloqueada pelo sandbox, então a moldura externa ainda precisa de captura no ambiente alvo.
-- `main.cpp` não procura mais o wallpaper Carina; o PNG VALO 2×, os ícones 4×, os botões e as refrações são recursos QML rasterizados de SVGs exportados do frame. A sombra externa usa o PNG local do frame em nove fatias. `backdropGrab` continua ativo.
-- O shader mantém ABI `std140` de 128 bytes e geometria G2. `fwidth`/`smoothstep` usam cobertura de fragmento para suavizar o contorno e o fio de brilho; `SystaliaG2Frame.qml` usa `CurveRenderer` e calcula o slant de formas internas nas dimensões da superfície inteira para alinhar o cabeçalho à borda do shader. A sombra das janelas preserva os cantos ao redimensionar.
-- Os endpoints temporários de asset do Figma retornam HTTP 403 pelo proxy. Os vetores necessários foram exportados diretamente dos nós do frame pela API do Figma e guardados em `src/qml/assets/figma`; os PNGs 2×/4× são rasterizações desses SVGs para o runtime Qt sem suporte a SVG.
-- `cmake --build build --target systalia_glass_engine` concluiu e a captura de runtime mostrou wallpaper, ícones, janelas e dock. D-Bus de sessão e EGL Wayland não inicializaram no Xvfb; CTest e clientes externos não foram executados.
-
-## 5. Sequência de implementação
-
-### Etapa A — Auditoria do Figma e especificação
-
-1. Acessar o arquivo e identificar páginas e frames. **Concluído para a página `Page 1` e o frame `2:2`.**
-2. Separar telas de referência de estudos antigos ou componentes rejeitados. **Pendente:** há apenas uma página e a validade das camadas como versão final não está identificada.
-3. Produzir a tabela da seção 3, com medidas e estados observados. **Concluído para a composição estática visível.**
-4. Marcar cada elemento como existente, substituído, novo ou removido. **Concluído inicialmente; correspondências abertas estão na seção 3.3.**
-5. Confirmar os pontos de interação que afetam serviços e Wayland. **Pendente:** o frame não documenta interações nem estados alternativos.
-
-**Saída atual:** frame principal inventariado e usado como referência para a primeira implementação. Estados de launcher, notificações, task switcher, SSD, clientes e acessibilidade seguem sem referência; isso não bloqueia o escopo visual do frame principal.
-
-### Etapa B — Fundação visual
-
-1. Criar tokens compartilhados de cor, tipografia, escala, raios, materiais e animação a partir do Figma.
-2. Mapear tokens a propriedades já existentes do glass engine quando houver equivalência.
-3. Preparar assets em formatos adequados e atualizar o pipeline de recursos se necessário.
-4. Validar wallpaper, contraste e recorte nas resoluções e escalas escolhidas.
-
-**Saída:** tema QML comum criado e usado nos componentes principais; revisão de contraste e escala pendente.
-
-### Etapa C — Estrutura do desktop e janelas
-
-1. Reorganizar `main.qml` segundo a hierarquia e zonas visuais do Figma.
-2. Aplicar o wallpaper e manter `backdropGrab` apenas onde a refração o consome.
-3. Atualizar moldura e janela demonstrativa Systalia Files.
-4. Atualizar `WaylandWindowContainer.qml` sem alterar contratos de buffer, input, geometria, foco ou estados XDG.
-5. Comparar clientes reais, incluindo terminal, com o conteúdo da janela visível.
-
-**Saída:** desktop e duas janelas principais implementados; captura e comparação manual da geometria feitas em 1662 × 975. Validação de clientes Wayland e escalas menores continuam pendentes.
-
-### Etapa D — Shell e overlays
-
-O frame principal está implementado nestes componentes:
-
-1. TopBar e dock.
-2. Janela VALO/SOAR e controles de material.
-3. Janela Systalia Files.
-
-Flow Launcher, notificações e task switcher continuam com a aparência anterior porque o frame não os especifica. O Figma também não mostra conteúdo de clientes externos; suas molduras usam agora o cabeçalho e as ações comuns derivados das janelas VALO, enquanto cada aplicativo conserva seu próprio conteúdo.
-
-### Etapa E — Serviços e integração
-
-1. Manter os serviços C++ desacoplados dos detalhes de apresentação.
-2. Ligar os novos controles visuais às propriedades existentes do `SystaliaGlassItem`; ainda falta validar os valores em runtime.
-3. Evitar comandos bloqueantes no render thread; manter a execução assíncrona.
-4. Resolver a validação de buffers EGL no ambiente objetivo, distinguindo buffers SHM dos acelerados.
-5. Testar notificações em barramento isolado ou com o daemon concorrente identificado; não substituir silenciosamente outro dono D-Bus.
-
-**Saída:** controles de material ligados a propriedades reais; validação no ambiente Vulkan permanece pendente.
-
-### Etapa F — Revisão visual, desempenho e acessibilidade
-
-1. Capturar cada frame do SGE nas mesmas dimensões/escala da referência; o frame principal em 1662 × 975 já foi capturado.
-2. Comparar posição, tamanho, cores, tipografia e hierarquia; a composição e os assets exportados foram conferidos em 1662 × 975, enquanto a comparação em outras escalas falta.
-3. Corrigir divergências observadas e registrar as diferenças restantes de assets e controles sem correspondência no motor.
-4. Testar teclado, foco, navegação, contraste e escala.
-5. Medir FPS, uso de CPU/GPU e custo da captura do wallpaper em idle e com clientes.
-6. Eliminar warnings de QML e confirmar que não há loops de binding.
-
-**Saída:** checklist visual com evidência e limitações registradas.
-
-## 6. Critérios de aceitação
-
-O redesign fica pronto quando:
-
-- Cada frame prioritário do inventário tem correspondência visual verificável na aplicação.
-- Tokens vêm do Figma observado; nenhum valor visual de produção foi inventado por conveniência.
-- TopBar, dock, launcher, painel, toasts, task switcher e janelas externas mantêm as ações reais.
-- Cliente externo envia buffer visível e recebe teclado/mouse na sessão alvo.
-- `SystaliaSurfaceProps` continua com 128 bytes e todos os offsets definidos no blueprint.
-- Build C++23 com Ninja termina sem warnings sob `-Werror`.
-- CTest executa todos os alvos disponíveis com 100% de aprovação.
-- Não há warnings de binding loop no startup e os serviços que não conseguem adquirir recursos reportam a causa.
-- Desempenho e limitações do host gráfico foram medidos e descritos, não presumidos.
-
-## 7. Plano de validação
-
-| Camada | Evidência |
-|---|---|
-| Build | `systalia_glass_engine` compilado via CMake/Ninja no ambiente Qt 6.8/Vulkan; CTest ainda não executado. |
-| Unitária | Geometria SDF, alinhamento, parsers, modelos e estado do task switcher. |
-| Integração | Protocolo de superfície, XDG/SSD/resize, filtro de aplicações, serviços de notificação e composição. |
-| E2E | Lifecycle Wayland com conexão, buffer, registro, desconexão e limpeza. |
-| Visual | Captura 1662 × 975 conferida contra o frame e os vetores exportados; escala menor ainda pendente. |
-| Runtime | Alacritty ou outro cliente GPU acelerado, input, resize, controles e notificações reais. |
-| Performance | FPS e custo de frame em desktop vazio e com múltiplas superfícies. |
-
-O número de entradas CTest não é o número de casos QTest. Registrar ambos separadamente nos relatórios.
-
-## 8. Riscos e decisões abertas
-
-- **Cobertura do Figma:** o arquivo auditado expõe um frame desktop estático; launcher, notificações, task switcher, SSD, clientes, estados de input e comportamento responsivo não estão especificados.
-- **Direção do wallpaper:** a atmosfera exportada do nó `2:3` é empacotada como PNG 2×; URLs temporários seguem bloqueados pelo proxy, mas a exportação direta pela API do Figma funcionou.
-- **Mapeamento de Control Center:** a janela VALO/SOAR liga seis controles a propriedades reais do material; o quick panel permanece separado.
-- **Tokens e assets:** o frame não tem variáveis retornadas; `SystaliaTheme.qml` reúne os tokens base. O runtime mínimo não decodifica SVG e usa PNGs de alta resolução exportados dos vetores do frame.
-- **Escala:** existe uma referência de 1662 × 975 px; essa dimensão foi capturada. Comparação em tamanhos menores segue pendente.
-- **Buffers GPU:** a falta da extensão EGL reportada pode tornar uma shell visualmente correta incapaz de mostrar determinados clientes Wayland.
-- **D-Bus compartilhado:** um daemon de notificações hospedeiro pode ocupar o nome padrão.
-- **Captura de wallpaper:** o fundo vetorial e a captura live do backdrop têm custo de GPU/memória ainda não medido.
-- **Shell demo vs. aplicações finais:** Systalia Files continua como janela ilustrativa; os seis cartões não representam operações reais de navegação no sistema de arquivos.
-
-## 9. Atualização dos documentos
-
-Quando as decisões e referências pendentes forem resolvidas:
-
-1. Atualizar as seções 5 e 6 do `SGE_MASTER_BLUEPRINT.md` com decisões observadas.
-2. Substituir as dependências abertas por frames, tokens e critérios verificáveis.
-3. Atualizar este plano com o mapeamento final e a sequência aprovada.
-4. Anotar cada mudança de escopo, decisão e resultado de validação nos dois documentos.
+| Regras de produto e decisões já fechadas | [`Context/ETAPA_02_PLANEJAMENTO_ESTRATEGICO_2026.md`](Context/ETAPA_02_PLANEJAMENTO_ESTRATEGICO_2026.md) | Não reabrir decisões 01–25 nem 02.1–02.7 |
+| Arquitetura, contratos ABI/Wayland/QRC atuais | [`SGE_MASTER_BLUEPRINT.md`](SGE_MASTER_BLUEPRINT.md) v4.0 | Verificar sempre `SystaliaSurfacePropsV2` (160B) e aliases QRC |
+| Próxima tarefa técnica autorizada | **Atividade 03.2 (Sessão Fedora independente)** | Definir edição Fedora, validar instalação/caminhos (`data/`, `config/eglfs_kms.json`) e testar sessão autônoma real |
+| Política de artefatos e limpeza em execuções | [`docs/architecture/maintenance/SYSTALIA_DEBUG_RETENTION_POLICY.md`](docs/architecture/maintenance/SYSTALIA_DEBUG_RETENTION_POLICY.md) | Usar `${TMPDIR:-/tmp}/systalia-runs/` via `tools/maintenance/` |

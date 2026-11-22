@@ -1,0 +1,63 @@
+[1/64] Copying sge_core qml sources into build dir
+[2/64] Running rcc for resource sge_core_raw_qml_0
+[3/64] Generating .rcc/qmlcache/sge_core_src_qml_shell_SystaliaFilesWindowV2_qml.cpp, .rcc/qmlcache/sge_core_src_qml_shell_SystaliaFilesWindowV2_qml.cpp.aotstats
+[4/64] Generating .rcc/qmlcache/sge_core_src_qml_shell_SystaliaMaterialWindow_qml.cpp, .rcc/qmlcache/sge_core_src_qml_shell_SystaliaMaterialWindow_qml.cpp.aotstats
+[5/64] Generating .rcc/qmlcache/sge_core_src_qml_main_qml.cpp, .rcc/qmlcache/sge_core_src_qml_main_qml.cpp.aotstats
+[6/64] Building CXX object CMakeFiles/sge_core.dir/build/.qt/rcc/qrc_sge_core_raw_qml_0.cpp.o
+[7/64] Building CXX object CMakeFiles/sge_core.dir/build/.rcc/qmlcache/sge_core_src_qml_shell_SystaliaFilesWindowV2_qml.cpp.o
+[8/64] Building CXX object CMakeFiles/sge_core.dir/build/.rcc/qmlcache/sge_core_src_qml_shell_SystaliaMaterialWindow_qml.cpp.o
+[9/64] Building CXX object CMakeFiles/sge_core.dir/build/.rcc/qmlcache/sge_core_src_qml_main_qml.cpp.o
+[10/64] Linking CXX static library libsge_core.a
+[11/64] Linking CXX executable valo_gpu_benchmark
+[12/64] Linking CXX executable valo_dock_v2_artifacts
+[13/64] Linking CXX executable tests/tst_xdg_resize
+[14/64] Linking CXX executable systalia_glass_engine
+[15/64] Automatic MOC and UIC for target tst_shell_state_regression
+[16/63] Linking CXX executable valo_shell_v2_artifacts
+[17/63] Linking CXX executable valo_stage_05_1_artifacts
+[18/63] Linking CXX executable raw_render_diagnostics
+[19/63] Linking CXX executable tests/tst_systalia_engine
+[20/63] Linking CXX executable tests/tst_item_geometry
+[21/63] Linking CXX executable tests/tst_backdrop_binding
+[22/63] Linking CXX executable tests/tst_wayland_socket
+[23/63] Linking CXX executable tests/tst_xdg_shell
+[24/63] Linking CXX executable tests/tst_xdg_decorations
+[25/63] Linking CXX executable tests/tst_unified_composition
+[26/63] Linking CXX executable tests/tst_systalia_protocol
+[27/63] Linking CXX executable tests/tst_telemetry
+[28/63] Linking CXX executable tests/tst_process_launcher
+[29/63] Linking CXX executable tests/tst_app_registry
+[30/63] Linking CXX executable tests/tst_notification_server
+[31/63] Linking CXX executable tests/tst_sdf_geometry_math
+[32/63] Linking CXX executable tests/tst_memory_alignment
+[33/63] Linking CXX executable tests/tst_linux_parsers
+[34/63] Building CXX object tests/CMakeFiles/tst_shell_state_regression.dir/integration/tst_ShellStateRegression.cpp.o
+[35/63] Linking CXX executable tests/tst_task_switcher
+[36/63] Linking CXX executable tests/tst_resource_leak_audit
+[37/63] Linking CXX executable tests/tst_workspace_manager
+[38/63] Linking CXX executable tests/tst_liquid_tiling
+[39/63] Linking CXX executable tests/tst_output_manager
+[40/63] Linking CXX executable tests/tst_phase4_audit
+[41/63] Linking CXX executable tests/tst_input_hardware_backend
+[42/63] Linking CXX executable tests/tst_logind_integration
+[43/63] Linking CXX executable tests/tst_xwayland_integration
+[44/63] Linking CXX executable tests/tst_valo_theme
+[45/63] Linking CXX executable tests/tst_valo_glass
+[46/63] Linking CXX executable tests/tst_valo_decorations
+[47/63] Linking CXX executable tests/tst_sdf_geometry_math_v2
+[48/63] Linking CXX executable tests/tst_surface_props_alignment_v2
+[49/63] Linking CXX executable tests/tst_valo_organic_transform_v2
+[50/63] Linking CXX executable tests/tst_valo_glass_shader_v2
+[51/63] Linking CXX executable tests/tst_valo_glass_rendering_v2
+[52/63] Linking CXX executable tests/tst_valo_backdrop_blur_v2
+[53/63] Linking CXX executable tests/tst_valo_refraction_optics_v2
+[54/63] Linking CXX executable tests/tst_valo_gpu_blur_pipeline_v2
+[55/63] Linking CXX executable tests/tst_valo_dock_v2
+[56/63] Linking CXX executable tests/tst_valo_shell_v2
+[57/63] Linking CXX executable tests/tst_protocol_roundtrip
+[58/63] Linking CXX executable tests/tst_xdg_shell_decoration
+[59/63] Linking CXX executable tests/tst_app_model_filtering
+[60/63] Linking CXX executable tests/tst_wayland_client_lifecycle_e2e
+[61/63] Linking CXX executable tests/tst_shell_state_regression
+[62/63] Linking CXX executable tests/tst_client_surface_visibility
+[63/63] Linking CXX executable tests/tst_valo_optical_contract_v2

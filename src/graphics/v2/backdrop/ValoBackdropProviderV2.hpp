@@ -1,0 +1,123 @@
+#pragma once
+
+#include <QObject>
+#include <QQuickItem>
+#include <QSGTexture>
+#include <QSGTextureProvider>
+#include <QImage>
+#include <QPointer>
+#include <QSize>
+#include <memory>
+#include <atomic>
+#include <QtQml/qqmlregistration.h>
+
+#include "ValoBlurPipelineV2.hpp"
+
+namespace Systalia::Gfx::V2 {
+
+class ValoGpuBlurPipelineV2;
+
+/**
+ * @brief Provedor de textura de backdrop para o motor VALO Graphics 2.0 (Etapa 03).
+ *
+ * Responsável por disponibilizar a textura de fundo ao renderer óptico sem feedback
+ * recursivo. Suporta vinculação de itens de cena upstream (ShaderEffectSource / Wallpaper)
+ * e geração autônoma de backdrop sintético para testes isolados e execução headless.
+ */
+class ValoBackdropProviderV2 : public QObject {
+    Q_OBJECT
+    QML_ELEMENT
+
+    Q_PROPERTY(QQuickItem* source READ source WRITE setSource NOTIFY sourceChanged)
+    Q_PROPERTY(bool hasTexture READ hasTexture NOTIFY textureChanged)
+    Q_PROPERTY(bool isDirty READ isDirty WRITE setDirty NOTIFY dirtyChanged)
+    Q_PROPERTY(Systalia::Gfx::V2::ValoBackdropProviderV2* upstreamBlurProvider READ upstreamBlurProvider WRITE setUpstreamBlurProvider NOTIFY upstreamBlurProviderChanged)
+    Q_PROPERTY(int blurProfile READ blurProfileInt WRITE setBlurProfileInt NOTIFY blurProfileChanged)
+
+public:
+    explicit ValoBackdropProviderV2(QObject *parent = nullptr);
+    ~ValoBackdropProviderV2() override;
+
+    ValoBackdropProviderV2 *upstreamBlurProvider() const noexcept { return m_upstreamBlurProvider; }
+    void setUpstreamBlurProvider(ValoBackdropProviderV2 *provider);
+
+    BlurProfile blurProfile() const noexcept { return m_blurProfile; }
+    int blurProfileInt() const noexcept { return static_cast<int>(m_blurProfile); }
+    void setBlurProfile(BlurProfile profile);
+    void setBlurProfileInt(int profile) { if (profile >= 0 && profile <= 2) setBlurProfile(static_cast<BlurProfile>(profile)); }
+
+    QQuickItem *source() const noexcept { return m_source; }
+    void setSource(QQuickItem *source);
+
+    /**
+     * @brief Define o item consumidor para proteção estrita contra feedback recursivo.
+     */
+    void setConsumerItem(QQuickItem *consumer) noexcept { m_consumerItem = consumer; }
+
+    bool hasTexture() const noexcept;
+    bool isDirty() const noexcept { return m_isDirty; }
+    // Diagnostic state; no texture readback or GUI-thread QRhi access.
+    int executedPasses() const noexcept { return m_executedPasses; }
+    QString blurStatus() const {
+        switch (m_status.load()) {
+        case 0: return QStringLiteral("bypass");
+        case 1: return QStringLiteral("pending");
+        case 2: return QStringLiteral("filtered");
+        default: return QStringLiteral("unavailable");
+        }
+    }
+    void setDirty(bool dirty) noexcept;
+
+    /**
+     * @brief Obtém a textura de backdrop pronta para amostragem no Scene Graph.
+     * @param window Janela dona dos recursos gráficos RHI.
+     */
+    QSGTexture *texture(QQuickWindow *window);
+
+    /**
+     * @brief Obtém a textura de backdrop com desfoque Dual-Kawase multipass aplicado na GPU.
+     */
+    QSGTexture *blurredTexture(QQuickWindow *window);
+
+    /**
+     * @brief Gera imagem de backdrop sintético com padrão calibrado de teste.
+     */
+    static QImage createSyntheticBackdrop(const QSize &size);
+
+    void releaseResources();
+    void attachToWindow(QQuickWindow *window);
+
+signals:
+    void upstreamBlurProviderChanged();
+    void sourceChanged();
+    void textureChanged();
+    void dirtyChanged();
+    void blurProfileChanged();
+
+private slots:
+    void onSourceTextureChanged();
+    void onBeforeRendering();
+
+private:
+    QPointer<ValoBackdropProviderV2> m_upstreamBlurProvider;
+    QPointer<ValoBackdropProviderV2> m_renderUpstream;
+    bool m_preparing = false; // Render-thread dependency/cycle guard.
+    QPointer<QQuickItem> m_source;
+    QPointer<QQuickItem> m_consumerItem;
+    QPointer<QSGTextureProvider> m_connectedProvider;
+    QRhiTexture *m_lastSourceTexture = nullptr;
+    QSize m_lastSourceSize;
+    QSGTexture *m_fallbackTexture = nullptr;
+    QSGTexture *m_qsgBlurredTexture = nullptr;
+    std::unique_ptr<ValoGpuBlurPipelineV2> m_gpuBlurPipeline;
+    QPointer<QQuickWindow> m_resourceWindow;
+    QThread *m_renderThread = nullptr;
+    BlurProfile m_blurProfile = BlurProfile::Performance;
+    std::atomic_bool m_isDirty{true};
+    std::atomic_int m_status{1};
+    std::atomic_int m_executedPasses{0};
+    BlurProfile m_renderProfile = BlurProfile::Performance;
+};
+
+} // namespace Systalia::Gfx::V2
+

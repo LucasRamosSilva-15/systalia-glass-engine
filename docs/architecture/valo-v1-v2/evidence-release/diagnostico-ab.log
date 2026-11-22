@@ -1,0 +1,133 @@
+In file included from /usr/include/qt6/QtQml/qqml.h:8,
+                 from /usr/include/qt6/QtQml/qqmlcomponent.h:11,
+                 from /usr/include/qt6/QtQml/QQmlComponent:1,
+                 from /tmp/valo-check.21obFJ/original.cpp:1:
+In destructor ‘QQmlPrivate::QQmlElement<T>::~QQmlElement() [with T = SystaliaGlassItem]’,
+    inlined from ‘QQmlPrivate::QQmlElement<T>::~QQmlElement() [with T = SystaliaGlassItem]’ at /usr/include/qt6/QtQml/qqmlprivate.h:112:9,
+    inlined from ‘constexpr void std::default_delete<_Tp>::operator()(_Tp*) const [with _Tp = QQuickItem]’ at /usr/include/c++/16/bits/unique_ptr.h:92:2,
+    inlined from ‘constexpr void std::__uniq_ptr_impl<_Tp, _Dp>::reset(pointer) [with _Tp = QQuickItem; _Dp = std::default_delete<QQuickItem>]’ at /usr/include/c++/16/bits/unique_ptr.h:204:16,
+    inlined from ‘constexpr void std::unique_ptr<_Tp, _Dp>::reset(pointer) [with _Tp = QQuickItem; _Dp = std::default_delete<QQuickItem>]’ at /usr/include/c++/16/bits/unique_ptr.h:530:12,
+    inlined from ‘void TestLiquidTiling::pairedWindowsFormActiveSplitAndCleanupOnDestruction()’ at /tmp/valo-check.21obFJ/original.cpp:200:19:
+/usr/include/qt6/QtQml/qqmlprivate.h:112:9: error: array subscript ‘QQmlPrivate::QQmlElement<SystaliaGlassItem>[0]’ is partly outside array bounds of ‘unsigned char [32]’ [-Werror=array-bounds=]
+  112 |         }
+      |         ^
+In file included from /usr/include/c++/16/memory:80,
+                 from /usr/include/qt6/QtCore/qcontainertools_impl.h:22,
+                 from /usr/include/qt6/QtCore/qarraydataops.h:10,
+                 from /usr/include/qt6/QtCore/qarraydatapointer.h:8,
+                 from /usr/include/qt6/QtCore/qbytearray.h:12,
+                 from /usr/include/qt6/QtCore/qmetatype.h:12,
+                 from /usr/include/qt6/QtCore/qvariant.h:11,
+                 from /usr/include/qt6/QtQml/qqmlcomponent.h:8:
+In function ‘constexpr std::__detail::__unique_ptr_t<_Tp> std::make_unique(_Args&& ...) [with _Tp = QQuickItem; _Args = {}]’,
+    inlined from ‘void TestLiquidTiling::pairedWindowsFormActiveSplitAndCleanupOnDestruction()’ at /tmp/valo-check.21obFJ/original.cpp:186:50:
+/usr/include/c++/16/bits/unique_ptr.h:1105:30: note: object of size 32 allocated by ‘operator new’
+ 1105 |     { return unique_ptr<_Tp>(new _Tp(std::forward<_Args>(__args)...)); }
+      |                              ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In destructor ‘QQmlPrivate::QQmlElement<T>::~QQmlElement() [with T = SystaliaGlassItem]’,
+    inlined from ‘QQmlPrivate::QQmlElement<T>::~QQmlElement() [with T = SystaliaGlassItem]’ at /usr/include/qt6/QtQml/qqmlprivate.h:112:9,
+    inlined from ‘constexpr void std::default_delete<_Tp>::operator()(_Tp*) const [with _Tp = QQuickItem]’ at /usr/include/c++/16/bits/unique_ptr.h:92:2,
+    inlined from ‘constexpr void std::__uniq_ptr_impl<_Tp, _Dp>::reset(pointer) [with _Tp = QQuickItem; _Dp = std::default_delete<QQuickItem>]’ at /usr/include/c++/16/bits/unique_ptr.h:204:16,
+    inlined from ‘constexpr void std::unique_ptr<_Tp, _Dp>::reset(pointer) [with _Tp = QQuickItem; _Dp = std::default_delete<QQuickItem>]’ at /usr/include/c++/16/bits/unique_ptr.h:530:12,
+    inlined from ‘void TestLiquidTiling::pairedWindowsFormActiveSplitAndCleanupOnDestruction()’ at /tmp/valo-check.21obFJ/original.cpp:200:19:
+/usr/include/qt6/QtQml/qqmlprivate.h:112:9: error: array subscript ‘QQmlPrivate::QQmlElement<SystaliaGlassItem>[0]’ is partly outside array bounds of ‘unsigned char [32]’ [-Werror=array-bounds=]
+  112 |         }
+      |         ^
+In function ‘constexpr std::__detail::__unique_ptr_t<_Tp> std::make_unique(_Args&& ...) [with _Tp = QQuickItem; _Args = {}]’,
+    inlined from ‘void TestLiquidTiling::pairedWindowsFormActiveSplitAndCleanupOnDestruction()’ at /tmp/valo-check.21obFJ/original.cpp:186:50:
+/usr/include/c++/16/bits/unique_ptr.h:1105:30: note: object of size 32 allocated by ‘operator new’
+ 1105 |     { return unique_ptr<_Tp>(new _Tp(std::forward<_Args>(__args)...)); }
+      |                              ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In destructor ‘QQmlPrivate::QQmlElement<T>::~QQmlElement() [with T = SystaliaGlassItem]’,
+    inlined from ‘QQmlPrivate::QQmlElement<T>::~QQmlElement() [with T = SystaliaGlassItem]’ at /usr/include/qt6/QtQml/qqmlprivate.h:112:9,
+    inlined from ‘constexpr void std::default_delete<_Tp>::operator()(_Tp*) const [with _Tp = QQuickItem]’ at /usr/include/c++/16/bits/unique_ptr.h:92:2,
+    inlined from ‘constexpr void std::__uniq_ptr_impl<_Tp, _Dp>::reset(pointer) [with _Tp = QQuickItem; _Dp = std::default_delete<QQuickItem>]’ at /usr/include/c++/16/bits/unique_ptr.h:204:16,
+    inlined from ‘constexpr void std::unique_ptr<_Tp, _Dp>::reset(pointer) [with _Tp = QQuickItem; _Dp = std::default_delete<QQuickItem>]’ at /usr/include/c++/16/bits/unique_ptr.h:530:12,
+    inlined from ‘void TestLiquidTiling::pairedWindowsFormActiveSplitAndCleanupOnDestruction()’ at /tmp/valo-check.21obFJ/original.cpp:200:19:
+/usr/include/qt6/QtQml/qqmlprivate.h:112:9: error: array subscript ‘QQmlPrivate::QQmlElement<SystaliaGlassItem>[0]’ is partly outside array bounds of ‘unsigned char [32]’ [-Werror=array-bounds=]
+  112 |         }
+      |         ^
+In function ‘constexpr std::__detail::__unique_ptr_t<_Tp> std::make_unique(_Args&& ...) [with _Tp = QQuickItem; _Args = {}]’,
+    inlined from ‘void TestLiquidTiling::pairedWindowsFormActiveSplitAndCleanupOnDestruction()’ at /tmp/valo-check.21obFJ/original.cpp:186:50:
+/usr/include/c++/16/bits/unique_ptr.h:1105:30: note: object of size 32 allocated by ‘operator new’
+ 1105 |     { return unique_ptr<_Tp>(new _Tp(std::forward<_Args>(__args)...)); }
+      |                              ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In destructor ‘QQmlPrivate::QQmlElement<T>::~QQmlElement() [with T = SystaliaGlassItem]’,
+    inlined from ‘QQmlPrivate::QQmlElement<T>::~QQmlElement() [with T = SystaliaGlassItem]’ at /usr/include/qt6/QtQml/qqmlprivate.h:112:9,
+    inlined from ‘constexpr void std::default_delete<_Tp>::operator()(_Tp*) const [with _Tp = QQuickItem]’ at /usr/include/c++/16/bits/unique_ptr.h:92:2,
+    inlined from ‘constexpr std::unique_ptr<_Tp, _Dp>::~unique_ptr() [with _Tp = QQuickItem; _Dp = std::default_delete<QQuickItem>]’ at /usr/include/c++/16/bits/unique_ptr.h:408:17,
+    inlined from ‘void TestLiquidTiling::pairedWindowsFormActiveSplitAndCleanupOnDestruction()’ at /tmp/valo-check.21obFJ/original.cpp:202:1:
+/usr/include/qt6/QtQml/qqmlprivate.h:112:9: error: array subscript ‘QQmlPrivate::QQmlElement<SystaliaGlassItem>[0]’ is partly outside array bounds of ‘unsigned char [32]’ [-Werror=array-bounds=]
+  112 |         }
+      |         ^
+In function ‘constexpr std::__detail::__unique_ptr_t<_Tp> std::make_unique(_Args&& ...) [with _Tp = QQuickItem; _Args = {}]’,
+    inlined from ‘void TestLiquidTiling::pairedWindowsFormActiveSplitAndCleanupOnDestruction()’ at /tmp/valo-check.21obFJ/original.cpp:185:49:
+/usr/include/c++/16/bits/unique_ptr.h:1105:30: note: object of size 32 allocated by ‘operator new’
+ 1105 |     { return unique_ptr<_Tp>(new _Tp(std::forward<_Args>(__args)...)); }
+      |                              ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In destructor ‘QQmlPrivate::QQmlElement<T>::~QQmlElement() [with T = SystaliaGlassItem]’,
+    inlined from ‘QQmlPrivate::QQmlElement<T>::~QQmlElement() [with T = SystaliaGlassItem]’ at /usr/include/qt6/QtQml/qqmlprivate.h:112:9,
+    inlined from ‘constexpr void std::default_delete<_Tp>::operator()(_Tp*) const [with _Tp = QQuickItem]’ at /usr/include/c++/16/bits/unique_ptr.h:92:2,
+    inlined from ‘constexpr std::unique_ptr<_Tp, _Dp>::~unique_ptr() [with _Tp = QQuickItem; _Dp = std::default_delete<QQuickItem>]’ at /usr/include/c++/16/bits/unique_ptr.h:408:17,
+    inlined from ‘void TestLiquidTiling::pairedWindowsFormActiveSplitAndCleanupOnDestruction()’ at /tmp/valo-check.21obFJ/original.cpp:202:1:
+/usr/include/qt6/QtQml/qqmlprivate.h:112:9: error: array subscript ‘QQmlPrivate::QQmlElement<SystaliaGlassItem>[0]’ is partly outside array bounds of ‘unsigned char [32]’ [-Werror=array-bounds=]
+  112 |         }
+      |         ^
+In function ‘constexpr std::__detail::__unique_ptr_t<_Tp> std::make_unique(_Args&& ...) [with _Tp = QQuickItem; _Args = {}]’,
+    inlined from ‘void TestLiquidTiling::pairedWindowsFormActiveSplitAndCleanupOnDestruction()’ at /tmp/valo-check.21obFJ/original.cpp:185:49:
+/usr/include/c++/16/bits/unique_ptr.h:1105:30: note: object of size 32 allocated by ‘operator new’
+ 1105 |     { return unique_ptr<_Tp>(new _Tp(std::forward<_Args>(__args)...)); }
+      |                              ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In destructor ‘QQmlPrivate::QQmlElement<T>::~QQmlElement() [with T = SystaliaGlassItem]’,
+    inlined from ‘QQmlPrivate::QQmlElement<T>::~QQmlElement() [with T = SystaliaGlassItem]’ at /usr/include/qt6/QtQml/qqmlprivate.h:112:9,
+    inlined from ‘constexpr void std::default_delete<_Tp>::operator()(_Tp*) const [with _Tp = QQuickItem]’ at /usr/include/c++/16/bits/unique_ptr.h:92:2,
+    inlined from ‘constexpr std::unique_ptr<_Tp, _Dp>::~unique_ptr() [with _Tp = QQuickItem; _Dp = std::default_delete<QQuickItem>]’ at /usr/include/c++/16/bits/unique_ptr.h:408:17,
+    inlined from ‘void TestLiquidTiling::pairedWindowsFormActiveSplitAndCleanupOnDestruction()’ at /tmp/valo-check.21obFJ/original.cpp:202:1:
+/usr/include/qt6/QtQml/qqmlprivate.h:112:9: error: array subscript ‘QQmlPrivate::QQmlElement<SystaliaGlassItem>[0]’ is partly outside array bounds of ‘unsigned char [32]’ [-Werror=array-bounds=]
+  112 |         }
+      |         ^
+In function ‘constexpr std::__detail::__unique_ptr_t<_Tp> std::make_unique(_Args&& ...) [with _Tp = QQuickItem; _Args = {}]’,
+    inlined from ‘void TestLiquidTiling::pairedWindowsFormActiveSplitAndCleanupOnDestruction()’ at /tmp/valo-check.21obFJ/original.cpp:185:49:
+/usr/include/c++/16/bits/unique_ptr.h:1105:30: note: object of size 32 allocated by ‘operator new’
+ 1105 |     { return unique_ptr<_Tp>(new _Tp(std::forward<_Args>(__args)...)); }
+      |                              ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In destructor ‘QQmlPrivate::QQmlElement<T>::~QQmlElement() [with T = SystaliaGlassItem]’,
+    inlined from ‘QQmlPrivate::QQmlElement<T>::~QQmlElement() [with T = SystaliaGlassItem]’ at /usr/include/qt6/QtQml/qqmlprivate.h:112:9,
+    inlined from ‘constexpr void std::default_delete<_Tp>::operator()(_Tp*) const [with _Tp = QQuickItem]’ at /usr/include/c++/16/bits/unique_ptr.h:92:2,
+    inlined from ‘constexpr std::unique_ptr<_Tp, _Dp>::~unique_ptr() [with _Tp = QQuickItem; _Dp = std::default_delete<QQuickItem>]’ at /usr/include/c++/16/bits/unique_ptr.h:408:17,
+    inlined from ‘void TestLiquidTiling::pairedWindowsFormActiveSplitAndCleanupOnDestruction()’ at /tmp/valo-check.21obFJ/original.cpp:202:1:
+/usr/include/qt6/QtQml/qqmlprivate.h:112:9: error: array subscript ‘QQmlPrivate::QQmlElement<SystaliaGlassItem>[0]’ is partly outside array bounds of ‘unsigned char [32]’ [-Werror=array-bounds=]
+  112 |         }
+      |         ^
+In function ‘constexpr std::__detail::__unique_ptr_t<_Tp> std::make_unique(_Args&& ...) [with _Tp = QQuickItem; _Args = {}]’,
+    inlined from ‘void TestLiquidTiling::pairedWindowsFormActiveSplitAndCleanupOnDestruction()’ at /tmp/valo-check.21obFJ/original.cpp:185:49:
+/usr/include/c++/16/bits/unique_ptr.h:1105:30: note: object of size 32 allocated by ‘operator new’
+ 1105 |     { return unique_ptr<_Tp>(new _Tp(std::forward<_Args>(__args)...)); }
+      |                              ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In destructor ‘QQmlPrivate::QQmlElement<T>::~QQmlElement() [with T = SystaliaGlassItem]’,
+    inlined from ‘QQmlPrivate::QQmlElement<T>::~QQmlElement() [with T = SystaliaGlassItem]’ at /usr/include/qt6/QtQml/qqmlprivate.h:112:9,
+    inlined from ‘constexpr void std::default_delete<_Tp>::operator()(_Tp*) const [with _Tp = QQuickItem]’ at /usr/include/c++/16/bits/unique_ptr.h:92:2,
+    inlined from ‘constexpr std::unique_ptr<_Tp, _Dp>::~unique_ptr() [with _Tp = QQuickItem; _Dp = std::default_delete<QQuickItem>]’ at /usr/include/c++/16/bits/unique_ptr.h:408:17,
+    inlined from ‘void TestLiquidTiling::pairedWindowsFormActiveSplitAndCleanupOnDestruction()’ at /tmp/valo-check.21obFJ/original.cpp:202:1:
+/usr/include/qt6/QtQml/qqmlprivate.h:112:9: error: array subscript ‘QQmlPrivate::QQmlElement<SystaliaGlassItem>[0]’ is partly outside array bounds of ‘unsigned char [32]’ [-Werror=array-bounds=]
+  112 |         }
+      |         ^
+In function ‘constexpr std::__detail::__unique_ptr_t<_Tp> std::make_unique(_Args&& ...) [with _Tp = QQuickItem; _Args = {}]’,
+    inlined from ‘void TestLiquidTiling::pairedWindowsFormActiveSplitAndCleanupOnDestruction()’ at /tmp/valo-check.21obFJ/original.cpp:185:49:
+/usr/include/c++/16/bits/unique_ptr.h:1105:30: note: object of size 32 allocated by ‘operator new’
+ 1105 |     { return unique_ptr<_Tp>(new _Tp(std::forward<_Args>(__args)...)); }
+      |                              ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In destructor ‘QQmlPrivate::QQmlElement<T>::~QQmlElement() [with T = SystaliaGlassItem]’,
+    inlined from ‘QQmlPrivate::QQmlElement<T>::~QQmlElement() [with T = SystaliaGlassItem]’ at /usr/include/qt6/QtQml/qqmlprivate.h:112:9,
+    inlined from ‘constexpr void std::default_delete<_Tp>::operator()(_Tp*) const [with _Tp = QQuickItem]’ at /usr/include/c++/16/bits/unique_ptr.h:92:2,
+    inlined from ‘constexpr std::unique_ptr<_Tp, _Dp>::~unique_ptr() [with _Tp = QQuickItem; _Dp = std::default_delete<QQuickItem>]’ at /usr/include/c++/16/bits/unique_ptr.h:408:17,
+    inlined from ‘void TestLiquidTiling::pairedWindowsFormActiveSplitAndCleanupOnDestruction()’ at /tmp/valo-check.21obFJ/original.cpp:202:1:
+/usr/include/qt6/QtQml/qqmlprivate.h:112:9: error: array subscript ‘QQmlPrivate::QQmlElement<SystaliaGlassItem>[0]’ is partly outside array bounds of ‘unsigned char [32]’ [-Werror=array-bounds=]
+  112 |         }
+      |         ^
+In function ‘constexpr std::__detail::__unique_ptr_t<_Tp> std::make_unique(_Args&& ...) [with _Tp = QQuickItem; _Args = {}]’,
+    inlined from ‘void TestLiquidTiling::pairedWindowsFormActiveSplitAndCleanupOnDestruction()’ at /tmp/valo-check.21obFJ/original.cpp:185:49:
+/usr/include/c++/16/bits/unique_ptr.h:1105:30: note: object of size 32 allocated by ‘operator new’
+ 1105 |     { return unique_ptr<_Tp>(new _Tp(std::forward<_Args>(__args)...)); }
+      |                              ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+cc1plus: all warnings being treated as errors
