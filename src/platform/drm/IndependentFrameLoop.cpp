@@ -69,7 +69,7 @@ bool IndependentFrameLoop::processNextFrame() {
         return false;
     }
 
-    if (!m_renderSource.renderControlledFrame()) {
+    if (!m_renderSource.renderIntoBuffer(*buf)) {
         Q_UNUSED(gbm.releaseBufferToAvailable(bufferId));
         Q_UNUSED(m_waylandCoordinator.completeFrame(false));
         ++m_failedRenderCount;
@@ -77,7 +77,7 @@ bool IndependentFrameLoop::processNextFrame() {
         return false;
     }
 
-    if (!gbm.markBufferReadyForScanout(bufferId)) {
+    if (!gbm.markBufferReadyForScanout(bufferId, buf->acquireFenceFd)) {
         Q_UNUSED(gbm.releaseBufferToAvailable(bufferId));
         Q_UNUSED(m_waylandCoordinator.completeFrame(false));
         ++m_failedRenderCount;
@@ -141,7 +141,7 @@ void IndependentFrameLoop::onPageFlipTimedOut(quint64 pendingToken) {
     m_flipInFlight = false;
     ++m_timedOutCount;
 
-    Q_UNUSED(m_presenter.bufferManager().releaseBufferToAvailable(bufferId));
+    Q_UNUSED(m_presenter.bufferManager().markBufferTimedOut(bufferId));
     Q_UNUSED(m_waylandCoordinator.completeFrame(false));
     emit frameFailed();
 

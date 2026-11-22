@@ -200,25 +200,31 @@ bool AtomicKmsPresenter::submitBufferForScanout(uint64_t bufferId, int acquireFe
     if (!m_initialized || m_suspended) {
         return false;
     }
+    GbmExportedBuffer *target = m_bufferManager.findBuffer(bufferId);
+    if (!target) {
+        return false;
+    }
     if (!m_bufferManager.markBufferPendingFlip(bufferId)) {
         return false;
     }
 
-    // Localiza o buffer pendente e garante FB ID válido
-    GbmExportedBuffer *target = nullptr;
-    // Reutiliza acquire/release? Como GbmBufferManager não expõe lista direta,
-    // usamos um ciclo simples: addFramebuffer é chamado quando kmsFramebufferId == 0.
-    // Para manter encapsulamento limpo, delegamos via AtomicCommitRequest.
-    Q_UNUSED(target);
+    if (target->kmsFramebufferId == 0) {
+        const uint32_t fbId = m_atomicBackend.addFramebuffer(m_drmFd, *target);
+        if (fbId == 0) {
+            Q_UNUSED(m_bufferManager.releaseBufferToAvailable(bufferId));
+            return false;
+        }
+        target->kmsFramebufferId = fbId;
+    }
 
     AtomicCommitRequest req;
     req.connectorId = m_connectorId;
     req.crtcId = m_crtcId;
     req.planeId = m_planeId;
-    req.framebufferId = static_cast<uint32_t>(bufferId);
+    req.framebufferId = target->kmsFramebufferId;
     req.srcWidth = static_cast<uint32_t>(m_activeMode.width);
     req.srcHeight = static_cast<uint32_t>(m_activeMode.height);
-    req.inFenceFd = acquireFenceFd;
+    req.inFenceFd = (acquireFenceFd >= 0) ? acquireFenceFd : target->acquireFenceFd;
 
     const AtomicCommitResult res = m_atomicBackend.commitAtomic(m_drmFd, req);
     if (!res.succeeded) {
@@ -247,6 +253,14 @@ bool AtomicKmsPresenter::resumePresentation(int drmFd) {
 }
 
 void AtomicKmsPresenter::shutdown() {
+    if (m_drmFd >= 0) {
+        for (auto &buf : m_bufferManager.buffers()) {
+            if (buf.kmsFramebufferId != 0) {
+                m_atomicBackend.removeFramebuffer(m_drmFd, buf.kmsFramebufferId);
+                buf.kmsFramebufferId = 0;
+            }
+        }
+    }
     m_bufferManager.shutdown();
     m_drmFd = -1;
     m_connectorId = 0;

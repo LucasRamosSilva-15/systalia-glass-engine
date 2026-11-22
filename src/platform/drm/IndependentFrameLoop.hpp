@@ -9,6 +9,7 @@ namespace Systalia::Platform::Drm {
 
 class AtomicKmsPresenter;
 class DrmEventDispatcher;
+struct GbmExportedBuffer;
 
 /**
  * @brief Abstração do estágio de renderização Qt Quick/Vulkan para o loop independente.
@@ -18,6 +19,9 @@ public:
     virtual ~IControlledRenderSource() = default;
 
     [[nodiscard]] virtual bool renderControlledFrame() = 0;
+    [[nodiscard]] virtual bool renderIntoBuffer(GbmExportedBuffer &) {
+        return renderControlledFrame();
+    }
 };
 
 /**

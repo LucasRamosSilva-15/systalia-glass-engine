@@ -496,3 +496,16 @@ set_tests_properties(tst_shell_root_integration PROPERTIES
     TIMEOUT 60
     ENVIRONMENT "QT_QPA_PLATFORM=sge_vulkan_offscreen;QT_QPA_PLATFORM_PLUGIN_PATH=${CMAKE_BINARY_DIR}/platforms"
 )
+
+qt_add_executable(tst_unified_vulkan_gbm_pool unit/tst_UnifiedVulkanGbmPool.cpp)
+target_link_libraries(tst_unified_vulkan_gbm_pool PRIVATE
+    sge_drm_poc
+    Qt6::Test
+)
+add_dependencies(tst_unified_vulkan_gbm_pool sge_vulkan_offscreen)
+add_test(NAME tst_unified_vulkan_gbm_pool COMMAND tst_unified_vulkan_gbm_pool)
+set_tests_properties(tst_unified_vulkan_gbm_pool PROPERTIES
+    LABELS "integration"
+    TIMEOUT 45
+    ENVIRONMENT "QT_QPA_PLATFORM=sge_vulkan_offscreen;QT_QPA_PLATFORM_PLUGIN_PATH=${CMAKE_BINARY_DIR}/platforms"
+)

@@ -216,7 +216,8 @@ void tst_IndependentFrameLoop::pageFlipTimeoutRecoversCleanly() {
     QTRY_COMPARE(h.loop.timedOutCount(), 1ULL);
     QVERIFY(!h.loop.isFlipInFlight());
     QCOMPARE(h.sink.sent, 0);
-    QCOMPARE(h.presenter.bufferManager().countInState(GbmBufferState::Available), 2);
+    QCOMPARE(h.presenter.bufferManager().countInState(GbmBufferState::TimedOutInScanout), 1);
+    QCOMPARE(h.presenter.bufferManager().countInState(GbmBufferState::Available), 1);
 }
 
 void tst_IndependentFrameLoop::suspendDuringRenderAndCommitAndResumeWithNewFd() {

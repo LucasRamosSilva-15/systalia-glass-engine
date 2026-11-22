@@ -14,7 +14,8 @@ enum class GbmBufferState {
     Rendering,
     ReadyForScanout,
     PendingFlip,
-    Presented
+    Presented,
+    TimedOutInScanout
 };
 
 struct GbmBufferAllocationRequest {
@@ -26,20 +27,31 @@ struct GbmBufferAllocationRequest {
     bool requireRendering = true;
 };
 
+struct DrmModifierNegotiationResult {
+    bool compatible = false;
+    uint32_t drmFourcc = 0;
+    QList<uint64_t> negotiatedModifiers;
+    QString failureReason;
+};
+
 struct GbmExportedBuffer {
     uint64_t id = 0;
     uint32_t width = 0;
     uint32_t height = 0;
     uint32_t format = 0;
     uint32_t stride = 0;
+    uint32_t offset = 0;
+    uint32_t planeCount = 1;
     uint64_t modifier = 0;
     int dmabufFd = -1;
-    uint32_t kmsFramebufferId = 0; ///< Preenchido apenas na etapa de apresentação KMS real
+    uint32_t kmsFramebufferId = 0; ///< Preenchido na preparação/criação de FB KMS
     int acquireFenceFd = -1;
     int releaseFenceFd = -1;
     GbmBufferState state = GbmBufferState::Available;
     bool vulkanExternalMemoryVerified = false;
     void *nativeHandle = nullptr; ///< Ponteiro opaco para gbm_bo* no backend real
+    uint64_t vkImageHandle = 0;   ///< VkImage associado quando o pool é unificado com Vulkan
+    uint64_t vkMemoryHandle = 0;  ///< VkDeviceMemory associado ao slot unificado
 };
 
 /**
@@ -83,22 +95,30 @@ public:
 
     [[nodiscard]] bool initializeDevice(int drmFd);
     [[nodiscard]] bool allocateSwapchainPool(const GbmBufferAllocationRequest &req, int bufferCount);
+    [[nodiscard]] GbmExportedBuffer *registerExternalSlot(GbmExportedBuffer slot);
     [[nodiscard]] GbmExportedBuffer *acquireBufferForRendering();
     [[nodiscard]] bool markBufferReadyForScanout(uint64_t bufferId, int acquireFenceFd = -1);
     [[nodiscard]] bool markBufferReadyForFlip(uint64_t bufferId, int acquireFenceFd = -1);
     [[nodiscard]] bool markBufferPendingFlip(uint64_t bufferId);
     [[nodiscard]] bool markBufferPresented(uint64_t bufferId, uint32_t kmsFbId = 0);
+    [[nodiscard]] bool markBufferTimedOut(uint64_t bufferId);
     [[nodiscard]] bool releaseBufferToAvailable(uint64_t bufferId, int releaseFenceFd = -1);
     void releaseAllBuffers();
     void shutdown();
 
+    [[nodiscard]] static DrmModifierNegotiationResult negotiateModifiers(
+        uint32_t drmFourcc,
+        const QList<uint64_t> &kmsModifiers,
+        const QList<uint64_t> &vulkanModifiers);
+
+    [[nodiscard]] GbmExportedBuffer *findBuffer(uint64_t bufferId) noexcept;
+    [[nodiscard]] QList<GbmExportedBuffer> &buffers() noexcept { return m_buffers; }
+    [[nodiscard]] const QList<GbmExportedBuffer> &buffers() const noexcept { return m_buffers; }
     [[nodiscard]] bool isDeviceReady() const noexcept { return m_device != nullptr; }
     [[nodiscard]] int bufferCount() const noexcept { return static_cast<int>(m_buffers.size()); }
     [[nodiscard]] int countInState(GbmBufferState state) const noexcept;
 
 private:
-    GbmExportedBuffer *findBuffer(uint64_t bufferId) noexcept;
-
     IGbmBackend &m_backend;
     void *m_device = nullptr;
     QList<GbmExportedBuffer> m_buffers;

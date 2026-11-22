@@ -21,6 +21,8 @@ class QQuickWindow;
 
 namespace Systalia::Platform::Drm {
 
+class GbmBufferManager;
+
 struct VulkanDeviceCapabilities {
     QString deviceName;
     uint32_t vendorId = 0;
@@ -55,8 +57,16 @@ public:
     [[nodiscard]] bool resize(const QSize &pixelSize);
     [[nodiscard]] bool renderFrame();
     [[nodiscard]] bool renderControlledFrame() override { return renderFrame(); }
+    [[nodiscard]] bool renderIntoBuffer(GbmExportedBuffer &slot) override;
     [[nodiscard]] QImage readbackImage();
     [[nodiscard]] int exportDmabufFd();
+
+    [[nodiscard]] QList<uint64_t> querySupportedDrmModifiers() const;
+    [[nodiscard]] bool createSharedPoolSlots(GbmBufferManager &pool,
+                                             const QSize &pixelSize,
+                                             int slotCount = 2,
+                                             const QList<uint64_t> &kmsModifiers = {});
+    void destroySharedPoolSlots(GbmBufferManager &pool);
 
     void setSuspended(bool suspended) noexcept;
     void shutdown();

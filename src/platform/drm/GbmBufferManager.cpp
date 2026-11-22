@@ -137,6 +137,13 @@ bool GbmBufferManager::allocateSwapchainPool(const GbmBufferAllocationRequest &r
     return true;
 }
 
+GbmExportedBuffer *GbmBufferManager::registerExternalSlot(GbmExportedBuffer slot) {
+    slot.id = m_nextBufferId++;
+    slot.state = GbmBufferState::Available;
+    m_buffers.append(slot);
+    return &m_buffers.last();
+}
+
 GbmExportedBuffer *GbmBufferManager::acquireBufferForRendering() {
     for (auto &buf : m_buffers) {
         if (buf.state == GbmBufferState::Available) {
@@ -191,6 +198,45 @@ bool GbmBufferManager::markBufferPresented(uint64_t bufferId, uint32_t kmsFbId) 
     return true;
 }
 
+bool GbmBufferManager::markBufferTimedOut(uint64_t bufferId) {
+    GbmExportedBuffer *buf = findBuffer(bufferId);
+    if (!buf || buf->state != GbmBufferState::PendingFlip) {
+        return false;
+    }
+    closeFdIfValid(buf->acquireFenceFd);
+    buf->state = GbmBufferState::TimedOutInScanout;
+    return true;
+}
+
+DrmModifierNegotiationResult GbmBufferManager::negotiateModifiers(
+    uint32_t drmFourcc,
+    const QList<uint64_t> &kmsModifiers,
+    const QList<uint64_t> &vulkanModifiers) {
+    DrmModifierNegotiationResult res;
+    res.drmFourcc = drmFourcc;
+    if (drmFourcc == 0) {
+        res.failureReason = QStringLiteral("Formato DRM FourCC inválido.");
+        return res;
+    }
+    if (kmsModifiers.isEmpty() || vulkanModifiers.isEmpty()) {
+        res.failureReason = QStringLiteral("Lista de modificadores KMS ou Vulkan vazia.");
+        return res;
+    }
+
+    for (uint64_t mod : vulkanModifiers) {
+        if (kmsModifiers.contains(mod) && !res.negotiatedModifiers.contains(mod)) {
+            res.negotiatedModifiers.append(mod);
+        }
+    }
+
+    if (res.negotiatedModifiers.isEmpty()) {
+        res.failureReason = QStringLiteral("Nenhum modificador DRM compatível entre KMS e Vulkan.");
+        return res;
+    }
+    res.compatible = true;
+    return res;
+}
+
 bool GbmBufferManager::releaseBufferToAvailable(uint64_t bufferId, int releaseFenceFd) {
     GbmExportedBuffer *buf = findBuffer(bufferId);
     if (!buf) {
@@ -206,6 +252,9 @@ bool GbmBufferManager::releaseBufferToAvailable(uint64_t bufferId, int releaseFe
 void GbmBufferManager::releaseAllBuffers() {
     for (auto &buf : m_buffers) {
         m_backend.destroyBuffer(&buf);
+        closeFdIfValid(buf.dmabufFd);
+        closeFdIfValid(buf.acquireFenceFd);
+        closeFdIfValid(buf.releaseFenceFd);
     }
     m_buffers.clear();
 }
