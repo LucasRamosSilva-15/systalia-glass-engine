@@ -25,6 +25,11 @@ struct AtomicCommitResult {
     int outFenceFd = -1;
 };
 
+struct KmsFenceCapabilities {
+    bool supportsInFenceFd = false;
+    bool supportsOutFencePtr = false;
+};
+
 /**
  * @brief Interface de commit Atomic KMS e registro de framebuffers (mockável para CTest).
  */
@@ -32,6 +37,14 @@ class IAtomicKmsBackend {
 public:
     virtual ~IAtomicKmsBackend() = default;
 
+    [[nodiscard]] virtual KmsFenceCapabilities probeFenceCapabilities(int drmFd,
+                                                                     uint32_t planeId,
+                                                                     uint32_t crtcId) {
+        Q_UNUSED(drmFd);
+        Q_UNUSED(planeId);
+        Q_UNUSED(crtcId);
+        return {};
+    }
     [[nodiscard]] virtual uint32_t addFramebuffer(int drmFd, const GbmExportedBuffer &buffer) = 0;
     virtual void removeFramebuffer(int drmFd, uint32_t fbId) = 0;
     [[nodiscard]] virtual AtomicCommitResult commitAtomic(int drmFd, const AtomicCommitRequest &req) = 0;
@@ -44,6 +57,9 @@ public:
  */
 class LibdrmAtomicKmsBackend final : public IAtomicKmsBackend {
 public:
+    [[nodiscard]] KmsFenceCapabilities probeFenceCapabilities(int drmFd,
+                                                             uint32_t planeId,
+                                                             uint32_t crtcId) override;
     [[nodiscard]] uint32_t addFramebuffer(int drmFd, const GbmExportedBuffer &buffer) override;
     void removeFramebuffer(int drmFd, uint32_t fbId) override;
     [[nodiscard]] AtomicCommitResult commitAtomic(int drmFd, const AtomicCommitRequest &req) override;
@@ -75,6 +91,8 @@ public:
     [[nodiscard]] uint32_t activeCrtcId() const noexcept { return m_crtcId; }
     [[nodiscard]] uint32_t activePlaneId() const noexcept { return m_planeId; }
     [[nodiscard]] bool isSuspended() const noexcept { return m_suspended; }
+    [[nodiscard]] KmsFenceCapabilities fenceCapabilities() const noexcept { return m_fenceCaps; }
+    [[nodiscard]] int pendingOutFenceFd() const noexcept { return m_pendingOutFenceFd; }
 
 private:
     KmsOutputDiscovery m_discovery;
@@ -87,6 +105,9 @@ private:
     uint32_t m_crtcId = 0;
     uint32_t m_planeId = 0;
     DrmOutputMode m_activeMode;
+    KmsFenceCapabilities m_fenceCaps;
+    uint64_t m_pendingFlipBufferId = 0;
+    int m_pendingOutFenceFd = -1;
     bool m_initialized = false;
     bool m_suspended = false;
 };

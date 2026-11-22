@@ -509,3 +509,16 @@ set_tests_properties(tst_unified_vulkan_gbm_pool PROPERTIES
     TIMEOUT 45
     ENVIRONMENT "QT_QPA_PLATFORM=sge_vulkan_offscreen;QT_QPA_PLATFORM_PLUGIN_PATH=${CMAKE_BINARY_DIR}/platforms"
 )
+
+qt_add_executable(tst_vulkan_kms_sync unit/tst_VulkanKmsSync.cpp)
+target_link_libraries(tst_vulkan_kms_sync PRIVATE
+    sge_drm_poc
+    Qt6::Test
+)
+add_dependencies(tst_vulkan_kms_sync sge_vulkan_offscreen)
+add_test(NAME tst_vulkan_kms_sync COMMAND tst_vulkan_kms_sync)
+set_tests_properties(tst_vulkan_kms_sync PROPERTIES
+    LABELS "integration"
+    TIMEOUT 45
+    ENVIRONMENT "QT_QPA_PLATFORM=sge_vulkan_offscreen;QT_QPA_PLATFORM_PLUGIN_PATH=${CMAKE_BINARY_DIR}/platforms"
+)

@@ -12,8 +12,11 @@
 #include <QUrl>
 #include <QVulkanDeviceFunctions>
 #include <QVulkanFunctions>
+#include <rhi/qrhi.h>
+#include <rhi/qrhi_platform.h>
 
 #include <cstring>
+#include <poll.h>
 #include <unistd.h>
 #include <vector>
 
@@ -209,26 +212,107 @@ bool VulkanQuickRenderer::renderFrame() {
         m_renderControl->render();
     }
     m_renderControl->endFrame();
-    if (QVulkanDeviceFunctions *df = m_vulkanInstance.deviceFunctions(m_device)) {
-        df->vkQueueWaitIdle(m_graphicsQueue);
-    }
     return synced;
 }
 
 bool VulkanQuickRenderer::renderIntoBuffer(GbmExportedBuffer &slot) {
-    if (!m_initialized || m_suspended || !m_window) {
+    if (!m_initialized || m_suspended || !m_window || !m_renderControl) {
         return false;
     }
     if (slot.vkImageHandle == 0) {
         // Fallback para buffers simulados sem VkImage dedicada
         return renderFrame();
     }
+
+    QVulkanFunctions *f = m_vulkanInstance.functions();
+    bool hasImportedWaitSemaphore = false;
+    VkSemaphore waitSem = reinterpret_cast<VkSemaphore>(slot.vkWaitSemaphoreHandle);
+    VkSemaphore signalSem = reinterpret_cast<VkSemaphore>(slot.vkSignalSemaphoreHandle);
+
+    if (slot.releaseFenceFd >= 0) {
+        if (m_capabilities.supportsSyncFdImport && waitSem != VK_NULL_HANDLE && f) {
+            auto fnImportSemFd = reinterpret_cast<PFN_vkImportSemaphoreFdKHR>(
+                f->vkGetDeviceProcAddr(m_device, "vkImportSemaphoreFdKHR"));
+            if (fnImportSemFd) {
+                VkImportSemaphoreFdInfoKHR importInfo{};
+                importInfo.sType = VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_FD_INFO_KHR;
+                importInfo.semaphore = waitSem;
+                importInfo.flags = VK_SEMAPHORE_IMPORT_TEMPORARY_BIT;
+                importInfo.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT;
+                importInfo.fd = slot.releaseFenceFd;
+                if (fnImportSemFd(m_device, &importInfo) == VK_SUCCESS) {
+                    // Ownership do FD transferido ao Vulkan em caso de sucesso.
+                    slot.releaseFenceFd = -1;
+                    hasImportedWaitSemaphore = true;
+                }
+            }
+        }
+        if (slot.releaseFenceFd >= 0) {
+            const bool signaled = isSyncFdSignaled(slot.releaseFenceFd, 2000);
+            ::close(slot.releaseFenceFd);
+            slot.releaseFenceFd = -1;
+            if (!signaled) {
+                m_lastError = QStringLiteral("Timeout aguardando releaseFenceFd antes de reutilizar slot.");
+                return false;
+            }
+        }
+    }
+
     auto *vkImg = reinterpret_cast<VkImage>(slot.vkImageHandle);
     m_colorImage = vkImg;
     m_colorMemory = reinterpret_cast<VkDeviceMemory>(slot.vkMemoryHandle);
     m_window->setRenderTarget(QQuickRenderTarget::fromVulkanImage(
         vkImg, VK_IMAGE_LAYOUT_UNDEFINED, m_vkFormat, m_pixelSize, 1));
-    return renderFrame();
+
+    m_renderControl->polishItems();
+    m_renderControl->beginFrame();
+    const bool synced = m_renderControl->sync();
+    if (synced) {
+        m_renderControl->render();
+    }
+
+    QRhi *rhi = m_window->rhi();
+    QRhiVulkanQueueSubmitParams submitParams{};
+    if (synced && rhi && signalSem != VK_NULL_HANDLE) {
+        submitParams.waitSemaphoreCount = hasImportedWaitSemaphore ? 1U : 0U;
+        submitParams.waitSemaphores = hasImportedWaitSemaphore ? &waitSem : nullptr;
+        submitParams.signalSemaphoreCount = 1U;
+        submitParams.signalSemaphores = &signalSem;
+        rhi->setQueueSubmitParams(&submitParams);
+    }
+
+    m_renderControl->endFrame();
+    if (rhi) {
+        rhi->setQueueSubmitParams(nullptr);
+    }
+
+    if (!synced) {
+        return false;
+    }
+
+    if (m_capabilities.supportsSyncFdExport && signalSem != VK_NULL_HANDLE && f) {
+        auto fnGetSemFd = reinterpret_cast<PFN_vkGetSemaphoreFdKHR>(
+            f->vkGetDeviceProcAddr(m_device, "vkGetSemaphoreFdKHR"));
+        if (!fnGetSemFd) {
+            m_lastError = QStringLiteral("vkGetSemaphoreFdKHR indisponível no dispositivo Vulkan.");
+            return false;
+        }
+        VkSemaphoreGetFdInfoKHR getFdInfo{};
+        getFdInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_GET_FD_INFO_KHR;
+        getFdInfo.semaphore = signalSem;
+        getFdInfo.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT;
+        int syncFd = -1;
+        if (fnGetSemFd(m_device, &getFdInfo, &syncFd) != VK_SUCCESS || syncFd < 0) {
+            m_lastError = QStringLiteral("Falha ao exportar SYNC_FD após endFrame() do Qt Quick.");
+            return false;
+        }
+        if (slot.acquireFenceFd >= 0) {
+            ::close(slot.acquireFenceFd);
+        }
+        slot.acquireFenceFd = syncFd;
+    }
+
+    return true;
 }
 
 QList<uint64_t> VulkanQuickRenderer::querySupportedDrmModifiers() const {
@@ -263,7 +347,8 @@ QList<uint64_t> VulkanQuickRenderer::querySupportedDrmModifiers() const {
     fnGetProps2(m_physicalDevice, m_vkFormat, &fmtProps);
 
     for (const auto &entry : props) {
-        if ((entry.drmFormatModifierTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) != 0) {
+        if ((entry.drmFormatModifierTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) != 0
+            && entry.drmFormatModifierPlaneCount == 1) {
             result.append(entry.drmFormatModifier);
         }
     }
@@ -416,6 +501,30 @@ bool VulkanQuickRenderer::createSharedPoolSlots(GbmBufferManager &pool,
         slot.vulkanExternalMemoryVerified = true;
         slot.vkImageHandle = reinterpret_cast<uint64_t>(slotImage);
         slot.vkMemoryHandle = reinterpret_cast<uint64_t>(slotMem);
+
+        if (m_capabilities.supportsSyncFdExport) {
+            VkExportSemaphoreCreateInfo exportSemInfo{};
+            exportSemInfo.sType = VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO;
+            exportSemInfo.handleTypes = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT;
+
+            VkSemaphoreCreateInfo semInfo{};
+            semInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+            semInfo.pNext = &exportSemInfo;
+
+            VkSemaphore sigSem = VK_NULL_HANDLE;
+            if (df->vkCreateSemaphore(m_device, &semInfo, nullptr, &sigSem) == VK_SUCCESS) {
+                slot.vkSignalSemaphoreHandle = reinterpret_cast<uint64_t>(sigSem);
+            }
+        }
+        if (m_capabilities.supportsSyncFdImport) {
+            VkSemaphoreCreateInfo waitSemInfo{};
+            waitSemInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+            VkSemaphore waitSem = VK_NULL_HANDLE;
+            if (df->vkCreateSemaphore(m_device, &waitSemInfo, nullptr, &waitSem) == VK_SUCCESS) {
+                slot.vkWaitSemaphoreHandle = reinterpret_cast<uint64_t>(waitSem);
+            }
+        }
+
         Q_UNUSED(pool.registerExternalSlot(std::move(slot)));
     }
     return true;
@@ -440,6 +549,14 @@ void VulkanQuickRenderer::destroySharedPoolSlots(GbmBufferManager &pool) {
         if (slot.releaseFenceFd >= 0) {
             ::close(slot.releaseFenceFd);
             slot.releaseFenceFd = -1;
+        }
+        if (df && slot.vkSignalSemaphoreHandle != 0) {
+            df->vkDestroySemaphore(m_device, reinterpret_cast<VkSemaphore>(slot.vkSignalSemaphoreHandle), nullptr);
+            slot.vkSignalSemaphoreHandle = 0;
+        }
+        if (df && slot.vkWaitSemaphoreHandle != 0) {
+            df->vkDestroySemaphore(m_device, reinterpret_cast<VkSemaphore>(slot.vkWaitSemaphoreHandle), nullptr);
+            slot.vkWaitSemaphoreHandle = 0;
         }
         if (df && slot.vkImageHandle != 0) {
             if (reinterpret_cast<VkImage>(slot.vkImageHandle) == m_colorImage) {
@@ -619,6 +736,15 @@ void VulkanQuickRenderer::setSuspended(bool suspended) noexcept {
     m_suspended = suspended;
 }
 
+bool VulkanQuickRenderer::isSyncFdSignaled(int fenceFd, int timeoutMs) {
+    if (fenceFd < 0) {
+        return false;
+    }
+    pollfd pfd{fenceFd, POLLIN, 0};
+    const int rc = ::poll(&pfd, 1, timeoutMs);
+    return rc > 0 && (pfd.revents & POLLIN) != 0;
+}
+
 void VulkanQuickRenderer::shutdown() {
     m_initialized = false;
     m_suspended = false;
@@ -784,6 +910,23 @@ bool VulkanQuickRenderer::createVulkanDevice() {
     m_capabilities.supportsDrmFormatModifier = hasExtension(devExts, VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
     m_capabilities.supportsExternalSemaphoreFd = hasExtension(devExts, VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME);
 
+    if (m_capabilities.supportsExternalSemaphoreFd) {
+        auto fnGetExtSemProps = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalSemaphoreProperties>(
+            vkGetInstanceProcAddr(m_vulkanInstance.vkInstance(), "vkGetPhysicalDeviceExternalSemaphoreProperties"));
+        if (fnGetExtSemProps) {
+            VkPhysicalDeviceExternalSemaphoreInfo semQuery{};
+            semQuery.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SEMAPHORE_INFO;
+            semQuery.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT;
+            VkExternalSemaphoreProperties semProps{};
+            semProps.sType = VK_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_PROPERTIES;
+            fnGetExtSemProps(m_physicalDevice, &semQuery, &semProps);
+            m_capabilities.supportsSyncFdExport =
+                (semProps.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT) != 0;
+            m_capabilities.supportsSyncFdImport =
+                (semProps.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT) != 0;
+        }
+    }
+
     std::vector<const char *> enabledDevExts;
     if (hasExtension(devExts, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME)) {
         enabledDevExts.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
@@ -793,6 +936,12 @@ bool VulkanQuickRenderer::createVulkanDevice() {
     }
     if (m_capabilities.supportsExternalMemoryDmabuf) {
         enabledDevExts.push_back(VK_EXT_EXTERNAL_MEMORY_DMA_BUF_EXTENSION_NAME);
+    }
+    if (hasExtension(devExts, VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME)) {
+        enabledDevExts.push_back(VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME);
+    }
+    if (m_capabilities.supportsExternalSemaphoreFd) {
+        enabledDevExts.push_back(VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME);
     }
     if (m_capabilities.supportsDrmFormatModifier) {
         if (hasExtension(devExts, VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME)) {

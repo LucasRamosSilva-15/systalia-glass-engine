@@ -52,6 +52,8 @@ struct GbmExportedBuffer {
     void *nativeHandle = nullptr; ///< Ponteiro opaco para gbm_bo* no backend real
     uint64_t vkImageHandle = 0;   ///< VkImage associado quando o pool é unificado com Vulkan
     uint64_t vkMemoryHandle = 0;  ///< VkDeviceMemory associado ao slot unificado
+    uint64_t vkSignalSemaphoreHandle = 0; ///< VkSemaphore exportável (SYNC_FD) do slot
+    uint64_t vkWaitSemaphoreHandle = 0;   ///< VkSemaphore para importar releaseFenceFd do KMS
 };
 
 /**
@@ -100,7 +102,9 @@ public:
     [[nodiscard]] bool markBufferReadyForScanout(uint64_t bufferId, int acquireFenceFd = -1);
     [[nodiscard]] bool markBufferReadyForFlip(uint64_t bufferId, int acquireFenceFd = -1);
     [[nodiscard]] bool markBufferPendingFlip(uint64_t bufferId);
-    [[nodiscard]] bool markBufferPresented(uint64_t bufferId, uint32_t kmsFbId = 0);
+    [[nodiscard]] bool markBufferPresented(uint64_t bufferId,
+                                           uint32_t kmsFbId = 0,
+                                           int previousBufferReleaseFenceFd = -1);
     [[nodiscard]] bool markBufferTimedOut(uint64_t bufferId);
     [[nodiscard]] bool releaseBufferToAvailable(uint64_t bufferId, int releaseFenceFd = -1);
     void releaseAllBuffers();

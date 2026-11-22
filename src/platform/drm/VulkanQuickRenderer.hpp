@@ -32,6 +32,8 @@ struct VulkanDeviceCapabilities {
     bool supportsExternalMemoryDmabuf = false;
     bool supportsDrmFormatModifier = false;
     bool supportsExternalSemaphoreFd = false;
+    bool supportsSyncFdExport = false;
+    bool supportsSyncFdImport = false;
     bool dmabufExportImageCreated = false;
 };
 
@@ -70,6 +72,8 @@ public:
 
     void setSuspended(bool suspended) noexcept;
     void shutdown();
+
+    [[nodiscard]] static bool isSyncFdSignaled(int fenceFd, int timeoutMs = 0);
 
     [[nodiscard]] bool isInitialized() const noexcept { return m_initialized; }
     [[nodiscard]] bool isSuspended() const noexcept { return m_suspended; }

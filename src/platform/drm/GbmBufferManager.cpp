@@ -147,7 +147,7 @@ GbmExportedBuffer *GbmBufferManager::registerExternalSlot(GbmExportedBuffer slot
 GbmExportedBuffer *GbmBufferManager::acquireBufferForRendering() {
     for (auto &buf : m_buffers) {
         if (buf.state == GbmBufferState::Available) {
-            closeFdIfValid(buf.releaseFenceFd);
+            // Preserva buf.releaseFenceFd para que o renderer importe/aguarde antes de sobrescrever.
             buf.state = GbmBufferState::Rendering;
             return &buf;
         }
@@ -160,8 +160,10 @@ bool GbmBufferManager::markBufferReadyForScanout(uint64_t bufferId, int acquireF
     if (!buf || buf->state != GbmBufferState::Rendering) {
         return false;
     }
-    closeFdIfValid(buf->acquireFenceFd);
-    buf->acquireFenceFd = acquireFenceFd;
+    if (buf->acquireFenceFd != acquireFenceFd) {
+        closeFdIfValid(buf->acquireFenceFd);
+        buf->acquireFenceFd = acquireFenceFd;
+    }
     buf->state = GbmBufferState::ReadyForScanout;
     return true;
 }
@@ -180,15 +182,27 @@ bool GbmBufferManager::markBufferReadyForFlip(uint64_t bufferId, int acquireFenc
            && markBufferPendingFlip(bufferId);
 }
 
-bool GbmBufferManager::markBufferPresented(uint64_t bufferId, uint32_t kmsFbId) {
+bool GbmBufferManager::markBufferPresented(uint64_t bufferId,
+                                           uint32_t kmsFbId,
+                                           int previousBufferReleaseFenceFd) {
     GbmExportedBuffer *buf = findBuffer(bufferId);
     if (!buf || buf->state != GbmBufferState::PendingFlip) {
+        closeFdIfValid(previousBufferReleaseFenceFd);
         return false;
     }
+    bool attachedToPrevious = false;
     for (auto &other : m_buffers) {
         if (other.id != bufferId && other.state == GbmBufferState::Presented) {
+            closeFdIfValid(other.releaseFenceFd);
+            if (!attachedToPrevious && previousBufferReleaseFenceFd >= 0) {
+                other.releaseFenceFd = previousBufferReleaseFenceFd;
+                attachedToPrevious = true;
+            }
             other.state = GbmBufferState::Available;
         }
+    }
+    if (!attachedToPrevious) {
+        closeFdIfValid(previousBufferReleaseFenceFd);
     }
     if (kmsFbId != 0) {
         buf->kmsFramebufferId = kmsFbId;
