@@ -567,3 +567,28 @@ set_tests_properties(tst_vulkan_dmabuf_audit PROPERTIES
     TIMEOUT 45
     ENVIRONMENT "QT_QPA_PLATFORM=sge_vulkan_offscreen;QT_QPA_PLATFORM_PLUGIN_PATH=${CMAKE_BINARY_DIR}/platforms"
 )
+
+if(SGE_ENABLE_WAYLIB_BACKEND)
+    qt_add_executable(tst_waylib_test_client compositor/tst_WaylibTestClient.cpp)
+    target_link_libraries(tst_waylib_test_client PRIVATE Qt6::Gui)
+
+    qt_add_executable(tst_waylib_backend compositor/tst_WaylibBackend.cpp)
+    qt_add_resources(tst_waylib_backend "sge_waylib_test_qml"
+        PREFIX "/systalia/waylib"
+        BASE "${CMAKE_SOURCE_DIR}/src/qml/waylib"
+        FILES "${CMAKE_SOURCE_DIR}/src/qml/waylib/WaylibNestedShell.qml"
+    )
+    target_link_libraries(tst_waylib_backend PRIVATE
+        sge_waylib_backend
+        Qt6::Test
+    )
+    target_compile_definitions(tst_waylib_backend PRIVATE
+        SGE_WAYLIB_QML_IMPORT_PATH="${SGE_WAYLIB_QML_IMPORT_PATH}"
+    )
+    add_dependencies(tst_waylib_backend tst_waylib_test_client)
+    add_test(NAME tst_waylib_backend COMMAND tst_waylib_backend)
+    set_tests_properties(tst_waylib_backend PROPERTIES
+        LABELS "integration"
+        TIMEOUT 30
+    )
+endif()

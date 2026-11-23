@@ -21,6 +21,11 @@ include(cmake/SgeDrmPoc.cmake)
 include(cmake/SgeQml.cmake)
 include(cmake/SgeInstall.cmake)
 
+option(SGE_ENABLE_WAYLIB_BACKEND "Enable experimental Waylib/wlroots nested compositor backend" OFF)
+if(SGE_ENABLE_WAYLIB_BACKEND)
+    include(cmake/SgeWaylib.cmake)
+endif()
+
 enable_testing()
 add_subdirectory(tests)
 
