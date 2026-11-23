@@ -29,6 +29,20 @@
 
 void qml_register_types_Systalia_Engine();
 
+static void waitFrames(QQuickWindow *w, int frames = 2) {
+    if (!w) {
+        return;
+    }
+    QSignalSpy spy(w, &QQuickWindow::afterFrameEnd);
+    for (int i = 0; i < frames; ++i) {
+        const int target = spy.count() + 1;
+        w->update();
+        if (!QTest::qWaitFor([&]() { return spy.count() >= target; }, 500)) {
+            break;
+        }
+    }
+}
+
 class TestShellStateRegression final : public QObject {
     Q_OBJECT
 private:
@@ -250,8 +264,7 @@ private slots:
                 for (int p = 0; p < 3; ++p)
                     checked += visualItem(window->contentItem(), QString("graphicsProfile%1").arg(p))->property("checked").toBool();
                 QCOMPARE(checked, 1);
-                window->update();
-                QTest::qWait(45);
+                waitFrames(window, 2);
                 QVERIFY(!window->grabWindow().isNull());
             }
         }
@@ -260,10 +273,10 @@ private slots:
         window->setPersistentSceneGraph(false);
         window->hide();
         window->releaseResources();
-        QTest::qWait(100);
+        QCoreApplication::processEvents();
         window->show();
         QVERIFY(QTest::qWaitForWindowExposed(window));
-        QTest::qWait(100);
+        waitFrames(window, 2);
         QVERIFY(!window->grabWindow().isNull());
         evaluate("materialWindow.blurProfile = 1");
     }
@@ -716,10 +729,7 @@ private slots:
         QVERIFY(QTest::qWaitForWindowExposed(window));
 
         evaluate("raiseFileWindow(); raiseMaterialWindow(); controlCenter.close()");
-        for (int i = 0; i < 6; ++i) {
-            QCoreApplication::processEvents();
-            QTest::qWait(25);
-        }
+        waitFrames(window, 3);
 
         const QString artifactDir = QStringLiteral("/home/lucasramos/.gemini/antigravity/brain/db6eb3e4-2bf0-441e-9ef2-a1601d0a1c5f");
         QImage shellShot = window->grabWindow();
@@ -728,10 +738,7 @@ private slots:
 
         // Helper para captura dos estados obrigatórios da Dock
         auto captureDock = [&](const QString &filename) {
-            for (int i = 0; i < 4; ++i) {
-                QCoreApplication::processEvents();
-                QTest::qWait(25);
-            }
+            waitFrames(window, 2);
             QImage full = window->grabWindow();
             QVERIFY(!full.isNull());
             QImage dockCrop = full.copy(520, 805, 620, 155);
@@ -773,10 +780,7 @@ private slots:
         evaluate("systemDock.performanceProfile = 'balanced'; systemDock.filesVisible = true; systemDock.settingsOpen = true");
 
         evaluate("controlCenter.open()");
-        for (int i = 0; i < 6; ++i) {
-            QCoreApplication::processEvents();
-            QTest::qWait(25);
-        }
+        waitFrames(window, 3);
         QImage controlShot = window->grabWindow();
         QVERIFY(!controlShot.isNull());
         controlShot.save(artifactDir + QStringLiteral("/valo_control_center_live.png"));

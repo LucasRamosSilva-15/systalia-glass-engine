@@ -13,6 +13,7 @@
 #include "ValoGlassItemV2.hpp"
 #include "ValoOpticalContext.hpp"
 #include <QTest>
+#include <QSignalSpy>
 #include <QQuickWindow>
 #include <QSGGeometryNode>
 #include <QSGGeometry>
@@ -103,10 +104,23 @@ public:
 
 class OpticalContract : public QObject {
     Q_OBJECT
-    static QImage frame(QQuickWindow &w, ProbeItem &item) {
-        item.update(); w.update();
-        QTest::qWait(50);
+    static void waitFrames(QQuickWindow &w, int frames = 2) {
+        QSignalSpy spy(&w, &QQuickWindow::afterFrameEnd);
+        for (int i = 0; i < frames; ++i) {
+            const int target = spy.count() + 1;
+            w.update();
+            if (!QTest::qWaitFor([&]() { return spy.count() >= target; }, 500)) {
+                break;
+            }
+        }
+    }
+    static QImage grabAfterFrames(QQuickWindow &w, int frames = 2) {
+        waitFrames(w, frames);
         return w.grabWindow();
+    }
+    static QImage frame(QQuickWindow &w, ProbeItem &item) {
+        item.update();
+        return grabAfterFrames(w, 2);
     }
     static QColor pixel(const QImage &im, int x, int y) {
         // grabWindow may return logical-sized pixels with DPR metadata on offscreen.
@@ -247,16 +261,16 @@ Item {
         glass->setBlurProfile(profile);
         glass->setBackdropProvider(&provider);
         w.show(); QVERIFY(QTest::qWaitForWindowExposed(&w));
-        QTest::qWait(200); auto first=w.grabWindow(); QVERIFY(!first.isNull());
+        auto first=grabAfterFrames(w, 2); QVERIFY(!first.isNull());
         qInfo() << "profile" << profile << "top" << pixel(first,128,48) << "bottom" << pixel(first,128,144);
         QVERIFY(pixel(first,128,48).red()>200);
         QVERIFY(pixel(first,128,144).blue()>200);
         root->setProperty("topColor",QColor(Qt::green));
-        QTest::qWait(200); auto changed=w.grabWindow(); QVERIFY(!changed.isNull());
+        auto changed=grabAfterFrames(w, 2); QVERIFY(!changed.isNull());
         QVERIFY2(pixel(changed,128,48).green()>100,"Wallpaper must update after the first GPU blur");
         QVERIFY(pixel(changed,128,48).red()<30);
-        glass->setX(100); QTest::qWait(100);
-        auto moved=w.grabWindow(); QVERIFY(!moved.isNull());
+        glass->setX(100);
+        auto moved=grabAfterFrames(w, 2); QVERIFY(!moved.isNull());
         QVERIFY(pixel(moved,128,48).green()>100);
         QVERIFY(pixel(moved,128,144).blue()>200);
         // Destroy consumer before provider and QML source.
@@ -271,11 +285,12 @@ Item {
         QVERIFY(QMetaObject::invokeMethod(glass, "onIdleTimeout"));
         QVERIFY(!glass->isCausticFrozen());
         QCOMPARE(glass->animationIntervalMs(),16);
-        QTest::qWait(5200); // Regress the old five-second unconditional freeze.
+        QTRY_VERIFY_WITH_TIMEOUT(glass->causticTime() > 0.0f, 500);
         const float t=glass->causticTime();
         QVERIFY(t>0); QVERIFY(glass->animationRunning());
         const auto a=w.grabWindow(); QVERIFY(!a.isNull());
-        QTest::qWait(500); const auto b=w.grabWindow(); QVERIFY(!b.isNull());
+        QTRY_VERIFY_WITH_TIMEOUT(glass->causticTime() > t + .1f, 800);
+        const auto b=w.grabWindow(); QVERIFY(!b.isNull());
         QVERIFY(glass->causticTime()>t+.1f); QVERIFY(a!=b); // Actual production pass I changes.
         glass->setBlurProfile(1); QCOMPARE(glass->animationIntervalMs(),33);
         glass->setBlurProfile(0); const float paused=glass->causticTime();
@@ -325,11 +340,11 @@ Item {
             wrapper = reinterpret_cast<quintptr>(used);
         },Qt::DirectConnection);
         window.show(); QVERIFY(QTest::qWaitForWindowExposed(&window));
-        QTest::qWait(100); glass->update(); QVERIFY(!window.grabWindow().isNull());
+        glass->update(); QVERIFY(!grabAfterFrames(window, 2).isNull());
         QJsonArray metrics; double energies[3]{}; quintptr stable=0;
         for(int profile : {0,1,2,0,2,1}) {
-            glass->setBlurProfile(profile); window.update(); QTest::qWait(220);
-            const auto image=window.grabWindow(); QVERIFY(!image.isNull());
+            glass->setBlurProfile(profile);
+            const auto image=grabAfterFrames(window, 2); QVERIFY(!image.isNull());
             double energy=0, mean=0; int count=0;
             for(int y=32;y<160;++y) for(int x=32;x<224;++x) {
                 auto luma=[](QColor c) { return .2126*c.redF()+.7152*c.greenF()+.0722*c.blueF(); };
@@ -406,7 +421,7 @@ Item {
         auto *stack=object->findChild<QObject *>("stack"); QVERIFY(stack);
         auto *first=object->findChild<QQuickItem *>("first"); QVERIFY(first);
         w.show(); QVERIFY(QTest::qWaitForWindowExposed(&w));
-        auto grab=[&] { w.update(); QTest::qWait(120); return w.grabWindow(); };
+        auto grab=[&] { return grabAfterFrames(w, 2); };
         QVERIFY(stack->property("compositeAvailable").toBool());
         auto initial=grab(); QVERIFY2(pixel(initial,120,100).red()>180,"Front glass must sample the rear internal window, not wallpaper");
         root->setProperty("firstPainted",false);
@@ -505,7 +520,7 @@ Item {
         auto *other=object->findChild<QQuickItem *>("otherWindow"); QVERIFY(other);
         auto *consumer=object->findChild<QQuickItem *>("overlayConsumer"); QVERIFY(consumer);
         window.show(); QVERIFY(QTest::qWaitForWindowExposed(&window));
-        auto grab=[&] {window.update();QTest::qWait(100);return window.grabWindow();};
+        auto grab=[&] { return grabAfterFrames(window, 2); };
         QVERIFY(stack->property("topBarAvailable").toBool());
         QVERIFY2(pixel(grab(),120,60).red()>180,"Overlay must sample the rear window");
         for(int i=0;i<18;++i) {
@@ -581,7 +596,7 @@ Item {
         auto *a=object->findChild<QQuickItem *>("a"); auto *b=object->findChild<QQuickItem *>("b");
         auto *c=object->findChild<QQuickItem *>("c"); auto *d=object->findChild<QQuickItem *>("d");
         QVERIFY(a && b && c && d); window.show(); QVERIFY(QTest::qWaitForWindowExposed(&window));
-        auto grab=[&] {window.update();QTest::qWait(150);return window.grabWindow();};
+        auto grab=[&] { return grabAfterFrames(window, 2); };
         QCOMPARE(stack->property("selectedCount").toInt(),1);
         auto image=grab(); QVERIFY(!image.isNull());
         QVERIFY(pixel(image,25,90).red()>200 && pixel(image,25,90).green()>200);
@@ -618,7 +633,7 @@ Item {
         auto *item=qobject_cast<QQuickItem *>(object.data()); QVERIFY(item);
         item->setSize(QSizeF(256,192)); item->setParentItem(w.contentItem());
         w.show(); QVERIFY(QTest::qWaitForWindowExposed(&w));
-        auto grab=[&] { item->update(); QTest::qWait(70); return w.grabWindow(); };
+        auto grab=[&] { item->update(); return grabAfterFrames(w, 2); };
         auto energy=[](const QImage &image) { qint64 sum=0; for(int y=0;y<image.height();++y) for(int x=0;x<image.width();++x) sum+=image.pixelColor(x,y).alpha(); return sum; };
         const QString output=qEnvironmentVariable("SGE_VALO_GPU_METRICS_DIR");
         if(!output.isEmpty()) QDir().mkpath(output);

@@ -14,6 +14,7 @@
 #include <QQuickWindow>
 #include <QRasterWindow>
 #include <QTemporaryDir>
+#include <QSignalSpy>
 #include <QTest>
 #include <QTimer>
 #include <QtWaylandCompositor/QWaylandOutput>
@@ -31,6 +32,17 @@ constexpr auto TestSocketName = "wayland-visibility-test";
 }
 
 void qml_register_types_Systalia_Engine();
+
+static void waitFrames(QQuickWindow &w, int frames = 2) {
+    QSignalSpy spy(&w, &QQuickWindow::afterFrameEnd);
+    for (int i = 0; i < frames; ++i) {
+        const int target = spy.count() + 1;
+        w.update();
+        if (!QTest::qWaitFor([&]() { return spy.count() >= target; }, 500)) {
+            break;
+        }
+    }
+}
 
 class VisibilityPatternClient final : public QRasterWindow {
 protected:
@@ -188,10 +200,7 @@ void TestClientSurfaceVisibility::clientBufferIsRenderedVisibleInCompositor() {
     QTRY_COMPARE(surfaceItem->size(), viewport->size());
 
     // Permitir múltiplos passes de renderização da árvore de cena
-    for (int i = 0; i < 5; ++i) {
-        QCoreApplication::processEvents();
-        QTest::qWait(25);
-    }
+    waitFrames(window, 3);
 
     // Capturar o framebuffer real do compositor
     QImage screenshot = window.grabWindow();
@@ -310,14 +319,14 @@ void TestClientSurfaceVisibility::alacrittyRendersVisibleTerminalCharacters() {
     QTRY_VERIFY(container->property("clientMapped").toBool());
 
     // Permitir renderização de múltiplos passes e ciclos de evento Wayland
-    for (int i = 0; i < 15; ++i) {
+    for (int i = 0; i < 6; ++i) {
         m_compositor->processWaylandEvents();
         for (auto *surf : m_compositor->surfaces()) {
             surf->frameStarted();
             surf->sendFrameCallbacks();
         }
         QCoreApplication::processEvents();
-        QTest::qWait(30);
+        waitFrames(window, 1);
     }
 
     QImage screenshot = window.grabWindow();
