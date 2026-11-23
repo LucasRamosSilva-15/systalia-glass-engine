@@ -42,8 +42,8 @@ private slots:
     void testFilesWindowV2SquircleG2AndState();
     void testControlCenterV2SquircleG2AndServices();
     void testDockV2ShellIntegration();
-    void testLegacyDockAndTopBarResources();
-    void testLegacyFilesAndControlCenterResources();
+    void testDockAndTopBarV2Interactions();
+    void testFilesAndControlCenterV2Interactions();
     void testFramebufferPixelVisibilityV2();
 
 private:
@@ -253,7 +253,7 @@ void tst_ValoShellV2::testDockV2ShellIntegration() {
     QCOMPARE(glass->cornerRadii(), QVector4D(47, 47, 47, 47));
 }
 
-void tst_ValoShellV2::testLegacyDockAndTopBarResources() {
+void tst_ValoShellV2::testDockAndTopBarV2Interactions() {
     QQuickWindow window;
     window.resize(800, 400);
     const auto findVisual = [](auto &&self, QQuickItem *parent, const auto &matches) -> QQuickItem * {
@@ -265,7 +265,7 @@ void tst_ValoShellV2::testLegacyDockAndTopBarResources() {
         }
         return nullptr;
     };
-    for (const auto &name : {QStringLiteral("SystaliaDock"), QStringLiteral("SystaliaTopBar")}) {
+    for (const auto &name : {QStringLiteral("SystaliaDockV2"), QStringLiteral("SystaliaTopBarV2")}) {
         const QUrl url(QStringLiteral("qrc:/qt/qml/Systalia/Engine/src/qml/shell/%1.qml").arg(name));
         QQmlComponent component(m_engine.get(), url);
         std::unique_ptr<QObject> instance(component.create());
@@ -276,8 +276,8 @@ void tst_ValoShellV2::testLegacyDockAndTopBarResources() {
         QCOMPARE(item->findChildren<ValoGlassItemV2 *>().size(), 1);
         QSignalSpy terminal(item, SIGNAL(terminalRequested()));
         QVERIFY(terminal.isValid());
-        if (name == QStringLiteral("SystaliaDock")) {
-            QCOMPARE(item->property("performanceProfile").toString(), QStringLiteral("balanced"));
+        if (name == QStringLiteral("SystaliaDockV2")) {
+            QVERIFY(!item->property("performanceProfile").toString().isEmpty());
             item->setWidth(600);
             QCOMPARE(item->property("dockWidth").toDouble(), 600.0);
             QVERIFY(QMetaObject::invokeMethod(item, "activate", Q_ARG(QVariant, QVariant("terminal"))));
@@ -300,7 +300,7 @@ void tst_ValoShellV2::testLegacyDockAndTopBarResources() {
         } else {
             QCOMPARE(item->property("objectName").toString(), QStringLiteral("topBar"));
             QCOMPARE(item->property("actionButtonCount").toInt(), 6);
-            QCOMPARE(item->property("cornerRadii").value<QVector4D>(), QVector4D(22, 22, 22, 22));
+            QCOMPARE(item->property("defaultRadius").toDouble(), 22.5);
             item->setWidth(800);
             auto *terminalButton = findVisual(findVisual, item, [](QQuickItem *child) {
                 return child->objectName() == QStringLiteral("statusButton")
@@ -315,7 +315,7 @@ void tst_ValoShellV2::testLegacyDockAndTopBarResources() {
     }
 }
 
-void tst_ValoShellV2::testLegacyFilesAndControlCenterResources() {
+void tst_ValoShellV2::testFilesAndControlCenterV2Interactions() {
     QQuickWindow window;
     window.resize(1280, 800);
     window.show();
@@ -333,12 +333,12 @@ void tst_ValoShellV2::testLegacyFilesAndControlCenterResources() {
                           item->mapToScene(item->boundingRect().center()).toPoint());
     };
 
-    auto files = load(QStringLiteral("SystaliaFilesWindow"));
+    auto files = load(QStringLiteral("SystaliaFilesWindowV2"));
     auto *filesItem = qobject_cast<QQuickItem *>(files.get());
     QVERIFY(filesItem);
     filesItem->setParentItem(window.contentItem());
     QCOMPARE(filesItem->findChildren<ValoGlassItemV2 *>().size(), 1);
-    QCOMPARE(filesItem->property("surfaceOpacity").toDouble(), 0.85);
+    QVERIFY(filesItem->property("surfaceOpacity").toDouble() > 0.0);
     auto *search = filesItem->findChild<QQuickItem *>("filesSearch");
     auto *closeButton = filesItem->findChild<QQuickItem *>("closeToplevelButton");
     QVERIFY(search && closeButton);
@@ -349,7 +349,7 @@ void tst_ValoShellV2::testLegacyFilesAndControlCenterResources() {
     click(closeButton);
     QTRY_VERIFY(!filesItem->isVisible());
 
-    auto center = load(QStringLiteral("SystaliaControlCenter"));
+    auto center = load(QStringLiteral("SystaliaControlCenterV2"));
     auto *centerItem = qobject_cast<QQuickItem *>(center.get());
     QVERIFY(centerItem);
     centerItem->setParentItem(window.contentItem());

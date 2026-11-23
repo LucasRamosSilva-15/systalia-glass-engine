@@ -211,24 +211,8 @@ inline void installValoStabilityProbe(QQuickWindow *window) {
         if (qEnvironmentVariableIsSet("SGE_VALO_FILES_CONTROL_PROBE")) {
             step(29000, "raiseFileWindow(); controlCenter.close()", "11-files-v2");
             step(32000, "controlCenter.open()", "12-control-center-v2");
-            step(35000, R"(
-                controlCenter.close();
-                var legacyFiles = Qt.createComponent("qrc:/qt/qml/Systalia/Engine/src/qml/shell/SystaliaFilesWindow.qml")
-                var files = legacyFiles.createObject(glassChassis.parent, {
-                    objectName: "probeLegacyFiles", x: glassChassis.x, y: glassChassis.y,
-                    z: glassChassis.z, backdropSource: backdropGrab
-                });
-                if (files) glassChassis.visible = false;
-            )", "13-files-legacy-name");
-            step(38000, R"(
-                var legacyCenter = Qt.createComponent("qrc:/qt/qml/Systalia/Engine/src/qml/shell/SystaliaControlCenter.qml");
-                var center = legacyCenter.createObject(controlCenter.parent, {
-                    objectName: "probeLegacyControlCenter", backdropSource: backdropGrab
-                });
-                if (center) center.open();
-            )", "14-control-center-legacy-name");
-            step(41000, "trackedClientContainers.slice().forEach(w=>waylandServer.closeToplevel(w.toplevel))", "15-client-closed");
-            QTimer::singleShot(43000, window, [] { QCoreApplication::quit(); });
+            step(35000, "trackedClientContainers.slice().forEach(w=>waylandServer.closeToplevel(w.toplevel))", "13-client-closed");
+            QTimer::singleShot(37000, window, [] { QCoreApplication::quit(); });
             return;
         }
         step(29000, "flowMenu.opened=true", "11-flow");
