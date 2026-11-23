@@ -1,0 +1,12 @@
+CMakeLists.txt:220:        src/qml/WaylandClientView.qml
+CMakeLists.txt:223:        src/qml/shell/SystaliaTopBar.qml
+CMakeLists.txt:224:        src/qml/shell/SystaliaDock.qml
+CMakeLists.txt:226:        src/qml/shell/SystaliaG2Frame.qml
+CMakeLists.txt:229:        src/qml/shell/SystaliaFilesWindow.qml
+CMakeLists.txt:233:        src/qml/shell/SystaliaControlCenter.qml
+src/qml/ValoGlass.qml:196:    SystaliaG2Frame {
+src/qml/ValoGlass.qml:223:    SystaliaG2Frame {
+src/qml/ValoGlass.qml:248:    SystaliaG2Frame {
+src/qml/shell/SystaliaControlCenter.qml:105:        SystaliaG2Frame {
+src/qml/shell/SystaliaWindowHeader.qml:45:    SystaliaG2Frame {
+src/qml/shell/SystaliaWindowHeader.qml:67:    SystaliaG2Frame {

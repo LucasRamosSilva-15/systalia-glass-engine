@@ -1,0 +1,20 @@
+********* Start testing of OpticalContract *********
+Config: Using QtTest library 6.11.2, Qt 6.11.2 (x86_64-little_endian-lp64 shared (dynamic) release build; by GCC 16.2.1 20260819 (Red Hat 16.2.1-2)), fedora 44
+PASS   : OpticalContract::initTestCase()
+QWARN  : OpticalContract::singleWindowOverlayBackdropPixels() [SGE-BACKDROP-V2] REAL TEXTURE ATIVA: size=-1x-1, rhiTex=0x0, rhi=0x7ff3f4003d40
+QWARN  : OpticalContract::singleWindowOverlayBackdropPixels() [SGE-BACKDROP-V2] onBeforeRendering frame=1: srcTex=0x7ff3f44a13f0, rhiSrc=0x7ff3f44b2650, srcSize=256x192
+QWARN  : OpticalContract::singleWindowOverlayBackdropPixels() [SGE-BACKDROP-V2] onBeforeRendering frame=2: srcTex=0x7ff3f44a85b0, rhiSrc=0x7ff3f45f0540, srcSize=256x192
+QWARN  : OpticalContract::singleWindowOverlayBackdropPixels() [SGE-BACKDROP-V2] onBeforeRendering frame=3: srcTex=0x7ff3f44a13f0, rhiSrc=0x7ff3f44b2650, srcSize=256x192
+QWARN  : OpticalContract::singleWindowOverlayBackdropPixels() [SGE-BACKDROP-V2] onBeforeRendering frame=4: srcTex=0x7ff3f44a13f0, rhiSrc=0x7ff3f44b2650, srcSize=256x192
+QWARN  : OpticalContract::singleWindowOverlayBackdropPixels() [SGE-BACKDROP-V2] onBeforeRendering frame=5: srcTex=0x7ff3f44a85b0, rhiSrc=0x7ff3f45f0540, srcSize=256x192
+QWARN  : OpticalContract::singleWindowOverlayBackdropPixels() [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7ff3f47253e0, format=1, size=256x192
+QWARN  : OpticalContract::singleWindowOverlayBackdropPixels() [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7ff3f4797820, format=1, size=256x192
+QWARN  : OpticalContract::singleWindowOverlayBackdropPixels() [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7ff3f4797820, format=1, size=256x192
+QWARN  : OpticalContract::singleWindowOverlayBackdropPixels() [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7ff3f4766fa0, format=1, size=256x192
+QWARN  : OpticalContract::singleWindowOverlayBackdropPixels() [SGE-BACKDROP-V2] Blur GPU executado com sucesso! outRhi=0x7ff3f4743a10, format=1, size=256x192
+QINFO  : OpticalContract::singleWindowOverlayBackdropPixels() overlay GPU edge contrast 0.0975975 0.00546956 0.00194014
+PASS   : OpticalContract::singleWindowOverlayBackdropPixels()
+PASS   : OpticalContract::internalWindowBackdropPixels()
+PASS   : OpticalContract::cleanupTestCase()
+Totals: 4 passed, 0 failed, 0 skipped, 0 blacklisted, 8083ms
+********* Finished testing of OpticalContract *********

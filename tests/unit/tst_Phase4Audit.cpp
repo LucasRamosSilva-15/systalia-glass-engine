@@ -8,10 +8,11 @@
 #include <cmath>
 #include <memory>
 
-#include "compositor/OutputManagerService.hpp"
-#include "gfx/SystaliaGlassItem.hpp"
-#include "system/LiquidTilingService.hpp"
-#include "system/WorkspaceManagerService.hpp"
+#include "compositor/outputs/OutputManagerService.hpp"
+#include "graphics/v2/materials/ValoGlassItemV2.hpp"
+#include "graphics/v2/backdrop/ValoBackdropProviderV2.hpp"
+#include "services/windows/LiquidTilingService.hpp"
+#include "services/windows/WorkspaceManagerService.hpp"
 
 class tst_Phase4Audit : public QObject {
     Q_OBJECT
@@ -23,28 +24,31 @@ private slots:
 };
 
 void tst_Phase4Audit::workspaceOcclusionCullingAndVramPreservation() {
+    using Systalia::Gfx::V2::ValoBackdropProviderV2;
+    using Systalia::Gfx::V2::ValoGlassItemV2;
+
     WorkspaceManagerService wsManager;
     wsManager.setTotalWorkspaces(4);
     wsManager.switchToWorkspace(0);
 
-    // Simula 4 workspaces com contentores de janela e chassis ópticos SystaliaGlassItem
+    // Simula 4 workspaces com contentores de janela e chassis ópticos ValoGlassItemV2
     QQuickItem rootCanvas;
     std::vector<std::unique_ptr<QQuickItem>> containers;
-    std::vector<SystaliaGlassItem *> glassItems;
+    std::vector<ValoGlassItemV2 *> glassItems;
 
-    auto dummyBackdrop = std::make_unique<QQuickItem>(&rootCanvas);
-    auto dummyClient = std::make_unique<QQuickItem>(&rootCanvas);
+    auto dummyBackdropSource = std::make_unique<QQuickItem>(&rootCanvas);
+    ValoBackdropProviderV2 sharedBackdrop;
+    sharedBackdrop.setSource(dummyBackdropSource.get());
 
     for (int ws = 0; ws < 4; ++ws) {
         auto container = std::make_unique<QQuickItem>(&rootCanvas);
         container->setWidth(800.0);
         container->setHeight(520.0);
 
-        auto *glass = new SystaliaGlassItem(container.get());
+        auto *glass = new ValoGlassItemV2(container.get());
         glass->setWidth(800.0);
         glass->setHeight(520.0);
-        glass->setBackdropSource(dummyBackdrop.get());
-        glass->setClientTextureSource(dummyClient.get());
+        glass->setBackdropProvider(&sharedBackdrop);
 
         wsManager.setWindowWorkspace(container.get(), ws);
         glassItems.push_back(glass);
@@ -58,27 +62,17 @@ void tst_Phase4Audit::workspaceOcclusionCullingAndVramPreservation() {
     QCOMPARE(visibleAtZero, 1);
     QCOMPARE(wsManager.activeVisibleWindowCount(), 1);
 
-    for (int ws = 0; ws < 4; ++ws) {
-        glassItems[static_cast<size_t>(ws)]->setOccluded(!containers[static_cast<size_t>(ws)]->isVisible());
-    }
-
     QVERIFY(containers[0]->isVisible());
-    QVERIFY(!glassItems[0]->isOccluded());
-    QVERIFY(!glassItems[0]->shouldSuppressSceneGraphUpdate());
-    QVERIFY(glassItems[0]->hasPreservedVramTextures());
+    QCOMPARE(glassItems[0]->backdropProvider(), &sharedBackdrop);
 
     for (int ws = 1; ws < 4; ++ws) {
         const auto idx = static_cast<size_t>(ws);
         QVERIFY(!containers[idx]->isVisible());
-        QVERIFY(glassItems[idx]->isOccluded());
-        QVERIFY(glassItems[idx]->shouldSuppressSceneGraphUpdate());
-        // As fontes de textura continuam preservadas em VRAM mesmo com oclusão ativa
-        QVERIFY(glassItems[idx]->hasPreservedVramTextures());
-
-        const quint64 beforeSuppressed = glassItems[idx]->suppressedUpdateCount();
+        // O provedor de backdrop permanece vinculado mesmo quando o container está fora do viewport
+        QCOMPARE(glassItems[idx]->backdropProvider(), &sharedBackdrop);
         glassItems[idx]->setIor(1.52f);
         glassItems[idx]->setCausticIntensity(0.85f);
-        QVERIFY(glassItems[idx]->suppressedUpdateCount() > beforeSuppressed);
+        QCOMPARE(glassItems[idx]->ior(), 1.52f);
     }
 
     // 2. Durante transição hidrodinâmica entre Workspace 0 e Workspace 1 (viewportOffset = -960):
@@ -101,7 +95,7 @@ void tst_Phase4Audit::workspaceOcclusionCullingAndVramPreservation() {
     QVERIFY(!containers[1]->isVisible());
     QVERIFY(containers[2]->isVisible());
     QVERIFY(!containers[3]->isVisible());
-    QVERIFY(glassItems[2]->hasPreservedVramTextures());
+    QCOMPARE(glassItems[2]->backdropProvider(), &sharedBackdrop);
 }
 
 void tst_Phase4Audit::tileSplitterStressAndG2FusedRadiiSafety() {

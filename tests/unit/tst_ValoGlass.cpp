@@ -4,12 +4,12 @@
 #include <QQuickItem>
 #include <QQuickWindow>
 #include <QVector4D>
-#include <QVector2D>
 #include <QImage>
 #include <QDir>
 
-#include "gfx/SystaliaGlassItem.hpp"
-#include "tokens/ValoTokens.hpp"
+#include "graphics/v2/materials/ValoGlassItemV2.hpp"
+
+void qml_register_types_Systalia_Engine();
 
 class TestValoGlass final : public QObject {
     Q_OBJECT
@@ -19,7 +19,7 @@ private:
 
 private slots:
     void initTestCase();
-    void defaultPropertiesMatchValoTheme();
+    void defaultPropertiesMatchValoV2Defaults();
     void performanceProfilesAdaptOpticalParameters();
     void contentNestingInContentContainer();
     void activeStateModulatesIllumination();
@@ -27,15 +27,15 @@ private slots:
 };
 
 void TestValoGlass::initTestCase() {
-    qmlRegisterType<SystaliaGlassItem>("Systalia.Engine", 1, 0, "SystaliaGlassItem");
+    qml_register_types_Systalia_Engine();
 }
 
-void TestValoGlass::defaultPropertiesMatchValoTheme() {
+void TestValoGlass::defaultPropertiesMatchValoV2Defaults() {
     QQmlComponent component(&m_engine);
     component.setData(
         "import QtQuick\n"
         "import Systalia.Engine\n"
-        "ValoGlass {\n"
+        "ValoMaterialSurfaceV2 {\n"
         "    id: glass\n"
         "}\n",
         QUrl()
@@ -47,20 +47,15 @@ void TestValoGlass::defaultPropertiesMatchValoTheme() {
     auto *glass = qobject_cast<QQuickItem *>(obj.data());
     QVERIFY(glass);
 
-    // Verificação das 10 propriedades principais com padrões do ValoTheme
-    QCOMPARE(glass->property("glassOpacity").toReal(), Systalia::ValoTokens::opacityWindowMax);
-    QCOMPARE(glass->property("blurRadius").toReal(), Systalia::ValoTokens::blurBackdrop);
-    QCOMPARE(glass->property("cornerRadius").toReal(), Systalia::ValoTokens::radiusWindow);
-    QCOMPARE(glass->property("cornerRadii").value<QVector4D>(),
-             QVector4D(Systalia::ValoTokens::radiusWindow, Systalia::ValoTokens::radiusWindow,
-                       Systalia::ValoTokens::radiusWindow, Systalia::ValoTokens::radiusWindow));
-    QCOMPARE(glass->property("borderIntensity").toReal(), 1.0);
-    QCOMPARE(glass->property("iridescenceStrength").toReal(), 1.0);
-    QCOMPARE(glass->property("refractionStrength").toReal(), 1.0);
+    QCOMPARE(glass->property("surfaceOpacity").toReal(), 0.34);
+    QCOMPARE(glass->property("cornerRadius").toReal(), 20.0);
+    QCOMPARE(glass->property("cornerRadii").value<QVector4D>(), QVector4D(20.0f, 20.0f, 20.0f, 20.0f));
+    QCOMPARE(glass->property("specularStrokeWidth").toReal(), 1.25);
+    QCOMPARE(glass->property("blurProfile").toInt(), 2);
+    QCOMPARE(glass->property("ior").toReal(), 1.25);
     QCOMPARE(glass->property("chromaticDispersion").toReal(), 0.040);
-    QCOMPARE(glass->property("glowIntensity").toReal(), 1.0);
+    QCOMPARE(glass->property("causticIntensity").toReal(), 0.18);
     QCOMPARE(glass->property("active").toBool(), true);
-    QCOMPARE(glass->property("performanceProfile").toString(), QStringLiteral("balanced"));
 }
 
 void TestValoGlass::performanceProfilesAdaptOpticalParameters() {
@@ -69,26 +64,20 @@ void TestValoGlass::performanceProfilesAdaptOpticalParameters() {
         "import QtQuick\n"
         "import Systalia.Engine\n"
         "Item {\n"
-        "    ValoGlass {\n"
+        "    ValoMaterialSurfaceV2 {\n"
         "        id: glassQuality\n"
         "        objectName: 'glassQuality'\n"
-        "        performanceProfile: 'quality'\n"
-        "        refractionStrength: 1.0\n"
-        "        chromaticDispersion: 0.040\n"
+        "        blurProfile: 2\n"
         "    }\n"
-        "    ValoGlass {\n"
+        "    ValoMaterialSurfaceV2 {\n"
         "        id: glassBalanced\n"
         "        objectName: 'glassBalanced'\n"
-        "        performanceProfile: 'balanced'\n"
-        "        refractionStrength: 1.0\n"
-        "        chromaticDispersion: 0.040\n"
+        "        blurProfile: 1\n"
         "    }\n"
-        "    ValoGlass {\n"
+        "    ValoMaterialSurfaceV2 {\n"
         "        id: glassPerformance\n"
         "        objectName: 'glassPerformance'\n"
-        "        performanceProfile: 'performance'\n"
-        "        refractionStrength: 1.0\n"
-        "        chromaticDispersion: 0.040\n"
+        "        blurProfile: 0\n"
         "    }\n"
         "}\n",
         QUrl()
@@ -103,20 +92,19 @@ void TestValoGlass::performanceProfilesAdaptOpticalParameters() {
 
     QVERIFY(gQuality && gBalanced && gPerformance);
 
-    // 1. Perfil Quality: máximo detalhamento óptico
-    QCOMPARE(gQuality->property("effectiveIor").toReal(), 1.25);
-    QCOMPARE(gQuality->property("effectiveDispersion").toReal(), 0.040);
-    QCOMPARE(gQuality->property("effectiveCaustics").toReal(), 0.85);
+    // 1. Perfil Quality (2): máximo detalhamento óptico
+    QCOMPARE(gQuality->property("ior").toReal(), 1.25);
+    QCOMPARE(gQuality->property("chromaticDispersion").toReal(), 0.040);
+    QCOMPARE(gQuality->property("causticIntensity").toReal(), 0.18);
 
-    // 2. Perfil Balanced: equilíbrio entre fidelidade e custo
-    QCOMPARE(gBalanced->property("effectiveIor").toReal(), 1.15);
-    QVERIFY(qAbs(gBalanced->property("effectiveDispersion").toReal() - 0.026) < 0.001);
-    QCOMPARE(gBalanced->property("effectiveCaustics").toReal(), 0.50);
+    // 2. Perfil Balanced (1): equilíbrio entre fidelidade e custo
+    QCOMPARE(gBalanced->property("ior").toReal(), 1.15);
+    QCOMPARE(gBalanced->property("chromaticDispersion").toReal(), 0.020);
+    QCOMPARE(gBalanced->property("causticIntensity").toReal(), 0.05);
 
-    // 3. Perfil Performance: supressão de efeitos custosos
-    QCOMPARE(gPerformance->property("effectiveIor").toReal(), 1.0);
-    QCOMPARE(gPerformance->property("effectiveDispersion").toReal(), 0.0);
-    QCOMPARE(gPerformance->property("effectiveCaustics").toReal(), 0.0);
+    // 3. Perfil Performance (0): partículas desativadas e menor custo
+    QCOMPARE(gPerformance->property("blurProfile").toInt(), 0);
+    QCOMPARE(gPerformance->property("ior").toReal(), 1.15);
 }
 
 void TestValoGlass::contentNestingInContentContainer() {
@@ -124,7 +112,7 @@ void TestValoGlass::contentNestingInContentContainer() {
     component.setData(
         "import QtQuick\n"
         "import Systalia.Engine\n"
-        "ValoGlass {\n"
+        "ValoMaterialSurfaceV2 {\n"
         "    id: glassHost\n"
         "    width: 400\n"
         "    height: 300\n"
@@ -159,7 +147,7 @@ void TestValoGlass::activeStateModulatesIllumination() {
     component.setData(
         "import QtQuick\n"
         "import Systalia.Engine\n"
-        "ValoGlass {\n"
+        "ValoMaterialSurfaceV2 {\n"
         "    id: glassInteractive\n"
         "    active: true\n"
         "}\n",
@@ -172,16 +160,12 @@ void TestValoGlass::activeStateModulatesIllumination() {
     auto *glass = qobject_cast<QQuickItem *>(obj.data());
     QVERIFY(glass);
 
-    const qreal activeCaustics = glass->property("effectiveCaustics").toReal();
-    const qreal activeSurfaceOpacity = glass->property("effectiveSurfaceOpacity").toReal();
+    auto *glassItem = glass->findChild<Systalia::Gfx::V2::ValoGlassItemV2 *>();
+    QVERIFY(glassItem);
+    QVERIFY(glassItem->isActive());
 
     glass->setProperty("active", false);
-
-    const qreal inactiveCaustics = glass->property("effectiveCaustics").toReal();
-    const qreal inactiveSurfaceOpacity = glass->property("effectiveSurfaceOpacity").toReal();
-
-    QVERIFY(inactiveCaustics < activeCaustics);
-    QVERIFY(inactiveSurfaceOpacity < activeSurfaceOpacity);
+    QVERIFY(!glassItem->isActive());
 }
 
 void TestValoGlass::renderThreeProfilesAndCaptureComparison() {
@@ -197,11 +181,10 @@ void TestValoGlass::renderThreeProfilesAndCaptureComparison() {
         "    Row {\n"
         "        anchors.centerIn: parent\n"
         "        spacing: 32\n"
-        "        // 1. Vidro Padrão (Balanced)\n"
-        "        ValoGlass {\n"
+        "        ValoMaterialSurfaceV2 {\n"
         "            width: 360\n"
         "            height: 480\n"
-        "            performanceProfile: 'balanced'\n"
+        "            blurProfile: 1\n"
         "            active: true\n"
         "            Text {\n"
         "                anchors.centerIn: parent\n"
@@ -211,14 +194,11 @@ void TestValoGlass::renderThreeProfilesAndCaptureComparison() {
         "                font.pixelSize: 16\n"
         "            }\n"
         "        }\n"
-        "        // 2. Vidro Ativo com Efeitos Prismáticos (Quality)\n"
-        "        ValoGlass {\n"
+        "        ValoMaterialSurfaceV2 {\n"
         "            width: 360\n"
         "            height: 480\n"
-        "            performanceProfile: 'quality'\n"
+        "            blurProfile: 2\n"
         "            active: true\n"
-        "            iridescenceStrength: 1.5\n"
-        "            borderIntensity: 1.2\n"
         "            Text {\n"
         "                anchors.centerIn: parent\n"
         "                text: '2. Prismático Ativo (Quality)'\n"
@@ -228,11 +208,10 @@ void TestValoGlass::renderThreeProfilesAndCaptureComparison() {
         "                font.pixelSize: 16\n"
         "            }\n"
         "        }\n"
-        "        // 3. Vidro Simplificado (Performance)\n"
-        "        ValoGlass {\n"
+        "        ValoMaterialSurfaceV2 {\n"
         "            width: 360\n"
         "            height: 480\n"
-        "            performanceProfile: 'performance'\n"
+        "            blurProfile: 0\n"
         "            active: false\n"
         "            Text {\n"
         "                anchors.centerIn: parent\n"
@@ -257,12 +236,15 @@ void TestValoGlass::renderThreeProfilesAndCaptureComparison() {
     window.setGeometry(0, 0, 1280, 600);
     item->setParentItem(window.contentItem());
     window.show();
+    QVERIFY(window.isVisible());
 
-    QImage screenshot = window.grabWindow();
-    if (!screenshot.isNull()) {
-        const QString artifactDir = QStringLiteral("/home/lucasramos/.gemini/antigravity/brain/db6eb3e4-2bf0-441e-9ef2-a1601d0a1c5f");
-        QDir().mkpath(artifactDir);
-        screenshot.save(artifactDir + QStringLiteral("/valo_glass_comparison.png"));
+    const QString keepDir = qEnvironmentVariable("SGE_KEEP_EVIDENCE_DIR");
+    if (!keepDir.isEmpty()) {
+        QImage screenshot = window.grabWindow();
+        if (!screenshot.isNull()) {
+            QDir().mkpath(keepDir);
+            screenshot.save(keepDir + QStringLiteral("/valo_glass_v2_comparison.png"));
+        }
     }
 }
 

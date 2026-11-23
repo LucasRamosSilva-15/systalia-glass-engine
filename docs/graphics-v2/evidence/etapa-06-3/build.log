@@ -1,0 +1,10 @@
+[1/10] Copying sge_core qml sources into build dir
+[2/10] Generating .rcc/qmlcache/sge_core_src_qml_graphics_v2_ValoLimitedBackdropV2_qml.cpp, .rcc/qmlcache/sge_core_src_qml_graphics_v2_ValoLimitedBackdropV2_qml.cpp.aotstats
+[3/10] Running rcc for resource sge_core_raw_qml_0
+[4/10] Building CXX object CMakeFiles/sge_core.dir/build/.qt/rcc/qrc_sge_core_raw_qml_0.cpp.o
+[5/10] Building CXX object CMakeFiles/sge_core.dir/build/.rcc/qmlcache/sge_core_src_qml_graphics_v2_ValoLimitedBackdropV2_qml.cpp.o
+[6/10] Linking CXX static library libsge_core.a
+[7/10] Linking CXX executable tests/tst_xdg_resize
+[8/10] Linking CXX executable systalia_glass_engine
+[9/10] Linking CXX executable tests/tst_valo_optical_contract_v2
+[10/10] Linking CXX executable tests/tst_shell_state_regression

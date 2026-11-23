@@ -7,16 +7,18 @@
 #include <QtWaylandCompositor/QWaylandSeat>
 #include <fcntl.h>
 
-#include "compositor/OutputManagerService.hpp"
-#include "compositor/SystaliaCompositor.hpp"
-#include "system/InputDeviceManager.hpp"
-#include "system/WorkspaceManagerService.hpp"
+#include "compositor/outputs/OutputManagerService.hpp"
+#include "compositor/core/SystaliaCompositor.hpp"
+#include "services/input/InputDeviceManager.hpp"
+#include "services/windows/WorkspaceManagerService.hpp"
 
 class tst_InputHardwareBackend final : public QObject {
     Q_OBJECT
 
 private slots:
     void platformEnvironmentDetectionForHeadlessNestedAndBareMetal();
+    void kmsConfigResolutionAcrossInstallPrefixesAndEnv();
+    void primaryDrmDeviceDiscovery();
     void kmsNativeModeSelectionAndEglfsJsonGeneration();
     void libinputPipelineToWaylandSeatAndGestureRouting();
     void pointerBoundaryClampingAgainstKmsGeometry();
@@ -231,6 +233,68 @@ void tst_InputHardwareBackend::pointerBoundaryClampingAgainstKmsGeometry() {
     const QPointF absMid = inputMgr.processLibinputPointerMotionAbsolute(0.5, 0.5);
     QVERIFY(absMid.x() >= 1279.0 && absMid.x() <= 1280.0);
     QVERIFY(absMid.y() >= 719.0 && absMid.y() <= 720.0);
+}
+
+void tst_InputHardwareBackend::kmsConfigResolutionAcrossInstallPrefixesAndEnv() {
+    QTemporaryDir tempDir;
+    QVERIFY(tempDir.isValid());
+
+    const QString shareDir = tempDir.filePath(QStringLiteral("share/systalia"));
+    QVERIFY(QDir().mkpath(shareDir));
+    const QString prefixConfig = shareDir + QStringLiteral("/eglfs_kms.json");
+    {
+        QFile f(prefixConfig);
+        QVERIFY(f.open(QIODevice::WriteOnly));
+        f.write(R"({"device":"/dev/dri/card0"})");
+    }
+
+    // 1. Quando o caminho relativo não existe no CWD, resolve pelo diretório de instalação extra
+    const QString resolvedPrefix = InputDeviceManager::resolveKmsConfigPath(
+        QStringLiteral("nonexistent/config/eglfs_kms.json"),
+        QStringList{shareDir});
+    QCOMPARE(QFileInfo(resolvedPrefix).canonicalFilePath(),
+             QFileInfo(prefixConfig).canonicalFilePath());
+
+    // 2. Variável de ambiente QT_QPA_EGLFS_KMS_CONFIG existente tem prioridade
+    const QString envConfig = tempDir.filePath(QStringLiteral("override_kms.json"));
+    {
+        QFile f(envConfig);
+        QVERIFY(f.open(QIODevice::WriteOnly));
+        f.write(R"({"device":"/dev/dri/card1"})");
+    }
+    const QString resolvedEnv = InputDeviceManager::resolveKmsConfigPath(
+        prefixConfig,
+        QStringList{shareDir},
+        envConfig.toUtf8());
+    QCOMPARE(QFileInfo(resolvedEnv).canonicalFilePath(),
+             QFileInfo(envConfig).canonicalFilePath());
+}
+
+void tst_InputHardwareBackend::primaryDrmDeviceDiscovery() {
+    QTemporaryDir tempDir;
+    QVERIFY(tempDir.isValid());
+
+    // 1. Sem card0, seleciona card1 (cenário real AMD Cezanne / Fedora 44)
+    const QString card1 = tempDir.filePath(QStringLiteral("card1"));
+    const QString card2 = tempDir.filePath(QStringLiteral("card2"));
+    {
+        QFile f1(card1);
+        QVERIFY(f1.open(QIODevice::WriteOnly));
+        QFile f2(card2);
+        QVERIFY(f2.open(QIODevice::WriteOnly));
+    }
+    QCOMPARE(InputDeviceManager::discoverPrimaryDrmDevice(tempDir.path()), card1);
+
+    // 2. Quando card0 existe, seleciona o menor índice numérico
+    const QString card0 = tempDir.filePath(QStringLiteral("card0"));
+    {
+        QFile f0(card0);
+        QVERIFY(f0.open(QIODevice::WriteOnly));
+    }
+    QCOMPARE(InputDeviceManager::discoverPrimaryDrmDevice(tempDir.path()), card0);
+
+    // 3. Override explícito existente tem prioridade
+    QCOMPARE(InputDeviceManager::discoverPrimaryDrmDevice(tempDir.path(), card2), card2);
 }
 
 QTEST_MAIN(tst_InputHardwareBackend)

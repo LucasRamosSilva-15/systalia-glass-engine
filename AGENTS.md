@@ -1,0 +1,9 @@
+# SYSTALIA Glass Engine — Instruções para Agentes (Codex / Geral)
+
+1. **Política de Artefatos de Diagnóstico:** Leia e siga [`docs/architecture/maintenance/SYSTALIA_DEBUG_RETENTION_POLICY.md`](docs/architecture/maintenance/SYSTALIA_DEBUG_RETENTION_POLICY.md).
+2. **Saída temporária obrigatória e exclusiva:** Nunca gere capturas, dumps JSON ou logs de execução diretamente em `docs/` ou `artifacts/` rastreados. Os scripts Python (`tools/sge_evidence.py`) e geradores C++ (`tools/sge_artifact_dir.hpp`) criam diretórios exclusivos em `${TMPDIR:-/tmp}/systalia-runs/<tool>-<id>/`.
+3. **Ciclo de execução e limpeza automática:** Em sucesso, a limpeza do diretório próprio ocorre automaticamente no `finally`/destrutor. Em falhas ou interrupções, o diretório é preservado por até 24h com `run-status.json` para diagnóstico. Diretórios fornecidos via `--artifact-dir` ou `SGE_KEEP_EVIDENCE_DIR` nunca são removidos automaticamente.
+4. **Modo de depuração explícito:** Para manter evidências temporárias após uma execução bem-sucedida, defina `SGE_KEEP_EVIDENCE=1` (ou `SGE_KEEP_EVIDENCE_DIR=<caminho>` / `--artifact-dir <caminho>`).
+5. **Bug aberto / regressão:** Se uma execução reproduzir uma falha ainda aberta, preserve apenas o conjunto mínimo necessário para reprodução e registre a justificativa no relatório.
+6. **Proteção do repositório:** Não altere ou exclua `src/`, `tests/`, `shaders/`, `protocols/`, `cmake/`, ADRs ou componentes VALO V1/V2 durante rotinas de limpeza.
+7. **Ordem obrigatória de execução de testes:** Ao modificar ou criar qualquer componente, execute **primeiro** o(s) teste(s) específico(s) do(s) componente(s) mexido(s) ou criado(s) (ex.: `ctest -R <teste_especifico> --output-on-failure`) e, após aprovação, execute **todos** os testes da suíte completa (`ctest --output-on-failure`).

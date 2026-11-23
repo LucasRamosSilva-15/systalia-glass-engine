@@ -1,0 +1,371 @@
+CMakeLists.txt:51:        shaders/valo_optical.vert
+CMakeLists.txt:52:        shaders/valo_optical.frag
+CMakeLists.txt:100:    src/gfx/SystaliaSurfaceProps.hpp
+CMakeLists.txt:102:    src/gfx/SystaliaGlassMaterial.hpp
+CMakeLists.txt:103:    src/gfx/SystaliaGlassMaterial.cpp
+CMakeLists.txt:104:    src/gfx/SystaliaGlassItem.hpp
+CMakeLists.txt:105:    src/gfx/SystaliaGlassItem.cpp
+CMakeLists.txt:135:    src/gfx/v2/SystaliaSurfacePropsV2.hpp
+CMakeLists.txt:197:set_source_files_properties(src/qml/theme/SystaliaTheme.qml src/qml/theme/ValoTheme.qml PROPERTIES
+CMakeLists.txt:218:        src/qml/theme/SystaliaTheme.qml
+CMakeLists.txt:222:        src/qml/ValoGlass.qml
+CMakeLists.txt:226:        src/qml/shell/SystaliaG2Frame.qml
+shaders/v2/valo_particles.frag:4:// Independent ShaderEffect UBO, not SystaliaSurfacePropsV2.
+tests/tst_SystaliaEngine.cpp:3:#include "SystaliaSurfaceProps.hpp"
+tests/tst_SystaliaEngine.cpp:15:    QCOMPARE(sizeof(SystaliaSurfaceProps), size_t(128));
+tests/tst_SystaliaEngine.cpp:16:    QCOMPARE(sizeof(SystaliaSurfaceProps) % 16, size_t(0));
+tests/tst_SystaliaEngine.cpp:17:    QCOMPARE(sizeof(Matrix4x4_std140), size_t(64));
+tests/tst_SystaliaEngine.cpp:18:    QCOMPARE(alignof(SystaliaSurfaceProps), size_t(16));
+tests/tst_SystaliaEngine.cpp:19:    QCOMPARE(alignof(Matrix4x4_std140), size_t(16));
+tests/tst_SystaliaEngine.cpp:23:    QCOMPARE(offsetof(SystaliaSurfaceProps, matrix), size_t(0));
+tests/tst_SystaliaEngine.cpp:24:    QCOMPARE(offsetof(SystaliaSurfaceProps, radii), size_t(64));
+tests/tst_SystaliaEngine.cpp:25:    QCOMPARE(offsetof(SystaliaSurfaceProps, windowSize), size_t(80));
+tests/tst_SystaliaEngine.cpp:26:    QCOMPARE(offsetof(SystaliaSurfaceProps, screenResolution), size_t(88));
+tests/tst_SystaliaEngine.cpp:27:    QCOMPARE(offsetof(SystaliaSurfaceProps, slant), size_t(96));
+tests/tst_SystaliaEngine.cpp:28:    QCOMPARE(offsetof(SystaliaSurfaceProps, ior), size_t(100));
+tests/tst_SystaliaEngine.cpp:29:    QCOMPARE(offsetof(SystaliaSurfaceProps, chromaticDispersion), size_t(104));
+tests/tst_SystaliaEngine.cpp:30:    QCOMPARE(offsetof(SystaliaSurfaceProps, causticIntensity), size_t(108));
+tests/tst_SystaliaEngine.cpp:31:    QCOMPARE(offsetof(SystaliaSurfaceProps, opacity), size_t(112));
+tests/tst_SystaliaEngine.cpp:32:    QCOMPARE(offsetof(SystaliaSurfaceProps, time), size_t(116));
+tests/tst_SystaliaEngine.cpp:33:    QCOMPARE(offsetof(SystaliaSurfaceProps, hasClientTexture), size_t(120));
+tests/tst_SystaliaEngine.cpp:34:    QCOMPARE(offsetof(SystaliaSurfaceProps, titleBarHeight), size_t(124));
+tests/tst_SystaliaEngine.cpp:38:    QVERIFY2(QFile::exists(":/shaders/valo_optical.vert.qsb"),
+tests/tst_SystaliaEngine.cpp:40:    QVERIFY2(QFile::exists(":/shaders/valo_optical.frag.qsb"),
+tests/tst_XdgResize.cpp:19:#include "SystaliaGlassItem.hpp"
+tests/tst_XdgResize.cpp:84:    qmlRegisterType<SystaliaGlassItem>("Systalia.Engine", 1, 0, "SystaliaGlassItem");
+tests/tst_BackdropBinding.cpp:5:#include "SystaliaGlassItem.hpp"
+tests/tst_BackdropBinding.cpp:6:#include "SystaliaSurfaceProps.hpp"
+tests/tst_BackdropBinding.cpp:18:    SystaliaGlassItem item;
+tests/tst_BackdropBinding.cpp:19:    QSignalSpy spy(&item, &SystaliaGlassItem::screenResolutionChanged);
+tests/tst_BackdropBinding.cpp:33:    SystaliaSurfaceProps props;
+tests/tst_BackdropBinding.cpp:47:    SystaliaGlassItem item;
+src/diagnostics/ValoStabilityProbe.hpp:144:                    v2:w.useGraphicsV2, visible:w.visible, profile:w.blurProfile,
+src/diagnostics/ValoStabilityProbe.hpp:199:        step(4000, "trackedClientContainers.forEach((w,i)=>{w.x=30+i*390;w.y=100+i*80;w.dispatchClientResize(Qt.size(400,260),false);w.useGraphicsV2=false})", "01-v1-fallback");
+src/diagnostics/ValoStabilityProbe.hpp:200:        step(6000, "trackedClientContainers.forEach(w=>w.useGraphicsV2=true)", "02-v2");
+tests/tst_ItemGeometry.cpp:3:#include "SystaliaGlassItem.hpp"
+tests/tst_ItemGeometry.cpp:4:#include "SystaliaSurfaceProps.hpp"
+tests/tst_ItemGeometry.cpp:15:    SystaliaGlassItem item;
+tests/tst_ItemGeometry.cpp:23:    SystaliaSurfaceProps props;
+tests/e2e/tst_WaylandClientLifecycleE2E.cpp:16:#include "SystaliaGlassItem.hpp"
+tests/e2e/tst_WaylandClientLifecycleE2E.cpp:59:    qmlRegisterType<SystaliaGlassItem>("Systalia.Engine", 1, 0, "SystaliaGlassItem");
+tests/tst_SystaliaProtocol.cpp:20:#include "SystaliaGlassItem.hpp"
+tests/tst_SystaliaProtocol.cpp:159:    qmlRegisterType<SystaliaGlassItem>("Systalia.Engine", 1, 0, "SystaliaGlassItem");
+tests/tst_SystaliaProtocol.cpp:268:        SystaliaGlassItem {
+tests/integration/tst_ClientSurfaceVisibility.cpp:27:#include "SystaliaGlassItem.hpp"
+tests/integration/tst_ClientSurfaceVisibility.cpp:81:    qmlRegisterType<SystaliaGlassItem>("Systalia.Engine", 1, 0, "SystaliaGlassItem");
+tests/unit/tst_Phase4Audit.cpp:12:#include "gfx/SystaliaGlassItem.hpp"
+tests/unit/tst_Phase4Audit.cpp:30:    // Simula 4 workspaces com contentores de janela e chassis ópticos SystaliaGlassItem
+tests/unit/tst_Phase4Audit.cpp:33:    std::vector<SystaliaGlassItem *> glassItems;
+tests/unit/tst_Phase4Audit.cpp:43:        auto *glass = new SystaliaGlassItem(container.get());
+tests/unit/tst_ValoOpticalContractV2.cpp:34:    SystaliaSurfacePropsV2 props;
+tests/CMakeLists.txt:15:# Teste 2: Geometria de Vértices e Propriedades do SystaliaGlassItem
+tests/integration/tst_ShellStateRegression.cpp:17:#include "SystaliaGlassItem.hpp"
+tests/integration/tst_ShellStateRegression.cpp:70:        qmlRegisterType<SystaliaGlassItem>("Systalia.Engine", 1, 0, "SystaliaGlassItem");
+tests/integration/tst_ShellStateRegression.cpp:108:        QCOMPARE(surface->findChildren<SystaliaGlassItem *>().size(), 0);
+tests/integration/tst_ShellStateRegression.cpp:171:            QCOMPARE(surface->findChildren<SystaliaGlassItem *>().size(),0);
+tests/integration/tst_ShellStateRegression.cpp:672:        // Valida que o chassi óptico principal é um ValoGlass unificado com cantos circulares de 47px
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:5:#include "SystaliaSurfaceProps.hpp"
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:6:#include "SystaliaSurfacePropsV2.hpp"
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:24:    QCOMPARE(sizeof(SystaliaSurfaceProps), std::size_t(128));
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:25:    QCOMPARE(alignof(SystaliaSurfaceProps), std::size_t(16));
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:26:    QCOMPARE(offsetof(SystaliaSurfaceProps, matrix), std::size_t(0));
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:27:    QCOMPARE(offsetof(SystaliaSurfaceProps, radii), std::size_t(64));
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:28:    QCOMPARE(offsetof(SystaliaSurfaceProps, windowSize), std::size_t(80));
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:29:    QCOMPARE(offsetof(SystaliaSurfaceProps, screenResolution), std::size_t(88));
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:30:    QCOMPARE(offsetof(SystaliaSurfaceProps, slant), std::size_t(96));
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:31:    QCOMPARE(offsetof(SystaliaSurfaceProps, ior), std::size_t(100));
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:32:    QCOMPARE(offsetof(SystaliaSurfaceProps, chromaticDispersion), std::size_t(104));
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:33:    QCOMPARE(offsetof(SystaliaSurfaceProps, causticIntensity), std::size_t(108));
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:34:    QCOMPARE(offsetof(SystaliaSurfaceProps, opacity), std::size_t(112));
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:35:    QCOMPARE(offsetof(SystaliaSurfaceProps, time), std::size_t(116));
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:36:    QCOMPARE(offsetof(SystaliaSurfaceProps, hasClientTexture), std::size_t(120));
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:37:    QCOMPARE(offsetof(SystaliaSurfaceProps, titleBarHeight), std::size_t(124));
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:41:    QCOMPARE(sizeof(SystaliaSurfacePropsV2), std::size_t(160));
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:42:    QCOMPARE(sizeof(Matrix4x4_std140), std::size_t(64));
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:43:    QCOMPARE(sizeof(SystaliaSurfacePropsV2) % 16, std::size_t(0));
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:47:    QCOMPARE(alignof(SystaliaSurfacePropsV2), std::size_t(16));
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:48:    QCOMPARE(alignof(Matrix4x4_std140), std::size_t(16));
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:82:        offsetof(SystaliaSurfacePropsV2, matrix),
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:83:        offsetof(SystaliaSurfacePropsV2, radii),
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:84:        offsetof(SystaliaSurfacePropsV2, windowSize),
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:85:        offsetof(SystaliaSurfacePropsV2, screenResolution),
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:86:        offsetof(SystaliaSurfacePropsV2, slant),
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:87:        offsetof(SystaliaSurfacePropsV2, ior),
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:88:        offsetof(SystaliaSurfacePropsV2, chromaticDispersion),
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:89:        offsetof(SystaliaSurfacePropsV2, causticIntensity),
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:90:        offsetof(SystaliaSurfacePropsV2, surfaceOpacity),
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:91:        offsetof(SystaliaSurfacePropsV2, time),
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:92:        offsetof(SystaliaSurfacePropsV2, hasClientTexture),
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:93:        offsetof(SystaliaSurfacePropsV2, titleBarHeight),
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:94:        offsetof(SystaliaSurfacePropsV2, specularStrokeWidth),
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:95:        offsetof(SystaliaSurfacePropsV2, geometryMode),
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:96:        offsetof(SystaliaSurfacePropsV2, shadowIntensity),
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:97:        offsetof(SystaliaSurfacePropsV2, shadowOffsetY),
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:98:        offsetof(SystaliaSurfacePropsV2, volumetricTint)
+tests/unit/tst_SurfacePropsAlignmentV2.cpp:106:    const SystaliaSurfacePropsV2 props;
+tests/integration/tst_XdgShellDecoration.cpp:18:#include "SystaliaGlassItem.hpp"
+tests/integration/tst_XdgShellDecoration.cpp:56:    qmlRegisterType<SystaliaGlassItem>("Systalia.Engine", 1, 0, "SystaliaGlassItem");
+tools/raw_render_diagnostics/raw_render_diagnostics.cpp:24:#include "SystaliaSurfacePropsV2.hpp"
+tools/raw_render_diagnostics/raw_render_diagnostics.cpp:159:// T3: QSGMaterialShader com UBO std140 de 160 Bytes (SystaliaSurfacePropsV2)
+tools/raw_render_diagnostics/raw_render_diagnostics.cpp:163:    SystaliaSurfacePropsV2 props;
+tools/raw_render_diagnostics/raw_render_diagnostics.cpp:188:        SystaliaSurfacePropsV2 p = mat->props;
+tools/raw_render_diagnostics/raw_render_diagnostics.cpp:191:        constexpr qsizetype uboSize = sizeof(SystaliaSurfacePropsV2);
+tools/raw_render_diagnostics/raw_render_diagnostics.cpp:254:    SystaliaSurfacePropsV2 props;
+tools/raw_render_diagnostics/raw_render_diagnostics.cpp:279:        SystaliaSurfacePropsV2 p = mat->props;
+tools/raw_render_diagnostics/raw_render_diagnostics.cpp:282:        constexpr qsizetype uboSize = sizeof(SystaliaSurfacePropsV2);
+tests/unit/tst_SdfGeometryMath.cpp:90:    QFile shader(QStringLiteral(SGE_SOURCE_DIR "/shaders/valo_optical.frag"));
+tests/unit/tst_OutputManager.cpp:11:#include "SystaliaGlassItem.hpp"
+tests/unit/tst_OutputManager.cpp:12:#include "SystaliaSurfaceProps.hpp"
+tests/unit/tst_OutputManager.cpp:97:    static_assert(sizeof(SystaliaSurfaceProps) == 128);
+tests/unit/tst_OutputManager.cpp:98:    static_assert(alignof(SystaliaSurfaceProps) == 16);
+tests/unit/tst_OutputManager.cpp:99:    static_assert(offsetof(SystaliaSurfaceProps, windowSize) == 80);
+tests/unit/tst_OutputManager.cpp:100:    static_assert(offsetof(SystaliaSurfaceProps, screenResolution) == 88);
+tests/unit/tst_OutputManager.cpp:102:    QCOMPARE(sizeof(SystaliaSurfaceProps), size_t(128));
+tests/unit/tst_OutputManager.cpp:103:    QCOMPARE(offsetof(SystaliaSurfaceProps, screenResolution), size_t(88));
+tests/unit/tst_OutputManager.cpp:123:    SystaliaGlassItem glassItem(hostWindow.contentItem());
+tests/unit/tst_ValoTheme.cpp:22:    void qmlSystaliaThemeBackwardsCompatibility();
+tests/unit/tst_ValoTheme.cpp:213:void TestValoTheme::qmlSystaliaThemeBackwardsCompatibility() {
+tests/unit/tst_ValoTheme.cpp:220:        "    readonly property color ocean: SystaliaTheme.ocean\n"
+tests/unit/tst_ValoTheme.cpp:221:        "    readonly property color textMuted: SystaliaTheme.textMuted\n"
+tests/unit/tst_ValoTheme.cpp:222:        "    readonly property string family: SystaliaTheme.fontFamily\n"
+tests/unit/tst_ValoTheme.cpp:223:        "    readonly property bool hasValo: SystaliaTheme.valo !== undefined\n"
+tests/unit/tst_LiquidTiling.cpp:9:#include "SystaliaGlassItem.hpp"
+tests/unit/tst_LiquidTiling.cpp:30:    qmlRegisterType<SystaliaGlassItem>("Systalia.Engine", 1, 0, "SystaliaGlassItem");
+tests/unit/tst_MemoryAlignment.cpp:5:#include "SystaliaSurfaceProps.hpp"
+tests/unit/tst_MemoryAlignment.cpp:7:static_assert(sizeof(SystaliaSurfaceProps) == 128);
+tests/unit/tst_MemoryAlignment.cpp:8:static_assert(offsetof(SystaliaSurfaceProps, matrix) == 0);
+tests/unit/tst_MemoryAlignment.cpp:9:static_assert(offsetof(SystaliaSurfaceProps, radii) == 64);
+tests/unit/tst_MemoryAlignment.cpp:10:static_assert(offsetof(SystaliaSurfaceProps, windowSize) == 80);
+tests/unit/tst_MemoryAlignment.cpp:11:static_assert(offsetof(SystaliaSurfaceProps, screenResolution) == 88);
+tests/unit/tst_MemoryAlignment.cpp:12:static_assert(offsetof(SystaliaSurfaceProps, slant) == 96);
+tests/unit/tst_MemoryAlignment.cpp:13:static_assert(offsetof(SystaliaSurfaceProps, ior) == 100);
+tests/unit/tst_MemoryAlignment.cpp:14:static_assert(offsetof(SystaliaSurfaceProps, chromaticDispersion) == 104);
+tests/unit/tst_MemoryAlignment.cpp:15:static_assert(offsetof(SystaliaSurfaceProps, causticIntensity) == 108);
+tests/unit/tst_MemoryAlignment.cpp:16:static_assert(offsetof(SystaliaSurfaceProps, opacity) == 112);
+tests/unit/tst_MemoryAlignment.cpp:17:static_assert(offsetof(SystaliaSurfaceProps, time) == 116);
+tests/unit/tst_MemoryAlignment.cpp:18:static_assert(offsetof(SystaliaSurfaceProps, hasClientTexture) == 120);
+tests/unit/tst_MemoryAlignment.cpp:19:static_assert(offsetof(SystaliaSurfaceProps, titleBarHeight) == 124);
+tests/unit/tst_MemoryAlignment.cpp:33:    QCOMPARE(sizeof(SystaliaSurfaceProps), std::size_t(128));
+tests/unit/tst_MemoryAlignment.cpp:34:    QCOMPARE(sizeof(Matrix4x4_std140), std::size_t(64));
+tests/unit/tst_MemoryAlignment.cpp:38:    QCOMPARE(alignof(SystaliaSurfaceProps), std::size_t(16));
+tests/unit/tst_MemoryAlignment.cpp:39:    QCOMPARE(alignof(Matrix4x4_std140), std::size_t(16));
+tests/unit/tst_MemoryAlignment.cpp:65:        offsetof(SystaliaSurfaceProps, matrix),
+tests/unit/tst_MemoryAlignment.cpp:66:        offsetof(SystaliaSurfaceProps, radii),
+tests/unit/tst_MemoryAlignment.cpp:67:        offsetof(SystaliaSurfaceProps, windowSize),
+tests/unit/tst_MemoryAlignment.cpp:68:        offsetof(SystaliaSurfaceProps, screenResolution),
+tests/unit/tst_MemoryAlignment.cpp:69:        offsetof(SystaliaSurfaceProps, slant),
+tests/unit/tst_MemoryAlignment.cpp:70:        offsetof(SystaliaSurfaceProps, ior),
+tests/unit/tst_MemoryAlignment.cpp:71:        offsetof(SystaliaSurfaceProps, chromaticDispersion),
+tests/unit/tst_MemoryAlignment.cpp:72:        offsetof(SystaliaSurfaceProps, causticIntensity),
+tests/unit/tst_MemoryAlignment.cpp:73:        offsetof(SystaliaSurfaceProps, opacity),
+tests/unit/tst_MemoryAlignment.cpp:74:        offsetof(SystaliaSurfaceProps, time),
+tests/unit/tst_MemoryAlignment.cpp:75:        offsetof(SystaliaSurfaceProps, hasClientTexture),
+tests/unit/tst_MemoryAlignment.cpp:76:        offsetof(SystaliaSurfaceProps, titleBarHeight)
+tests/unit/tst_MemoryAlignment.cpp:83:    const SystaliaSurfaceProps props;
+tests/tst_UnifiedComposition.cpp:4:#include "SystaliaSurfaceProps.hpp"
+tests/tst_UnifiedComposition.cpp:22:    const SystaliaSurfaceProps props;
+tests/tst_UnifiedComposition.cpp:24:    QCOMPARE(offsetof(SystaliaSurfaceProps, hasClientTexture), size_t(120));
+tests/tst_UnifiedComposition.cpp:25:    QCOMPARE(offsetof(SystaliaSurfaceProps, titleBarHeight), size_t(124));
+tests/tst_UnifiedComposition.cpp:29:    const SystaliaSurfaceProps props;
+tests/tst_UnifiedComposition.cpp:34:    const SystaliaSurfaceProps props;
+tests/unit/tst_ValoDecorations.cpp:12:#include "gfx/SystaliaGlassItem.hpp"
+tests/unit/tst_ValoDecorations.cpp:34:    qmlRegisterType<SystaliaGlassItem>("Systalia.Engine", 1, 0, "SystaliaGlassItem");
+tests/unit/tst_ValoDecorations.cpp:56:    // Verifica que o ValoGlass está presente e encapsula o SystaliaGlassItem
+tests/unit/tst_ValoDecorations.cpp:59:    QVERIFY(!container->findChild<SystaliaGlassItem *>());
+tests/unit/tst_ValoDecorations.cpp:66:    container->setProperty("useGraphicsV2", false);
+tests/unit/tst_ValoDecorations.cpp:67:    QVERIFY(container->findChild<SystaliaGlassItem *>());
+tests/unit/tst_ValoDecorations.cpp:69:    container->setProperty("useGraphicsV2", true);
+tests/unit/tst_ValoDecorations.cpp:87:        "    ValoGlass {\n"
+tests/unit/tst_ValoDecorations.cpp:92:        "    ValoGlass {\n"
+tests/unit/tst_ValoDecorations.cpp:224:        "    ValoGlass {\n"
+tests/unit/tst_ValoDecorations.cpp:241:        "                text: 'Janela Ativa — ValoGlass (Quality)'\n"
+tests/unit/tst_ValoDecorations.cpp:249:        "    ValoGlass {\n"
+tests/unit/tst_ValoDecorations.cpp:266:        "                text: 'Janela Inativa — ValoGlass (Balanced)'\n"
+tests/unit/tst_ValoGlassShaderV2.cpp:6:#include "SystaliaSurfacePropsV2.hpp"
+tests/unit/tst_ValoGlassShaderV2.cpp:77:    QCOMPARE(sizeof(SystaliaSurfacePropsV2), std::size_t(160));
+tests/unit/tst_ValoGlassShaderV2.cpp:78:    QCOMPARE(sizeof(SystaliaSurfacePropsV2) % 16, std::size_t(0));
+tests/unit/tst_ValoGlass.cpp:11:#include "gfx/SystaliaGlassItem.hpp"
+tests/unit/tst_ValoGlass.cpp:30:    qmlRegisterType<SystaliaGlassItem>("Systalia.Engine", 1, 0, "SystaliaGlassItem");
+tests/unit/tst_ValoGlass.cpp:38:        "ValoGlass {\n"
+tests/unit/tst_ValoGlass.cpp:72:        "    ValoGlass {\n"
+tests/unit/tst_ValoGlass.cpp:79:        "    ValoGlass {\n"
+tests/unit/tst_ValoGlass.cpp:86:        "    ValoGlass {\n"
+tests/unit/tst_ValoGlass.cpp:127:        "ValoGlass {\n"
+tests/unit/tst_ValoGlass.cpp:162:        "ValoGlass {\n"
+tests/unit/tst_ValoGlass.cpp:201:        "        ValoGlass {\n"
+tests/unit/tst_ValoGlass.cpp:215:        "        ValoGlass {\n"
+tests/unit/tst_ValoGlass.cpp:232:        "        ValoGlass {\n"
+src/main.cpp:9:#include "SystaliaGlassItem.hpp"
+src/main.cpp:53:    qmlRegisterType<SystaliaGlassItem>("Systalia.Engine", 1, 0, "SystaliaGlassItem");
+tests/unit/tst_ResourceLeakAudit.cpp:7:#include "SystaliaGlassItem.hpp"
+tests/unit/tst_ResourceLeakAudit.cpp:8:#include "SystaliaGlassMaterial.hpp"
+tests/unit/tst_ResourceLeakAudit.cpp:12:#include "SystaliaSurfaceProps.hpp"
+tests/unit/tst_ResourceLeakAudit.cpp:31:        auto *item = new SystaliaGlassItem(window->contentItem());
+tests/unit/tst_ResourceLeakAudit.cpp:50:    // Valida que múltiplas instâncias de SystaliaGlassMaterial compartilham exatamente
+tests/unit/tst_ResourceLeakAudit.cpp:53:    SystaliaGlassMaterial mat1;
+tests/unit/tst_ResourceLeakAudit.cpp:54:    SystaliaGlassMaterial mat2;
+tests/unit/tst_ResourceLeakAudit.cpp:55:    SystaliaGlassMaterial mat3;
+tests/unit/tst_ResourceLeakAudit.cpp:63:    SystaliaGlassMaterial matA;
+tests/unit/tst_ResourceLeakAudit.cpp:64:    SystaliaGlassMaterial matB;
+src/qml/WaylandWindowContainer.qml:20:    property bool useGraphicsV2: true
+src/qml/WaylandWindowContainer.qml:486:            sourceComponent: windowContainer.useGraphicsV2 ? decorationV2 : decorationV1
+src/qml/WaylandWindowContainer.qml:507:            id: decorationV1
+src/qml/WaylandWindowContainer.qml:508:            ValoGlass {
+src/gfx/SystaliaGlassItem.hpp:9:#include "SystaliaSurfaceProps.hpp"
+src/gfx/SystaliaGlassItem.hpp:11:class SystaliaGlassItem : public QQuickItem {
+src/gfx/SystaliaGlassItem.hpp:31:    explicit SystaliaGlassItem(QQuickItem *parent = nullptr);
+src/gfx/SystaliaGlassItem.hpp:32:    ~SystaliaGlassItem() override;
+src/qml/theme/SystaliaTheme.qml:9:    // Camada de Compatibilidade Retroativa (SystaliaTheme -> ValoTheme)
+src/qml/main.qml:17:    color: SystaliaTheme.ocean
+src/qml/main.qml:24:    readonly property bool useGraphicsV2: true
+src/gfx/v2/ValoShadowItemV2.cpp:23:    SystaliaSurfacePropsV2 props = mat->props();
+src/gfx/v2/ValoShadowItemV2.cpp:27:    constexpr qsizetype uboSize = static_cast<qsizetype>(sizeof(SystaliaSurfacePropsV2));
+src/gfx/v2/ValoShadowItemV2.cpp:145:    SystaliaSurfacePropsV2 props;
+src/gfx/v2/ValoGlassMaterialV2.hpp:3:#include "SystaliaSurfacePropsV2.hpp"
+src/gfx/v2/ValoGlassMaterialV2.hpp:50:  void setProps(const SystaliaSurfacePropsV2 &props) noexcept {
+src/gfx/v2/ValoGlassMaterialV2.hpp:53:  const SystaliaSurfacePropsV2 &props() const noexcept { return m_props; }
+src/gfx/v2/ValoGlassMaterialV2.hpp:54:  SystaliaSurfacePropsV2 &props() noexcept { return m_props; }
+src/gfx/v2/ValoGlassMaterialV2.hpp:63:  SystaliaSurfacePropsV2 m_props;
+src/gfx/SystaliaGlassItem.cpp:1:#include "SystaliaGlassItem.hpp"
+src/gfx/SystaliaGlassItem.cpp:2:#include "SystaliaGlassMaterial.hpp"
+src/gfx/SystaliaGlassItem.cpp:25:SystaliaGlassItem::SystaliaGlassItem(QQuickItem *parent)
+src/gfx/SystaliaGlassItem.cpp:32:                this, &SystaliaGlassItem::invalidateSceneGraph, Qt::DirectConnection);
+src/gfx/SystaliaGlassItem.cpp:37:SystaliaGlassItem::~SystaliaGlassItem() {
+src/gfx/SystaliaGlassItem.cpp:41:void SystaliaGlassItem::setRadii(const QVector4D &radii) {
+src/gfx/SystaliaGlassItem.cpp:49:void SystaliaGlassItem::setSlant(float slant) {
+src/gfx/SystaliaGlassItem.cpp:57:void SystaliaGlassItem::setIor(float ior) {
+src/gfx/SystaliaGlassItem.cpp:65:void SystaliaGlassItem::setChromaticDispersion(float dispersion) {
+src/gfx/SystaliaGlassItem.cpp:73:void SystaliaGlassItem::setCausticIntensity(float intensity) {
+src/gfx/SystaliaGlassItem.cpp:81:void SystaliaGlassItem::setSurfaceOpacity(float opacity) {
+src/gfx/SystaliaGlassItem.cpp:89:void SystaliaGlassItem::setTime(float t) {
+src/gfx/SystaliaGlassItem.cpp:97:void SystaliaGlassItem::setOccluded(bool occluded) {
+src/gfx/SystaliaGlassItem.cpp:108:bool SystaliaGlassItem::shouldSuppressSceneGraphUpdate() const noexcept {
+src/gfx/SystaliaGlassItem.cpp:118:bool SystaliaGlassItem::hasPreservedVramTextures() const noexcept {
+src/gfx/SystaliaGlassItem.cpp:125:void SystaliaGlassItem::requestSceneUpdate() {
+src/gfx/SystaliaGlassItem.cpp:133:void SystaliaGlassItem::itemChange(ItemChange change, const ItemChangeData &value) {
+src/gfx/SystaliaGlassItem.cpp:140:void SystaliaGlassItem::setBackdropSource(QQuickItem *source) {
+src/gfx/SystaliaGlassItem.cpp:153:void SystaliaGlassItem::setClientTextureSource(QQuickItem *source) {
+src/gfx/SystaliaGlassItem.cpp:166:void SystaliaGlassItem::setScreenResolution(const QVector2D &res) {
+src/gfx/SystaliaGlassItem.cpp:174:void SystaliaGlassItem::setDevicePixelRatio(qreal dpr) {
+src/gfx/SystaliaGlassItem.cpp:183:QVector2D SystaliaGlassItem::effectivePhysicalResolution() const {
+src/gfx/SystaliaGlassItem.cpp:198:void SystaliaGlassItem::setTitleBarHeight(float height) {
+src/gfx/SystaliaGlassItem.cpp:207:void SystaliaGlassItem::setCircularCorners(bool enable) {
+src/gfx/SystaliaGlassItem.cpp:215:QSGTexture *SystaliaGlassItem::ensureFallbackTexture() {
+src/gfx/SystaliaGlassItem.cpp:225:QSGTexture *SystaliaGlassItem::ensureFallbackClientTexture() {
+src/gfx/SystaliaGlassItem.cpp:235:void SystaliaGlassItem::releaseResources() {
+src/gfx/SystaliaGlassItem.cpp:257:void SystaliaGlassItem::invalidateSceneGraph() {
+src/gfx/SystaliaGlassItem.cpp:265:QSGNode *SystaliaGlassItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *) {
+src/gfx/SystaliaGlassItem.cpp:282:    SystaliaGlassMaterial *material = nullptr;
+src/gfx/SystaliaGlassItem.cpp:291:        material = new SystaliaGlassMaterial();
+src/gfx/SystaliaGlassItem.cpp:295:        material = static_cast<SystaliaGlassMaterial *>(node->material());
+src/gfx/SystaliaGlassItem.cpp:360:    SystaliaSurfaceProps props;
+src/gfx/v2/ValoShadowItemV2.hpp:11:#include "SystaliaSurfacePropsV2.hpp"
+src/gfx/v2/ValoShadowItemV2.hpp:31:    void setProps(const SystaliaSurfacePropsV2 &props) noexcept { m_props = props; }
+src/gfx/v2/ValoShadowItemV2.hpp:32:    const SystaliaSurfacePropsV2 &props() const noexcept { return m_props; }
+src/gfx/v2/ValoShadowItemV2.hpp:35:    SystaliaSurfacePropsV2 m_props;
+src/qml/shell/SystaliaG2Frame.qml:7:    // Ordem igual a SystaliaGlassItem.radii: topo esquerdo, topo direito,
+src/gfx/v2/SystaliaSurfacePropsV2.hpp:3:#include "SystaliaSurfaceProps.hpp"
+src/gfx/v2/SystaliaSurfacePropsV2.hpp:29: * Contrato legado V1 (SystaliaSurfaceProps, 128 bytes) é preservado em paralelo.
+src/gfx/v2/SystaliaSurfacePropsV2.hpp:31:struct alignas(16) SystaliaSurfacePropsV2 {
+src/gfx/v2/SystaliaSurfacePropsV2.hpp:32:    Matrix4x4_std140 matrix;               // offset 0,   tamanho 64 (Matriz MVP normalizada)
+src/gfx/v2/SystaliaSurfacePropsV2.hpp:56:static_assert(sizeof(SystaliaSurfacePropsV2) == 160,
+src/gfx/v2/SystaliaSurfacePropsV2.hpp:57:              "SystaliaSurfacePropsV2 deve ter exatamente 160 bytes.");
+src/gfx/v2/SystaliaSurfacePropsV2.hpp:58:static_assert(sizeof(SystaliaSurfacePropsV2) % 16 == 0,
+src/gfx/v2/SystaliaSurfacePropsV2.hpp:59:              "Tamanho de SystaliaSurfacePropsV2 deve ser multiplo de 16 bytes.");
+src/gfx/v2/SystaliaSurfacePropsV2.hpp:60:static_assert(alignof(SystaliaSurfacePropsV2) == 16,
+src/gfx/v2/SystaliaSurfacePropsV2.hpp:61:              "SystaliaSurfacePropsV2 deve ter alinhamento de 16 bytes.");
+src/gfx/v2/SystaliaSurfacePropsV2.hpp:63:static_assert(offsetof(SystaliaSurfacePropsV2, matrix) == 0,
+src/gfx/v2/SystaliaSurfacePropsV2.hpp:65:static_assert(offsetof(SystaliaSurfacePropsV2, radii) == 64,
+src/gfx/v2/SystaliaSurfacePropsV2.hpp:67:static_assert(offsetof(SystaliaSurfacePropsV2, windowSize) == 80,
+src/gfx/v2/SystaliaSurfacePropsV2.hpp:69:static_assert(offsetof(SystaliaSurfacePropsV2, screenResolution) == 88,
+src/gfx/v2/SystaliaSurfacePropsV2.hpp:71:static_assert(offsetof(SystaliaSurfacePropsV2, slant) == 96,
+src/gfx/v2/SystaliaSurfacePropsV2.hpp:73:static_assert(offsetof(SystaliaSurfacePropsV2, ior) == 100,
+src/gfx/v2/SystaliaSurfacePropsV2.hpp:75:static_assert(offsetof(SystaliaSurfacePropsV2, chromaticDispersion) == 104,
+src/gfx/v2/SystaliaSurfacePropsV2.hpp:77:static_assert(offsetof(SystaliaSurfacePropsV2, causticIntensity) == 108,
+src/gfx/v2/SystaliaSurfacePropsV2.hpp:79:static_assert(offsetof(SystaliaSurfacePropsV2, surfaceOpacity) == 112,
+src/gfx/v2/SystaliaSurfacePropsV2.hpp:81:static_assert(offsetof(SystaliaSurfacePropsV2, time) == 116,
+src/gfx/v2/SystaliaSurfacePropsV2.hpp:83:static_assert(offsetof(SystaliaSurfacePropsV2, hasClientTexture) == 120,
+src/gfx/v2/SystaliaSurfacePropsV2.hpp:85:static_assert(offsetof(SystaliaSurfacePropsV2, titleBarHeight) == 124,
+src/gfx/v2/SystaliaSurfacePropsV2.hpp:87:static_assert(offsetof(SystaliaSurfacePropsV2, specularStrokeWidth) == 128,
+src/gfx/v2/SystaliaSurfacePropsV2.hpp:89:static_assert(offsetof(SystaliaSurfacePropsV2, geometryMode) == 132,
+src/gfx/v2/SystaliaSurfacePropsV2.hpp:91:static_assert(offsetof(SystaliaSurfacePropsV2, shadowIntensity) == 136,
+src/gfx/v2/SystaliaSurfacePropsV2.hpp:93:static_assert(offsetof(SystaliaSurfacePropsV2, shadowOffsetY) == 140,
+src/gfx/v2/SystaliaSurfacePropsV2.hpp:95:static_assert(offsetof(SystaliaSurfacePropsV2, volumetricTint) == 144,
+src/qml/shell/SystaliaWindowHeader.qml:45:    SystaliaG2Frame {
+src/qml/shell/SystaliaWindowHeader.qml:67:    SystaliaG2Frame {
+src/qml/shell/SystaliaWindowHeader.qml:100:        font.family: SystaliaTheme.fontFamily
+src/qml/shell/SystaliaWindowHeader.qml:127:            font.family: SystaliaTheme.fontFamily
+src/qml/shell/SystaliaWindowHeader.qml:156:                font.family: SystaliaTheme.fontFamily
+src/qml/ValoGlass.qml:99:    // Permite que componentes filhos sejam inseridos diretamente no ValoGlass
+src/qml/ValoGlass.qml:172:    // Camada B: Passo Óptico Nativo (SystaliaGlassItem via SPIR-V)
+src/qml/ValoGlass.qml:173:    SystaliaGlassItem {
+src/qml/ValoGlass.qml:196:    SystaliaG2Frame {
+src/qml/ValoGlass.qml:223:    SystaliaG2Frame {
+src/qml/ValoGlass.qml:248:    SystaliaG2Frame {
+src/gfx/SystaliaSurfaceProps.hpp:12:struct alignas(16) Matrix4x4_std140 {
+src/gfx/SystaliaSurfaceProps.hpp:15:    constexpr Matrix4x4_std140() noexcept : data{
+src/gfx/SystaliaSurfaceProps.hpp:22:    Matrix4x4_std140(const QMatrix4x4 &m) noexcept {
+src/gfx/SystaliaSurfaceProps.hpp:27:    Matrix4x4_std140 &operator=(const QMatrix4x4 &m) noexcept {
+src/gfx/SystaliaSurfaceProps.hpp:38:static_assert(sizeof(Matrix4x4_std140) == 64, "Matrix4x4_std140 precisa ter 64 bytes");
+src/gfx/SystaliaSurfaceProps.hpp:39:static_assert(alignof(Matrix4x4_std140) == 16, "Matrix4x4_std140 precisa estar alinhada a 16 bytes");
+src/gfx/SystaliaSurfaceProps.hpp:45:struct alignas(16) SystaliaSurfaceProps {
+src/gfx/SystaliaSurfaceProps.hpp:46:    Matrix4x4_std140 matrix;               // offset 0,  tamanho 64
+src/gfx/SystaliaSurfaceProps.hpp:60:static_assert(sizeof(SystaliaSurfaceProps) == 128, "Tamanho deve ser exatamente 128 bytes");
+src/gfx/SystaliaSurfaceProps.hpp:61:static_assert(sizeof(SystaliaSurfaceProps) % 16 == 0, "Alinhamento deve ser multiplo de 16");
+src/gfx/SystaliaSurfaceProps.hpp:62:static_assert(alignof(SystaliaSurfaceProps) == 16, "SystaliaSurfaceProps deve ter alinhamento de 16 bytes");
+src/gfx/SystaliaSurfaceProps.hpp:63:static_assert(offsetof(SystaliaSurfaceProps, matrix) == 0, "Offset de matrix deve ser 0");
+src/gfx/SystaliaSurfaceProps.hpp:64:static_assert(offsetof(SystaliaSurfaceProps, radii) == 64, "Offset de radii deve ser 64");
+src/gfx/SystaliaSurfaceProps.hpp:65:static_assert(offsetof(SystaliaSurfaceProps, windowSize) == 80, "Offset de windowSize deve ser 80");
+src/gfx/SystaliaSurfaceProps.hpp:66:static_assert(offsetof(SystaliaSurfaceProps, screenResolution) == 88, "Offset de screenResolution deve ser 88");
+src/gfx/SystaliaSurfaceProps.hpp:67:static_assert(offsetof(SystaliaSurfaceProps, slant) == 96, "Offset de slant deve ser 96");
+src/gfx/SystaliaSurfaceProps.hpp:68:static_assert(offsetof(SystaliaSurfaceProps, ior) == 100, "Offset de ior deve ser 100");
+src/gfx/SystaliaSurfaceProps.hpp:69:static_assert(offsetof(SystaliaSurfaceProps, chromaticDispersion) == 104, "Offset de chromaticDispersion deve ser 104");
+src/gfx/SystaliaSurfaceProps.hpp:70:static_assert(offsetof(SystaliaSurfaceProps, causticIntensity) == 108, "Offset de causticIntensity deve ser 108");
+src/gfx/SystaliaSurfaceProps.hpp:71:static_assert(offsetof(SystaliaSurfaceProps, opacity) == 112, "Offset de opacity deve ser 112");
+src/gfx/SystaliaSurfaceProps.hpp:72:static_assert(offsetof(SystaliaSurfaceProps, time) == 116, "Offset de time deve ser 116");
+src/gfx/SystaliaSurfaceProps.hpp:73:static_assert(offsetof(SystaliaSurfaceProps, hasClientTexture) == 120,
+src/gfx/SystaliaSurfaceProps.hpp:75:static_assert(offsetof(SystaliaSurfaceProps, titleBarHeight) == 124,
+src/gfx/SystaliaSurfaceProps.hpp:79:struct alignas(16) SystaliaRenderUniforms {
+src/gfx/SystaliaSurfaceProps.hpp:80:    SystaliaSurfaceProps surface;
+src/gfx/SystaliaSurfaceProps.hpp:84:static_assert(offsetof(SystaliaRenderUniforms, sceneOpacity) == 128);
+src/gfx/SystaliaSurfaceProps.hpp:85:static_assert(sizeof(SystaliaRenderUniforms) == 144);
+src/qml/shell/SystaliaTopBar.qml:49:    SystaliaGlassItem {
+src/qml/shell/SystaliaFilesWindow.qml:37:    ValoGlass {
+src/gfx/SystaliaGlassMaterial.cpp:1:#include "SystaliaGlassMaterial.hpp"
+src/gfx/SystaliaGlassMaterial.cpp:6:SystaliaGlassMaterialShader::SystaliaGlassMaterialShader() {
+src/gfx/SystaliaGlassMaterial.cpp:7:    setShaderFileName(VertexStage, QStringLiteral(":/shaders/valo_optical.vert.qsb"));
+src/gfx/SystaliaGlassMaterial.cpp:8:    setShaderFileName(FragmentStage, QStringLiteral(":/shaders/valo_optical.frag.qsb"));
+src/gfx/SystaliaGlassMaterial.cpp:11:bool SystaliaGlassMaterialShader::updateUniformData(RenderState &state,
+src/gfx/SystaliaGlassMaterial.cpp:20:    auto *mat = static_cast<SystaliaGlassMaterial *>(newMaterial);
+src/gfx/SystaliaGlassMaterial.cpp:25:    SystaliaRenderUniforms uniforms;
+src/gfx/SystaliaGlassMaterial.cpp:31:    if (buf->size() >= static_cast<qsizetype>(sizeof(SystaliaRenderUniforms))
+src/gfx/SystaliaGlassMaterial.cpp:32:        && std::memcmp(buf->constData(), &uniforms, sizeof(SystaliaRenderUniforms)) == 0) {
+src/gfx/SystaliaGlassMaterial.cpp:36:    if (buf->size() < static_cast<qsizetype>(sizeof(SystaliaRenderUniforms))) {
+src/gfx/SystaliaGlassMaterial.cpp:37:        buf->resize(sizeof(SystaliaRenderUniforms));
+src/gfx/SystaliaGlassMaterial.cpp:40:    std::memcpy(buf->data(), &uniforms, sizeof(SystaliaRenderUniforms));
+src/gfx/SystaliaGlassMaterial.cpp:53:void SystaliaGlassMaterialShader::updateSampledImage(RenderState &state,
+src/gfx/SystaliaGlassMaterial.cpp:60:    auto *mat = static_cast<SystaliaGlassMaterial *>(newMaterial);
+src/gfx/SystaliaGlassMaterial.cpp:83:SystaliaGlassMaterial::SystaliaGlassMaterial() {
+src/gfx/SystaliaGlassMaterial.cpp:88:QSGMaterialType *SystaliaGlassMaterial::type() const {
+src/gfx/SystaliaGlassMaterial.cpp:93:QSGMaterialShader *SystaliaGlassMaterial::createShader(QSGRendererInterface::RenderMode) const {
+src/gfx/SystaliaGlassMaterial.cpp:94:    return new SystaliaGlassMaterialShader();
+src/gfx/SystaliaGlassMaterial.cpp:97:int SystaliaGlassMaterial::compare(const QSGMaterial *other) const {
+src/gfx/SystaliaGlassMaterial.cpp:98:    const auto *otherMaterial = static_cast<const SystaliaGlassMaterial *>(other);
+src/gfx/v2/ValoGlassMaterialV2.cpp:69:  SystaliaSurfacePropsV2 props = mat->props();
+src/gfx/v2/ValoGlassMaterialV2.cpp:84:      static_cast<qsizetype>(sizeof(SystaliaSurfacePropsV2));
+src/gfx/v2/ValoGeometryEngineV2.hpp:3:#include "SystaliaSurfacePropsV2.hpp"
+src/gfx/v2/ValoGlassItemV2.hpp:13:#include "SystaliaSurfacePropsV2.hpp"
+src/gfx/SystaliaGlassMaterial.hpp:6:#include "SystaliaSurfaceProps.hpp"
+src/gfx/SystaliaGlassMaterial.hpp:8:class SystaliaGlassMaterialShader : public QSGMaterialShader {
+src/gfx/SystaliaGlassMaterial.hpp:10:    SystaliaGlassMaterialShader();
+src/gfx/SystaliaGlassMaterial.hpp:23:class SystaliaGlassMaterial : public QSGMaterial {
+src/gfx/SystaliaGlassMaterial.hpp:25:    SystaliaGlassMaterial();
+src/gfx/SystaliaGlassMaterial.hpp:26:    ~SystaliaGlassMaterial() override = default;
+src/gfx/SystaliaGlassMaterial.hpp:32:    void setProps(const SystaliaSurfaceProps &props) { m_props = props; }
+src/gfx/SystaliaGlassMaterial.hpp:33:    const SystaliaSurfaceProps &props() const { return m_props; }
+src/gfx/SystaliaGlassMaterial.hpp:34:    SystaliaSurfaceProps &props() { return m_props; }
+src/gfx/SystaliaGlassMaterial.hpp:42:    SystaliaSurfaceProps m_props;
+src/gfx/v2/ValoGlassItemV2.cpp:292:  SystaliaSurfacePropsV2 props;
+src/qml/shell/SystaliaDock.qml:168:            ValoGlass {
+src/qml/shell/SystaliaControlCenter.qml:91:        SystaliaGlassItem {
+src/qml/shell/SystaliaControlCenter.qml:105:        SystaliaG2Frame {

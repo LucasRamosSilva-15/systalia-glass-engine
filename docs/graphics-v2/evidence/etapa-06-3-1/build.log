@@ -1,0 +1,13 @@
+[1/14] Copying sge_core qml sources into build dir
+[2/14] Running rcc for resource sge_core_raw_qml_0
+[3/14] Generating .rcc/qmlcache/sge_core_src_qml_main_qml.cpp, .rcc/qmlcache/sge_core_src_qml_main_qml.cpp.aotstats
+[4/14] Building CXX object CMakeFiles/sge_core.dir/build/.qt/rcc/qrc_sge_core_raw_qml_0.cpp.o
+[5/14] Building CXX object CMakeFiles/sge_core.dir/build/.rcc/qmlcache/sge_core_src_qml_main_qml.cpp.o
+[6/14] Linking CXX static library libsge_core.a
+[7/14] Linking CXX executable tests/tst_xdg_resize
+[8/14] Automatic MOC and UIC for target tst_shell_state_regression
+[9/13] Building CXX object CMakeFiles/systalia_glass_engine.dir/src/main.cpp.o
+[10/13] Linking CXX executable systalia_glass_engine
+[11/13] Building CXX object tests/CMakeFiles/tst_shell_state_regression.dir/integration/tst_ShellStateRegression.cpp.o
+[12/13] Linking CXX executable tests/tst_valo_optical_contract_v2
+[13/13] Linking CXX executable tests/tst_shell_state_regression

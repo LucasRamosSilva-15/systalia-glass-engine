@@ -1,0 +1,148 @@
+#pragma once
+
+#include "DrmSessionTypes.hpp"
+#include "GbmBufferManager.hpp"
+#include "KmsOutputDiscovery.hpp"
+
+#include <QByteArray>
+#include <cstdint>
+#include <memory>
+#include <optional>
+
+namespace Systalia::Platform::Drm {
+
+class DrmFlipContextRegistry;
+
+struct AtomicCommitRequest {
+    uint32_t connectorId = 0;
+    uint32_t crtcId = 0;
+    uint32_t planeId = 0;
+    uint32_t framebufferId = 0;
+    uint32_t srcWidth = 0;
+    uint32_t srcHeight = 0;
+    int inFenceFd = -1;
+    void *userData = nullptr;
+    bool testOnly = false;
+    bool allowModeset = false;
+    QByteArray modeInfoBlob;
+};
+
+struct AtomicCommitResult {
+    bool succeeded = false;
+    int outFenceFd = -1;
+};
+
+enum class KmsModesetState {
+    Unconfigured,
+    InitialModesetPending,
+    Active,
+    Suspended
+};
+
+struct KmsFenceCapabilities {
+    bool supportsInFenceFd = false;
+    bool supportsOutFencePtr = false;
+};
+
+/**
+ * @brief Interface de commit Atomic KMS e registro de framebuffers (mockável para CTest).
+ */
+class IAtomicKmsBackend {
+public:
+    virtual ~IAtomicKmsBackend() = default;
+
+    [[nodiscard]] virtual KmsFenceCapabilities probeFenceCapabilities(int drmFd,
+                                                                     uint32_t planeId,
+                                                                     uint32_t crtcId) {
+        Q_UNUSED(drmFd);
+        Q_UNUSED(planeId);
+        Q_UNUSED(crtcId);
+        return {};
+    }
+    [[nodiscard]] virtual uint32_t addFramebuffer(int drmFd, const GbmExportedBuffer &buffer) = 0;
+    virtual void removeFramebuffer(int drmFd, uint32_t fbId) = 0;
+    [[nodiscard]] virtual AtomicCommitResult commitAtomic(int drmFd, const AtomicCommitRequest &req) = 0;
+};
+
+/**
+ * @brief Implementação libdrm real (drmModeAddFB2WithModifiers / drmModeAtomicCommit).
+ *
+ * Não executada automaticamente sobre GPU física durante testes automatizados.
+ */
+class LibdrmAtomicKmsBackend final : public IAtomicKmsBackend {
+public:
+    [[nodiscard]] KmsFenceCapabilities probeFenceCapabilities(int drmFd,
+                                                             uint32_t planeId,
+                                                             uint32_t crtcId) override;
+    [[nodiscard]] uint32_t addFramebuffer(int drmFd, const GbmExportedBuffer &buffer) override;
+    void removeFramebuffer(int drmFd, uint32_t fbId) override;
+    [[nodiscard]] AtomicCommitResult commitAtomic(int drmFd, const AtomicCommitRequest &req) override;
+};
+
+/**
+ * @brief Apresentador Atomic KMS integrando KmsOutputDiscovery, GbmBufferManager e IDrmPresenter.
+ */
+class AtomicKmsPresenter final : public IDrmPresenter {
+public:
+    AtomicKmsPresenter(IKmsResourceBackend &kmsBackend,
+                       IGbmBackend &gbmBackend,
+                       IAtomicKmsBackend &atomicBackend) noexcept;
+    ~AtomicKmsPresenter() override;
+
+    [[nodiscard]] bool initializeOnFd(int drmFd) override;
+    [[nodiscard]] std::optional<DrmOutputMode> discoverPreferredMode() const override;
+    [[nodiscard]] bool configureOutput(const DrmOutputMode &mode) override;
+    [[nodiscard]] bool presentFrame(uint64_t frameIndex, int drmFd) override;
+    void suspendPresentation() override;
+    [[nodiscard]] bool resumePresentation(int drmFd) override;
+    void releaseKmsFramebuffers();
+    void shutdown() override;
+
+    void setUseExternalVulkanPool(bool enabled) noexcept { m_useExternalVulkanPool = enabled; }
+    [[nodiscard]] bool submitBufferForScanout(uint64_t bufferId, int acquireFenceFd = -1);
+    [[nodiscard]] bool onPageFlipCompleted(uint64_t bufferId, int releaseFenceFd = -1);
+    void markFlipTimedOut(uint64_t bufferId);
+
+    [[nodiscard]] GbmBufferManager &bufferManager() noexcept { return m_bufferManager; }
+    [[nodiscard]] const KmsDiscoverySnapshot &snapshot() const noexcept { return m_snapshot; }
+    [[nodiscard]] const DrmOutputMode &activeMode() const noexcept { return m_activeMode; }
+    [[nodiscard]] uint32_t activeConnectorId() const noexcept { return m_connectorId; }
+    [[nodiscard]] uint32_t activeCrtcId() const noexcept { return m_crtcId; }
+    [[nodiscard]] uint32_t activePlaneId() const noexcept { return m_planeId; }
+    [[nodiscard]] bool isSuspended() const noexcept { return m_suspended; }
+    [[nodiscard]] KmsModesetState modesetState() const noexcept { return m_modesetState; }
+    [[nodiscard]] KmsFenceCapabilities fenceCapabilities() const noexcept { return m_fenceCaps; }
+    [[nodiscard]] int pendingOutFenceFd() const noexcept { return m_pendingOutFenceFd; }
+    [[nodiscard]] uint64_t pendingFlipCommitId() const noexcept { return m_pendingFlipCommitId; }
+    [[nodiscard]] const QList<uint64_t> &primaryPlaneModifiers() const noexcept {
+        return m_primaryPlaneModifiers;
+    }
+    [[nodiscard]] std::shared_ptr<DrmFlipContextRegistry> flipContextRegistry() const noexcept {
+        return m_flipRegistry;
+    }
+
+private:
+    KmsOutputDiscovery m_discovery;
+    GbmBufferManager m_bufferManager;
+    IAtomicKmsBackend &m_atomicBackend;
+    std::shared_ptr<DrmFlipContextRegistry> m_flipRegistry;
+
+    int m_drmFd = -1;
+    KmsDiscoverySnapshot m_snapshot;
+    uint32_t m_connectorId = 0;
+    uint32_t m_crtcId = 0;
+    uint32_t m_planeId = 0;
+    DrmOutputMode m_activeMode;
+    QByteArray m_activeModeBlob;
+    KmsFenceCapabilities m_fenceCaps;
+    QList<uint64_t> m_primaryPlaneModifiers;
+    uint64_t m_pendingFlipBufferId = 0;
+    uint64_t m_pendingFlipCommitId = 0;
+    int m_pendingOutFenceFd = -1;
+    bool m_useExternalVulkanPool = false;
+    bool m_initialized = false;
+    bool m_suspended = false;
+    KmsModesetState m_modesetState = KmsModesetState::Unconfigured;
+};
+
+} // namespace Systalia::Platform::Drm

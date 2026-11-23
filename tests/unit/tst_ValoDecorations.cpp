@@ -9,8 +9,10 @@
 #include <QDir>
 #include <QSignalSpy>
 
-#include "gfx/SystaliaGlassItem.hpp"
-#include "tokens/ValoTokens.hpp"
+#include "ValoGlassItemV2.hpp"
+#include "theme/tokens/ValoTokens.hpp"
+
+void qml_register_types_Systalia_Engine();
 
 class TestValoDecorations final : public QObject {
     Q_OBJECT
@@ -27,7 +29,7 @@ private slots:
 };
 
 void TestValoDecorations::initTestCase() {
-    qmlRegisterType<SystaliaGlassItem>("Systalia.Engine", 1, 0, "SystaliaGlassItem");
+    qml_register_types_Systalia_Engine();
 }
 
 void TestValoDecorations::windowContainerIntegratesValoGlass() {
@@ -49,9 +51,18 @@ void TestValoDecorations::windowContainerIntegratesValoGlass() {
     auto *container = qobject_cast<QQuickItem *>(obj.data());
     QVERIFY(container);
 
-    // Verifica que o ValoGlass está presente e encapsula o SystaliaGlassItem
-    auto *glass = container->findChild<SystaliaGlassItem *>();
+    // Verifica que a decoração oficial V2 está presente diretamente, sem captura redundante de cliente
+    auto *glass = container->findChild<Systalia::Gfx::V2::ValoGlassItemV2 *>();
     QVERIFY(glass);
+    QVERIFY(!container->findChild<QQuickItem *>("clientDecorationV1"));
+    QVERIFY(container->findChild<QQuickItem *>("clientDecorationV2"));
+    QVERIFY(!container->findChild<QQuickItem *>("clientTextureCapture"));
+    QVERIFY(container->property("useGraphicsV2").toBool());
+    QCOMPARE(glass->geometryMode(), int(Systalia::Gfx::V2::ValoGlassItemV2::SquircleG2));
+    for (int i = 0; i < 30; ++i) {
+        container->setProperty("blurProfile", i % 3);
+        QCOMPARE(glass->blurProfile(), i % 3);
+    }
 
     auto *viewport = container->findChild<QQuickItem *>("clientViewport");
     QVERIFY(viewport);
@@ -68,15 +79,17 @@ void TestValoDecorations::activeStateModulatesWindowDecoration() {
         "import QtQuick\n"
         "import Systalia.Engine\n"
         "Item {\n"
-        "    ValoGlass {\n"
+        "    ValoMaterialSurfaceV2 {\n"
         "        id: winActive\n"
         "        objectName: 'winActive'\n"
         "        active: true\n"
+        "        surfaceOpacity: ValoTheme.opacityWindowMax\n"
         "    }\n"
-        "    ValoGlass {\n"
+        "    ValoMaterialSurfaceV2 {\n"
         "        id: winInactive\n"
         "        objectName: 'winInactive'\n"
         "        active: false\n"
+        "        surfaceOpacity: ValoTheme.opacityWindowMin\n"
         "    }\n"
         "}\n",
         QUrl()
@@ -89,15 +102,14 @@ void TestValoDecorations::activeStateModulatesWindowDecoration() {
     auto *inactiveGlass = root->findChild<QQuickItem *>("winInactive");
     QVERIFY(activeGlass && inactiveGlass);
 
-    // Janela ativa utiliza opacidade máxima e reflexos plenos
-    QCOMPARE(activeGlass->property("glassOpacity").toReal(), Systalia::ValoTokens::opacityWindowMax);
-    // Janela inativa utiliza opacidade mínima
-    QCOMPARE(inactiveGlass->property("glassOpacity").toReal(), Systalia::ValoTokens::opacityWindowMin);
+    QCOMPARE(activeGlass->property("surfaceOpacity").toReal(), Systalia::ValoTokens::opacityWindowMax);
+    QCOMPARE(inactiveGlass->property("surfaceOpacity").toReal(), Systalia::ValoTokens::opacityWindowMin);
 
-    QVERIFY(activeGlass->property("effectiveCaustics").toReal() >
-            inactiveGlass->property("effectiveCaustics").toReal());
-    QVERIFY(activeGlass->property("effectiveSurfaceOpacity").toReal() >
-            inactiveGlass->property("effectiveSurfaceOpacity").toReal());
+    auto *activeItem = activeGlass->findChild<Systalia::Gfx::V2::ValoGlassItemV2 *>();
+    auto *inactiveItem = inactiveGlass->findChild<Systalia::Gfx::V2::ValoGlassItemV2 *>();
+    QVERIFY(activeItem && inactiveItem);
+    QVERIFY(activeItem->isActive());
+    QVERIFY(!inactiveItem->isActive());
 }
 
 void TestValoDecorations::windowControlsEmitSignalsAndHaveVectorGlyphs() {
@@ -205,13 +217,13 @@ void TestValoDecorations::renderWallpaperAndDecorationsComparison() {
         "        visible: false\n"
         "    }\n"
         "    // 2. Janela 1: Systalia Files (Ativa, Perfil Quality)\n"
-        "    ValoGlass {\n"
+        "    ValoMaterialSurfaceV2 {\n"
         "        x: 100; y: 180\n"
         "        width: 680; height: 500\n"
+        "        geometryMode: ValoGlassItemV2.SquircleG2\n"
         "        active: true\n"
-        "        performanceProfile: 'quality'\n"
+        "        blurProfile: 2\n"
         "        backdropSource: testBackdrop\n"
-        "        screenResolution: Qt.vector2d(1662, 975)\n"
         "        Shell.SystaliaWindowHeader {\n"
         "            width: parent.width; height: 36\n"
         "            title: 'Systalia Files'\n"
@@ -222,7 +234,7 @@ void TestValoDecorations::renderWallpaperAndDecorationsComparison() {
         "            x: 8; y: 44; width: parent.width - 16; height: parent.height - 52\n"
         "            Text {\n"
         "                anchors.centerIn: parent\n"
-        "                text: 'Janela Ativa — ValoGlass (Quality)'\n"
+        "                text: 'Janela Ativa — ValoMaterialSurfaceV2 (Quality)'\n"
         "                color: '#DDF7FF'\n"
         "                font.family: 'Inter'\n"
         "                font.pixelSize: 18\n"
@@ -230,13 +242,13 @@ void TestValoDecorations::renderWallpaperAndDecorationsComparison() {
         "        }\n"
         "    }\n"
         "    // 3. Janela 2: Systalia Control Center (Inativa, Perfil Balanced)\n"
-        "    ValoGlass {\n"
+        "    ValoMaterialSurfaceV2 {\n"
         "        x: 860; y: 220\n"
         "        width: 680; height: 500\n"
+        "        geometryMode: ValoGlassItemV2.SquircleG2\n"
         "        active: false\n"
-        "        performanceProfile: 'balanced'\n"
+        "        blurProfile: 1\n"
         "        backdropSource: testBackdrop\n"
-        "        screenResolution: Qt.vector2d(1662, 975)\n"
         "        Shell.SystaliaWindowHeader {\n"
         "            width: parent.width; height: 36\n"
         "            title: 'Systalia Control Center'\n"
@@ -247,7 +259,7 @@ void TestValoDecorations::renderWallpaperAndDecorationsComparison() {
         "            x: 8; y: 44; width: parent.width - 16; height: parent.height - 52\n"
         "            Text {\n"
         "                anchors.centerIn: parent\n"
-        "                text: 'Janela Inativa — ValoGlass (Balanced)'\n"
+        "                text: 'Janela Inativa — ValoMaterialSurfaceV2 (Balanced)'\n"
         "                color: '#9CBAD3'\n"
         "                font.family: 'Inter'\n"
         "                font.pixelSize: 18\n"
@@ -268,12 +280,15 @@ void TestValoDecorations::renderWallpaperAndDecorationsComparison() {
     window.setGeometry(0, 0, 1662, 975);
     item->setParentItem(window.contentItem());
     window.show();
+    QVERIFY(window.isVisible());
 
-    QImage screenshot = window.grabWindow();
-    if (!screenshot.isNull()) {
-        const QString artifactDir = QStringLiteral("/home/lucasramos/.gemini/antigravity/brain/db6eb3e4-2bf0-441e-9ef2-a1601d0a1c5f");
-        QDir().mkpath(artifactDir);
-        screenshot.save(artifactDir + QStringLiteral("/valo_decorations_scene.png"));
+    const QString keepDir = qEnvironmentVariable("SGE_KEEP_EVIDENCE_DIR");
+    if (!keepDir.isEmpty()) {
+        QImage screenshot = window.grabWindow();
+        if (!screenshot.isNull()) {
+            QDir().mkpath(keepDir);
+            screenshot.save(keepDir + QStringLiteral("/valo_decorations_v2_scene.png"));
+        }
     }
 }
 

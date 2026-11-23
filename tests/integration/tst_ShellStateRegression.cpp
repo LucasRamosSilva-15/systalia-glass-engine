@@ -1,5 +1,7 @@
 #include <QTest>
+#include <QScopeGuard>
 #include <QFile>
+#include <QFont>
 #include <QJSEngine>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
@@ -12,7 +14,8 @@
 #include <memory>
 
 #include "SystaliaCompositor.hpp"
-#include "SystaliaGlassItem.hpp"
+#include "graphics/v2/materials/ValoGlassItemV2.hpp"
+#include "graphics/v2/shadows/ValoShadowItemV2.hpp"
 #include "SystemTelemetryService.hpp"
 #include "ProcessLauncherService.hpp"
 #include "AppRegistryService.hpp"
@@ -23,6 +26,8 @@
 #include "OutputManagerService.hpp"
 #include "InputDeviceManager.hpp"
 #include "LogindSessionService.hpp"
+
+void qml_register_types_Systalia_Engine();
 
 class TestShellStateRegression final : public QObject {
     Q_OBJECT
@@ -37,6 +42,13 @@ private:
     InputDeviceManager m_input;
     std::unique_ptr<QQmlApplicationEngine> m_engine;
     QObject *m_root = nullptr;
+
+    static QQuickItem *visualItem(QQuickItem *root, const QString &name) {
+        if (root->objectName() == name) return root;
+        for (auto *child : root->childItems())
+            if (auto *found = visualItem(child, name)) return found;
+        return nullptr;
+    }
 
     QVariant evaluate(const QString &code) {
         QQmlExpression expression(QQmlEngine::contextForObject(m_root), m_root, code);
@@ -53,7 +65,7 @@ private slots:
     void initTestCase() {
         QVERIFY(m_runtime.isValid());
         qputenv("XDG_RUNTIME_DIR", m_runtime.path().toUtf8());
-        qmlRegisterType<SystaliaGlassItem>("Systalia.Engine", 1, 0, "SystaliaGlassItem");
+        qml_register_types_Systalia_Engine();
         qmlRegisterType<SystaliaCompositor>("Systalia.Compositor", 1, 0, "SystaliaCompositor");
         qmlRegisterSingletonType<SystemTelemetryService>("Systalia.System", 1, 0, "SystemTelemetry",
             [](QQmlEngine *, QJSEngine *) -> QObject * { return new SystemTelemetryService; });
@@ -83,6 +95,177 @@ private slots:
         evaluate("WorkspaceManager.setWindowWorkspace(glassChassis, 0);"
                  "WorkspaceManager.setWindowWorkspace(materialWindow, 0);"
                  "raiseFileWindow(); raiseMaterialWindow(); flowMenu.close()");
+    }
+
+    void materialWindowUsesOneV2ChassisAndLiveSettings() {
+        using namespace Systalia::Gfx::V2;
+        auto *surface = m_root->findChild<QObject *>("materialWindowOpticalSurfaceV2");
+        QVERIFY(surface);
+        QCOMPARE(surface->findChildren<ValoGlassItemV2 *>().size(), 1);
+        QCOMPARE(surface->findChildren<ValoShadowItemV2 *>().size(), 1);
+        QCOMPARE(evaluate("materialWindow.opticalSurface.geometryMode").toInt(), 1);
+        QCOMPARE(evaluate("materialWindow.blurProfile").toInt(), 1);
+        QCOMPARE(evaluate("materialWindow.surfaceOpacity").toDouble(), .50);
+        QVERIFY(evaluate("filesOpticalItem !== null && dockOpticalItem !== null").toBool());
+        auto change = [&](const char *name, double value) {
+            auto *row = m_root->findChild<QObject *>(QString::fromLatin1(name));
+            return row && QMetaObject::invokeMethod(row, "changed", Q_ARG(double, value));
+        };
+        QVERIFY(change("iorSetting", 1.4));
+        QCOMPARE(evaluate("materialWindow.refractiveIndex").toDouble(), 1.4);
+        QVERIFY(qAbs(evaluate("filesOpticalItem.ior").toDouble()-1.4)<.0001);
+        QVERIFY(qAbs(evaluate("dockOpticalItem.ior").toDouble()-1.4)<.0001);
+        QVERIFY(qAbs(evaluate("materialWindow.opticalSurface.glassItemInstance.ior").toDouble()-1.4)<.0001);
+        evaluate("materialWindow.blurProfile = 0");
+        QCOMPARE(evaluate("materialWindow.blurProfile").toInt(), 0);
+        QCOMPARE(evaluate("glassChassis.blurProfile").toInt(), 0);
+        QCOMPARE(evaluate("systemDock.blurProfile").toInt(), 0);
+        QCOMPARE(evaluate("topBar.blurProfile").toInt(), 0);
+        QCOMPARE(evaluate("materialWindow.refractiveIndex").toDouble(), 1.4);
+        evaluate("materialWindow.blurProfile = 1");
+        QCOMPARE(evaluate("glassChassis.blurProfile").toInt(), 1);
+        QCOMPARE(evaluate("topBar.blurProfile").toInt(), 1);
+        evaluate("materialWindow.blurProfile = 2");
+        QCOMPARE(evaluate("glassChassis.blurProfile").toInt(), 2);
+        QCOMPARE(evaluate("topBar.blurProfile").toInt(), 2);
+        QVERIFY(change("opacitySetting", .4));
+        QCOMPARE(evaluate("glassChassis.surfaceOpacity").toDouble(), .4);
+        QVERIFY(qAbs(evaluate("materialWindow.opticalSurface.surfaceOpacity").toDouble()-.4)<.0001);
+        QVERIFY(change("dispersionSetting", .06));
+        QVERIFY(change("dispersionStrengthSetting", .5));
+        QVERIFY(qAbs(evaluate("filesOpticalItem.chromaticDispersion").toDouble()-.03)<.0001);
+        QVERIFY(qAbs(evaluate("dockOpticalItem.chromaticDispersion").toDouble()-.03)<.0001);
+        QVERIFY(change("causticsSetting", .7));
+        QVERIFY(qAbs(evaluate("filesOpticalItem.causticIntensity").toDouble()-.7)<.0001);
+        QVERIFY(qAbs(evaluate("dockOpticalItem.causticIntensity").toDouble()-.7)<.0001);
+        evaluate("materialWindow.materialActive = false");
+        QCOMPARE(evaluate("filesOpticalItem.ior").toDouble(), 1.0);
+        QCOMPARE(evaluate("filesOpticalItem.causticIntensity").toDouble(), 0.0);
+        QCOMPARE(evaluate("dockOpticalItem.causticIntensity").toDouble(), 0.0);
+        QCOMPARE(evaluate("materialWindow.opticalSurface.causticIntensity").toDouble(), 0.0);
+        evaluate("materialWindow.materialActive = true; materialWindow.refractiveIndex = 1.25;"
+                 "materialWindow.surfaceOpacity = .50; materialWindow.dispersion = .04;"
+                 "materialWindow.dispersionStrength = 1; materialWindow.caustics = .85");
+    }
+
+    void migratedOverlaysUseSingleV2ChassisAndSharedProfiles() {
+        using namespace Systalia::Gfx::V2;
+        const auto id = m_notifications.Notify("VALO",0,"","Migration","Native content",{}, {},0);
+        const auto cleanupNotification = qScopeGuard([&] { m_notifications.CloseNotification(id); });
+        auto findSurface = [this](const QString &name) {
+            auto *window = qobject_cast<QQuickWindow *>(m_root);
+            return visualItem(window->contentItem(),name);
+        };
+        qobject_cast<QQuickWindow *>(m_root)->show();
+        QTest::qWait(100);
+        const QStringList names{"SystaliaFlowMenuSurfaceV2", "SystaliaNotificationHostSurfaceV2",
+                                "SystaliaTaskSwitcherSurfaceV2", "SnapPreviewOverlaySurfaceV2"};
+        for (const auto &name : names) {
+            QTRY_VERIFY(findSurface(name));
+            auto *surface = findSurface(name);
+            QCOMPARE(surface->findChildren<ValoGlassItemV2 *>().size(),1);
+            QCOMPARE(surface->findChildren<ValoShadowItemV2 *>().size(),1);
+            QCOMPARE(surface->property("geometryMode").toInt(),1);
+        }
+        for (int profile : {0,1,2,1}) {
+            evaluate(QString("materialWindow.blurProfile=%1").arg(profile));
+            for (const auto &name : names)
+                QCOMPARE(findSurface(name)->property("blurProfile").toInt(),profile);
+        }
+        evaluate("materialWindow.opticalSurface.userPrefersReducedMotion=true; materialWindow.opticalSurface.userHighContrast=true");
+        for (const auto &name : names) {
+            auto *surface=findSurface(name);
+            QVERIFY(surface->property("prefersReducedMotion").toBool());
+            QVERIFY(surface->property("highContrast").toBool());
+        }
+        evaluate("materialWindow.opticalSurface.userPrefersReducedMotion=false; materialWindow.opticalSurface.userHighContrast=false");
+    }
+
+    void internalBackdropOrderingAndFallback() {
+        evaluate("glassChassis.x = 80; glassChassis.y = 80; materialWindow.x = 300; materialWindow.y = 100; raiseMaterialWindow()");
+        QVERIFY(evaluate("internalWindowBackdrop.compositeAvailable").toBool());
+        QVERIFY(evaluate("materialWindow.backdropSource === internalWindowBackdrop.compositeSource && glassChassis.backdropSource === backdropGrab").toBool());
+        QVERIFY(evaluate("materialWindow.opticalSurface.effectiveBackdropProvider.upstreamBlurProvider === filesOpticalItem.backdropProvider").toBool());
+        evaluate("internalWindowBackdrop.externalClientsPresent = true");
+        QVERIFY(!evaluate("internalWindowBackdrop.compositeAvailable").toBool());
+        evaluate("internalWindowBackdrop.externalClientsPresent = Qt.binding(() => externalBackdropBlocked(glassChassis.z > materialWindow.z ? glassChassis : materialWindow, [glassChassis.z > materialWindow.z ? materialWindow : glassChassis], false) || nearestBackdropWindow(glassChassis.z > materialWindow.z ? glassChassis : materialWindow, false) !== (glassChassis.z > materialWindow.z ? materialWindow : glassChassis)); raiseFileWindow()");
+        QVERIFY(evaluate("glassChassis.backdropSource === internalWindowBackdrop.compositeSource && materialWindow.backdropSource === backdropGrab").toBool());
+        QVERIFY(evaluate("filesOpticalItem.backdropProvider.upstreamBlurProvider === materialWindow.opticalSurface.effectiveBackdropProvider").toBool());
+        evaluate("WorkspaceManager.setWindowWorkspace(materialWindow, 1)");
+        QVERIFY(!evaluate("internalWindowBackdrop.compositeAvailable").toBool());
+        QVERIFY(evaluate("glassChassis.backdropSource === backdropGrab && materialWindow.backdropSource === backdropGrab").toBool());
+        evaluate("WorkspaceManager.setWindowWorkspace(materialWindow, 0); materialWindow.visible = false");
+        QVERIFY(!evaluate("internalWindowBackdrop.compositeAvailable").toBool());
+        evaluate("raiseMaterialWindow(); materialWindow.x = 810; materialWindow.y = 80");
+        QVERIFY(!evaluate("internalWindowBackdrop.compositeAvailable").toBool());
+    }
+
+    void materialWindowSliderInputAndWindowActions() {
+        auto *window = qobject_cast<QQuickWindow *>(m_root);
+        QVERIFY(window);
+        auto *slider = m_root->findChild<QQuickItem *>("iorSettingSlider");
+        QVERIFY(slider);
+        QTest::mouseClick(window, Qt::LeftButton, Qt::NoModifier,
+                          slider->mapToScene(QPointF(slider->width()*.8, slider->height()/2)).toPoint());
+        QVERIFY(evaluate("materialWindow.refractiveIndex > 1.3").toBool());
+        for (const char *name : {"opacitySettingSlider", "dispersionSettingSlider",
+                                 "causticsSettingSlider", "dispersionStrengthSettingSlider"}) {
+            auto *control = m_root->findChild<QQuickItem *>(QString::fromLatin1(name));
+            QVERIFY(control);
+            const double previous = control->property("value").toDouble();
+            QTest::mouseClick(window, Qt::LeftButton, Qt::NoModifier,
+                              control->mapToScene(QPointF(control->width()*.3, control->height()/2)).toPoint());
+            QVERIFY2(qAbs(control->property("value").toDouble()-previous)>.001, name);
+        }
+        QVERIFY(qAbs(evaluate("filesOpticalItem.ior - materialWindow.refractiveIndex").toDouble())<.0001);
+        QVERIFY(qAbs(evaluate("filesOpticalItem.chromaticDispersion - materialWindow.effectiveDispersion").toDouble())<.0001);
+        QVERIFY(qAbs(evaluate("filesOpticalItem.causticIntensity - materialWindow.caustics").toDouble())<.0001);
+        QCOMPARE(evaluate("glassChassis.blurProfile").toInt(), evaluate("materialWindow.blurProfile").toInt());
+        evaluate("toggleMaterialWindowMaximized()");
+        QVERIFY(evaluate("materialWindowMaximized && materialWindow.x === 8").toBool());
+        evaluate("toggleMaterialWindowMaximized(); raiseMaterialWindow()");
+        QVERIFY(!evaluate("materialWindowMaximized").toBool());
+        evaluate("materialWindow.x += 12; materialWindow.y += 8; raiseMaterialWindow()");
+        QCOMPARE(m_workspaces.activeWindow(), evaluate("materialWindow").value<QObject *>());
+        evaluate("closeMaterialWindow()");
+        QVERIFY(!evaluate("materialWindow.visible || materialWindow.windowOpen").toBool());
+        evaluate("raiseMaterialWindow(); materialWindow.refractiveIndex = 1.25;"
+                 "materialWindow.surfaceOpacity = .50; materialWindow.blurProfile = 1;"
+                 "materialWindow.dispersion = .04; materialWindow.dispersionStrength = 1; materialWindow.caustics = .85");
+    }
+
+    void repeatedGraphicsProfiles() {
+        auto *window = qobject_cast<QQuickWindow *>(m_root);
+        QVERIFY(window);
+        const QSize original = window->size();
+        for (int cycle = 0; cycle < 12; ++cycle) {
+            window->resize(original.width() - (cycle % 2) * 16, original.height() - (cycle % 2) * 8);
+            for (int profile : {0, 1, 2, 1, 0, 2}) {
+                auto *button = visualItem(window->contentItem(), QString("graphicsProfile%1").arg(profile));
+                QVERIFY(button);
+                QTest::mouseClick(window, Qt::LeftButton, Qt::NoModifier,
+                    button->mapToScene(QPointF(button->width()/2, button->height()/2)).toPoint());
+                QCOMPARE(evaluate("materialWindow.blurProfile").toInt(), profile);
+                int checked = 0;
+                for (int p = 0; p < 3; ++p)
+                    checked += visualItem(window->contentItem(), QString("graphicsProfile%1").arg(p))->property("checked").toBool();
+                QCOMPARE(checked, 1);
+                window->update();
+                QTest::qWait(45);
+                QVERIFY(!window->grabWindow().isNull());
+            }
+        }
+        window->resize(original);
+        window->setPersistentGraphics(false);
+        window->setPersistentSceneGraph(false);
+        window->hide();
+        window->releaseResources();
+        QTest::qWait(100);
+        window->show();
+        QVERIFY(QTest::qWaitForWindowExposed(window));
+        QTest::qWait(100);
+        QVERIFY(!window->grabWindow().isNull());
+        evaluate("materialWindow.blurProfile = 1");
     }
 
     void minimizedMaterialStaysHiddenAfterWorkspaceRoundtrip() {
@@ -140,6 +323,206 @@ private slots:
         QVERIFY(!evaluate("notificationHost.visible").toBool());
         m_notifications.CloseNotification(id);
         m_control.setDoNotDisturb(false);
+    }
+
+    void clientHeaderMatchesFilesGeometryAndTypography() {
+        auto *window=qobject_cast<QQuickWindow *>(m_root);
+        auto *files=visualItem(window->contentItem(),"filesWindowHeader");
+        QVERIFY(files);
+        QQmlComponent component(m_engine.get(),QUrl("qrc:/qt/qml/Systalia/Engine/src/qml/WaylandWindowContainer.qml"));
+        std::unique_ptr<QObject> object(component.createWithInitialProperties({{"width",701}}));
+        QVERIFY2(object,qPrintable(component.errorString()));
+        auto *container=qobject_cast<QQuickItem *>(object.get());
+        auto *header=container->findChild<QQuickItem *>("sgeTitleBar");
+        QVERIFY(header);
+        QCOMPARE(container->property("titleBarHeight").toInt(),50);
+        QCOMPARE(header->height(),files->height());
+        QCOMPARE(header->property("badgeWidth"),files->property("badgeWidth"));
+        for(const auto &text:QStringList{"Alacritty",QString(200,'W')}) {
+            header->setProperty("title",text);
+            for(const auto &name:{"windowHeaderTitle","windowHeaderIcon","windowHeaderBadge"}) {
+                auto *actual=header->findChild<QQuickItem *>(name);
+                auto *reference=files->findChild<QQuickItem *>(name);
+                QVERIFY(actual && reference);
+                QCOMPARE(actual->mapToItem(header,QPointF()).y(),reference->mapToItem(files,QPointF()).y());
+                QCOMPARE(actual->height(),reference->height());
+                if (QString::fromLatin1(name)=="windowHeaderTitle") {
+                    QCOMPARE(actual->property("font").value<QFont>(),reference->property("font").value<QFont>());
+                    QCOMPARE(actual->property("baselineOffset"),reference->property("baselineOffset"));
+                    QCOMPARE(actual->mapToItem(header,QPointF()).x(),50.0);
+                }
+            }
+            auto *previous=header->findChild<QQuickItem *>("minimizeToplevelButton");
+            for(const auto &name:{"minimizeToplevelButton","maximizeToplevelButton","closeToplevelButton"}) {
+                auto *button=header->findChild<QQuickItem *>(name);
+                QVERIFY(button);
+                QCOMPARE(button->size(),QSizeF(28,28));
+                QCOMPARE(button->mapToItem(header,QPointF()).y(),11.0);
+                if(button!=previous) QCOMPARE(button->x()-previous->x()-previous->width(),10.0);
+                previous=button;
+            }
+            QCOMPARE(header->width()-previous->mapToItem(header,QPointF()).x()-previous->width(),18.5);
+        }
+        for(int width:{320,701}) {
+            container->setWidth(width);
+            auto *label=header->findChild<QQuickItem *>("windowHeaderTitle");
+            auto *button=header->findChild<QQuickItem *>("minimizeToplevelButton");
+            QVERIFY(label->mapToItem(header,QPointF(label->width(),0)).x()<=button->mapToItem(header,QPointF()).x());
+        }
+    }
+
+    void overlayBackdropUsesOneInternalProducerOrFallsBack() {
+        evaluate("glassChassis.visible=true; materialWindow.visible=false; glassChassis.x=500; glassChassis.y=450; glassChassis.width=701; glassChassis.height=534");
+        QTRY_VERIFY(evaluate("overlayBackdrop.dockAvailable").toBool());
+        QVERIFY(!evaluate("overlayBackdrop.topBarAvailable").toBool());
+        QVERIFY(evaluate("overlayBackdrop.producer === glassChassis").toBool());
+        QVERIFY(evaluate("dockOpticalItem.backdropProvider.upstreamBlurProvider === filesOpticalItem.backdropProvider").toBool());
+        evaluate("glassChassis.y=-45");
+        QTRY_VERIFY(evaluate("overlayBackdrop.topBarAvailable").toBool());
+        QVERIFY(!evaluate("overlayBackdrop.dockAvailable").toBool());
+        QVERIFY(evaluate("topBarOpticalItem.backdropProvider.upstreamBlurProvider === filesOpticalItem.backdropProvider").toBool());
+        evaluate("materialWindow.x=600; materialWindow.y=-45; materialWindow.visible=true; raiseMaterialWindow()");
+        QTRY_COMPARE(evaluate("overlayBackdrop.coverageMode").toString(),QString("limited-internal-windows"));
+        QVERIFY(evaluate("!overlayBackdrop.requiresBoth && overlayBackdrop.producerFor(topBar) === materialWindow").toBool());
+        QVERIFY(evaluate("topBarOpticalItem.backdropProvider.upstreamBlurProvider === materialWindow.opticalSurface.effectiveBackdropProvider").toBool());
+        evaluate("raiseFileWindow()");
+        QTRY_VERIFY(evaluate("overlayBackdrop.producerFor(topBar) === glassChassis").toBool());
+        QVERIFY(evaluate("topBarOpticalItem.backdropProvider.upstreamBlurProvider === filesOpticalItem.backdropProvider").toBool());
+        evaluate("materialWindow.y=80");
+        QTRY_VERIFY(!evaluate("overlayBackdrop.requiresBoth").toBool());
+        evaluate("glassChassis.x=80; glassChassis.y=80; materialWindow.x=810; materialWindow.y=80; materialWindow.visible=true");
+    }
+
+    void externalBackdropFallbackIsLocal() {
+        evaluate("glassChassis.visible=true; materialWindow.visible=true; glassChassis.x=100; glassChassis.y=100; materialWindow.x=150; materialWindow.y=130; glassChassis.z=10; materialWindow.z=30");
+        evaluate("trackedClientContainers = [Qt.createQmlObject('import QtQuick; Item { property int workspaceIndex: 0; width: 120; height: 120; z: 20 }', clientWindowsLayer.workspacePageAt(0))]");
+        evaluate("trackedClientContainers[0].x=1200; trackedClientContainers[0].y=100");
+        QTRY_VERIFY(evaluate("internalWindowBackdrop.compositeAvailable").toBool());
+        QVERIFY(evaluate("nearestBackdropWindow(materialWindow, false) === glassChassis").toBool());
+        // The nearest external window blocks selection even where it does not
+        // intersect the deeper internal window; do not skip it for a capture.
+        evaluate("trackedClientContainers[0].x=820; trackedClientContainers[0].y=160");
+        QTRY_VERIFY(!evaluate("internalWindowBackdrop.compositeAvailable").toBool());
+        QVERIFY(evaluate("nearestBackdropWindow(materialWindow, false) === trackedClientContainers[0]").toBool());
+        evaluate("trackedClientContainers[0].x=180; trackedClientContainers[0].y=160");
+        QTRY_VERIFY(!evaluate("internalWindowBackdrop.compositeAvailable").toBool());
+        QVERIFY(evaluate("nearestBackdropWindow(materialWindow, false) === trackedClientContainers[0]").toBool());
+        evaluate("trackedClientContainers[0].z=5");
+        QTRY_VERIFY(evaluate("internalWindowBackdrop.compositeAvailable").toBool());
+        evaluate("trackedClientContainers[0].z=40");
+        QTRY_VERIFY(evaluate("internalWindowBackdrop.compositeAvailable").toBool());
+        QVERIFY(evaluate("nearestBackdropWindow(materialWindow, false) === glassChassis").toBool());
+        evaluate("trackedClientContainers[0].z=20; trackedClientContainers[0].workspaceIndex=1");
+        QTRY_VERIFY(evaluate("internalWindowBackdrop.compositeAvailable").toBool());
+        evaluate("trackedClientContainers[0].workspaceIndex=0; trackedClientContainers[0].visible=false");
+        QTRY_VERIFY(evaluate("internalWindowBackdrop.compositeAvailable").toBool());
+        evaluate("materialWindow.visible=false; glassChassis.x=500; glassChassis.y=450; trackedClientContainers[0].visible=true; trackedClientContainers[0].z=40; trackedClientContainers[0].x=0; trackedClientContainers[0].y=0");
+        QTRY_VERIFY(evaluate("overlayBackdrop.dockAvailable").toBool());
+        evaluate("trackedClientContainers[0].x=650; trackedClientContainers[0].y=760");
+        QTRY_VERIFY(!evaluate("overlayBackdrop.dockAvailable").toBool());
+        evaluate("glassChassis.y=-45; trackedClientContainers[0].x=0; trackedClientContainers[0].y=500");
+        QTRY_VERIFY(evaluate("overlayBackdrop.topBarAvailable").toBool());
+        evaluate("trackedClientContainers[0].x=650; trackedClientContainers[0].y=-45");
+        QTRY_VERIFY(!evaluate("overlayBackdrop.topBarAvailable").toBool());
+        evaluate("trackedClientContainers[0].destroy(); trackedClientContainers=[]; glassChassis.x=80; glassChassis.y=80; materialWindow.x=810; materialWindow.y=80");
+    }
+
+    void windowHeadersReleaseBadgeSpace() {
+        auto *window=qobject_cast<QQuickWindow *>(m_root);
+        auto *files=visualItem(window->contentItem(),"filesWindowHeader");
+        QVERIFY(files);
+        auto *filesTitle=files->findChild<QQuickItem *>("windowHeaderTitle");
+        auto *content=files->findChild<QQuickItem *>("windowHeaderTitleContent");
+        auto *badge=files->findChild<QQuickItem *>("windowHeaderBadge");
+        QVERIFY(filesTitle && content && badge);
+        QVERIFY(files->property("badgeText").toString().isEmpty());
+        QVERIFY(!badge->isVisible());
+        QCOMPARE(filesTitle->width(),content->width());
+        QCOMPARE(files->height(),50.0);
+        QCOMPARE(filesTitle->property("font").value<QFont>().pixelSize(),21);
+        QQmlComponent component(m_engine.get(),QUrl("qrc:/qt/qml/Systalia/Engine/src/qml/WaylandWindowContainer.qml"));
+        std::unique_ptr<QObject> obj(component.create());
+        QVERIFY2(obj,qPrintable(component.errorString()));
+        auto *header=obj->findChild<QQuickItem *>("sgeTitleBar");
+        QVERIFY(header);
+        QVERIFY(header->property("badgeText").toString().isEmpty());
+        QVERIFY(evaluate("materialWindow.children.some(c => c.title === 'Systalia Control Center' && c.badgeText === '' && c.titlePixelSize === 21)").toBool());
+    }
+
+    void internalWindowsResizeAtEveryEdge() {
+        auto *window=qobject_cast<QQuickWindow *>(m_root);
+        window->show();
+        QVERIFY(QTest::qWaitForWindowExposed(window));
+        struct Direction { const char *name; int x; int y; Qt::CursorShape cursor; };
+        const Direction directions[]={{"top",0,-1,Qt::SizeVerCursor},{"bottom",0,1,Qt::SizeVerCursor},
+            {"left",-1,0,Qt::SizeHorCursor},{"right",1,0,Qt::SizeHorCursor},
+            {"topLeft",-1,-1,Qt::SizeFDiagCursor},{"bottomRight",1,1,Qt::SizeFDiagCursor},
+            {"topRight",1,-1,Qt::SizeBDiagCursor},{"bottomLeft",-1,1,Qt::SizeBDiagCursor}};
+        for(const auto &name: {QStringLiteral("files"),QStringLiteral("material")}) {
+            const auto source=name=="files" ? QStringLiteral("glassChassis") : QStringLiteral("materialWindow");
+            evaluate("glassChassis.visible=false; materialWindow.visible=false; " + source + ".visible=true");
+            auto *handles=visualItem(window->contentItem(),name+"ResizeHandles");
+            QVERIFY(handles);
+            auto *target=handles->parentItem();
+            QVERIFY(target);
+            for(const auto &d:directions) {
+                target->setPosition(QPointF(200,100)); target->setSize(QSizeF(750,600));
+                auto *area=visualItem(handles,QString("internalResize_")+d.name);
+                QVERIFY(area);
+                QCOMPARE(area->property("cursorShape").toInt(),int(d.cursor));
+                const auto pos=area->mapToScene(QPointF(area->width()/2,area->height()/2)).toPoint();
+                QTest::mousePress(window,Qt::LeftButton,Qt::NoModifier,pos);
+                QTest::mouseMove(window,pos+QPoint(d.x*30,d.y*25),20);
+                QTest::mouseRelease(window,Qt::LeftButton,Qt::NoModifier,pos+QPoint(d.x*30,d.y*25));
+                QCOMPARE(target->width(),750.0+(d.x ? 30:0));
+                QCOMPARE(target->height(),600.0+(d.y ? 25:0));
+                QCOMPARE(target->x(),200.0+(d.x<0 ? -30:0));
+                QCOMPARE(target->y(),100.0+(d.y<0 ? -25:0));
+                QCOMPARE(target->property("restoreGeometry").toRectF(),QRectF(target->position(),target->size()));
+            }
+            target->setPosition(QPointF(200,100)); target->setSize(QSizeF(750,600));
+            auto *right=visualItem(handles,"internalResize_right");
+            const auto rightPos=right->mapToScene(QPointF(right->width()/2,right->height()/2)).toPoint();
+            QTest::mousePress(window,Qt::LeftButton,Qt::NoModifier,rightPos);
+            QTest::mouseMove(window,rightPos-QPoint(200,0),20);
+            QTest::mouseRelease(window,Qt::LeftButton,Qt::NoModifier,rightPos-QPoint(200,0));
+            QCOMPARE(target->width(),610.0);
+            auto *bottom=visualItem(handles,"internalResize_bottom");
+            const auto bottomPos=bottom->mapToScene(QPointF(bottom->width()/2,bottom->height()/2)).toPoint();
+            QTest::mousePress(window,Qt::LeftButton,Qt::NoModifier,bottomPos);
+            QTest::mouseMove(window,bottomPos-QPoint(0,200),20);
+            QTest::mouseRelease(window,Qt::LeftButton,Qt::NoModifier,bottomPos-QPoint(0,200));
+            QCOMPARE(target->height(),name=="files" ? 530.0 : 525.0);
+            if(name=="files") {
+                auto *breadcrumb=visualItem(target,"filesBreadcrumb");
+                auto *menu=visualItem(target,"filesMenuButton");
+                auto *grid=visualItem(target,"filesGrid");
+                QVERIFY(breadcrumb && menu && grid);
+                QVERIFY(breadcrumb->mapToItem(target,QPointF(breadcrumb->width(),0)).x() <= menu->mapToItem(target,QPointF()).x());
+                QVERIFY(grid->mapToItem(target,QPointF(grid->width(),grid->height())).x() <= target->width());
+                QVERIFY(grid->mapToItem(target,QPointF(grid->width(),grid->height())).y() <= target->height());
+            } else {
+                auto *panel=visualItem(target,"materialOptionsPanel");
+                QVERIFY(panel && panel->x()+panel->width()<=target->width());
+                QVERIFY(panel->y()+panel->height()<=target->height());
+                auto *slider=visualItem(panel,"dispersionStrengthSetting");
+                QVERIFY(slider && slider->x()+slider->width()<=panel->width());
+                QVERIFY(slider->y()+slider->height()<=panel->height());
+            }
+            const QRectF beforeMax(target->position(),target->size());
+            evaluate(name=="files" ? "toggleFileWindowMaximized()" : "toggleMaterialWindowMaximized()");
+            QVERIFY(!handles->isEnabled());
+            evaluate(name=="files" ? "toggleFileWindowMaximized()" : "toggleMaterialWindowMaximized()");
+            QCOMPARE(QRectF(target->position(),target->size()),beforeMax);
+            target->setProperty("snapState",1);
+            QVERIFY(!handles->isEnabled());
+            target->setProperty("snapState",0);
+            const QString maximized=name=="files" ? "filesWindowMaximized" : "materialWindowMaximized";
+            m_root->setProperty(maximized.toUtf8().constData(),true);
+            QVERIFY(!handles->isEnabled());
+            m_root->setProperty(maximized.toUtf8().constData(),false);
+        }
+        evaluate("glassChassis.visible=true; materialWindow.visible=true");
     }
 
     void longWindowTitlesStayClearOfActions() {
@@ -208,6 +591,25 @@ private slots:
         QCOMPARE(result.first().at(0).toString(), QString("poweroff"));
         QVERIFY(!result.first().at(1).toBool());
         QVERIFY(result.first().at(2).toString().contains("denied:poweroff"));
+    }
+
+    void systemControlDestructorStopsRunningProbesCleanly() {
+        QTemporaryDir binaries;
+        QVERIFY(binaries.isValid());
+        QFile executable(binaries.filePath("wpctl"));
+        QVERIFY(executable.open(QIODevice::WriteOnly));
+        executable.write("#!/bin/sh\nsleep 10\n");
+        executable.close();
+        QVERIFY(executable.setPermissions(QFileDevice::ReadOwner | QFileDevice::WriteOwner | QFileDevice::ExeOwner));
+
+        const auto previousPath = qgetenv("PATH");
+        qputenv("PATH", binaries.path().toUtf8());
+        QTest::failOnWarning(QRegularExpression("QProcess: Destroyed while process"));
+        {
+            SystemControlService control;
+            QVERIFY(!control.findChildren<QProcess *>().isEmpty());
+        }
+        qputenv("PATH", previousPath);
     }
 
     void desktopTerminalRequirementReachesTheModel() {
@@ -282,7 +684,7 @@ private slots:
         QCOMPARE(evaluate("systemDock.height").toDouble(), 125.0);
         QCOMPARE(evaluate("systemDock.pillRadius").toDouble(), 47.0);
 
-        // Valida que o chassi óptico principal é um ValoGlass unificado com cantos circulares de 47px
+        // Valida que o chassi óptico principal é uma superfície V2 unificada com cantos circulares de 47px
         QVERIFY(evaluate("systemDock.valoGlassInstance !== null").toBool());
         QVERIFY(evaluate("systemDock.valoGlassInstance.circularCorners").toBool());
         QCOMPARE(evaluate("systemDock.valoGlassInstance.cornerRadius").toDouble(), 47.0);
