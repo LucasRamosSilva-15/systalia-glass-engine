@@ -42,12 +42,10 @@ Item {
     property real animationTime: 0.0
 
     readonly property int borderMargin: 8
-    readonly property int frameMargin: isMaximized ? 0 : 8
+    readonly property int frameMargin: 8
     readonly property int titleBarHeight: sgeTitleBar.implicitHeight
-    readonly property real radius: isMaximized ? 0.0 : cornerRadius
-    readonly property vector4d frameRadii: isMaximized
-                                           ? Qt.vector4d(0, 0, 0, 0)
-                                           : Qt.vector4d(cornerRadius, cornerRadius, cornerRadius, cornerRadius)
+    readonly property real radius: cornerRadius
+    readonly property vector4d frameRadii: Qt.vector4d(cornerRadius, cornerRadius, cornerRadius, cornerRadius)
 
     property real normalX: Math.max(8, Math.min(24 + (windowIndex * 36), Math.max(8, workAreaWidth - 480)))
     property real normalY: Math.max(8, Math.min(16 + (windowIndex * 32), Math.max(8, workAreaHeight - 360)))
@@ -77,8 +75,8 @@ Item {
 
     x: (isMaximized ? 0 : normalX) + animatedWorkspaceOffsetX
     y: isMaximized ? 0 : normalY
-    width: isMaximized ? Math.max(320, workAreaWidth) : normalWidth
-    height: isMaximized ? Math.max(220, workAreaHeight) : normalHeight
+    width: isMaximized ? Math.max(320, frame.desktopWidth - 16) : normalWidth
+    height: isMaximized ? Math.max(220, frame.desktopHeight - 68) : normalHeight
     z: windowZOrder
     visible: !isMinimized && (workspaceIndex === activeWorkspace || workspaceTransitioning)
     clip: false
@@ -258,13 +256,20 @@ Item {
         }
     }
 
+    function maximizedClientSize() {
+        const maxFrameW = Math.max(320, frame.desktopWidth - 16)
+        const maxFrameH = Math.max(220, frame.desktopHeight - 68)
+        return Qt.size(
+            Math.max(240, Math.round(maxFrameW - 2 * frame.frameMargin)),
+            Math.max(160, Math.round(maxFrameH - frame.titleBarHeight - 2 * frame.frameMargin)))
+    }
+
     function syncMaximizedSurface() {
         if (!isMaximized || !windowShellSurface) {
             return
         }
-        const targetW = Math.max(240, Math.round(frame.width - 2 * frame.frameMargin))
-        const targetH = Math.max(160, Math.round(frame.height - frame.titleBarHeight - 2 * frame.frameMargin))
-        frame.surfaceAdapter.resizeSurface(frame.windowShellSurface, targetW, targetH)
+        const sz = maximizedClientSize()
+        frame.surfaceAdapter.resizeSurface(frame.windowShellSurface, sz.width, sz.height)
     }
 
     onIsMaximizedChanged: {
@@ -276,8 +281,8 @@ Item {
             frame.surfaceAdapter.resizeSurface(frame.windowShellSurface, targetW, targetH)
         }
     }
-    onWorkAreaWidthChanged: syncMaximizedSurface()
-    onWorkAreaHeightChanged: syncMaximizedSurface()
+    onDesktopWidthChanged: syncMaximizedSurface()
+    onDesktopHeightChanged: syncMaximizedSurface()
 
     // Chassi óptico unificado VALO Graphics V2 (idêntico ao WaylandWindowContainer.qml)
     ValoMaterialSurfaceV2 {
@@ -317,8 +322,11 @@ Item {
         Rectangle {
             id: opaqueClientBacking
             objectName: "opaqueClientBacking"
-            anchors.fill: parent
-            radius: frame.isMaximized ? 0 : Math.max(0, frame.cornerRadius - frame.frameMargin - 2)
+            x: 0
+            y: 0
+            width: toplevelItem.width > 0 ? Math.min(parent.width, toplevelItem.width) : parent.width
+            height: toplevelItem.height > 0 ? Math.min(parent.height, toplevelItem.height) : parent.height
+            radius: Math.max(0, frame.cornerRadius - frame.frameMargin - 2)
             color: "#0b111c"
             visible: frame.surfaceOpaque && toplevelItem.ready
         }
@@ -403,7 +411,19 @@ Item {
         dragEnabled: false
 
         onMinimizeRequested: frame.surfaceAdapter.toggleMinimize(frame.windowShellSurface)
-        onMaximizeRequested: frame.surfaceAdapter.toggleMaximize(frame.windowShellSurface)
+        onMaximizeRequested: {
+            if (!frame.windowShellSurface) {
+                return
+            }
+            if (!frame.isMaximized) {
+                const sz = frame.maximizedClientSize()
+                frame.surfaceAdapter.setSurfaceMaximized(frame.windowShellSurface, true, sz.width, sz.height)
+            } else {
+                const targetW = Math.max(240, Math.round(frame.normalWidth - 2 * frame.frameMargin))
+                const targetH = Math.max(160, Math.round(frame.normalHeight - frame.titleBarHeight - 2 * frame.frameMargin))
+                frame.surfaceAdapter.setSurfaceMaximized(frame.windowShellSurface, false, targetW, targetH)
+            }
+        }
         onCloseRequested: frame.surfaceAdapter.requestClose(frame.windowShellSurface)
         onHeaderTapped: frame.surfaceAdapter.activateSurface(frame.windowShellSurface)
     }

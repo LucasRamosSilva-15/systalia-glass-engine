@@ -485,11 +485,15 @@ void tst_WaylibBackend::headlessAndMultiWindowValoShellLifecycle() {
                && findToplevelItemInLayer(clientLayer, surfB) != nullptr;
     }, 3000));
 
-    // Cliente B deve estar focado e acima de A no z-order; TopBar reflete título ativo
+    // Cliente B deve estar focado e acima de A no z-order; TopBar mantém apenas branding limpo
     QVERIFY(surfB->isActivated());
     QVERIFY(!surfA->isActivated());
     QVERIFY(surfaceAdapter->zOrderForSurface(surfB) > surfaceAdapter->zOrderForSurface(surfA));
-    QCOMPARE(topBar->property("activeWindowTitle").toString(), QStringLiteral("Window Beta"));
+    QCOMPARE(surfaceAdapter->activeTitle(), QStringLiteral("Window Beta"));
+    QCOMPARE(topBar->property("activeWindowTitle").toString(), QString());
+    auto *activeTitleLabel = topBar->findChild<QQuickItem *>(QStringLiteral("activeWindowTitleLabel"));
+    QVERIFY(activeTitleLabel != nullptr);
+    QVERIFY(!activeTitleLabel->isVisible());
     if (adapter.seat()) {
         QCOMPARE(adapter.seat()->keyboardFocusSurface(), surfB->surface());
     }
@@ -505,7 +509,8 @@ void tst_WaylibBackend::headlessAndMultiWindowValoShellLifecycle() {
     QCOMPARE(surfaceAdapter->activeSurface(), surfA);
     QVERIFY(waitUntil([&]() { return surfA->isActivated() && !surfB->isActivated(); }, 3000));
     QVERIFY(surfaceAdapter->zOrderForSurface(surfA) > surfaceAdapter->zOrderForSurface(surfB));
-    QCOMPARE(topBar->property("activeWindowTitle").toString(), QStringLiteral("Window Alpha"));
+    QCOMPARE(surfaceAdapter->activeTitle(), QStringLiteral("Window Alpha"));
+    QCOMPARE(topBar->property("activeWindowTitle").toString(), QString());
     QVERIFY(activeSpy.count() >= 1);
     if (adapter.seat()) {
         QCOMPARE(adapter.seat()->keyboardFocusSurface(), surfA->surface());
@@ -521,11 +526,43 @@ void tst_WaylibBackend::headlessAndMultiWindowValoShellLifecycle() {
     QCOMPARE(surfaceAdapter->activeSurface(), surfA);
     QVERIFY(waitUntil([&]() { return surfA->isActivated(); }, 3000));
 
-    // Maximizar e restaurar A
-    surfaceAdapter->toggleMaximize(surfA);
+    // Maximizar e restaurar A: verifica geometria [8, 60, width-16, height-68], auto-hide da Dock e redimensionamento do cliente
+    QObject *rootItem = rootObj.data();
+    auto *toplevelItemAInit = findToplevelItemInLayer(clientLayer, surfA);
+    QVERIFY(toplevelItemAInit != nullptr);
+    auto *frameAMaxTest = toplevelItemAInit->parentItem()->parentItem();
+    QVERIFY(frameAMaxTest != nullptr);
+    const qreal preMaxX = frameAMaxTest->property("normalX").toReal();
+    const qreal preMaxY = frameAMaxTest->property("normalY").toReal();
+    const qreal preMaxW = frameAMaxTest->property("normalWidth").toReal();
+    const qreal preMaxH = frameAMaxTest->property("normalHeight").toReal();
+
+    QVERIFY(dockV2->isVisible());
+    QMetaObject::invokeMethod(frameAMaxTest->findChild<QQuickItem *>(QStringLiteral("sgeTitleBar")), "maximizeRequested");
     QVERIFY(surfaceAdapter->isMaximized(surfA));
+    QTRY_VERIFY(surfA->isMaximized());
+    QCOMPARE(rootItem->property("hasMaximizedWindowInActiveWorkspace").toBool(), true);
+    QTRY_VERIFY(!dockV2->isVisible());
+    QTRY_COMPARE(qRound(frameAMaxTest->width()), renderWindow->width() - 16);
+    QTRY_COMPARE(qRound(frameAMaxTest->height()), renderWindow->height() - 68);
+    const QPointF frameAScenePos = frameAMaxTest->mapToScene(QPointF(0.0, 0.0));
+    QCOMPARE(qRound(frameAScenePos.x()), 8);
+    QCOMPARE(qRound(frameAScenePos.y()), 60);
+    auto *clientViewportA = frameAMaxTest->findChild<QQuickItem *>(QStringLiteral("clientViewport"));
+    QVERIFY(clientViewportA != nullptr);
+    QTRY_VERIFY(surfA->getContentGeometry().width() > 320);
+    QTRY_COMPARE(qRound(toplevelItemAInit->width()), qRound(clientViewportA->width()));
+    QTRY_COMPARE(qRound(toplevelItemAInit->height()), qRound(clientViewportA->height()));
+
     surfaceAdapter->toggleMaximize(surfA);
     QVERIFY(!surfaceAdapter->isMaximized(surfA));
+    QTRY_VERIFY(!surfA->isMaximized());
+    QCOMPARE(rootItem->property("hasMaximizedWindowInActiveWorkspace").toBool(), false);
+    QTRY_VERIFY(dockV2->isVisible());
+    QCOMPARE(frameAMaxTest->property("normalX").toReal(), preMaxX);
+    QCOMPARE(frameAMaxTest->property("normalY").toReal(), preMaxY);
+    QCOMPARE(frameAMaxTest->property("normalWidth").toReal(), preMaxW);
+    QCOMPARE(frameAMaxTest->property("normalHeight").toReal(), preMaxH);
 
     // Verifica moldura VALO Glass V2, subsurfaces habilitadas e botão fechar na SSD (geometria ativa)
     auto *toplevelItemA = findToplevelItemInLayer(clientLayer, surfA);
@@ -589,6 +626,43 @@ void tst_WaylibBackend::headlessAndMultiWindowValoShellLifecycle() {
                                       Q_ARG(QVariant, QPointF(origFilesW + 50.0, 200.0))));
     QCOMPARE(filesWindowItem->width(), origFilesW + 50.0);
     QVERIFY(QMetaObject::invokeMethod(filesHandles, "finish"));
+
+    // 3c-bis. Maximização e restauração das janelas internas (Files + Control Center) com auto-hide da Dock
+    const QRectF origFilesRect(filesWindowItem->x(), filesWindowItem->y(),
+                               filesWindowItem->width(), filesWindowItem->height());
+    QVERIFY(QMetaObject::invokeMethod(rootItem, "toggleFileWindowMaximized"));
+    QCOMPARE(rootItem->property("filesWindowMaximized").toBool(), true);
+    QCOMPARE(qRound(filesWindowItem->x()), 8);
+    QCOMPARE(qRound(filesWindowItem->y()), 60);
+    QCOMPARE(qRound(filesWindowItem->width()), renderWindow->width() - 16);
+    QCOMPARE(qRound(filesWindowItem->height()), renderWindow->height() - 68);
+    QTRY_VERIFY(!dockV2->isVisible());
+    QVERIFY(QMetaObject::invokeMethod(rootItem, "toggleFileWindowMaximized"));
+    QCOMPARE(rootItem->property("filesWindowMaximized").toBool(), false);
+    QCOMPARE(filesWindowItem->x(), origFilesRect.x());
+    QCOMPARE(filesWindowItem->y(), origFilesRect.y());
+    QCOMPARE(filesWindowItem->width(), origFilesRect.width());
+    QCOMPARE(filesWindowItem->height(), origFilesRect.height());
+    QTRY_VERIFY(dockV2->isVisible());
+    QVERIFY(QMetaObject::invokeMethod(rootItem, "minimizeFileWindow"));
+
+    const QRectF origMatRect(materialWindowItem->x(), materialWindowItem->y(),
+                             materialWindowItem->width(), materialWindowItem->height());
+    QVERIFY(QMetaObject::invokeMethod(rootItem, "toggleMaterialWindowMaximized"));
+    QCOMPARE(rootItem->property("materialWindowMaximized").toBool(), true);
+    QCOMPARE(qRound(materialWindowItem->x()), 8);
+    QCOMPARE(qRound(materialWindowItem->y()), 60);
+    QCOMPARE(qRound(materialWindowItem->width()), renderWindow->width() - 16);
+    QCOMPARE(qRound(materialWindowItem->height()), renderWindow->height() - 68);
+    QTRY_VERIFY(!dockV2->isVisible());
+    QVERIFY(QMetaObject::invokeMethod(rootItem, "toggleMaterialWindowMaximized"));
+    QCOMPARE(rootItem->property("materialWindowMaximized").toBool(), false);
+    QCOMPARE(materialWindowItem->x(), origMatRect.x());
+    QCOMPARE(materialWindowItem->y(), origMatRect.y());
+    QCOMPARE(materialWindowItem->width(), origMatRect.width());
+    QCOMPARE(materialWindowItem->height(), origMatRect.height());
+    QTRY_VERIFY(dockV2->isVisible());
+    QVERIFY(QMetaObject::invokeMethod(rootItem, "minimizeMaterialWindow"));
 
     // 3d. Alternador de quadros no centro da SystaliaTopBarV2 (clique real na pílula + transição)
     auto *pill1 = findVisualChildByObjectName(topBar, QStringLiteral("workspacePillMouseArea_1"));
@@ -677,7 +751,8 @@ void tst_WaylibBackend::headlessAndMultiWindowValoShellLifecycle() {
     QCOMPARE(clientA.exitCode(), 0);
     QCOMPARE(surfaceAdapter->activeSurface(), surfB);
     QVERIFY(waitUntil([&]() { return surfB->isActivated(); }, 3000));
-    QCOMPARE(topBar->property("activeWindowTitle").toString(), QStringLiteral("Window Beta"));
+    QCOMPARE(surfaceAdapter->activeTitle(), QStringLiteral("Window Beta"));
+    QCOMPARE(topBar->property("activeWindowTitle").toString(), QString());
 
     // 4. Encerra compositor ainda com cliente B conectado (sem crash nem use-after-free) + shutdown idempotente
     rootObj.reset();

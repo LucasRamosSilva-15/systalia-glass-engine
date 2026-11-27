@@ -114,6 +114,7 @@ class WaylibSurfaceAdapter final : public QObject {
     Q_PROPERTY(QString activeTitle READ activeTitle NOTIFY activeSurfaceChanged)
     Q_PROPERTY(QString activeAppId READ activeAppId NOTIFY activeSurfaceChanged)
     Q_PROPERTY(QStringList activeAppIds READ activeAppIds NOTIFY surfacesChanged)
+    Q_PROPERTY(int maximizedRevision READ maximizedRevision NOTIFY maximizedStateChanged)
 
 public:
     explicit WaylibSurfaceAdapter(QObject *parent = nullptr);
@@ -140,6 +141,10 @@ public:
     Q_INVOKABLE void raiseSurface(WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *surface);
     Q_INVOKABLE void requestClose(WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *surface);
     Q_INVOKABLE void toggleMaximize(WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *surface);
+    Q_INVOKABLE void setSurfaceMaximized(WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *surface,
+                                         bool maximized,
+                                         int clientWidth = 0,
+                                         int clientHeight = 0);
     Q_INVOKABLE void toggleMinimize(WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *surface);
     Q_INVOKABLE void focusOrRestore(WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *surface);
     Q_INVOKABLE void resizeSurface(WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *surface,
@@ -152,6 +157,8 @@ public:
     Q_INVOKABLE WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *topVisibleSurfaceForWorkspace(
         int workspaceIndex,
         WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *exclude = nullptr) const;
+    Q_INVOKABLE bool hasMaximizedSurfaceInWorkspace(int workspaceIndex) const;
+    [[nodiscard]] int maximizedRevision() const noexcept { return m_maximizedRevision; }
     Q_INVOKABLE bool isMinimized(WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *surface) const;
     Q_INVOKABLE bool isMaximized(WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *surface) const;
     Q_INVOKABLE bool isSurfaceOpaque(WAYLIB_SERVER_NAMESPACE::WSurface *surface) const;
@@ -168,6 +175,7 @@ Q_SIGNALS:
     void appIdChanged(WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *surface, const QString &appId);
     void moveRequested(WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *surface);
     void resizeRequested(WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *surface, int edgeFlags);
+    void maximizedStateChanged();
 
 private:
     void onToplevelAdded(WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *surface);
@@ -187,6 +195,7 @@ private:
     QPointer<WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface> m_activeSurface;
     quint64 m_nextSurfaceId = 0;
     int m_nextZOrder = 0;
+    int m_maximizedRevision = 0;
 };
 
 } // namespace Systalia::Compositor::WaylibBackend

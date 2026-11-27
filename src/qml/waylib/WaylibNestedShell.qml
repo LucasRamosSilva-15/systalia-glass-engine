@@ -16,6 +16,20 @@ Item {
     property int materialWindowWorkspace: 0
     property var orderedClientFrames: []
     readonly property int maxClientStages: 6
+    readonly property bool hasMaximizedWindowInActiveWorkspace: {
+        const ws = WorkspaceManager.currentWorkspace
+        if (filesWindowMaximized && filesWindow.windowOpen && filesWindowWorkspace === ws) {
+            return true
+        }
+        if (materialWindowMaximized && materialWindow.windowOpen && materialWindowWorkspace === ws) {
+            return true
+        }
+        if (root.compositorAdapter && root.compositorAdapter.surfaceAdapter) {
+            const rev = root.compositorAdapter.surfaceAdapter.maximizedRevision
+            return rev >= 0 && root.compositorAdapter.surfaceAdapter.hasMaximizedSurfaceInWorkspace(ws)
+        }
+        return false
+    }
 
     property real filesWorkspaceOffsetX: (filesWindowWorkspace - WorkspaceManager.currentWorkspace) * renderWindow.width
     Behavior on filesWorkspaceOffsetX {
@@ -233,10 +247,10 @@ Item {
         }
         filesWindowRestoreGeometry = Qt.rect(filesWindow.x, filesWindow.y,
                                              filesWindow.width, filesWindow.height)
-        filesWindow.x = clientLayer.x + 8
-        filesWindow.y = clientLayer.y + 8
-        filesWindow.width = Math.max(480, clientLayer.width - 16)
-        filesWindow.height = Math.max(360, clientLayer.height - 16)
+        filesWindow.x = 8
+        filesWindow.y = 60
+        filesWindow.width = Math.max(520, renderWindow.width - 16)
+        filesWindow.height = Math.max(400, renderWindow.height - 68)
         filesWindowMaximized = true
         raiseFileWindow()
     }
@@ -273,10 +287,10 @@ Item {
         }
         materialWindowRestoreGeometry = Qt.rect(materialWindow.x, materialWindow.y,
                                                 materialWindow.width, materialWindow.height)
-        materialWindow.x = clientLayer.x + 8
-        materialWindow.y = clientLayer.y + 8
-        materialWindow.width = Math.max(480, clientLayer.width - 16)
-        materialWindow.height = Math.max(360, clientLayer.height - 16)
+        materialWindow.x = 8
+        materialWindow.y = 60
+        materialWindow.width = Math.max(520, renderWindow.width - 16)
+        materialWindow.height = Math.max(400, renderWindow.height - 68)
         materialWindowMaximized = true
         raiseMaterialWindow()
     }
@@ -334,6 +348,22 @@ Item {
 
         Component.onCompleted: SystemTelemetry.attachWindow(renderWindow)
         onRenderEnd: SystemTelemetry.recordFrame()
+        onWidthChanged: {
+            if (root.filesWindowMaximized) {
+                filesWindow.width = Math.max(520, renderWindow.width - 16)
+            }
+            if (root.materialWindowMaximized) {
+                materialWindow.width = Math.max(520, renderWindow.width - 16)
+            }
+        }
+        onHeightChanged: {
+            if (root.filesWindowMaximized) {
+                filesWindow.height = Math.max(400, renderWindow.height - 68)
+            }
+            if (root.materialWindowMaximized) {
+                materialWindow.height = Math.max(400, renderWindow.height - 68)
+            }
+        }
 
         // Outputs Waylib (nested ou headless)
         Row {
@@ -421,7 +451,7 @@ Item {
                 objectName: "waylibClientLayer"
                 anchors.fill: parent
                 anchors.topMargin: 60
-                anchors.bottomMargin: valoDock.height + 24
+                anchors.bottomMargin: root.hasMaximizedWindowInActiveWorkspace ? 8 : (valoDock.height + 24)
                 anchors.leftMargin: 8
                 anchors.rightMargin: 8
                 clip: false
@@ -731,7 +761,7 @@ Item {
                 animationTime: animTimer.tick
                 telemetry: SystemTelemetry
                 workspaceManager: WorkspaceManager
-                activeWindowTitle: root.compositorAdapter.surfaceAdapter.activeTitle
+                activeWindowTitle: ""
                 activeWindowAppId: root.compositorAdapter.surfaceAdapter.activeAppId
                 onLauncherRequested: {
                     controlCenter.close()
@@ -767,9 +797,20 @@ Item {
                 id: valoDock
                 objectName: "valoDockV2"
                 anchors.bottom: parent.bottom
-                anchors.bottomMargin: 12
+                anchors.bottomMargin: root.hasMaximizedWindowInActiveWorkspace ? -height : 12
                 anchors.horizontalCenter: parent.horizontalCenter
                 z: 95
+                visible: opacity > 0.01
+                enabled: !root.hasMaximizedWindowInActiveWorkspace
+                opacity: root.hasMaximizedWindowInActiveWorkspace ? 0.0 : 1.0
+                Behavior on opacity {
+                    enabled: !materialWindow.opticalSurface.prefersReducedMotion
+                    NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+                }
+                Behavior on anchors.bottomMargin {
+                    enabled: !materialWindow.opticalSurface.prefersReducedMotion
+                    NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+                }
                 performanceProfile: !materialWindow.materialActive || materialWindow.blurProfile === 0
                                     ? "performance" : materialWindow.blurProfile === 1 ? "balanced" : "quality"
                 backdropSource: overlayCompositeBackdropSource

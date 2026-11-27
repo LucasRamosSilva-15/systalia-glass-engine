@@ -1,12 +1,21 @@
 #include <QEvent>
 #include <QGuiApplication>
+#include <QPainter>
 #include <QRasterWindow>
+#include <QResizeEvent>
 #include <QTimer>
 #include <memory>
 
 class SolidWindow final : public QRasterWindow {
 public:
-    void paintEvent(QPaintEvent *) override {}
+    void paintEvent(QPaintEvent *) override {
+        QPainter painter(this);
+        painter.fillRect(QRect(0, 0, width(), height()), QColor(QStringLiteral("#122436")));
+    }
+    void resizeEvent(QResizeEvent *event) override {
+        QRasterWindow::resizeEvent(event);
+        update();
+    }
     bool event(QEvent *e) override {
         if (e->type() == QEvent::Close) {
             QCoreApplication::quit();

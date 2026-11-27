@@ -297,6 +297,8 @@ void WaylibSurfaceAdapter::reset() {
     if (hadEntries) {
         m_model->clearAll();
         Q_EMIT surfacesChanged();
+        ++m_maximizedRevision;
+        Q_EMIT maximizedStateChanged();
     }
     if (hadActive) {
         Q_EMIT activeSurfaceChanged();
@@ -426,9 +428,39 @@ void WaylibSurfaceAdapter::toggleMaximize(WXdgToplevelSurface *surface) {
     if (!entry) {
         return;
     }
-    entry->maximized = !entry->maximized;
+    setSurfaceMaximized(surface, !entry->maximized);
+}
+
+void WaylibSurfaceAdapter::setSurfaceMaximized(WXdgToplevelSurface *surface,
+                                               bool maximized,
+                                               int clientWidth,
+                                               int clientHeight) {
+    const int row = m_model->indexOf(surface);
+    if (row < 0) {
+        return;
+    }
+    auto *entry = m_model->entryAt(row);
+    if (!entry) {
+        return;
+    }
+    entry->maximized = maximized;
     surface->setMaximize(entry->maximized);
+    if (clientWidth > 0 && clientHeight > 0) {
+        surface->resize(QSize(clientWidth, clientHeight));
+    }
+    if (surface->handle() && surface->handle()->base && surface->handle()->base->client
+        && surface->handle()->base->client->client) {
+        wl_display *display = wl_client_get_display(surface->handle()->base->client->client);
+        QTimer::singleShot(0, this, [display]() {
+            if (display) {
+                wl_event_loop_dispatch(wl_display_get_event_loop(display), 0);
+                wl_display_flush_clients(display);
+            }
+        });
+    }
     m_model->notifyRowChanged(row, {WaylibSurfaceListModel::MaximizedRole});
+    ++m_maximizedRevision;
+    Q_EMIT maximizedStateChanged();
     activateSurface(surface);
 }
 
@@ -443,6 +475,8 @@ void WaylibSurfaceAdapter::toggleMinimize(WXdgToplevelSurface *surface) {
     }
     entry->minimized = !entry->minimized;
     surface->setMinimize(entry->minimized);
+    ++m_maximizedRevision;
+    Q_EMIT maximizedStateChanged();
 
     if (entry->minimized && m_activeSurface.data() == surface) {
         entry->activated = false;
@@ -473,6 +507,16 @@ void WaylibSurfaceAdapter::resizeSurface(WXdgToplevelSurface *surface, int width
         return;
     }
     surface->resize(QSize(width, height));
+    if (surface->handle() && surface->handle()->base && surface->handle()->base->client
+        && surface->handle()->base->client->client) {
+        wl_display *display = wl_client_get_display(surface->handle()->base->client->client);
+        QTimer::singleShot(0, this, [display]() {
+            if (display) {
+                wl_event_loop_dispatch(wl_display_get_event_loop(display), 0);
+                wl_display_flush_clients(display);
+            }
+        });
+    }
 }
 
 void WaylibSurfaceAdapter::closeActiveSurface() {
@@ -549,7 +593,19 @@ void WaylibSurfaceAdapter::setSurfaceWorkspace(WXdgToplevelSurface *surface, int
         }
         entry->workspaceIndex = clamped;
         m_model->notifyRowChanged(row, {WaylibSurfaceListModel::WorkspaceIndexRole});
+        ++m_maximizedRevision;
+        Q_EMIT maximizedStateChanged();
     }
+}
+
+bool WaylibSurfaceAdapter::hasMaximizedSurfaceInWorkspace(int workspaceIndex) const {
+    const auto &entries = m_model->entries();
+    for (const auto &entry : entries) {
+        if (entry.shellSurface && entry.maximized && !entry.minimized && entry.workspaceIndex == workspaceIndex) {
+            return true;
+        }
+    }
+    return false;
 }
 
 bool WaylibSurfaceAdapter::isMinimized(WXdgToplevelSurface *surface) const {
@@ -646,6 +702,8 @@ void WaylibSurfaceAdapter::onToplevelAdded(WXdgToplevelSurface *surface) {
         if (auto *entryPtr = m_model->entryAt(row)) {
             entryPtr->maximized = safeSurface->isMaximized();
             m_model->notifyRowChanged(row, {WaylibSurfaceListModel::MaximizedRole});
+            ++m_maximizedRevision;
+            Q_EMIT maximizedStateChanged();
         }
     });
 
@@ -657,6 +715,8 @@ void WaylibSurfaceAdapter::onToplevelAdded(WXdgToplevelSurface *surface) {
         if (auto *entryPtr = m_model->entryAt(row)) {
             entryPtr->minimized = safeSurface->isMinimized();
             m_model->notifyRowChanged(row, {WaylibSurfaceListModel::MinimizedRole});
+            ++m_maximizedRevision;
+            Q_EMIT maximizedStateChanged();
         }
     });
 
@@ -800,6 +860,8 @@ void WaylibSurfaceAdapter::removeSurfaceInternal(WXdgToplevelSurface *surface, b
 
     const bool wasActive = (m_activeSurface.data() == surface);
     m_model->removeRowAt(row);
+    ++m_maximizedRevision;
+    Q_EMIT maximizedStateChanged();
 
     if (wasActive) {
         m_activeSurface.clear();
