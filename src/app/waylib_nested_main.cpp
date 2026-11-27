@@ -41,6 +41,7 @@ int main(int argc, char *argv[]) {
 
     QQmlApplicationEngine engine;
     engine.addImportPath(QStringLiteral(SGE_WAYLIB_QML_IMPORT_PATH));
+    Systalia::Compositor::WaylibBackend::WaylibCompositorAdapter::registerQmlTypes();
 
     Systalia::Compositor::WaylibBackend::WaylibCompositorAdapter adapter;
     QQmlComponent component(&engine, QUrl(QStringLiteral("qrc:/systalia/waylib/WaylibNestedShell.qml")));

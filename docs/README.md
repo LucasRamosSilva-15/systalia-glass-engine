@@ -22,3 +22,18 @@
 
 ## Motor Gráfico VALO Graphics 2.0
 - [Arquitetura VALO Graphics 2.0](graphics-v2/ARCHITECTURE.md)
+
+## Fluxo padrão de build e validação — Etapa 03.2.5.2+
+Toda compilação, execução de testes e validação de regressão utiliza exclusivamente `-DSGE_ENABLE_WAYLIB_BACKEND=ON` em build incremental único `Release` (`build/waylib`, com `-Werror`):
+
+```bash
+cmake -S . -B build/waylib -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DSGE_ENABLE_WAYLIB_BACKEND=ON \
+  -DCMAKE_PREFIX_PATH="$HOME/.cache/sge-waylib-prefix"
+
+cmake --build build/waylib -j "$(nproc)"
+ctest --test-dir build/waylib --output-on-failure
+```
+
+A opção `-DSGE_ENABLE_WAYLIB_BACKEND=OFF` permanece no `CMakeLists.txt` apenas por compatibilidade histórica e não faz parte do fluxo padrão de desenvolvimento.

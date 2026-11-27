@@ -25,6 +25,8 @@ Item {
     property var workspaceManager: null
     property var backdropSource: null
     property var screenResolution: Qt.vector2d(width, height)
+    property string activeWindowTitle: ""
+    property string activeWindowAppId: ""
     property real animationTime: 0
     property date dateNow: new Date()
     readonly property real defaultRadius: 22.5
@@ -127,12 +129,14 @@ Item {
             }
 
             Text {
+                objectName: "activeWindowTitleLabel"
                 anchors.verticalCenter: parent.verticalCenter
-                visible: topBar.showDesktopBranding
-                text: "SDE-KWIN | VALO"
-                color: ValoTheme.textSecondary
+                visible: topBar.activeWindowTitle.length > 0 || topBar.showDesktopBranding
+                text: topBar.activeWindowTitle.length > 0 ? topBar.activeWindowTitle : "SDE-KWIN | VALO"
+                color: topBar.activeWindowTitle.length > 0 ? ValoTheme.textPrimary : ValoTheme.textSecondary
                 font.family: ValoTheme.fontFamily
                 font.pixelSize: 14
+                elide: Text.ElideRight
                 antialiasing: true
             }
 

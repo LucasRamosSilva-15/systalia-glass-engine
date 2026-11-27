@@ -576,7 +576,9 @@ if(SGE_ENABLE_WAYLIB_BACKEND)
     qt_add_resources(tst_waylib_backend "sge_waylib_test_qml"
         PREFIX "/systalia/waylib"
         BASE "${CMAKE_SOURCE_DIR}/src/qml/waylib"
-        FILES "${CMAKE_SOURCE_DIR}/src/qml/waylib/WaylibNestedShell.qml"
+        FILES
+            "${CMAKE_SOURCE_DIR}/src/qml/waylib/WaylibNestedShell.qml"
+            "${CMAKE_SOURCE_DIR}/src/qml/waylib/WaylibWindowFrame.qml"
     )
     target_link_libraries(tst_waylib_backend PRIVATE
         sge_waylib_backend

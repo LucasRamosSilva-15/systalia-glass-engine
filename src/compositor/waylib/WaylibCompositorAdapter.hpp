@@ -4,6 +4,7 @@
 #include "WaylibSurfaceAdapter.hpp"
 
 #include <wglobal.h>
+#include <wseat.h>
 
 #include <QObject>
 #include <QPointer>
@@ -32,6 +33,7 @@ class WaylibCompositorAdapter final : public QObject {
     Q_OBJECT
     Q_PROPERTY(WaylibOutputAdapter *outputAdapter READ outputAdapter CONSTANT)
     Q_PROPERTY(WaylibSurfaceAdapter *surfaceAdapter READ surfaceAdapter CONSTANT)
+    Q_PROPERTY(WAYLIB_SERVER_NAMESPACE::WSeat *seat READ seat CONSTANT)
     Q_PROPERTY(bool running READ isRunning NOTIFY runningChanged)
     Q_PROPERTY(QString socketName READ socketName NOTIFY socketNameChanged)
 
@@ -41,6 +43,8 @@ public:
         Headless
     };
     Q_ENUM(BackendMode)
+
+    static void registerQmlTypes();
 
     explicit WaylibCompositorAdapter(QObject *parent = nullptr);
     ~WaylibCompositorAdapter() override;
@@ -56,6 +60,7 @@ public:
     [[nodiscard]] QString lastError() const noexcept { return m_lastError; }
     [[nodiscard]] WaylibOutputAdapter *outputAdapter() const noexcept { return m_outputAdapter; }
     [[nodiscard]] WaylibSurfaceAdapter *surfaceAdapter() const noexcept { return m_surfaceAdapter; }
+    [[nodiscard]] WAYLIB_SERVER_NAMESPACE::WSeat *seat() const noexcept { return m_seat.data(); }
     [[nodiscard]] WAYLIB_SERVER_NAMESPACE::WServer *server() const noexcept { return m_server; }
     [[nodiscard]] WAYLIB_SERVER_NAMESPACE::WBackend *backend() const noexcept { return m_backend; }
 

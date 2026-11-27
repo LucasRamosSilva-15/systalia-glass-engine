@@ -1,5 +1,10 @@
 #include "WaylibCompositorAdapter.hpp"
 
+#include "ProcessLauncherService.hpp"
+#include "SystemControlService.hpp"
+#include "SystemTelemetryService.hpp"
+#include "WorkspaceManagerService.hpp"
+
 #include <wbackend.h>
 #include <wcursor.h>
 #include <winputdevice.h>
@@ -16,11 +21,44 @@
 #include <QDebug>
 #include <QDir>
 #include <QFileInfo>
+#include <QJSEngine>
 #include <QQmlEngine>
+
+void qml_register_types_Systalia_Engine();
 
 WAYLIB_SERVER_USE_NAMESPACE
 
 namespace Systalia::Compositor::WaylibBackend {
+
+void WaylibCompositorAdapter::registerQmlTypes() {
+    static bool registered = false;
+    if (registered) {
+        return;
+    }
+    registered = true;
+
+    qml_register_types_Systalia_Engine();
+    qmlRegisterSingletonType<SystemTelemetryService>(
+        "Systalia.System", 1, 0, "SystemTelemetry",
+        [](QQmlEngine *, QJSEngine *) -> QObject * {
+            return new SystemTelemetryService();
+        });
+    qmlRegisterSingletonType<ProcessLauncherService>(
+        "Systalia.System", 1, 0, "ProcessLauncher",
+        [](QQmlEngine *, QJSEngine *) -> QObject * {
+            return new ProcessLauncherService();
+        });
+    qmlRegisterSingletonType<SystemControlService>(
+        "Systalia.System", 1, 0, "SystemControl",
+        [](QQmlEngine *, QJSEngine *) -> QObject * {
+            return new SystemControlService();
+        });
+    qmlRegisterSingletonType<WorkspaceManagerService>(
+        "Systalia.System", 1, 0, "WorkspaceManager",
+        [](QQmlEngine *, QJSEngine *) -> QObject * {
+            return new WorkspaceManagerService();
+        });
+}
 
 WaylibCompositorAdapter::WaylibCompositorAdapter(QObject *parent)
     : QObject(parent),
@@ -31,6 +69,7 @@ WaylibCompositorAdapter::WaylibCompositorAdapter(QObject *parent)
     m_seat = m_server->attach<WSeat>();
     m_seat->setCursor(m_cursor);
     m_cursor->setLayout(m_outputAdapter->outputLayout());
+    m_surfaceAdapter->attachSeat(m_seat.data());
 }
 
 WaylibCompositorAdapter::~WaylibCompositorAdapter() {

@@ -89,6 +89,7 @@ target_compile_definitions(sge_waylib_backend PUBLIC
 )
 
 target_link_libraries(sge_waylib_backend PUBLIC
+    sge_core
     Sge::WaylibServer
     Qt6::Core
     Qt6::Gui
@@ -105,6 +106,7 @@ qt_add_resources(systalia_waylib_nested "sge_waylib_qml"
     BASE "src/qml/waylib"
     FILES
         src/qml/waylib/WaylibNestedShell.qml
+        src/qml/waylib/WaylibWindowFrame.qml
 )
 
 target_link_libraries(systalia_waylib_nested PRIVATE

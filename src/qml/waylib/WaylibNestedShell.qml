@@ -1,6 +1,8 @@
 import QtQuick
 import QtQuick.Layouts
 import Waylib.Server
+import Systalia.Engine
+import Systalia.System 1.0
 
 Item {
     id: root
@@ -48,51 +50,35 @@ Item {
             }
         }
 
-        // TopBar mínima com identidade VALO
-        Rectangle {
+        // TopBar real VALO V2
+        SystaliaTopBarV2 {
             id: valoTopBar
+            objectName: "topBar"
             anchors.top: parent.top
             anchors.left: parent.left
             anchors.right: parent.right
-            height: 36
-            color: "#CC0b1626"
-            border.width: 1
-            border.color: "#2200f2fe"
-            z: 20
+            anchors.margins: 8
+            height: 45
+            z: 100
+            blurProfile: 0
+            backdropSource: null
+            telemetry: SystemTelemetry
+            workspaceManager: WorkspaceManager
+            activeWindowTitle: root.compositorAdapter.surfaceAdapter.activeTitle
+            activeWindowAppId: root.compositorAdapter.surfaceAdapter.activeAppId
+            onLauncherRequested: root.compositorAdapter.surfaceAdapter.cycleFocus()
+            onPowerRequested: root.compositorAdapter.surfaceAdapter.closeActiveSurface()
 
-            RowLayout {
+            // Impede vazamento de cliques para janelas abaixo da TopBar
+            MouseArea {
                 anchors.fill: parent
-                anchors.leftMargin: 16
-                anchors.rightMargin: 16
-                spacing: 12
-
-                Rectangle {
-                    width: 8
-                    height: 8
-                    radius: 4
-                    color: "#00f2fe"
-                }
-
-                Text {
-                    text: "SYSTALIA // Waylib Nested PoC"
-                    color: "#e2f1ff"
-                    font.pixelSize: 13
-                    font.weight: Font.DemiBold
-                }
-
-                Item { Layout.fillWidth: true }
-
-                Text {
-                    text: "Socket: " + (root.compositorAdapter.socketName.length > 0
-                                      ? root.compositorAdapter.socketName : "starting")
-                          + " | Surfaces: " + root.compositorAdapter.surfaceAdapter.surfaceCount
-                    color: "#94a3b8"
-                    font.pixelSize: 12
-                }
+                z: -1
+                acceptedButtons: Qt.AllButtons
+                onPressed: (mouse) => { mouse.accepted = true }
             }
         }
 
-        // Área de janelas Wayland clientes
+        // Área útil (workarea) para janelas Wayland clientes XDG
         Item {
             id: clientLayer
             objectName: "waylibClientLayer"
@@ -100,78 +86,131 @@ Item {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.bottom: valoDock.top
-            anchors.margins: 16
+            anchors.margins: 8
+            clip: true
             z: 10
 
             Repeater {
                 id: surfaceRepeater
-                model: root.compositorAdapter.surfaceAdapter.surfaces
+                model: root.compositorAdapter.surfaceAdapter.windowModel
 
-                delegate: Rectangle {
-                    required property var modelData
+                delegate: WaylibWindowFrame {
+                    required property var surface
+                    required property var shellSurface
+                    required property string title
+                    required property string appId
+                    required property bool activated
+                    required property bool minimized
+                    required property bool maximized
+                    required property int zOrder
                     required property int index
-                    x: 24 + (index * 32)
-                    y: 20 + (index * 28)
-                    width: Math.max(320, toplevelItem.implicitWidth + 4)
-                    height: Math.max(240, toplevelItem.implicitHeight + 30)
-                    radius: 10
-                    color: "#D90f172a"
-                    border.width: 1
-                    border.color: "#8000f2fe"
 
-                    Rectangle {
-                        id: titleChrome
-                        anchors.top: parent.top
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        height: 28
-                        radius: 10
-                        color: "#3000f2fe"
+                    surfaceAdapter: root.compositorAdapter.surfaceAdapter
+                    waylandSurface: surface
+                    windowShellSurface: shellSurface
+                    windowTitle: title
+                    windowAppId: appId
+                    isActive: activated
+                    isMinimized: minimized
+                    isMaximized: maximized
+                    windowZOrder: zOrder
+                    windowIndex: index
+                    workAreaWidth: clientLayer.width
+                    workAreaHeight: clientLayer.height
+                }
+            }
+        }
+
+        // Faixa interativa de janelas Wayland abertas/minimizadas integrada ao Dock
+        Rectangle {
+            id: windowStrip
+            objectName: "waylibWindowStrip"
+            visible: root.compositorAdapter.surfaceAdapter.surfaceCount > 0
+            anchors.bottom: valoDock.top
+            anchors.bottomMargin: 6
+            anchors.horizontalCenter: parent.horizontalCenter
+            width: Math.min(parent.width - 48, windowStripRow.implicitWidth + 20)
+            height: 32
+            radius: 16
+            color: "#CC071628"
+            border.width: 1
+            border.color: ValoTheme.withAlpha(ValoTheme.borderHighlight, 0.30)
+            z: 96
+
+            MouseArea {
+                anchors.fill: parent
+                z: -1
+                acceptedButtons: Qt.AllButtons
+                onPressed: (mouse) => { mouse.accepted = true }
+            }
+
+            Row {
+                id: windowStripRow
+                anchors.centerIn: parent
+                spacing: 8
+
+                Repeater {
+                    model: root.compositorAdapter.surfaceAdapter.windowModel
+
+                    delegate: Rectangle {
+                        required property var shellSurface
+                        required property string title
+                        required property string appId
+                        required property bool activated
+                        required property bool minimized
+
+                        width: Math.min(180, pillLabel.implicitWidth + 20)
+                        height: 24
+                        radius: 12
+                        color: activated
+                               ? ValoTheme.withAlpha(ValoTheme.accentPrimary, 0.25)
+                               : (minimized ? "#40102030" : "#80102840")
+                        border.width: 1
+                        border.color: activated ? ValoTheme.accentPrimary : ValoTheme.withAlpha(ValoTheme.borderHighlight, 0.25)
 
                         Text {
-                            anchors.verticalCenter: parent.verticalCenter
-                            anchors.left: parent.left
-                            anchors.leftMargin: 12
-                            text: modelData.title.length > 0 ? modelData.title : (modelData.appId.length > 0 ? modelData.appId : "Wayland Client")
-                            color: "#e2f1ff"
-                            font.pixelSize: 12
+                            id: pillLabel
+                            anchors.centerIn: parent
+                            width: Math.min(156, implicitWidth)
+                            text: title.length > 0 ? title : (appId.length > 0 ? appId : "Wayland")
+                            color: minimized ? ValoTheme.textSecondary : ValoTheme.textBright
+                            font.family: ValoTheme.fontFamily
+                            font.pixelSize: 11
+                            elide: Text.ElideRight
                         }
-                    }
 
-                    XdgToplevelSurfaceItem {
-                        id: toplevelItem
-                        anchors.top: titleChrome.bottom
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.bottom: parent.bottom
-                        anchors.margins: 2
-                        surface: modelData.surface
-                        shellSurface: modelData
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.compositorAdapter.surfaceAdapter.focusOrRestore(shellSurface)
+                        }
                     }
                 }
             }
         }
 
-        // Dock mínimo com identidade VALO
-        Rectangle {
+        // Dock real VALO V2
+        SystaliaDockV2 {
             id: valoDock
+            objectName: "valoDockV2"
             anchors.bottom: parent.bottom
-            anchors.bottomMargin: 12
+            anchors.bottomMargin: 8
             anchors.horizontalCenter: parent.horizontalCenter
-            width: 320
-            height: 48
-            radius: 18
-            color: "#CC0b1626"
-            border.width: 1
-            border.color: "#4400f2fe"
-            z: 20
+            z: 95
+            performanceProfile: "performance"
+            backdropSource: null
+            filesVisible: false
+            settingsOpen: false
+            activeAppIds: root.compositorAdapter.surfaceAdapter.activeAppIds
 
-            Text {
-                anchors.centerIn: parent
-                text: "VALO Dock (Waylib Nested)"
-                color: "#7dd3fc"
-                font.pixelSize: 12
-                font.weight: Font.Medium
+            onTerminalRequested: root.compositorAdapter.surfaceAdapter.cycleFocus()
+
+            // Impede vazamento de cliques na região da Dock
+            MouseArea {
+                anchors.fill: parent
+                z: -1
+                acceptedButtons: Qt.AllButtons
+                onPressed: (mouse) => { mouse.accepted = true }
             }
         }
     }
