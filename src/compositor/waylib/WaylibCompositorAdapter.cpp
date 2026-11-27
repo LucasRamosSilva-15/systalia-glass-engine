@@ -67,6 +67,8 @@ WaylibCompositorAdapter::WaylibCompositorAdapter(QObject *parent)
       m_surfaceAdapter(new WaylibSurfaceAdapter(this)),
       m_cursor(new WCursor(this)) {
     m_seat = m_server->attach<WSeat>();
+    m_cursor->setCursor(QCursor(Qt::ArrowCursor));
+    m_cursor->setVisible(true);
     m_seat->setCursor(m_cursor);
     m_cursor->setLayout(m_outputAdapter->outputLayout());
     m_surfaceAdapter->attachSeat(m_seat.data());
@@ -139,7 +141,15 @@ bool WaylibCompositorAdapter::initialize(WOutputRenderWindow *window,
         return false;
     }
 
+    m_cursor->setEventWindow(window);
+    if (m_seat) {
+        m_seat->setKeyboardFocusWindow(window);
+    }
+
     m_outputAdapter->attachBackend(m_backend, window, qmlEngine);
+    for (WInputDevice *existingDevice : m_backend->inputDeviceList()) {
+        onInputAdded(existingDevice);
+    }
     connect(m_backend, &WBackend::inputAdded, this, &WaylibCompositorAdapter::onInputAdded);
     connect(m_backend, &WBackend::inputRemoved, this, &WaylibCompositorAdapter::onInputRemoved);
 
@@ -161,6 +171,10 @@ bool WaylibCompositorAdapter::initialize(WOutputRenderWindow *window,
         return false;
     }
 
+    for (WInputDevice *postStartDevice : m_backend->inputDeviceList()) {
+        onInputAdded(postStartDevice);
+    }
+
     m_running = true;
     Q_EMIT runningChanged();
     Q_EMIT initialized();
@@ -171,6 +185,18 @@ bool WaylibCompositorAdapter::initialize(WOutputRenderWindow *window,
 void WaylibCompositorAdapter::shutdown() {
     const bool wasRunning = m_running;
     m_running = false;
+    if (m_backend) {
+        m_backend->disconnect(this);
+        for (WInputDevice *device : m_backend->inputDeviceList()) {
+            onInputRemoved(device);
+        }
+    }
+    if (m_seat && m_seat->handle()) {
+        m_seat->clearKeyboardFocusWindow();
+    }
+    if (m_cursor) {
+        m_cursor->setEventWindow(nullptr);
+    }
     m_surfaceAdapter->reset();
     m_outputAdapter->reset();
 
@@ -204,7 +230,7 @@ void WaylibCompositorAdapter::shutdown() {
 }
 
 void WaylibCompositorAdapter::onInputAdded(WInputDevice *device) {
-    if (m_seat && device) {
+    if (m_seat && device && !m_seat->deviceList().contains(device)) {
         m_seat->attachInputDevice(device);
     }
 }

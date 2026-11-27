@@ -42,14 +42,18 @@ Rectangle {
                   : ValoTheme.withAlpha(ValoTheme.borderHighlight, 0.28)
     clip: true
 
-    onIsMaximizedChanged: {
-        if (!windowShellSurface) {
+    function syncMaximizedSurface() {
+        if (!isMaximized || !windowShellSurface) {
             return
         }
         const targetW = Math.max(240, Math.round(frame.width - 2))
         const targetH = Math.max(160, Math.round(frame.height - frame.titleBarHeight - 2))
         frame.surfaceAdapter.resizeSurface(frame.windowShellSurface, targetW, targetH)
     }
+
+    onIsMaximizedChanged: syncMaximizedSurface()
+    onWorkAreaWidthChanged: syncMaximizedSurface()
+    onWorkAreaHeightChanged: syncMaximizedSurface()
 
     // Barra de título SSD VALO (sem autorreferência ao desktopBackdropSource)
     Rectangle {

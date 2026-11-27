@@ -30,9 +30,18 @@ Item {
                     output: waylandOutput
                     devicePixelRatio: waylandOutput.scale
                     layout: root.compositorAdapter.outputAdapter.outputLayout
+                    width: Math.max(renderWindow.width, waylandOutput.size.width / Math.max(1.0, waylandOutput.scale))
+                    height: Math.max(renderWindow.height, waylandOutput.size.height / Math.max(1.0, waylandOutput.scale))
+
+                    cursorDelegate: Cursor {
+                        property var outputCursor
+                        cursor: root.compositorAdapter.cursor
+                        output: outputItem.output
+                    }
 
                     OutputViewport {
                         id: outputViewport
+                        objectName: "waylibOutputViewport"
                         anchors.fill: parent
                         output: waylandOutput
                         devicePixelRatio: parent.devicePixelRatio
@@ -92,7 +101,7 @@ Item {
                 objectName: "waylibClientLayer"
                 anchors.fill: parent
                 anchors.topMargin: 61
-                anchors.bottomMargin: 141
+                anchors.bottomMargin: valoDock.height + 20
                 anchors.leftMargin: 8
                 anchors.rightMargin: 8
                 clip: true
@@ -255,7 +264,7 @@ Item {
                 id: valoDock
                 objectName: "valoDockV2"
                 anchors.bottom: parent.bottom
-                anchors.bottomMargin: 8
+                anchors.bottomMargin: 12
                 anchors.horizontalCenter: parent.horizontalCenter
                 z: 95
                 performanceProfile: "balanced"

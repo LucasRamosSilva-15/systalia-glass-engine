@@ -2,7 +2,9 @@
 
 #include "compositor/waylib/WaylibCompositorAdapter.hpp"
 
+#include <wcursor.h>
 #include <woutputrenderwindow.h>
+#include <woutputviewport.h>
 #include <wseat.h>
 #include <wserver.h>
 #include <wxdgtoplevelsurface.h>
@@ -133,6 +135,21 @@ void tst_WaylibBackend::headlessAndMultiWindowValoShellLifecycle() {
     QVERIFY2(contentLayer->findChild<QQuickItem *>(QStringLiteral("valoDockV2")) == nullptr,
              "Loop de feedback detectado: valoDockV2 dentro de desktopContentLayer");
 
+    // Verifica geometria integral da Dock dentro do viewport (sem corte inferior)
+    const QPointF dockTopLeft = dockV2->mapToScene(QPointF(0.0, 0.0));
+    const qreal dockBottom = dockTopLeft.y() + dockV2->height();
+    QVERIFY2(dockTopLeft.y() >= 0.0, "Dock não pode sair pela borda superior");
+    QVERIFY2(dockBottom <= renderWindow->height() - 8.0,
+             qPrintable(QStringLiteral("Dock cortada na borda inferior: bottom=%1 windowHeight=%2")
+                            .arg(dockBottom).arg(renderWindow->height())));
+
+    // Verifica vínculo de WSeat / WCursor / WOutputLayout para entrada de mouse e teclado
+    QVERIFY(adapter.seat() != nullptr);
+    QVERIFY(adapter.cursor() != nullptr);
+    QCOMPARE(adapter.seat()->cursor(), adapter.cursor());
+    QCOMPARE(adapter.cursor()->layout(), adapter.outputAdapter()->outputLayout());
+    QVERIFY(adapter.cursor()->isVisible());
+
     const QString customSocket = QStringLiteral("systalia-waylib-test-%1")
                                      .arg(QCoreApplication::applicationPid());
     QSignalSpy startedSpy(&adapter, &WaylibCompositorAdapter::initialized);
@@ -145,10 +162,36 @@ void tst_WaylibBackend::headlessAndMultiWindowValoShellLifecycle() {
     QVERIFY(adapter.isRunning());
     QCOMPARE(startedSpy.count(), 1);
     QCOMPARE(adapter.socketName(), customSocket);
+    QCOMPARE(adapter.cursor()->eventWindow(), static_cast<QWindow *>(renderWindow));
+    QCOMPARE(adapter.seat()->keyboardFocusWindow(), static_cast<QWindow *>(renderWindow));
     // Socket isolado não deve sobrescrever WAYLAND_DISPLAY do ambiente pai
     QCOMPARE(qgetenv("WAYLAND_DISPLAY"), originalWaylandDisplay);
 
     QTRY_VERIFY(adapter.outputAdapter()->outputCount() >= 1);
+    QTRY_COMPARE(adapter.outputAdapter()->primaryOutputSize(), QSize(1280, 760));
+    adapter.cursor()->setPosition(QPointF(240.0, 180.0));
+    QCOMPARE(adapter.cursor()->position(), QPointF(240.0, 180.0));
+
+    // Simula redimensionamento dinâmico do output nested (ex.: maximização WL-1 -> 1920x1040)
+    QVERIFY(adapter.outputAdapter()->requestOutputResize(1920, 1040));
+    QTRY_COMPARE(adapter.outputAdapter()->primaryOutputSize(), QSize(1920, 1040));
+    QTRY_COMPARE(qRound(renderWindow->width()), 1920);
+    QTRY_COMPARE(qRound(renderWindow->height()), 1040);
+    QCOMPARE(qRound(contentLayer->width()), 1920);
+    QCOMPARE(qRound(contentLayer->height()), 1040);
+    QCOMPARE(backdropSource->property("textureSize").toSize(), QSize(1920, 1040));
+    QCOMPARE(qRound(topBar->width()), 1920 - 16);
+    QVERIFY(dockV2->mapToScene(QPointF(0.0, 0.0)).y() + dockV2->height() <= 1040.0 - 8.0);
+    if (auto *viewport = renderWindow->findChild<WOutputViewport *>(QStringLiteral("waylibOutputViewport"))) {
+        QCOMPARE(qRound(viewport->width()), 1920);
+        QCOMPARE(qRound(viewport->height()), 1040);
+    }
+
+    // Restaura tamanho nominal 1280x760 para os cenários multi-janela
+    QVERIFY(adapter.outputAdapter()->requestOutputResize(1280, 760));
+    QTRY_COMPARE(adapter.outputAdapter()->primaryOutputSize(), QSize(1280, 760));
+    QTRY_COMPARE(qRound(renderWindow->width()), 1280);
+    QTRY_COMPARE(qRound(renderWindow->height()), 760);
 
     auto *surfaceAdapter = adapter.surfaceAdapter();
     QAbstractListModel *model = surfaceAdapter->windowModel();
@@ -175,7 +218,7 @@ void tst_WaylibBackend::headlessAndMultiWindowValoShellLifecycle() {
         QCOMPARE(surfaceAdapter->surfaceCount(), 1);
 
         QVERIFY(waitUntil([&]() { return surfaceRemovedSpy.count() >= 1; }, 5000));
-        QVERIFY(soloClient.waitForFinished(3000));
+        QVERIFY(soloClient.state() == QProcess::NotRunning || soloClient.waitForFinished(3000));
         QCOMPARE(surfaceAdapter->surfaceCount(), 0);
         QVERIFY(surfaceAdapter->activeSurface() == nullptr);
     }
@@ -259,7 +302,16 @@ void tst_WaylibBackend::headlessAndMultiWindowValoShellLifecycle() {
     surfaceAdapter->toggleMaximize(surfA);
     QVERIFY(!surfaceAdapter->isMaximized(surfA));
 
-    // Solicita fechamento de A: apenas A encerra, foco volta para B
+    // Verifica botão fechar na SSD (geometria ativa) e solicita fechamento de A; foco volta para B
+    auto *frameA = findToplevelItemInLayer(clientLayer, surfA)->parentItem()->parentItem();
+    QVERIFY(frameA != nullptr);
+    auto *closeBtn = frameA->findChild<QQuickItem *>(QStringLiteral("closeButton"));
+    QVERIFY(closeBtn != nullptr);
+    QTRY_VERIFY(frameA->width() < 1000.0 && closeBtn->x() > 100.0 && closeBtn->x() < frameA->width());
+    QVERIFY(closeBtn->isVisible());
+    const QPointF closeCenter = closeBtn->mapToScene(closeBtn->boundingRect().center());
+    QVERIFY(closeCenter.x() > 0.0 && closeCenter.y() > 0.0);
+    adapter.cursor()->setPosition(closeCenter);
     surfaceAdapter->requestClose(surfA);
     QVERIFY(waitUntil([&]() {
         return surfaceAdapter->surfaceCount() == 1

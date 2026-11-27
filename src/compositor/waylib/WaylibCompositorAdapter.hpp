@@ -3,6 +3,7 @@
 #include "WaylibOutputAdapter.hpp"
 #include "WaylibSurfaceAdapter.hpp"
 
+#include <wcursor.h>
 #include <wglobal.h>
 #include <wseat.h>
 
@@ -34,6 +35,7 @@ class WaylibCompositorAdapter final : public QObject {
     Q_PROPERTY(WaylibOutputAdapter *outputAdapter READ outputAdapter CONSTANT)
     Q_PROPERTY(WaylibSurfaceAdapter *surfaceAdapter READ surfaceAdapter CONSTANT)
     Q_PROPERTY(WAYLIB_SERVER_NAMESPACE::WSeat *seat READ seat CONSTANT)
+    Q_PROPERTY(WAYLIB_SERVER_NAMESPACE::WCursor *cursor READ cursor CONSTANT)
     Q_PROPERTY(bool running READ isRunning NOTIFY runningChanged)
     Q_PROPERTY(QString socketName READ socketName NOTIFY socketNameChanged)
 
@@ -61,6 +63,7 @@ public:
     [[nodiscard]] WaylibOutputAdapter *outputAdapter() const noexcept { return m_outputAdapter; }
     [[nodiscard]] WaylibSurfaceAdapter *surfaceAdapter() const noexcept { return m_surfaceAdapter; }
     [[nodiscard]] WAYLIB_SERVER_NAMESPACE::WSeat *seat() const noexcept { return m_seat.data(); }
+    [[nodiscard]] WAYLIB_SERVER_NAMESPACE::WCursor *cursor() const noexcept { return m_cursor; }
     [[nodiscard]] WAYLIB_SERVER_NAMESPACE::WServer *server() const noexcept { return m_server; }
     [[nodiscard]] WAYLIB_SERVER_NAMESPACE::WBackend *backend() const noexcept { return m_backend; }
 
