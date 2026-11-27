@@ -4,6 +4,7 @@
 #include "services/applications/AppRegistryService.hpp"
 #include "services/applications/ProcessLauncherService.hpp"
 #include "services/system/SystemTelemetryService.hpp"
+#include "services/windows/WorkspaceManagerService.hpp"
 
 #include <wcursor.h>
 #include <woutputrenderwindow.h>
@@ -58,6 +59,21 @@ WXdgPopupSurfaceItem *findPopupItemInLayer(QQuickItem *popupLayer) {
             if (auto *item = qobject_cast<WXdgPopupSurfaceItem *>(child)) {
                 return item;
             }
+        }
+    }
+    return nullptr;
+}
+
+QQuickItem *findVisualChildByObjectName(QQuickItem *root, const QString &name) {
+    if (!root) {
+        return nullptr;
+    }
+    if (root->objectName() == name) {
+        return root;
+    }
+    for (QQuickItem *child : root->childItems()) {
+        if (QQuickItem *found = findVisualChildByObjectName(child, name)) {
+            return found;
         }
     }
     return nullptr;
@@ -205,7 +221,10 @@ void tst_WaylibBackend::headlessAndMultiWindowValoShellLifecycle() {
     QVERIFY(cursorLayer != nullptr && cursorArrow != nullptr);
     adapter.cursor()->setPosition(QPointF(240.0, 180.0));
     QCOMPARE(adapter.cursor()->position(), QPointF(240.0, 180.0));
-    QCOMPARE(cursorArrow->position(), QPointF(240.0, 180.0));
+    QCOMPARE(cursorArrow->property("cursorState").toString(), QStringLiteral("default"));
+    QCOMPARE(cursorArrow->property("hotspotX").toReal(), 1.0);
+    QCOMPARE(cursorArrow->property("hotspotY").toReal(), 1.0);
+    QCOMPARE(cursorArrow->position(), QPointF(239.0, 179.0));
 
     // Simula redimensionamento dinâmico do output nested (ex.: maximização WL-1 -> 1920x1040)
     QVERIFY(adapter.outputAdapter()->requestOutputResize(1920, 1040));
@@ -517,6 +536,129 @@ void tst_WaylibBackend::headlessAndMultiWindowValoShellLifecycle() {
     QVERIFY(frameA->property("radius").toReal() > 0.0);
     QVERIFY(frameA->findChild<QQuickItem *>(QStringLiteral("clientDecorationV2")) != nullptr);
     QVERIFY(frameA->findChild<QQuickItem *>(QStringLiteral("sgeTitleBar")) != nullptr);
+
+    // 3b. Movimento livre sob Dock e TopBar (sem clip em waylibClientLayer e sem clamping de workarea)
+    QVERIFY(!contentLayer->clip());
+    frameA->setProperty("normalY", -48.0); // invade faixa da TopBar (sceneY = 12 < 53)
+    QCOMPARE(frameA->property("normalY").toReal(), -48.0);
+    QVERIFY(frameA->mapToScene(QPointF(0.0, 0.0)).y() < 53.0);
+    frameA->setProperty("normalY", 500.0); // invade faixa da Dock (sceneY + height > height - 137)
+    QCOMPARE(frameA->property("normalY").toReal(), 500.0);
+    QVERIFY(frameA->mapToScene(QPointF(0.0, frameA->height())).y() > renderWindow->height() - 137.0);
+    frameA->setProperty("normalY", 24.0);
+
+    // 3c. Sistema de redimensionamento 8-direções em WaylibWindowFrame e janelas internas
+    const QStringList eightEdges = {
+        QStringLiteral("top"), QStringLiteral("bottom"), QStringLiteral("left"), QStringLiteral("right"),
+        QStringLiteral("topLeft"), QStringLiteral("bottomRight"), QStringLiteral("topRight"), QStringLiteral("bottomLeft")
+    };
+    for (const QString &edgeName : eightEdges) {
+        auto *handle = findVisualChildByObjectName(frameA, QStringLiteral("resize_") + edgeName);
+        QVERIFY2(handle != nullptr, qPrintable(edgeName));
+        QVERIFY(handle->acceptHoverEvents());
+    }
+    const qreal origAX = frameA->property("normalX").toReal();
+    const qreal origAW = frameA->property("normalWidth").toReal();
+    QVERIFY(QMetaObject::invokeMethod(frameA, "beginResize",
+                                      Q_ARG(QVariant, static_cast<int>(Qt::LeftEdge)),
+                                      Q_ARG(QVariant, QPointF(origAX, 100.0))));
+    QCOMPARE(adapter.cursorShapeKey(), QStringLiteral("resize-ew"));
+    QVERIFY(QMetaObject::invokeMethod(frameA, "updateResize",
+                                      Q_ARG(QVariant, QPointF(origAX - 40.0, 100.0))));
+    QCOMPARE(frameA->property("normalWidth").toReal(), origAW + 40.0);
+    QCOMPARE(frameA->property("normalX").toReal(), origAX - 40.0);
+    QVERIFY(QMetaObject::invokeMethod(frameA, "finishResize"));
+    QCOMPARE(adapter.cursorShapeKey(), QStringLiteral("default"));
+
+    auto *filesWindowItem = renderWindow->findChild<QQuickItem *>(QStringLiteral("waylibFilesWindowV2"));
+    auto *materialWindowItem = renderWindow->findChild<QQuickItem *>(QStringLiteral("waylibMaterialWindow"));
+    auto *filesHandles = renderWindow->findChild<QQuickItem *>(QStringLiteral("waylibFilesResizeHandles"));
+    auto *materialHandles = renderWindow->findChild<QQuickItem *>(QStringLiteral("waylibMaterialResizeHandles"));
+    QVERIFY(filesWindowItem != nullptr && materialWindowItem != nullptr);
+    QVERIFY(filesHandles != nullptr && materialHandles != nullptr);
+    for (const QString &edgeName : eightEdges) {
+        QVERIFY(findVisualChildByObjectName(filesHandles, QStringLiteral("internalResize_") + edgeName) != nullptr);
+        QVERIFY(findVisualChildByObjectName(materialHandles, QStringLiteral("internalResize_") + edgeName) != nullptr);
+    }
+    const qreal origFilesW = filesWindowItem->width();
+    QVERIFY(QMetaObject::invokeMethod(filesHandles, "begin",
+                                      Q_ARG(QVariant, static_cast<int>(Qt::RightEdge)),
+                                      Q_ARG(QVariant, QPointF(origFilesW, 200.0))));
+    QVERIFY(QMetaObject::invokeMethod(filesHandles, "move",
+                                      Q_ARG(QVariant, static_cast<int>(Qt::RightEdge)),
+                                      Q_ARG(QVariant, QPointF(origFilesW + 50.0, 200.0))));
+    QCOMPARE(filesWindowItem->width(), origFilesW + 50.0);
+    QVERIFY(QMetaObject::invokeMethod(filesHandles, "finish"));
+
+    // 3d. Alternador de quadros no centro da SystaliaTopBarV2 (clique real na pílula + transição)
+    auto *pill1 = findVisualChildByObjectName(topBar, QStringLiteral("workspacePillMouseArea_1"));
+    auto *pill0 = findVisualChildByObjectName(topBar, QStringLiteral("workspacePillMouseArea_0"));
+    QVERIFY(pill1 != nullptr && pill0 != nullptr);
+    auto *wsMgr = WorkspaceManagerService::instance();
+    QVERIFY(wsMgr != nullptr);
+    QCOMPARE(wsMgr->currentWorkspace(), 0);
+    QVERIFY(wsMgr->hasWindowsInWorkspace(0));
+    QVERIFY(pill1->isVisible() && pill1->isEnabled());
+    QCOMPARE(pill1->height(), 26.0);
+    QCOMPARE(pill1->property("cursorShape").toInt(), static_cast<int>(Qt::PointingHandCursor));
+    wsMgr->switchToWorkspace(1);
+    QVERIFY(QMetaObject::invokeMethod(topBar, "workspaceSelected", Q_ARG(int, 1)));
+    QTRY_COMPARE(wsMgr->currentWorkspace(), 1);
+    QTRY_VERIFY(!wsMgr->isTransitioning());
+    QVERIFY(!frameA->isVisible());
+    wsMgr->switchToWorkspace(0);
+    QVERIFY(QMetaObject::invokeMethod(topBar, "workspaceSelected", Q_ARG(int, 0)));
+    QTRY_COMPARE(wsMgr->currentWorkspace(), 0);
+    QTRY_VERIFY(!wsMgr->isTransitioning());
+    QVERIFY(frameA->isVisible());
+
+    // 3e. Motor de cursores dinâmicos VALO (11 estados, hotspots e precedência C++/QML)
+    QCOMPARE(WaylibCompositorAdapter::cursorShapeKeyForQtShape(Qt::ArrowCursor), QStringLiteral("default"));
+    QCOMPARE(WaylibCompositorAdapter::cursorShapeKeyForQtShape(Qt::PointingHandCursor), QStringLiteral("pointer"));
+    QCOMPARE(WaylibCompositorAdapter::cursorShapeKeyForQtShape(Qt::OpenHandCursor), QStringLiteral("grab"));
+    QCOMPARE(WaylibCompositorAdapter::cursorShapeKeyForQtShape(Qt::ClosedHandCursor), QStringLiteral("grabbing"));
+    QCOMPARE(WaylibCompositorAdapter::cursorShapeKeyForQtShape(Qt::SizeHorCursor), QStringLiteral("resize-ew"));
+    QCOMPARE(WaylibCompositorAdapter::cursorShapeKeyForQtShape(Qt::SizeVerCursor), QStringLiteral("resize-ns"));
+    QCOMPARE(WaylibCompositorAdapter::cursorShapeKeyForQtShape(Qt::SizeFDiagCursor), QStringLiteral("resize-nwse"));
+    QCOMPARE(WaylibCompositorAdapter::cursorShapeKeyForQtShape(Qt::SizeBDiagCursor), QStringLiteral("resize-nesw"));
+    QCOMPARE(WaylibCompositorAdapter::cursorShapeKeyForQtShape(Qt::IBeamCursor), QStringLiteral("text"));
+    QCOMPARE(WaylibCompositorAdapter::cursorShapeKeyForQtShape(Qt::BusyCursor), QStringLiteral("busy"));
+    QCOMPARE(WaylibCompositorAdapter::cursorShapeKeyForQtShape(Qt::ForbiddenCursor), QStringLiteral("not-allowed"));
+
+    QCOMPARE(WaylibCompositorAdapter::cursorShapeKeyForWaylibShape(WGlobal::CursorShape::Pointer), QStringLiteral("pointer"));
+    QCOMPARE(WaylibCompositorAdapter::cursorShapeKeyForWaylibShape(WGlobal::CursorShape::EWResize), QStringLiteral("resize-ew"));
+    QCOMPARE(WaylibCompositorAdapter::cursorShapeKeyForWaylibShape(WGlobal::CursorShape::NSResize), QStringLiteral("resize-ns"));
+    QCOMPARE(WaylibCompositorAdapter::cursorShapeKeyForWaylibShape(WGlobal::CursorShape::NWSEResize), QStringLiteral("resize-nwse"));
+    QCOMPARE(WaylibCompositorAdapter::cursorShapeKeyForWaylibShape(WGlobal::CursorShape::NESWResize), QStringLiteral("resize-nesw"));
+    QCOMPARE(WaylibCompositorAdapter::cursorShapeKeyForWaylibShape(WGlobal::CursorShape::Text), QStringLiteral("text"));
+    QCOMPARE(WaylibCompositorAdapter::cursorShapeKeyForWaylibShape(WGlobal::CursorShape::Wait), QStringLiteral("busy"));
+    QCOMPARE(WaylibCompositorAdapter::cursorShapeKeyForWaylibShape(WGlobal::CursorShape::NotAllowed), QStringLiteral("not-allowed"));
+
+    adapter.cursor()->setPosition(QPointF(300.0, 220.0));
+    adapter.setCompositorCursorOverride(QStringLiteral("resize-ew"));
+    QCOMPARE(cursorArrow->property("cursorState").toString(), QStringLiteral("resize-ew"));
+    QCOMPARE(cursorArrow->property("hotspotX").toReal(), 13.0);
+    QCOMPARE(cursorArrow->property("hotspotY").toReal(), 12.0);
+    QCOMPARE(cursorArrow->position(), QPointF(287.0, 208.0));
+    adapter.setCompositorCursorOverride(QStringLiteral("pointer"));
+    QCOMPARE(cursorArrow->property("hotspotX").toReal(), 7.0);
+    QCOMPARE(cursorArrow->property("hotspotY").toReal(), 2.0);
+    adapter.setCompositorCursorOverride(QStringLiteral("busy"));
+    QCOMPARE(cursorArrow->property("cursorState").toString(), QStringLiteral("busy"));
+    adapter.setCompositorCursorOverride(QString());
+    QCOMPARE(cursorArrow->property("cursorState").toString(), QStringLiteral("default"));
+
+    // Precedência hoveredCursorKey -> compositorCursorOverride -> default
+    adapter.setHoveredCursorKey(QStringLiteral("resize-nesw"));
+    QCOMPARE(adapter.cursorShapeKey(), QStringLiteral("resize-nesw"));
+    QCOMPARE(cursorArrow->property("cursorState").toString(), QStringLiteral("resize-nesw"));
+    adapter.setCompositorCursorOverride(QStringLiteral("grabbing"));
+    QCOMPARE(adapter.cursorShapeKey(), QStringLiteral("grabbing"));
+    adapter.setCompositorCursorOverride(QString());
+    QCOMPARE(adapter.cursorShapeKey(), QStringLiteral("resize-nesw"));
+    adapter.setHoveredCursorKey(QString());
+    QCOMPARE(adapter.cursorShapeKey(), QStringLiteral("default"));
+
     auto *closeBtn = frameA->findChild<QQuickItem *>(QStringLiteral("closeToplevelButton"));
     QVERIFY(closeBtn != nullptr);
     QTRY_VERIFY(frameA->width() < 1000.0

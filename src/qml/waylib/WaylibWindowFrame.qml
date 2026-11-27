@@ -1,6 +1,7 @@
 import QtQuick
 import Waylib.Server
 import Systalia.Engine
+import Systalia.System 1.0
 
 Item {
     id: frame
@@ -20,6 +21,15 @@ Item {
     required property real workAreaWidth
     required property real workAreaHeight
 
+    property var compositorAdapter: null
+    property int workspaceIndex: 0
+    property int activeWorkspace: 0
+    property bool workspaceTransitioning: false
+    property real desktopWidth: 1280
+    property real desktopHeight: 760
+    property real layerOriginX: 8
+    property real layerOriginY: 60
+
     property var backdropSource: null
     property int blurProfile: 1
     property bool userHighContrast: false
@@ -31,6 +41,7 @@ Item {
     property real cornerRadius: 20.0
     property real animationTime: 0.0
 
+    readonly property int borderMargin: 8
     readonly property int frameMargin: isMaximized ? 0 : 8
     readonly property int titleBarHeight: sgeTitleBar.implicitHeight
     readonly property real radius: isMaximized ? 0.0 : cornerRadius
@@ -45,12 +56,31 @@ Item {
     property bool userSized: false
     property bool surfaceOpaque: false
 
-    x: isMaximized ? 0 : normalX
+    property bool resizing: false
+    property bool clientInitiatedResizing: false
+    property int resizeEdges: 0
+    property bool resizeAnchored: false
+    property point resizeOrigin: Qt.point(0, 0)
+    property rect resizeStartRect: Qt.rect(0, 0, 480, 340)
+    property real fixedRight: 0
+    property real fixedBottom: 0
+    property size requestedClientSize: Qt.size(0, 0)
+
+    property real animatedWorkspaceOffsetX: (workspaceIndex - activeWorkspace) * desktopWidth
+    Behavior on animatedWorkspaceOffsetX {
+        enabled: !frame.userPrefersReducedMotion
+        NumberAnimation {
+            duration: 320
+            easing.type: Easing.OutCubic
+        }
+    }
+
+    x: (isMaximized ? 0 : normalX) + animatedWorkspaceOffsetX
     y: isMaximized ? 0 : normalY
     width: isMaximized ? Math.max(320, workAreaWidth) : normalWidth
     height: isMaximized ? Math.max(220, workAreaHeight) : normalHeight
     z: windowZOrder
-    visible: !isMinimized
+    visible: !isMinimized && (workspaceIndex === activeWorkspace || workspaceTransitioning)
     clip: false
 
     function clientOriginIn(target) {
@@ -84,10 +114,147 @@ Item {
             }
         }
         function onResizeRequested(surface, edgeFlags) {
-            if (surface === frame.windowShellSurface) {
+            if (surface === frame.windowShellSurface && !frame.isMaximized && edgeFlags !== 0) {
                 frame.surfaceAdapter.activateSurface(frame.windowShellSurface)
                 frame.surfaceAdapter.raiseSurface(frame.windowShellSurface)
+                const curPos = (frame.compositorAdapter && frame.compositorAdapter.cursor)
+                    ? frame.compositorAdapter.cursor.position
+                    : Qt.point(frame.x + frame.width, frame.y + frame.height)
+                const parentPt = frame.parent ? frame.parent.mapFromItem(null, curPos.x, curPos.y) : curPos
+                frame.clientInitiatedResizing = true
+                frame.beginResize(edgeFlags, parentPt)
             }
+        }
+    }
+
+    Connections {
+        target: frame.compositorAdapter ? frame.compositorAdapter.cursor : null
+        enabled: frame.clientInitiatedResizing
+        function onPositionChanged() {
+            if (!frame.clientInitiatedResizing || !frame.compositorAdapter || !frame.compositorAdapter.cursor) {
+                return
+            }
+            const curPos = frame.compositorAdapter.cursor.position
+            const parentPt = frame.parent ? frame.parent.mapFromItem(null, curPos.x, curPos.y) : curPos
+            frame.updateResize(parentPt)
+        }
+    }
+
+    function cursorKeyForEdges(edges) {
+        const hasLeft = (edges & Qt.LeftEdge) !== 0
+        const hasRight = (edges & Qt.RightEdge) !== 0
+        const hasTop = (edges & Qt.TopEdge) !== 0
+        const hasBottom = (edges & Qt.BottomEdge) !== 0
+        if ((hasLeft && hasTop) || (hasRight && hasBottom)) {
+            return "resize-nwse"
+        }
+        if ((hasRight && hasTop) || (hasLeft && hasBottom)) {
+            return "resize-nesw"
+        }
+        if (hasLeft || hasRight) {
+            return "resize-ew"
+        }
+        if (hasTop || hasBottom) {
+            return "resize-ns"
+        }
+        return "default"
+    }
+
+    function beginResize(edges, parentPoint) {
+        if (frame.isMaximized || !frame.windowShellSurface || edges === 0) {
+            return
+        }
+        frame.surfaceAdapter.activateSurface(frame.windowShellSurface)
+        frame.surfaceAdapter.raiseSurface(frame.windowShellSurface)
+        frame.resizeEdges = edges
+        frame.resizeAnchored = true
+        frame.resizeOrigin = parentPoint
+        frame.resizeStartRect = Qt.rect(frame.normalX, frame.normalY, frame.normalWidth, frame.normalHeight)
+        frame.fixedRight = frame.normalX + frame.normalWidth
+        frame.fixedBottom = frame.normalY + frame.normalHeight
+        frame.requestedClientSize = Qt.size(
+            Math.max(240, Math.round(frame.normalWidth - 2 * frame.frameMargin)),
+            Math.max(160, Math.round(frame.normalHeight - frame.titleBarHeight - 2 * frame.frameMargin)))
+        frame.resizing = true
+        if (frame.compositorAdapter) {
+            frame.compositorAdapter.compositorCursorOverride = cursorKeyForEdges(edges)
+        }
+    }
+
+    function updateResize(parentPoint) {
+        if (!frame.resizing || frame.isMaximized || !frame.windowShellSurface) {
+            return
+        }
+        const dx = parentPoint.x - frame.resizeOrigin.x
+        const dy = parentPoint.y - frame.resizeOrigin.y
+
+        const minClientW = Math.max(240, toplevelItem.minimumSize ? toplevelItem.minimumSize.width : 0)
+        const minClientH = Math.max(160, toplevelItem.minimumSize ? toplevelItem.minimumSize.height : 0)
+        const maxClientW = (toplevelItem.maximumSize && toplevelItem.maximumSize.width > 0)
+            ? Math.max(minClientW, toplevelItem.maximumSize.width) : 0
+        const maxClientH = (toplevelItem.maximumSize && toplevelItem.maximumSize.height > 0)
+            ? Math.max(minClientH, toplevelItem.maximumSize.height) : 0
+
+        const minFrameW = minClientW + 2 * frame.frameMargin
+        const minFrameH = minClientH + frame.titleBarHeight + 2 * frame.frameMargin
+        const maxFrameW = maxClientW > 0 ? (maxClientW + 2 * frame.frameMargin) : 100000
+        const maxFrameH = maxClientH > 0 ? (maxClientH + frame.titleBarHeight + 2 * frame.frameMargin) : 100000
+
+        let nextW = frame.resizeStartRect.width
+        let nextH = frame.resizeStartRect.height
+        if (frame.resizeEdges & Qt.LeftEdge) {
+            nextW = frame.resizeStartRect.width - dx
+        } else if (frame.resizeEdges & Qt.RightEdge) {
+            nextW = frame.resizeStartRect.width + dx
+        }
+        if (frame.resizeEdges & Qt.TopEdge) {
+            nextH = frame.resizeStartRect.height - dy
+        } else if (frame.resizeEdges & Qt.BottomEdge) {
+            nextH = frame.resizeStartRect.height + dy
+        }
+
+        nextW = Math.max(minFrameW, Math.min(Math.round(nextW), maxFrameW))
+        nextH = Math.max(minFrameH, Math.min(Math.round(nextH), maxFrameH))
+
+        let nextX = frame.resizeStartRect.x
+        let nextY = frame.resizeStartRect.y
+        if (frame.resizeEdges & Qt.LeftEdge) {
+            nextX = frame.fixedRight - nextW
+        }
+        if (frame.resizeEdges & Qt.TopEdge) {
+            nextY = frame.fixedBottom - nextH
+        }
+
+        frame.userSized = true
+        frame.normalX = nextX
+        frame.normalY = nextY
+        frame.normalWidth = nextW
+        frame.normalHeight = nextH
+
+        const clientW = Math.max(minClientW, Math.round(nextW - 2 * frame.frameMargin))
+        const clientH = Math.max(minClientH, Math.round(nextH - frame.titleBarHeight - 2 * frame.frameMargin))
+        if (clientW !== frame.requestedClientSize.width || clientH !== frame.requestedClientSize.height) {
+            frame.requestedClientSize = Qt.size(clientW, clientH)
+            if (typeof LiquidTiling === "undefined" || !LiquidTiling
+                    || LiquidTiling.shouldDispatchInteractiveResize(true)) {
+                frame.surfaceAdapter.resizeSurface(frame.windowShellSurface, clientW, clientH)
+            }
+        }
+    }
+
+    function finishResize() {
+        if (!frame.resizing) {
+            return
+        }
+        frame.resizing = false
+        frame.clientInitiatedResizing = false
+        if (frame.compositorAdapter) {
+            frame.compositorAdapter.compositorCursorOverride = ""
+        }
+        if (frame.windowShellSurface && frame.requestedClientSize.width > 0 && frame.requestedClientSize.height > 0) {
+            frame.surfaceAdapter.resizeSurface(frame.windowShellSurface,
+                                               frame.requestedClientSize.width,
+                                               frame.requestedClientSize.height)
         }
     }
 
@@ -179,6 +346,7 @@ Item {
             surface: frame.waylandSurface
             shellSurface: frame.windowShellSurface
             subsurfacesVisible: true
+            enabled: !frame.resizing
 
             function syncInitialSize() {
                 if (frame.userSized || frame.isMaximized || implicitWidth <= 0 || implicitHeight <= 0) {
@@ -240,7 +408,7 @@ Item {
         onHeaderTapped: frame.surfaceAdapter.activateSurface(frame.windowShellSurface)
     }
 
-    // Arraste controlado pela barra de título preservando bindings de normalX/normalY e clamping na workarea
+    // Arraste controlado pela barra de título permitindo passagem livre sob TopBar e Dock
     MouseArea {
         id: titleDragArea
         objectName: "ssdDragArea"
@@ -249,12 +417,17 @@ Item {
         width: Math.max(120, frame.width - 134)
         height: frame.titleBarHeight
         z: 3
+        hoverEnabled: true
+        cursorShape: pressed ? Qt.ClosedHandCursor : Qt.OpenHandCursor
         acceptedButtons: Qt.LeftButton
         property point pressOffset: Qt.point(0, 0)
 
         onPressed: (mouse) => {
             frame.surfaceAdapter.activateSurface(frame.windowShellSurface)
             pressOffset = Qt.point(mouse.x, mouse.y)
+            if (frame.compositorAdapter) {
+                frame.compositorAdapter.compositorCursorOverride = "grabbing"
+            }
             mouse.accepted = true
         }
 
@@ -264,46 +437,95 @@ Item {
             }
             const nextX = frame.normalX + (mouse.x - pressOffset.x)
             const nextY = frame.normalY + (mouse.y - pressOffset.y)
-            frame.normalX = Math.max(0, Math.min(nextX, Math.max(0, frame.workAreaWidth - frame.width)))
-            frame.normalY = Math.max(0, Math.min(nextY, Math.max(0, frame.workAreaHeight - frame.height)))
+            const visibleKeepW = Math.min(120, frame.width * 0.3)
+            const minX = -frame.layerOriginX - frame.width + visibleKeepW
+            const maxX = frame.desktopWidth - frame.layerOriginX - visibleKeepW
+            const minY = -frame.layerOriginY
+            const maxY = frame.desktopHeight - frame.layerOriginY - Math.max(36, frame.titleBarHeight)
+            frame.normalX = Math.max(minX, Math.min(nextX, maxX))
+            frame.normalY = Math.max(minY, Math.min(nextY, maxY))
+        }
+
+        onReleased: {
+            if (frame.compositorAdapter) {
+                frame.compositorAdapter.compositorCursorOverride = ""
+            }
+        }
+        onCanceled: {
+            if (frame.compositorAdapter) {
+                frame.compositorAdapter.compositorCursorOverride = ""
+            }
+        }
+        onContainsMouseChanged: {
+            if (!frame.compositorAdapter) {
+                return
+            }
+            if (containsMouse) {
+                frame.compositorAdapter.hoveredCursorKey = "grab"
+            } else if (frame.compositorAdapter.hoveredCursorKey === "grab") {
+                frame.compositorAdapter.hoveredCursorKey = ""
+            }
         }
     }
 
-    // Alça de redimensionamento no canto inferior direito
-    MouseArea {
-        objectName: "resizeCornerHandle"
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
-        width: 14
-        height: 14
-        z: 100
-        visible: !frame.isMaximized
-        cursorShape: Qt.SizeFDiagCursor
-        property point startPos: Qt.point(0, 0)
-        property real startW: 0
-        property real startH: 0
+    // Sistema de redimensionamento multi-direcional (8 bordas e cantos)
+    Repeater {
+        model: [
+            { name: "top", edges: Qt.TopEdge, cursor: Qt.SizeVerCursor },
+            { name: "bottom", edges: Qt.BottomEdge, cursor: Qt.SizeVerCursor },
+            { name: "left", edges: Qt.LeftEdge, cursor: Qt.SizeHorCursor },
+            { name: "right", edges: Qt.RightEdge, cursor: Qt.SizeHorCursor },
+            { name: "topLeft", edges: Qt.TopEdge | Qt.LeftEdge, cursor: Qt.SizeFDiagCursor },
+            { name: "bottomRight", edges: Qt.BottomEdge | Qt.RightEdge, cursor: Qt.SizeFDiagCursor },
+            { name: "topRight", edges: Qt.TopEdge | Qt.RightEdge, cursor: Qt.SizeBDiagCursor },
+            { name: "bottomLeft", edges: Qt.BottomEdge | Qt.LeftEdge, cursor: Qt.SizeBDiagCursor }
+        ]
 
-        onPressed: (mouse) => {
-            frame.surfaceAdapter.activateSurface(frame.windowShellSurface)
-            startPos = mapToItem(frame.parent, mouse.x, mouse.y)
-            startW = frame.normalWidth
-            startH = frame.normalHeight
-            mouse.accepted = true
-        }
+        delegate: MouseArea {
+            required property var modelData
+            readonly property bool horizontalEdge: (modelData.edges & (Qt.LeftEdge | Qt.RightEdge)) !== 0
+            readonly property bool verticalEdge: (modelData.edges & (Qt.TopEdge | Qt.BottomEdge)) !== 0
+            readonly property bool isCorner: horizontalEdge && verticalEdge
+            readonly property int cornerMargin: 12
+            readonly property string hoverKey: frame.cursorKeyForEdges(modelData.edges)
+            objectName: "resize_" + modelData.name
+            z: isCorner ? 102 : 101
+            x: (modelData.edges & Qt.RightEdge) ? frame.width - width
+               : (horizontalEdge ? 0 : cornerMargin)
+            y: (modelData.edges & Qt.BottomEdge) ? frame.height - height
+               : (verticalEdge ? 0 : cornerMargin)
+            width: isCorner ? cornerMargin
+                            : (horizontalEdge ? frame.borderMargin : Math.max(0, frame.width - 2 * cornerMargin))
+            height: isCorner ? cornerMargin
+                             : (verticalEdge ? frame.borderMargin : Math.max(0, frame.height - 2 * cornerMargin))
+            visible: !frame.isMaximized
+            enabled: !frame.isMaximized
+            hoverEnabled: true
+            cursorShape: modelData.cursor
+            acceptedButtons: Qt.LeftButton
+            preventStealing: true
 
-        onPositionChanged: (mouse) => {
-            if (!pressed || !frame.parent) {
-                return
+            onContainsMouseChanged: {
+                if (!frame.compositorAdapter) {
+                    return
+                }
+                if (containsMouse) {
+                    frame.compositorAdapter.hoveredCursorKey = hoverKey
+                } else if (frame.compositorAdapter.hoveredCursorKey === hoverKey) {
+                    frame.compositorAdapter.hoveredCursorKey = ""
+                }
             }
-            const cur = mapToItem(frame.parent, mouse.x, mouse.y)
-            const nextW = Math.max(320, Math.min(startW + (cur.x - startPos.x), frame.workAreaWidth - frame.normalX))
-            const nextH = Math.max(220, Math.min(startH + (cur.y - startPos.y), frame.workAreaHeight - frame.normalY))
-            frame.userSized = true
-            frame.normalWidth = nextW
-            frame.normalHeight = nextH
-            frame.surfaceAdapter.resizeSurface(frame.windowShellSurface,
-                                               Math.max(240, Math.round(nextW - 2 * frame.frameMargin)),
-                                               Math.max(160, Math.round(nextH - frame.titleBarHeight - 2 * frame.frameMargin)))
+            onPressed: (mouse) => {
+                frame.beginResize(modelData.edges, mapToItem(frame.parent, mouse.x, mouse.y))
+                mouse.accepted = true
+            }
+            onPositionChanged: (mouse) => {
+                if (pressed) {
+                    frame.updateResize(mapToItem(frame.parent, mouse.x, mouse.y))
+                }
+            }
+            onReleased: frame.finishResize()
+            onCanceled: frame.finishResize()
         }
     }
 }

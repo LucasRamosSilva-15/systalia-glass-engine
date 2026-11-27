@@ -99,6 +99,12 @@ WaylibCompositorAdapter::WaylibCompositorAdapter(QObject *parent)
     m_surfaceAdapter->attachOutputAdapter(m_outputAdapter);
     connect(m_outputAdapter, &WaylibOutputAdapter::outputReady,
             this, &WaylibCompositorAdapter::bindCursorToOutput);
+    connect(m_cursor, &WCursor::cursorChanged,
+            this, &WaylibCompositorAdapter::updateCursorShapeKey);
+    connect(m_cursor, &WCursor::requestedCursorShapeChanged,
+            this, &WaylibCompositorAdapter::updateCursorShapeKey);
+    connect(m_cursor, &WCursor::requestedCursorSurfaceChanged,
+            this, &WaylibCompositorAdapter::updateCursorShapeKey);
 }
 
 WaylibCompositorAdapter::~WaylibCompositorAdapter() {
@@ -300,6 +306,146 @@ void WaylibCompositorAdapter::onInputRemoved(WInputDevice *device) {
     if (m_seat && device) {
         m_seat->detachInputDevice(device);
     }
+}
+
+QString WaylibCompositorAdapter::cursorShapeKeyForQtShape(Qt::CursorShape shape) {
+    switch (shape) {
+    case Qt::PointingHandCursor:
+        return QStringLiteral("pointer");
+    case Qt::OpenHandCursor:
+        return QStringLiteral("grab");
+    case Qt::ClosedHandCursor:
+        return QStringLiteral("grabbing");
+    case Qt::SizeHorCursor:
+    case Qt::SplitHCursor:
+        return QStringLiteral("resize-ew");
+    case Qt::SizeVerCursor:
+    case Qt::SplitVCursor:
+        return QStringLiteral("resize-ns");
+    case Qt::SizeFDiagCursor:
+        return QStringLiteral("resize-nwse");
+    case Qt::SizeBDiagCursor:
+        return QStringLiteral("resize-nesw");
+    case Qt::IBeamCursor:
+        return QStringLiteral("text");
+    case Qt::BusyCursor:
+    case Qt::WaitCursor:
+        return QStringLiteral("busy");
+    case Qt::ForbiddenCursor:
+        return QStringLiteral("not-allowed");
+    case Qt::ArrowCursor:
+    default:
+        return QStringLiteral("default");
+    }
+}
+
+QString WaylibCompositorAdapter::cursorShapeKeyForWaylibShape(WGlobal::CursorShape shape) {
+    using CS = WGlobal::CursorShape;
+    switch (shape) {
+    case CS::Pointer:
+    case CS::Hand1:
+    case CS::Alias:
+    case CS::Copy:
+    case CS::ContextMenu:
+        return QStringLiteral("pointer");
+    case CS::Grab:
+    case CS::AllScroll:
+        return QStringLiteral("grab");
+    case CS::Grabbing:
+    case CS::Move:
+    case CS::DndAsk:
+        return QStringLiteral("grabbing");
+    case CS::EWResize:
+    case CS::WResize:
+    case CS::EResize:
+    case CS::LeftSide:
+    case CS::RightSide:
+    case CS::ColResize:
+        return QStringLiteral("resize-ew");
+    case CS::NSResize:
+    case CS::NResize:
+    case CS::SResize:
+    case CS::TopSide:
+    case CS::BottomSide:
+    case CS::RowResize:
+        return QStringLiteral("resize-ns");
+    case CS::NWSEResize:
+    case CS::NWResize:
+    case CS::SEResize:
+    case CS::TopLeftCorner:
+    case CS::BottomRightCorner:
+        return QStringLiteral("resize-nwse");
+    case CS::NESWResize:
+    case CS::NEResize:
+    case CS::SWResize:
+    case CS::TopRightCorner:
+    case CS::BottomLeftCorner:
+        return QStringLiteral("resize-nesw");
+    case CS::Text:
+    case CS::Xterm:
+    case CS::VerticalText:
+        return QStringLiteral("text");
+    case CS::Watch:
+    case CS::Wait:
+    case CS::Progress:
+        return QStringLiteral("busy");
+    case CS::NotAllowed:
+    case CS::NoDrop:
+        return QStringLiteral("not-allowed");
+    case CS::Default:
+    case CS::Invalid:
+    default:
+        return QStringLiteral("default");
+    }
+}
+
+void WaylibCompositorAdapter::setCompositorCursorOverride(const QString &overrideKey) {
+    if (m_compositorCursorOverride == overrideKey) {
+        return;
+    }
+    m_compositorCursorOverride = overrideKey;
+    Q_EMIT compositorCursorOverrideChanged();
+    updateCursorShapeKey();
+}
+
+void WaylibCompositorAdapter::setHoveredCursorKey(const QString &hoveredKey) {
+    if (m_hoveredCursorKey == hoveredKey) {
+        return;
+    }
+    m_hoveredCursorKey = hoveredKey;
+    Q_EMIT hoveredCursorKeyChanged();
+    updateCursorShapeKey();
+}
+
+QString WaylibCompositorAdapter::resolveCursorShapeKey() const {
+    if (!m_compositorCursorOverride.isEmpty()) {
+        return m_compositorCursorOverride;
+    }
+    if (!m_hoveredCursorKey.isEmpty()) {
+        return m_hoveredCursorKey;
+    }
+    if (m_cursor) {
+        const Qt::CursorShape qtShape = m_cursor->cursor().shape();
+        if (qtShape != Qt::ArrowCursor && qtShape != Qt::CustomCursor) {
+            return cursorShapeKeyForQtShape(qtShape);
+        }
+        if (m_seat && m_seat->pointerFocusSurface() != nullptr) {
+            const WGlobal::CursorShape reqShape = m_cursor->requestedCursorShape();
+            if (reqShape != WGlobal::CursorShape::Default && reqShape != WGlobal::CursorShape::Invalid) {
+                return cursorShapeKeyForWaylibShape(reqShape);
+            }
+        }
+    }
+    return QStringLiteral("default");
+}
+
+void WaylibCompositorAdapter::updateCursorShapeKey() {
+    const QString nextKey = resolveCursorShapeKey();
+    if (m_cursorShapeKey == nextKey) {
+        return;
+    }
+    m_cursorShapeKey = nextKey;
+    Q_EMIT cursorVisualChanged();
 }
 
 } // namespace Systalia::Compositor::WaylibBackend

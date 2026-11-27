@@ -41,6 +41,9 @@ class WaylibCompositorAdapter final : public QObject {
     Q_PROPERTY(WAYLIB_SERVER_NAMESPACE::WXdgDecorationManager *xdgDecorationManager READ xdgDecorationManager CONSTANT)
     Q_PROPERTY(bool running READ isRunning NOTIFY runningChanged)
     Q_PROPERTY(QString socketName READ socketName NOTIFY socketNameChanged)
+    Q_PROPERTY(QString cursorShapeKey READ cursorShapeKey NOTIFY cursorVisualChanged)
+    Q_PROPERTY(QString compositorCursorOverride READ compositorCursorOverride WRITE setCompositorCursorOverride NOTIFY compositorCursorOverrideChanged)
+    Q_PROPERTY(QString hoveredCursorKey READ hoveredCursorKey WRITE setHoveredCursorKey NOTIFY hoveredCursorKeyChanged)
 
 public:
     enum class BackendMode {
@@ -50,6 +53,8 @@ public:
     Q_ENUM(BackendMode)
 
     static void registerQmlTypes();
+    static QString cursorShapeKeyForQtShape(Qt::CursorShape shape);
+    static QString cursorShapeKeyForWaylibShape(WAYLIB_SERVER_NAMESPACE::WGlobal::CursorShape shape);
 
     explicit WaylibCompositorAdapter(QObject *parent = nullptr);
     ~WaylibCompositorAdapter() override;
@@ -72,17 +77,27 @@ public:
     }
     [[nodiscard]] WAYLIB_SERVER_NAMESPACE::WServer *server() const noexcept { return m_server; }
     [[nodiscard]] WAYLIB_SERVER_NAMESPACE::WBackend *backend() const noexcept { return m_backend; }
+    [[nodiscard]] QString cursorShapeKey() const noexcept { return m_cursorShapeKey; }
+    [[nodiscard]] QString compositorCursorOverride() const noexcept { return m_compositorCursorOverride; }
+    void setCompositorCursorOverride(const QString &overrideKey);
+    [[nodiscard]] QString hoveredCursorKey() const noexcept { return m_hoveredCursorKey; }
+    void setHoveredCursorKey(const QString &hoveredKey);
 
 Q_SIGNALS:
     void runningChanged();
     void socketNameChanged();
     void initialized();
     void stopped();
+    void cursorVisualChanged();
+    void compositorCursorOverrideChanged();
+    void hoveredCursorKeyChanged();
 
 private:
     void onInputAdded(WAYLIB_SERVER_NAMESPACE::WInputDevice *device);
     void onInputRemoved(WAYLIB_SERVER_NAMESPACE::WInputDevice *device);
     void bindCursorToOutput(WAYLIB_SERVER_NAMESPACE::WOutput *output);
+    [[nodiscard]] QString resolveCursorShapeKey() const;
+    void updateCursorShapeKey();
 
     WAYLIB_SERVER_NAMESPACE::WServer *m_server = nullptr;
     WaylibOutputAdapter *m_outputAdapter = nullptr;
@@ -101,6 +116,9 @@ private:
     bool m_running = false;
     QString m_socketName;
     QString m_lastError;
+    QString m_cursorShapeKey = QStringLiteral("default");
+    QString m_compositorCursorOverride;
+    QString m_hoveredCursorKey;
 };
 
 } // namespace Systalia::Compositor::WaylibBackend

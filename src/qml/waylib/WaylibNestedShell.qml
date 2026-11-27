@@ -10,10 +10,135 @@ Item {
     required property var compositorAdapter
     property bool filesWindowMaximized: false
     property rect filesWindowRestoreGeometry: Qt.rect(48, 72, 701, 534)
+    property int filesWindowWorkspace: 0
     property bool materialWindowMaximized: false
     property rect materialWindowRestoreGeometry: Qt.rect(520, 72, 700, 534)
+    property int materialWindowWorkspace: 0
     property var orderedClientFrames: []
     readonly property int maxClientStages: 6
+
+    property real filesWorkspaceOffsetX: (filesWindowWorkspace - WorkspaceManager.currentWorkspace) * renderWindow.width
+    Behavior on filesWorkspaceOffsetX {
+        enabled: !materialWindow.opticalSurface.prefersReducedMotion
+        NumberAnimation { duration: 320; easing.type: Easing.OutCubic }
+    }
+
+    property real materialWorkspaceOffsetX: (materialWindowWorkspace - WorkspaceManager.currentWorkspace) * renderWindow.width
+    Behavior on materialWorkspaceOffsetX {
+        enabled: !materialWindow.opticalSurface.prefersReducedMotion
+        NumberAnimation { duration: 320; easing.type: Easing.OutCubic }
+    }
+
+    Component.onCompleted: {
+        filesWindow.width = Math.min(701, Math.max(520, clientLayer.width - 16))
+        filesWindow.height = Math.min(534, Math.max(400, clientLayer.height - 16))
+        filesWindow.x = Math.max(8, Math.min(48, renderWindow.width - filesWindow.width - 16))
+        filesWindow.y = 68
+
+        materialWindow.width = Math.min(700, Math.max(520, clientLayer.width - 16))
+        materialWindow.height = Math.min(534, Math.max(400, clientLayer.height - 16))
+        materialWindow.x = Math.max(8, renderWindow.width - materialWindow.width - 32)
+        materialWindow.y = 68
+
+        WorkspaceManager.setWindowWorkspace(filesWindow, filesWindowWorkspace)
+        WorkspaceManager.setWindowWorkspace(materialWindow, materialWindowWorkspace)
+    }
+
+    component ShellResizeHandles: Item {
+        id: handles
+        required property Item targetWindow
+        property real minimumWidth: 520
+        property real minimumHeight: 400
+        property point startPointer
+        property rect startGeometry
+        anchors.fill: parent
+        z: 1000
+        visible: enabled
+        function cursorKeyForEdges(edges) {
+            const h = (edges & (Qt.LeftEdge | Qt.RightEdge)) !== 0
+            const v = (edges & (Qt.TopEdge | Qt.BottomEdge)) !== 0
+            if ((edges === (Qt.TopEdge | Qt.LeftEdge)) || (edges === (Qt.BottomEdge | Qt.RightEdge)))
+                return "resize-nwse"
+            if ((edges === (Qt.TopEdge | Qt.RightEdge)) || (edges === (Qt.BottomEdge | Qt.LeftEdge)))
+                return "resize-nesw"
+            if (h && !v) return "resize-ew"
+            if (v && !h) return "resize-ns"
+            return "default"
+        }
+        function begin(edges, point) {
+            root.bringInternalWindowToFront(targetWindow)
+            startPointer = point
+            startGeometry = Qt.rect(targetWindow.x, targetWindow.y, targetWindow.width, targetWindow.height)
+            if (root.compositorAdapter) {
+                root.compositorAdapter.compositorCursorOverride = cursorKeyForEdges(edges)
+            }
+        }
+        function move(edges, point) {
+            const dx = point.x - startPointer.x
+            const dy = point.y - startPointer.y
+            let w = startGeometry.width
+            let h = startGeometry.height
+            if (edges & Qt.LeftEdge) w = Math.max(minimumWidth, startGeometry.width - dx)
+            if (edges & Qt.RightEdge) w = Math.max(minimumWidth, startGeometry.width + dx)
+            if (edges & Qt.TopEdge) h = Math.max(minimumHeight, startGeometry.height - dy)
+            if (edges & Qt.BottomEdge) h = Math.max(minimumHeight, startGeometry.height + dy)
+            if (edges & Qt.LeftEdge) targetWindow.x = startGeometry.x + startGeometry.width - w
+            if (edges & Qt.TopEdge) targetWindow.y = startGeometry.y + startGeometry.height - h
+            targetWindow.width = w
+            targetWindow.height = h
+        }
+        function finish() {
+            targetWindow.restoreGeometry = Qt.rect(targetWindow.x, targetWindow.y,
+                                                    targetWindow.width, targetWindow.height)
+            if (root.compositorAdapter) {
+                root.compositorAdapter.compositorCursorOverride = ""
+            }
+        }
+        Repeater {
+            model: [
+                { name: "top", edges: Qt.TopEdge, cursor: Qt.SizeVerCursor },
+                { name: "bottom", edges: Qt.BottomEdge, cursor: Qt.SizeVerCursor },
+                { name: "left", edges: Qt.LeftEdge, cursor: Qt.SizeHorCursor },
+                { name: "right", edges: Qt.RightEdge, cursor: Qt.SizeHorCursor },
+                { name: "topLeft", edges: Qt.TopEdge | Qt.LeftEdge, cursor: Qt.SizeFDiagCursor },
+                { name: "bottomRight", edges: Qt.BottomEdge | Qt.RightEdge, cursor: Qt.SizeFDiagCursor },
+                { name: "topRight", edges: Qt.TopEdge | Qt.RightEdge, cursor: Qt.SizeBDiagCursor },
+                { name: "bottomLeft", edges: Qt.BottomEdge | Qt.LeftEdge, cursor: Qt.SizeBDiagCursor }
+            ]
+            MouseArea {
+                required property var modelData
+                readonly property bool horizontal: (modelData.edges & (Qt.LeftEdge | Qt.RightEdge)) !== 0
+                readonly property bool vertical: (modelData.edges & (Qt.TopEdge | Qt.BottomEdge)) !== 0
+                objectName: "internalResize_" + modelData.name
+                z: horizontal && vertical ? 1 : 0
+                x: (modelData.edges & Qt.RightEdge) ? handles.width - width : (horizontal ? 0 : 8)
+                y: (modelData.edges & Qt.BottomEdge) ? handles.height - height : (vertical ? 0 : 8)
+                width: horizontal ? 8 : Math.max(0, handles.width - 16)
+                height: vertical ? 8 : Math.max(0, handles.height - 16)
+                hoverEnabled: true
+                cursorShape: modelData.cursor
+                acceptedButtons: Qt.LeftButton
+                preventStealing: true
+                onContainsMouseChanged: {
+                    if (!root.compositorAdapter) {
+                        return
+                    }
+                    const key = handles.cursorKeyForEdges(modelData.edges)
+                    if (containsMouse) {
+                        root.compositorAdapter.hoveredCursorKey = key
+                    } else if (root.compositorAdapter.hoveredCursorKey === key) {
+                        root.compositorAdapter.hoveredCursorKey = ""
+                    }
+                }
+                onPressed: mouse => handles.begin(modelData.edges, mapToItem(handles.targetWindow.parent, mouse.x, mouse.y))
+                onPositionChanged: mouse => {
+                    if (pressed) handles.move(modelData.edges, mapToItem(handles.targetWindow.parent, mouse.x, mouse.y))
+                }
+                onReleased: handles.finish()
+                onCanceled: handles.finish()
+            }
+        }
+    }
 
     Binding {
         target: ProcessLauncher
@@ -77,6 +202,7 @@ Item {
     }
 
     function raiseFileWindow() {
+        WorkspaceManager.switchToWorkspace(filesWindowWorkspace)
         filesWindow.windowOpen = true
         filesWindow.visible = true
         bringInternalWindowToFront(filesWindow)
@@ -116,6 +242,7 @@ Item {
     }
 
     function raiseMaterialWindow() {
+        WorkspaceManager.switchToWorkspace(materialWindowWorkspace)
         materialWindow.windowOpen = true
         materialWindow.visible = true
         bringInternalWindowToFront(materialWindow)
@@ -159,6 +286,34 @@ Item {
         ignoreUnknownSignals: true
         function onActiveSurfaceChanged() { Qt.callLater(root.rebuildOrderedClientFrames) }
         function onSurfacesChanged() { Qt.callLater(root.rebuildOrderedClientFrames) }
+    }
+
+    Connections {
+        target: WorkspaceManager
+        function onCurrentWorkspaceChanged() {
+            Qt.callLater(root.rebuildOrderedClientFrames)
+        }
+    }
+
+    Connections {
+        target: ProcessLauncher
+        function onProcessStarted() {
+            if (root.compositorAdapter && root.compositorAdapter.compositorCursorOverride.length === 0) {
+                root.compositorAdapter.compositorCursorOverride = "busy"
+                busyCursorTimer.restart()
+            }
+        }
+    }
+
+    Timer {
+        id: busyCursorTimer
+        interval: 900
+        repeat: false
+        onTriggered: {
+            if (root.compositorAdapter && root.compositorAdapter.compositorCursorOverride === "busy") {
+                root.compositorAdapter.compositorCursorOverride = ""
+            }
+        }
     }
 
     Timer {
@@ -260,7 +415,7 @@ Item {
                 format: ShaderEffectSource.RGBA8
             }
 
-            // Área útil (workarea) para janelas Wayland clientes XDG
+            // Área útil (workarea) para janelas Wayland clientes XDG (sem clip para deslize livre sob TopBar/Dock)
             Item {
                 id: clientLayer
                 objectName: "waylibClientLayer"
@@ -269,7 +424,7 @@ Item {
                 anchors.bottomMargin: valoDock.height + 24
                 anchors.leftMargin: 8
                 anchors.rightMargin: 8
-                clip: true
+                clip: false
 
                 Repeater {
                     id: surfaceRepeater
@@ -287,8 +442,10 @@ Item {
                         required property bool minimized
                         required property bool maximized
                         required property int zOrder
+                        required property int workspaceIndex
                         required property int index
 
+                        compositorAdapter: root.compositorAdapter
                         surfaceAdapter: root.compositorAdapter.surfaceAdapter
                         outputLayout: root.compositorAdapter.outputAdapter.outputLayout
                         backdropSource: root.backdropForClientFrame(clientFrameDelegate)
@@ -310,8 +467,22 @@ Item {
                         isMaximized: maximized
                         windowZOrder: zOrder
                         windowIndex: index
+                        workspaceIndex: clientFrameDelegate.workspaceIndex
+                        activeWorkspace: WorkspaceManager.currentWorkspace
+                        workspaceTransitioning: WorkspaceManager.isTransitioning
+                        desktopWidth: renderWindow.width
+                        desktopHeight: renderWindow.height
+                        layerOriginX: clientLayer.x
+                        layerOriginY: clientLayer.y
                         workAreaWidth: clientLayer.width
                         workAreaHeight: clientLayer.height
+                        Component.onCompleted: {
+                            WorkspaceManager.setWindowWorkspace(clientFrameDelegate, clientFrameDelegate.workspaceIndex)
+                        }
+                        onWorkspaceIndexChanged: {
+                            WorkspaceManager.setWindowWorkspace(clientFrameDelegate, clientFrameDelegate.workspaceIndex)
+                            Qt.callLater(root.rebuildOrderedClientFrames)
+                        }
                         onWindowZOrderChanged: Qt.callLater(root.rebuildOrderedClientFrames)
                         onVisibleChanged: Qt.callLater(root.rebuildOrderedClientFrames)
                     }
@@ -424,12 +595,12 @@ Item {
             SystaliaFilesWindowV2 {
                 id: filesWindow
                 objectName: "waylibFilesWindowV2"
-                visible: false
+                visible: windowOpen && (root.filesWindowWorkspace === WorkspaceManager.currentWorkspace || WorkspaceManager.isTransitioning)
                 windowOpen: false
-                x: Math.max(8, Math.min(48, renderWindow.width - width - 16))
+                x: 48
                 y: 68
-                width: Math.min(701, Math.max(480, clientLayer.width - 16))
-                height: Math.min(534, Math.max(360, clientLayer.height - 16))
+                width: 701
+                height: 534
                 z: 31
                 blurProfile: materialWindow.materialActive ? materialWindow.blurProfile : 0
                 backdropSource: internalWindowBackdrop.sourceFor(filesWindow)
@@ -444,17 +615,32 @@ Item {
                 cornerRadius: materialWindow.cornerRadius
                 materialActive: materialWindow.materialActive
                 controller: root
+                transform: Translate { x: root.filesWorkspaceOffsetX }
+                onYChanged: {
+                    const maxY = Math.max(0, renderWindow.height - 40)
+                    if (y < -12) y = -12
+                    else if (y > maxY) y = maxY
+                }
+            }
+
+            ShellResizeHandles {
+                objectName: "waylibFilesResizeHandles"
+                parent: filesWindow
+                targetWindow: filesWindow
+                minimumWidth: 520
+                minimumHeight: 400
+                enabled: filesWindow.visible && !root.filesWindowMaximized && filesWindow.snapState === 0
             }
 
             SystaliaMaterialWindow {
                 id: materialWindow
                 objectName: "waylibMaterialWindow"
-                visible: false
+                visible: windowOpen && (root.materialWindowWorkspace === WorkspaceManager.currentWorkspace || WorkspaceManager.isTransitioning)
                 windowOpen: false
-                x: Math.max(8, Math.min(renderWindow.width - width - 32, Math.max(8, renderWindow.width - width - 16)))
+                x: 520
                 y: 68
-                width: Math.min(700, Math.max(480, clientLayer.width - 16))
-                height: Math.min(534, Math.max(360, clientLayer.height - 16))
+                width: 700
+                height: 534
                 z: 32
                 blurProfile: 1
                 backdropSource: internalWindowBackdrop.sourceFor(materialWindow)
@@ -462,6 +648,21 @@ Item {
                                               renderWindow.height * renderWindow.devicePixelRatio)
                 animationTime: animTimer.tick
                 controller: root
+                transform: Translate { x: root.materialWorkspaceOffsetX }
+                onYChanged: {
+                    const maxY = Math.max(0, renderWindow.height - 40)
+                    if (y < -12) y = -12
+                    else if (y > maxY) y = maxY
+                }
+            }
+
+            ShellResizeHandles {
+                objectName: "waylibMaterialResizeHandles"
+                parent: materialWindow
+                targetWindow: materialWindow
+                minimumWidth: 520
+                minimumHeight: 400
+                enabled: materialWindow.visible && !root.materialWindowMaximized && materialWindow.snapState === 0
             }
         }
 
@@ -544,6 +745,13 @@ Item {
                 onPowerRequested: {
                     flowMenu.close()
                     controlCenter.open()
+                }
+                onWorkspaceSelected: (index) => {
+                    controlCenter.close()
+                    flowMenu.close()
+                    const nextSurf = root.compositorAdapter.surfaceAdapter.topVisibleSurfaceForWorkspace(index)
+                    root.compositorAdapter.surfaceAdapter.activateSurface(nextSurf)
+                    Qt.callLater(root.rebuildOrderedClientFrames)
                 }
 
                 // Impede vazamento de cliques para janelas abaixo da TopBar
@@ -707,6 +915,18 @@ Item {
             onActivated: root.compositorAdapter.surfaceAdapter.cycleFocus()
         }
 
+        Shortcut {
+            sequence: "Ctrl+Alt+Left"
+            context: Qt.ApplicationShortcut
+            onActivated: WorkspaceManager.previousWorkspace()
+        }
+
+        Shortcut {
+            sequence: "Ctrl+Alt+Right"
+            context: Qt.ApplicationShortcut
+            onActivated: WorkspaceManager.nextWorkspace()
+        }
+
         // Camada de brilho em software para telas sem controle sysfs por hardware
         Rectangle {
             id: softwareBrightnessDimmer
@@ -727,33 +947,14 @@ Item {
             anchors.fill: parent
             z: 10000
 
-            Canvas {
+            GfxV2.ValoSoftwareCursor {
                 id: softwarePointerArrow
                 objectName: "waylibSoftwarePointer"
                 visible: root.compositorAdapter.cursor && root.compositorAdapter.cursor.visible
-                width: 20
-                height: 24
-                x: root.compositorAdapter.cursor ? root.compositorAdapter.cursor.position.x : 0
-                y: root.compositorAdapter.cursor ? root.compositorAdapter.cursor.position.y : 0
-                onPaint: {
-                    var ctx = getContext("2d")
-                    ctx.reset()
-                    ctx.beginPath()
-                    ctx.moveTo(1, 1)
-                    ctx.lineTo(1, 17)
-                    ctx.lineTo(5.5, 13)
-                    ctx.lineTo(9, 20)
-                    ctx.lineTo(11.5, 18.8)
-                    ctx.lineTo(8, 12)
-                    ctx.lineTo(13.5, 12)
-                    ctx.closePath()
-                    ctx.fillStyle = "#0b1626"
-                    ctx.fill()
-                    ctx.lineWidth = 1.4
-                    ctx.strokeStyle = "#e2f1ff"
-                    ctx.stroke()
-                }
-                Component.onCompleted: requestPaint()
+                cursorState: root.compositorAdapter ? root.compositorAdapter.cursorShapeKey : "default"
+                devicePixelRatio: renderWindow.devicePixelRatio
+                x: (root.compositorAdapter.cursor ? root.compositorAdapter.cursor.position.x : 0) - hotspotX
+                y: (root.compositorAdapter.cursor ? root.compositorAdapter.cursor.position.y : 0) - hotspotY
             }
         }
     }

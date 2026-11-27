@@ -262,19 +262,21 @@ Item {
                             }
 
                             width: isActive ? 28 : 18
-                            height: 14
+                            height: workspaceIndicatorTrack.height
                             anchors.verticalCenter: parent.verticalCenter
 
                             Rectangle {
                                 id: workspacePill
-                                anchors.fill: parent
+                                width: parent.width
+                                height: 14
+                                anchors.verticalCenter: parent.verticalCenter
                                 radius: 7
                                 gradient: workspaceDelegate.isActive
                                     ? activeWorkspaceGrad
-                                    : (pillHover.hovered ? hoverWorkspaceGrad : inactiveWorkspaceGrad)
+                                    : (pillMouseArea.containsMouse ? hoverWorkspaceGrad : inactiveWorkspaceGrad)
                                 border.color: workspaceDelegate.isActive
                                     ? ValoTheme.withAlpha(ValoTheme.primitiveWhite, 0.85)
-                                    : ValoTheme.withAlpha(ValoTheme.borderHighlight, pillHover.hovered ? 0.40 : 0.20)
+                                    : ValoTheme.withAlpha(ValoTheme.borderHighlight, pillMouseArea.containsMouse ? 0.40 : 0.20)
                                 border.width: workspaceDelegate.isActive ? 1.0 : ValoTheme.strokeFine
                                 antialiasing: true
 
@@ -298,14 +300,14 @@ Item {
                                 }
                             }
 
-                            HoverHandler {
-                                id: pillHover
+                            MouseArea {
+                                id: pillMouseArea
+                                objectName: "workspacePillMouseArea_" + workspaceDelegate.index
+                                anchors.fill: parent
+                                acceptedButtons: Qt.LeftButton
+                                hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
-                            }
-
-                            TapHandler {
-                                cursorShape: Qt.PointingHandCursor
-                                onTapped: {
+                                onClicked: {
                                     if (topBar.workspaceManager)
                                         topBar.workspaceManager.switchToWorkspace(workspaceDelegate.index)
                                     topBar.workspaceSelected(workspaceDelegate.index)

@@ -54,6 +54,7 @@ foreach(gfx_qml IN ITEMS
     ValoDockItemV2.qml
     ValoDockV2.qml
     ValoDockV2Scene.qml
+    ValoSoftwareCursor.qml
 )
     set_source_files_properties("src/graphics/v2/qml/${gfx_qml}" PROPERTIES QT_RESOURCE_ALIAS "src/qml/graphics/v2/${gfx_qml}")
 endforeach()
@@ -94,6 +95,7 @@ qt_add_qml_module(sge_core
         src/graphics/v2/qml/ValoDockItemV2.qml
         src/graphics/v2/qml/ValoDockV2.qml
         src/graphics/v2/qml/ValoDockV2Scene.qml
+        src/graphics/v2/qml/ValoSoftwareCursor.qml
     RESOURCES
         ${sge_valo_assets}
     NO_PLUGIN

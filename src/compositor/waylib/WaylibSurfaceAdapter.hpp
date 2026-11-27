@@ -35,13 +35,15 @@ public:
         MinimizedRole,
         MaximizedRole,
         SurfaceIdRole,
-        ZOrderRole
+        ZOrderRole,
+        WorkspaceIndexRole
     };
 
     struct Entry {
         quint64 surfaceId = 0;
         QPointer<WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface> shellSurface;
         int zOrder = 1;
+        int workspaceIndex = 0;
         bool minimized = false;
         bool maximized = false;
         bool activated = false;
@@ -145,6 +147,11 @@ public:
     Q_INVOKABLE void closeActiveSurface();
     Q_INVOKABLE void cycleFocus();
     Q_INVOKABLE int zOrderForSurface(WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *surface) const;
+    Q_INVOKABLE int surfaceWorkspace(WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *surface) const;
+    Q_INVOKABLE void setSurfaceWorkspace(WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *surface, int workspaceIndex);
+    Q_INVOKABLE WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *topVisibleSurfaceForWorkspace(
+        int workspaceIndex,
+        WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *exclude = nullptr) const;
     Q_INVOKABLE bool isMinimized(WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *surface) const;
     Q_INVOKABLE bool isMaximized(WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *surface) const;
     Q_INVOKABLE bool isSurfaceOpaque(WAYLIB_SERVER_NAMESPACE::WSurface *surface) const;

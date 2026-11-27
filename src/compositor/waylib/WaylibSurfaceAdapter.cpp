@@ -1,5 +1,6 @@
 #include "WaylibSurfaceAdapter.hpp"
 #include "WaylibOutputAdapter.hpp"
+#include "WorkspaceManagerService.hpp"
 
 #include <woutput.h>
 #include <wseat.h>
@@ -51,6 +52,8 @@ QVariant WaylibSurfaceListModel::data(const QModelIndex &index, int role) const 
         return static_cast<quint64>(entry.surfaceId);
     case ZOrderRole:
         return entry.zOrder;
+    case WorkspaceIndexRole:
+        return entry.workspaceIndex;
     default:
         return {};
     }
@@ -67,6 +70,7 @@ QHash<int, QByteArray> WaylibSurfaceListModel::roleNames() const {
         {MaximizedRole, "maximized"},
         {SurfaceIdRole, "surfaceId"},
         {ZOrderRole, "zOrder"},
+        {WorkspaceIndexRole, "workspaceIndex"},
     };
 }
 
@@ -482,12 +486,23 @@ void WaylibSurfaceAdapter::cycleFocus() {
     if (entries.isEmpty()) {
         return;
     }
+    const int activeWs = WorkspaceManagerService::instance()
+                             ? WorkspaceManagerService::instance()->currentWorkspace()
+                             : 0;
     if (!m_activeSurface) {
         activateSurface(topVisibleSurface());
         return;
     }
     const int currentRow = m_model->indexOf(m_activeSurface.data());
     const int count = static_cast<int>(entries.size());
+    for (int offset = 1; offset <= count; ++offset) {
+        const int nextRow = (currentRow + offset) % count;
+        const auto &candidate = entries.at(nextRow);
+        if (candidate.shellSurface && !candidate.minimized && candidate.workspaceIndex == activeWs) {
+            activateSurface(candidate.shellSurface.data());
+            return;
+        }
+    }
     for (int offset = 1; offset <= count; ++offset) {
         const int nextRow = (currentRow + offset) % count;
         const auto &candidate = entries.at(nextRow);
@@ -509,6 +524,32 @@ int WaylibSurfaceAdapter::zOrderForSurface(WXdgToplevelSurface *surface) const {
         return entry->zOrder;
     }
     return -1;
+}
+
+int WaylibSurfaceAdapter::surfaceWorkspace(WXdgToplevelSurface *surface) const {
+    const int row = m_model->indexOf(surface);
+    if (const auto *entry = m_model->entryAt(row)) {
+        return entry->workspaceIndex;
+    }
+    return 0;
+}
+
+void WaylibSurfaceAdapter::setSurfaceWorkspace(WXdgToplevelSurface *surface, int workspaceIndex) {
+    const int row = m_model->indexOf(surface);
+    if (row < 0) {
+        return;
+    }
+    const int totalWs = WorkspaceManagerService::instance()
+                            ? WorkspaceManagerService::instance()->totalWorkspaces()
+                            : WorkspaceManagerService::kDefaultTotalWorkspaces;
+    const int clamped = qBound(0, workspaceIndex, qMax(0, totalWs - 1));
+    if (auto *entry = m_model->entryAt(row)) {
+        if (entry->workspaceIndex == clamped) {
+            return;
+        }
+        entry->workspaceIndex = clamped;
+        m_model->notifyRowChanged(row, {WaylibSurfaceListModel::WorkspaceIndexRole});
+    }
 }
 
 bool WaylibSurfaceAdapter::isMinimized(WXdgToplevelSurface *surface) const {
@@ -543,6 +584,11 @@ void WaylibSurfaceAdapter::onToplevelAdded(WXdgToplevelSurface *surface) {
     entry.surfaceId = ++m_nextSurfaceId;
     entry.shellSurface = surface;
     entry.zOrder = ++m_nextZOrder;
+    if (auto *ws = WorkspaceManagerService::instance()) {
+        entry.workspaceIndex = qBound(0, ws->currentWorkspace(), qMax(0, ws->totalWorkspaces() - 1));
+    } else {
+        entry.workspaceIndex = 0;
+    }
     entry.minimized = surface->isMinimized();
     entry.maximized = surface->isMaximized();
     entry.activated = false;
@@ -773,7 +819,32 @@ void WaylibSurfaceAdapter::removeSurfaceInternal(WXdgToplevelSurface *surface, b
     Q_EMIT surfacesChanged();
 }
 
+WXdgToplevelSurface *WaylibSurfaceAdapter::topVisibleSurfaceForWorkspace(
+    int workspaceIndex,
+    WXdgToplevelSurface *exclude) const {
+    WXdgToplevelSurface *best = nullptr;
+    int bestZ = -1;
+    const auto &entries = m_model->entries();
+    for (const auto &entry : entries) {
+        WXdgToplevelSurface *candidate = entry.shellSurface.data();
+        if (!candidate || candidate == exclude || entry.minimized || entry.workspaceIndex != workspaceIndex) {
+            continue;
+        }
+        if (entry.zOrder > bestZ) {
+            bestZ = entry.zOrder;
+            best = candidate;
+        }
+    }
+    return best;
+}
+
 WXdgToplevelSurface *WaylibSurfaceAdapter::topVisibleSurface(WXdgToplevelSurface *exclude) const {
+    const int activeWs = WorkspaceManagerService::instance()
+                             ? WorkspaceManagerService::instance()->currentWorkspace()
+                             : 0;
+    if (WXdgToplevelSurface *inWs = topVisibleSurfaceForWorkspace(activeWs, exclude)) {
+        return inWs;
+    }
     WXdgToplevelSurface *best = nullptr;
     int bestZ = -1;
     const auto &entries = m_model->entries();
