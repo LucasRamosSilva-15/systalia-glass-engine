@@ -109,14 +109,29 @@ void tst_WaylibBackend::headlessAndMultiWindowValoShellLifecycle() {
     auto *renderWindow = rootObj->findChild<WOutputRenderWindow *>();
     QVERIFY(renderWindow != nullptr);
 
-    // 1. Verifica TopBar V2 e Dock V2 reais carregados diretamente na árvore QML
+    // 1. Verifica TopBar V2, Dock V2, separação de camadas e backdrop real sem loop de feedback
+    auto *contentLayer = renderWindow->findChild<QQuickItem *>(QStringLiteral("desktopContentLayer"));
+    auto *backdropSource = renderWindow->findChild<QQuickItem *>(QStringLiteral("waylibDesktopBackdropSource"));
+    auto *chromeLayer = renderWindow->findChild<QQuickItem *>(QStringLiteral("shellChromeLayer"));
     auto *topBar = renderWindow->findChild<QQuickItem *>(QStringLiteral("topBar"));
     auto *dockV2 = renderWindow->findChild<QQuickItem *>(QStringLiteral("valoDockV2"));
     auto *clientLayer = renderWindow->findChild<QQuickItem *>(QStringLiteral("waylibClientLayer"));
+    QVERIFY2(contentLayer != nullptr, "desktopContentLayer não encontrado na shell nested");
+    QVERIFY2(backdropSource != nullptr, "waylibDesktopBackdropSource não encontrado na shell nested");
+    QVERIFY2(chromeLayer != nullptr, "shellChromeLayer não encontrado na shell nested");
     QVERIFY2(topBar != nullptr, "SystaliaTopBarV2 não encontrado na shell nested");
     QVERIFY2(dockV2 != nullptr, "SystaliaDockV2 não encontrado na shell nested");
     QVERIFY(clientLayer != nullptr);
     QCOMPARE(dockV2->property("dockItemCount").toInt(), 5);
+    QCOMPARE(backdropSource->property("sourceItem").value<QQuickItem *>(), contentLayer);
+    QCOMPARE(topBar->property("backdropSource").value<QQuickItem *>(), backdropSource);
+    QCOMPARE(dockV2->property("backdropSource").value<QQuickItem *>(), backdropSource);
+    QVERIFY(topBar->property("blurProfile").toInt() >= 1);
+    QVERIFY(dockV2->property("blurProfile").toInt() >= 1);
+    QVERIFY2(contentLayer->findChild<QQuickItem *>(QStringLiteral("topBar")) == nullptr,
+             "Loop de feedback detectado: topBar dentro de desktopContentLayer");
+    QVERIFY2(contentLayer->findChild<QQuickItem *>(QStringLiteral("valoDockV2")) == nullptr,
+             "Loop de feedback detectado: valoDockV2 dentro de desktopContentLayer");
 
     const QString customSocket = QStringLiteral("systalia-waylib-test-%1")
                                      .arg(QCoreApplication::applicationPid());

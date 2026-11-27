@@ -51,7 +51,7 @@ Rectangle {
         frame.surfaceAdapter.resizeSurface(frame.windowShellSurface, targetW, targetH)
     }
 
-    // Barra de título SSD VALO
+    // Barra de título SSD VALO (sem autorreferência ao desktopBackdropSource)
     Rectangle {
         id: titleBar
         objectName: "ssdTitleBar"
@@ -59,9 +59,32 @@ Rectangle {
         anchors.left: parent.left
         anchors.right: parent.right
         height: frame.titleBarHeight
-        color: frame.isActive
-               ? ValoTheme.withAlpha(ValoTheme.primitiveOcean700, 0.65)
-               : ValoTheme.withAlpha(ValoTheme.primitiveOcean900, 0.55)
+        gradient: Gradient {
+            orientation: Gradient.Vertical
+            GradientStop {
+                position: 0.0
+                color: frame.isActive
+                       ? ValoTheme.withAlpha(ValoTheme.primitiveOcean600, 0.72)
+                       : ValoTheme.withAlpha(ValoTheme.primitiveOcean800, 0.58)
+            }
+            GradientStop {
+                position: 1.0
+                color: frame.isActive
+                       ? ValoTheme.withAlpha(ValoTheme.primitiveOcean800, 0.78)
+                       : ValoTheme.withAlpha(ValoTheme.primitiveOcean900, 0.65)
+            }
+        }
+
+        // Borda especular superior de 1px consistente com estética VALO V2
+        Rectangle {
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+            height: 1
+            color: frame.isActive
+                   ? ValoTheme.withAlpha(ValoTheme.borderHighlight, 0.55)
+                   : ValoTheme.withAlpha(ValoTheme.borderHighlight, 0.18)
+        }
 
         // Absorve cliques e permite arrastar a janela sem vazar para superfícies abaixo
         MouseArea {
