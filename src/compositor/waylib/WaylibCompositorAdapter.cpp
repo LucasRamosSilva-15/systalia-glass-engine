@@ -1,6 +1,8 @@
 #include "WaylibCompositorAdapter.hpp"
 
+#include "AppRegistryService.hpp"
 #include "LiquidTilingService.hpp"
+#include "NotificationServer.hpp"
 #include "ProcessLauncherService.hpp"
 #include "SystemControlService.hpp"
 #include "SystemTelemetryService.hpp"
@@ -8,6 +10,7 @@
 
 #include <wbackend.h>
 #include <wcursor.h>
+#include <wcursorshapemanagerv1.h>
 #include <winputdevice.h>
 #include <woutput.h>
 #include <woutputrenderwindow.h>
@@ -20,6 +23,9 @@
 #include <wxdgshell.h>
 
 #include <wlr_all.h>
+extern "C" {
+#include <wlr/types/wlr_xdg_activation_v1.h>
+}
 
 #include <QDebug>
 #include <QDir>
@@ -65,6 +71,16 @@ void WaylibCompositorAdapter::registerQmlTypes() {
         "Systalia.System", 1, 0, "LiquidTiling",
         [](QQmlEngine *, QJSEngine *) -> QObject * {
             return new LiquidTilingService();
+        });
+    qmlRegisterSingletonType<AppRegistryService>(
+        "Systalia.System", 1, 0, "AppRegistry",
+        [](QQmlEngine *, QJSEngine *) -> QObject * {
+            return new AppRegistryService();
+        });
+    qmlRegisterSingletonType<NotificationServer>(
+        "Systalia.System", 1, 0, "Notifications",
+        [](QQmlEngine *, QJSEngine *) -> QObject * {
+            return new NotificationServer();
         });
 }
 
@@ -116,6 +132,9 @@ bool WaylibCompositorAdapter::initialize(WOutputRenderWindow *window,
     m_xdgShell = m_server->attach<WXdgShell>(5);
     m_xdgDecorationManager = m_server->attach<WXdgDecorationManager>();
     m_xdgDecorationManager->setPreferredMode(WXdgDecorationManager::Server);
+    if (!m_server->findInterface<WCursorShapeManagerV1>()) {
+        m_server->attach<WCursorShapeManagerV1>();
+    }
     m_surfaceAdapter->attachXdgShell(m_xdgShell);
 
     m_server->start();
@@ -177,6 +196,11 @@ bool WaylibCompositorAdapter::initialize(WOutputRenderWindow *window,
     m_compositor = wlr_compositor_create(m_server->handle(), 6, m_renderer);
     wlr_subcompositor_create(m_server->handle());
     wlr_viewporter_create(m_server->handle());
+    wlr_data_device_manager_create(m_server->handle());
+    wlr_primary_selection_v1_device_manager_create(m_server->handle());
+    wlr_xdg_activation_v1_create(m_server->handle());
+    wlr_fractional_scale_manager_v1_create(m_server->handle(), 1);
+    wlr_text_input_manager_v3_create(m_server->handle());
 
     window->init(m_renderer, m_allocator);
     if (!wlr_backend_start(m_backend->handle())) {

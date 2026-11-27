@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import Waylib.Server
 import Systalia.Engine
 import Systalia.System 1.0
+import "qrc:/qt/qml/Systalia/Engine/src/qml/graphics/v2" as GfxV2
 
 Item {
     id: root
@@ -11,13 +12,43 @@ Item {
     property rect filesWindowRestoreGeometry: Qt.rect(48, 72, 701, 534)
     property bool materialWindowMaximized: false
     property rect materialWindowRestoreGeometry: Qt.rect(520, 72, 700, 534)
-    property int internalTopZ: 32
+    property var orderedClientFrames: []
+    readonly property int maxClientStages: 6
 
     Binding {
         target: ProcessLauncher
         property: "waylandDisplay"
         value: root.compositorAdapter ? root.compositorAdapter.socketName : ""
         when: root.compositorAdapter && root.compositorAdapter.socketName.length > 0
+    }
+
+    Binding {
+        target: ProcessLauncher
+        property: "isolatedNestedSession"
+        value: true
+        when: root.compositorAdapter !== null
+    }
+
+    function rebuildOrderedClientFrames() {
+        let list = []
+        for (let i = 0; i < surfaceRepeater.count; ++i) {
+            const item = surfaceRepeater.itemAt(i)
+            if (item && item.visible) {
+                list.push(item)
+            }
+        }
+        list.sort((a, b) => a.windowZOrder - b.windowZOrder)
+        orderedClientFrames = list
+    }
+
+    function backdropForClientFrame(frameItem) {
+        const idx = orderedClientFrames.indexOf(frameItem)
+        if (idx <= 0) {
+            return wallpaperOnlyBackdropSource
+        }
+        const stageIdx = Math.min(idx - 1, maxClientStages - 1)
+        const stageItem = clientStageRepeater.itemAt(stageIdx)
+        return (stageItem && stageItem.stageActive) ? stageItem.stageGrab : wallpaperOnlyBackdropSource
     }
 
     function launchDesktopApp(candidates, label) {
@@ -42,6 +73,7 @@ Item {
             filesWindow.z = 31
         }
         controlCenter.close()
+        flowMenu.close()
     }
 
     function raiseFileWindow() {
@@ -120,6 +152,13 @@ Item {
         materialWindow.height = Math.max(360, clientLayer.height - 16)
         materialWindowMaximized = true
         raiseMaterialWindow()
+    }
+
+    Connections {
+        target: root.compositorAdapter ? root.compositorAdapter.surfaceAdapter : null
+        ignoreUnknownSignals: true
+        function onActiveSurfaceChanged() { Qt.callLater(root.rebuildOrderedClientFrames) }
+        function onSurfacesChanged() { Qt.callLater(root.rebuildOrderedClientFrames) }
     }
 
     Timer {
@@ -203,7 +242,7 @@ Item {
                 }
             }
 
-            // Fonte de backdrop exclusiva do wallpaper para molduras externas (sem loop com clientLayer)
+            // Fonte de backdrop exclusiva do wallpaper (base da cadeia acíclica de clientes)
             ShaderEffectSource {
                 id: wallpaperOnlyBackdropSource
                 objectName: "waylibWallpaperBackdropSource"
@@ -235,8 +274,11 @@ Item {
                 Repeater {
                     id: surfaceRepeater
                     model: root.compositorAdapter.surfaceAdapter.windowModel
+                    onItemAdded: Qt.callLater(root.rebuildOrderedClientFrames)
+                    onItemRemoved: Qt.callLater(root.rebuildOrderedClientFrames)
 
                     delegate: WaylibWindowFrame {
+                        id: clientFrameDelegate
                         required property var surface
                         required property var shellSurface
                         required property string title
@@ -249,7 +291,7 @@ Item {
 
                         surfaceAdapter: root.compositorAdapter.surfaceAdapter
                         outputLayout: root.compositorAdapter.outputAdapter.outputLayout
-                        backdropSource: wallpaperOnlyBackdropSource
+                        backdropSource: root.backdropForClientFrame(clientFrameDelegate)
                         blurProfile: materialWindow.materialActive ? materialWindow.blurProfile : 0
                         userHighContrast: materialWindow.opticalSurface.highContrast
                         userPrefersReducedMotion: materialWindow.opticalSurface.prefersReducedMotion
@@ -270,6 +312,73 @@ Item {
                         windowIndex: index
                         workAreaWidth: clientLayer.width
                         workAreaHeight: clientLayer.height
+                        onWindowZOrderChanged: Qt.callLater(root.rebuildOrderedClientFrames)
+                        onVisibleChanged: Qt.callLater(root.rebuildOrderedClientFrames)
+                    }
+                }
+            }
+        }
+
+        // Cadeia acíclica offscreen para transparência entre janelas clientes Wayland (fora de desktopContentLayer)
+        Item {
+            id: clientBackdropPool
+            objectName: "waylibClientBackdropPool"
+            anchors.fill: desktopContentLayer
+            visible: false
+
+            Repeater {
+                id: clientStageRepeater
+                model: root.maxClientStages
+
+                Item {
+                    id: stageItem
+                    required property int index
+                    readonly property Item prevSource: index === 0
+                        ? wallpaperOnlyBackdropSource
+                        : clientStageRepeater.itemAt(index - 1).stageGrab
+                    readonly property Item lowerFrame: (index < root.orderedClientFrames.length)
+                        ? root.orderedClientFrames[index] : null
+                    readonly property bool stageActive: lowerFrame !== null && root.orderedClientFrames.length > (index + 1)
+                    readonly property point framePos: lowerFrame
+                        ? lowerFrame.mapToItem(desktopContentLayer, 0, 0) : Qt.point(0, 0)
+                    readonly property alias stageGrab: stageGrabItem
+                    anchors.fill: parent
+
+                    Item {
+                        id: stageComposition
+                        anchors.fill: parent
+
+                        ShaderEffect {
+                            anchors.fill: parent
+                            property var source: stageItem.prevSource
+                            fragmentShader: "qrc:/shaders/v2/valo_backdrop_copy.frag.qsb"
+                        }
+
+                        ShaderEffectSource {
+                            anchors.fill: parent
+                            sourceRect: Qt.rect(-stageItem.framePos.x, -stageItem.framePos.y,
+                                                stageItem.width, stageItem.height)
+                            sourceItem: stageItem.stageActive ? stageItem.lowerFrame : null
+                            opacity: stageItem.lowerFrame ? stageItem.lowerFrame.opacity : 0.0
+                            textureSize: Qt.size(
+                                Math.max(1, Math.round(stageItem.width * renderWindow.devicePixelRatio)),
+                                Math.max(1, Math.round(stageItem.height * renderWindow.devicePixelRatio)))
+                            live: stageItem.stageActive
+                            recursive: false
+                            hideSource: false
+                        }
+                    }
+
+                    ShaderEffectSource {
+                        id: stageGrabItem
+                        anchors.fill: parent
+                        sourceItem: stageItem.stageActive ? stageComposition : null
+                        textureSize: Qt.size(
+                            Math.max(1, Math.round(stageItem.width * renderWindow.devicePixelRatio)),
+                            Math.max(1, Math.round(stageItem.height * renderWindow.devicePixelRatio)))
+                        live: stageItem.stageActive
+                        recursive: false
+                        hideSource: false
                     }
                 }
             }
@@ -293,6 +402,18 @@ Item {
             format: ShaderEffectSource.RGBA8
         }
 
+        // Transparência real entre janelas internas (Files + Systalia Control Center) acima de desktopBackdropSource
+        GfxV2.ValoInternalWindowBackdropV2 {
+            id: internalWindowBackdrop
+            objectName: "waylibInternalWindowBackdropV2"
+            anchors.fill: parent
+            firstWindow: filesWindow
+            secondWindow: materialWindow
+            wallpaperSource: desktopBackdropSource
+            enabledForWorkspace: true
+            externalClientsPresent: false
+        }
+
         // 2. Janelas internas da shell (Files + Systalia Control Center) — sempre abaixo de TopBar/Dock
         Item {
             id: internalWindowsLayer
@@ -311,7 +432,7 @@ Item {
                 height: Math.min(534, Math.max(360, clientLayer.height - 16))
                 z: 31
                 blurProfile: materialWindow.materialActive ? materialWindow.blurProfile : 0
-                backdropSource: desktopBackdropSource
+                backdropSource: internalWindowBackdrop.sourceFor(filesWindow)
                 screenResolution: Qt.vector2d(renderWindow.width * renderWindow.devicePixelRatio,
                                               renderWindow.height * renderWindow.devicePixelRatio)
                 animationTime: animTimer.tick
@@ -336,12 +457,54 @@ Item {
                 height: Math.min(534, Math.max(360, clientLayer.height - 16))
                 z: 32
                 blurProfile: 1
-                backdropSource: desktopBackdropSource
+                backdropSource: internalWindowBackdrop.sourceFor(materialWindow)
                 screenResolution: Qt.vector2d(renderWindow.width * renderWindow.devicePixelRatio,
                                               renderWindow.height * renderWindow.devicePixelRatio)
                 animationTime: animTimer.tick
                 controller: root
             }
+        }
+
+        // Composição de backdrop para Overlays (wallpaper + clientes + janelas internas, fora de shellChromeLayer)
+        Item {
+            id: overlayBackdropComposition
+            anchors.fill: parent
+            visible: false
+            readonly property bool hasInternalWindows: filesWindow.visible || materialWindow.visible
+
+            ShaderEffect {
+                anchors.fill: parent
+                property var source: desktopBackdropSource
+                fragmentShader: "qrc:/shaders/v2/valo_backdrop_copy.frag.qsb"
+            }
+
+            ShaderEffectSource {
+                anchors.fill: parent
+                sourceItem: overlayBackdropComposition.hasInternalWindows ? internalWindowsLayer : null
+                textureSize: Qt.size(
+                    Math.max(1, Math.round(overlayBackdropComposition.width * renderWindow.devicePixelRatio)),
+                    Math.max(1, Math.round(overlayBackdropComposition.height * renderWindow.devicePixelRatio)))
+                live: overlayBackdropComposition.hasInternalWindows
+                recursive: false
+                hideSource: false
+            }
+        }
+
+        ShaderEffectSource {
+            id: overlayCompositeBackdropSource
+            objectName: "waylibOverlayCompositeBackdropSource"
+            anchors.fill: parent
+            sourceItem: overlayBackdropComposition.hasInternalWindows ? overlayBackdropComposition : desktopContentLayer
+            textureSize: Qt.size(
+                Math.max(1, Math.round(renderWindow.width * renderWindow.devicePixelRatio)),
+                Math.max(1, Math.round(renderWindow.height * renderWindow.devicePixelRatio)))
+            live: true
+            hideSource: false
+            visible: true
+            opacity: 0.0
+            z: -100
+            recursive: false
+            format: ShaderEffectSource.RGBA8
         }
 
         // 3. Camada de chrome/vidro VALO V2 (sempre acima das janelas internas e clientes)
@@ -361,7 +524,7 @@ Item {
                 height: 45
                 z: 100
                 blurProfile: materialWindow.materialActive ? materialWindow.blurProfile : 0
-                backdropSource: desktopBackdropSource
+                backdropSource: overlayCompositeBackdropSource
                 screenResolution: Qt.vector2d(renderWindow.width * renderWindow.devicePixelRatio,
                                               renderWindow.height * renderWindow.devicePixelRatio)
                 animationTime: animTimer.tick
@@ -369,10 +532,19 @@ Item {
                 workspaceManager: WorkspaceManager
                 activeWindowTitle: root.compositorAdapter.surfaceAdapter.activeTitle
                 activeWindowAppId: root.compositorAdapter.surfaceAdapter.activeAppId
-                onLauncherRequested: root.compositorAdapter.surfaceAdapter.cycleFocus()
-                onControlCenterRequested: controlCenter.toggle()
+                onLauncherRequested: {
+                    controlCenter.close()
+                    flowMenu.toggle()
+                }
+                onControlCenterRequested: {
+                    flowMenu.close()
+                    controlCenter.toggle()
+                }
                 onTerminalRequested: root.launchDesktopApp(["alacritty", "foot", "konsole", "xterm"], "terminal")
-                onPowerRequested: controlCenter.open()
+                onPowerRequested: {
+                    flowMenu.close()
+                    controlCenter.open()
+                }
 
                 // Impede vazamento de cliques para janelas abaixo da TopBar
                 MouseArea {
@@ -392,7 +564,7 @@ Item {
                 z: 95
                 performanceProfile: !materialWindow.materialActive || materialWindow.blurProfile === 0
                                     ? "performance" : materialWindow.blurProfile === 1 ? "balanced" : "quality"
-                backdropSource: desktopBackdropSource
+                backdropSource: overlayCompositeBackdropSource
                 screenResolution: Qt.vector2d(renderWindow.width * renderWindow.devicePixelRatio,
                                               renderWindow.height * renderWindow.devicePixelRatio)
                 animationTime: animTimer.tick
@@ -434,10 +606,41 @@ Item {
                 objectName: "waylibControlCenterV2"
                 z: 115
                 blurProfile: materialWindow.materialActive ? materialWindow.blurProfile : 0
-                backdropSource: desktopBackdropSource
+                backdropSource: overlayCompositeBackdropSource
                 screenResolution: Qt.vector2d(renderWindow.width * renderWindow.devicePixelRatio,
                                               renderWindow.height * renderWindow.devicePixelRatio)
                 animationTime: animTimer.tick
+            }
+
+            SystaliaNotificationHost {
+                id: notificationHost
+                objectName: "waylibNotificationHost"
+                z: 118
+                blurProfile: materialWindow.materialActive ? materialWindow.blurProfile : 0
+                backdropSource: overlayCompositeBackdropSource
+                screenResolution: Qt.vector2d(renderWindow.width * renderWindow.devicePixelRatio,
+                                              renderWindow.height * renderWindow.devicePixelRatio)
+                animationTime: animTimer.tick
+            }
+
+            SystaliaFlowMenu {
+                id: flowMenu
+                objectName: "waylibFlowMenu"
+                z: 120
+                blurProfile: materialWindow.materialActive ? materialWindow.blurProfile : 0
+                backdropSource: overlayCompositeBackdropSource
+                screenResolution: Qt.vector2d(renderWindow.width * renderWindow.devicePixelRatio,
+                                              renderWindow.height * renderWindow.devicePixelRatio)
+                animationTime: animTimer.tick
+            }
+        }
+
+        Shortcut {
+            sequence: "Meta+Space"
+            context: Qt.ApplicationShortcut
+            onActivated: {
+                controlCenter.close()
+                flowMenu.toggle()
             }
         }
 
@@ -504,7 +707,20 @@ Item {
             onActivated: root.compositorAdapter.surfaceAdapter.cycleFocus()
         }
 
-        // 5. Camada de cursor acima do wallpaper, janelas, chrome VALO e popups
+        // Camada de brilho em software para telas sem controle sysfs por hardware
+        Rectangle {
+            id: softwareBrightnessDimmer
+            objectName: "waylibSoftwareBrightnessDimmer"
+            anchors.fill: parent
+            z: 9990
+            color: "#000000"
+            opacity: SystemControl.softwareBrightness
+                     ? Math.max(0.0, Math.min(0.85, (100 - SystemControl.brightness) * 0.0085)) : 0
+            visible: opacity > 0.01
+            enabled: false
+        }
+
+        // 5. Camada de cursor acima do wallpaper, janelas, chrome VALO, popups e dimmer
         Item {
             id: cursorOverlayLayer
             objectName: "waylibCursorOverlayLayer"

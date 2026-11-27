@@ -1,6 +1,7 @@
 #include <QtTest>
 
 #include "compositor/waylib/WaylibCompositorAdapter.hpp"
+#include "services/applications/AppRegistryService.hpp"
 #include "services/applications/ProcessLauncherService.hpp"
 #include "services/system/SystemTelemetryService.hpp"
 
@@ -121,6 +122,7 @@ void tst_WaylibBackend::headlessAndMultiWindowValoShellLifecycle() {
 
     QQmlApplicationEngine engine;
     engine.addImportPath(QStringLiteral(SGE_WAYLIB_QML_IMPORT_PATH));
+    engine.addImageProvider(QStringLiteral("desktopIcons"), new DesktopIconProvider());
 
     WaylibCompositorAdapter adapter;
     QQmlComponent component(&engine, QUrl(QStringLiteral("qrc:/systalia/waylib/WaylibNestedShell.qml")));
@@ -136,20 +138,22 @@ void tst_WaylibBackend::headlessAndMultiWindowValoShellLifecycle() {
     // 1. Verifica TopBar V2, Dock V2, separação de camadas e backdrop real sem loop de feedback
     auto *contentLayer = renderWindow->findChild<QQuickItem *>(QStringLiteral("desktopContentLayer"));
     auto *backdropSource = renderWindow->findChild<QQuickItem *>(QStringLiteral("waylibDesktopBackdropSource"));
+    auto *overlayBackdropSource = renderWindow->findChild<QQuickItem *>(QStringLiteral("waylibOverlayCompositeBackdropSource"));
     auto *chromeLayer = renderWindow->findChild<QQuickItem *>(QStringLiteral("shellChromeLayer"));
     auto *topBar = renderWindow->findChild<QQuickItem *>(QStringLiteral("topBar"));
     auto *dockV2 = renderWindow->findChild<QQuickItem *>(QStringLiteral("valoDockV2"));
     auto *clientLayer = renderWindow->findChild<QQuickItem *>(QStringLiteral("waylibClientLayer"));
     QVERIFY2(contentLayer != nullptr, "desktopContentLayer não encontrado na shell nested");
     QVERIFY2(backdropSource != nullptr, "waylibDesktopBackdropSource não encontrado na shell nested");
+    QVERIFY2(overlayBackdropSource != nullptr, "waylibOverlayCompositeBackdropSource não encontrado na shell nested");
     QVERIFY2(chromeLayer != nullptr, "shellChromeLayer não encontrado na shell nested");
     QVERIFY2(topBar != nullptr, "SystaliaTopBarV2 não encontrado na shell nested");
     QVERIFY2(dockV2 != nullptr, "SystaliaDockV2 não encontrado na shell nested");
     QVERIFY(clientLayer != nullptr);
     QCOMPARE(dockV2->property("dockItemCount").toInt(), 5);
     QCOMPARE(backdropSource->property("sourceItem").value<QQuickItem *>(), contentLayer);
-    QCOMPARE(topBar->property("backdropSource").value<QQuickItem *>(), backdropSource);
-    QCOMPARE(dockV2->property("backdropSource").value<QQuickItem *>(), backdropSource);
+    QCOMPARE(topBar->property("backdropSource").value<QQuickItem *>(), overlayBackdropSource);
+    QCOMPARE(dockV2->property("backdropSource").value<QQuickItem *>(), overlayBackdropSource);
     QVERIFY(topBar->property("blurProfile").toInt() >= 1);
     QVERIFY(dockV2->property("blurProfile").toInt() >= 1);
     QVERIFY2(contentLayer->findChild<QQuickItem *>(QStringLiteral("topBar")) == nullptr,
@@ -274,24 +278,68 @@ void tst_WaylibBackend::headlessAndMultiWindowValoShellLifecycle() {
         QVERIFY(QMetaObject::invokeMethod(topBar, "controlCenterRequested"));
         QVERIFY(controlCenter->property("opened").toBool());
         QVERIFY(controlCenter->property("visible").toBool());
-        QCOMPARE(controlCenter->property("backdropSource").value<QObject *>(), backdropSource);
+        QCOMPARE(controlCenter->property("backdropSource").value<QObject *>(), overlayBackdropSource);
         QVERIFY(QMetaObject::invokeMethod(topBar, "controlCenterRequested"));
         QVERIFY(!controlCenter->property("opened").toBool());
-        QVERIFY(QMetaObject::invokeMethod(dockV2, "settingsRequested"));
-        QVERIFY(!materialWindow->property("visible").toBool());
 
-        // FilesWindow V2 abre abaixo da Dock (z-order corrigido) e dentro da workarea
+        // FilesWindow V2 + MaterialWindow sobrepostas -> ValoInternalWindowBackdropV2 ativo!
+        auto *internalBackdrop = renderWindow->findChild<QQuickItem *>(QStringLiteral("waylibInternalWindowBackdropV2"));
+        QVERIFY(internalBackdrop != nullptr);
         QVERIFY(!filesWindow->property("visible").toBool());
         QVERIFY(QMetaObject::invokeMethod(dockV2, "filesRequested"));
         QVERIFY(filesWindow->property("visible").toBool());
         QVERIFY(dockV2->property("filesVisible").toBool());
         QVERIFY(filesWindow->z() < dockV2->z());
-        QCOMPARE(filesWindow->property("backdropSource").value<QObject *>(), backdropSource);
-        QVERIFY(filesWindow->x() >= 0.0 && filesWindow->y() >= 60.0);
-        QVERIFY(filesWindow->x() + filesWindow->width() <= 1280.0);
-        QVERIFY(filesWindow->y() + filesWindow->height() <= 760.0);
+        filesWindow->setX(120.0);
+        materialWindow->setX(220.0);
+        QTRY_VERIFY(internalBackdrop->property("compositeAvailable").toBool());
+        QVERIFY(filesWindow->z() > materialWindow->z());
+        QVERIFY(filesWindow->property("backdropSource").value<QObject *>() != backdropSource);
+        QCOMPARE(materialWindow->property("backdropSource").value<QObject *>(), backdropSource);
+
+        QVERIFY(QMetaObject::invokeMethod(dockV2, "settingsRequested"));
+        QVERIFY(!materialWindow->property("visible").toBool());
         QVERIFY(QMetaObject::invokeMethod(dockV2, "filesRequested"));
         QVERIFY(!filesWindow->property("visible").toBool());
+
+        // Menu esquerdo da TopBar (SystaliaFlowMenu), AppRegistry, desktopIcons, NotificationHost e BrightnessDimmer
+        auto *flowMenu = renderWindow->findChild<QQuickItem *>(QStringLiteral("waylibFlowMenu"));
+        auto *notificationHost = renderWindow->findChild<QQuickItem *>(QStringLiteral("waylibNotificationHost"));
+        auto *brightnessDimmer = renderWindow->findChild<QQuickItem *>(QStringLiteral("waylibSoftwareBrightnessDimmer"));
+        QVERIFY(flowMenu != nullptr);
+        QVERIFY(notificationHost != nullptr);
+        QVERIFY(brightnessDimmer != nullptr);
+        QVERIFY(engine.imageProvider(QStringLiteral("desktopIcons")) != nullptr);
+        auto *appRegistry = engine.singletonInstance<AppRegistryService *>(
+            QStringLiteral("Systalia.System"), QStringLiteral("AppRegistry"));
+        QVERIFY(appRegistry != nullptr);
+        QVERIFY(!flowMenu->property("opened").toBool());
+        QVERIFY(QMetaObject::invokeMethod(topBar, "launcherRequested"));
+        QVERIFY(flowMenu->property("opened").toBool());
+        QVERIFY(flowMenu->property("visible").toBool());
+        QCOMPARE(flowMenu->property("backdropSource").value<QObject *>(), overlayBackdropSource);
+        QVERIFY(QMetaObject::invokeMethod(flowMenu, "close"));
+        QVERIFY(!flowMenu->property("opened").toBool());
+
+        // Protocolos Wayland obrigatórios publicados no registro do socket ativo
+        {
+            QProcess wlInfo;
+            QProcessEnvironment infoEnv = QProcessEnvironment::systemEnvironment();
+            infoEnv.insert(QStringLiteral("WAYLAND_DISPLAY"), adapter.socketName());
+            wlInfo.setProcessEnvironment(infoEnv);
+            wlInfo.start(QStringLiteral("wayland-info"));
+            QVERIFY2(wlInfo.waitForStarted(2000), qPrintable(wlInfo.errorString()));
+            QVERIFY(waitUntil([&]() { return wlInfo.state() == QProcess::NotRunning; }, 4000));
+            QCOMPARE(wlInfo.exitStatus(), QProcess::NormalExit);
+            QCOMPARE(wlInfo.exitCode(), 0);
+            const QByteArray infoOut = wlInfo.readAllStandardOutput();
+            QVERIFY(infoOut.contains("wl_data_device_manager"));
+            QVERIFY(infoOut.contains("zwp_primary_selection_device_manager_v1"));
+            QVERIFY(infoOut.contains("xdg_activation_v1"));
+            QVERIFY(infoOut.contains("wp_fractional_scale_manager_v1"));
+            QVERIFY(infoOut.contains("wp_cursor_shape_manager_v1"));
+            QVERIFY(infoOut.contains("zwp_text_input_manager_v3"));
+        }
 
         // Telemetria FPS > 0 após ciclos reais de renderEnd no WOutputRenderWindow
         auto *telemetry = engine.singletonInstance<SystemTelemetryService *>(
@@ -307,6 +355,18 @@ void tst_WaylibBackend::headlessAndMultiWindowValoShellLifecycle() {
             QStringLiteral("Systalia.System"), QStringLiteral("ProcessLauncher"));
         QVERIFY(launcher != nullptr);
         QTRY_COMPARE(launcher->waylandDisplay(), adapter.socketName());
+        QTRY_VERIFY(launcher->isolatedNestedSession());
+        const QProcessEnvironment nestedEnv = ProcessLauncherService::waylandProcessEnvironment(
+            adapter.socketName(), true);
+        QVERIFY(!nestedEnv.contains(QStringLiteral("DISPLAY")));
+        QCOMPARE(nestedEnv.value(QStringLiteral("ELECTRON_OZONE_PLATFORM_HINT")), QStringLiteral("wayland"));
+        const QStringList codeArgs = ProcessLauncherService::effectiveArgumentsForLaunch(
+            QStringLiteral("code"), {}, adapter.socketName(), true);
+        QVERIFY(std::any_of(codeArgs.cbegin(), codeArgs.cend(), [](const QString &arg) {
+            return arg.startsWith(QStringLiteral("--user-data-dir="));
+        }));
+        QVERIFY(codeArgs.contains(QStringLiteral("--new-window")));
+        QVERIFY(codeArgs.contains(QStringLiteral("--ozone-platform=wayland")));
         const int beforeAdded = surfaceAddedSpy.count();
         const int beforeRemoved = surfaceRemovedSpy.count();
         QVERIFY(launcher->launch(clientBin));
@@ -414,6 +474,11 @@ void tst_WaylibBackend::headlessAndMultiWindowValoShellLifecycle() {
     if (adapter.seat()) {
         QCOMPARE(adapter.seat()->keyboardFocusSurface(), surfB->surface());
     }
+
+    // Transparência inter-janelas para clientes Wayland: frame frontal B recebe estágio composto != wallpaperOnly
+    auto *frameBInit = findToplevelItemInLayer(clientLayer, surfB)->parentItem()->parentItem();
+    QVERIFY(frameBInit != nullptr);
+    QTRY_VERIFY(frameBInit->property("backdropSource").value<QObject *>() != backdropSource);
 
     // Alterna foco para A e verifica elevação, seat focus e TopBar
     QSignalSpy activeSpy(surfaceAdapter, &WaylibSurfaceAdapter::activeSurfaceChanged);

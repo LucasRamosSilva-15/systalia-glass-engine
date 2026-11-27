@@ -2,6 +2,7 @@
 
 #include <QByteArray>
 #include <QDebug>
+#include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QIODevice>
@@ -50,6 +51,18 @@ void ProcessLauncherService::setWaylandDisplay(const QString &display) {
     emit waylandDisplayChanged();
 }
 
+bool ProcessLauncherService::isolatedNestedSession() const {
+    return m_isolatedNestedSession;
+}
+
+void ProcessLauncherService::setIsolatedNestedSession(bool isolated) {
+    if (m_isolatedNestedSession == isolated) {
+        return;
+    }
+    m_isolatedNestedSession = isolated;
+    emit isolatedNestedSessionChanged();
+}
+
 bool ProcessLauncherService::launch(const QString &command, const QStringList &arguments) {
     const QString trimmedCommand = command.trimmed();
     const QString appId = applicationIdForCommand(trimmedCommand);
@@ -57,10 +70,21 @@ bool ProcessLauncherService::launch(const QString &command, const QStringList &a
         return false;
     }
 
+    const QStringList launchArgs = effectiveArgumentsForLaunch(
+        trimmedCommand, arguments, m_waylandDisplay, m_isolatedNestedSession);
+    if (m_isolatedNestedSession && (appId == QStringLiteral("code") || appId == QStringLiteral("codium"))) {
+        for (const QString &arg : launchArgs) {
+            if (arg.startsWith(QStringLiteral("--user-data-dir="))) {
+                QDir().mkpath(arg.mid(16));
+                break;
+            }
+        }
+    }
+
     QProcess process;
     process.setProgram(trimmedCommand);
-    process.setArguments(arguments);
-    process.setProcessEnvironment(waylandProcessEnvironment(m_waylandDisplay));
+    process.setArguments(launchArgs);
+    process.setProcessEnvironment(waylandProcessEnvironment(m_waylandDisplay, m_isolatedNestedSession));
 
     qint64 processId = 0;
     if (!process.startDetached(&processId) || processId <= 0) {
@@ -117,7 +141,8 @@ bool ProcessLauncherService::isAppRunning(const QString &appId) const {
     return false;
 }
 
-QProcessEnvironment ProcessLauncherService::waylandProcessEnvironment(const QString &waylandDisplay) {
+QProcessEnvironment ProcessLauncherService::waylandProcessEnvironment(const QString &waylandDisplay,
+                                                                      bool isolatedNestedSession) {
     QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
     environment.remove(QStringLiteral("QSG_RHI_BACKEND"));
     const QString resolvedDisplay = waylandDisplay.trimmed().isEmpty()
@@ -126,7 +151,49 @@ QProcessEnvironment ProcessLauncherService::waylandProcessEnvironment(const QStr
     environment.insert(QStringLiteral("WAYLAND_DISPLAY"), resolvedDisplay);
     environment.insert(QStringLiteral("QT_QPA_PLATFORM"), QStringLiteral("wayland"));
     environment.insert(QStringLiteral("GDK_BACKEND"), QStringLiteral("wayland"));
+    environment.insert(QStringLiteral("ELECTRON_OZONE_PLATFORM_HINT"), QStringLiteral("wayland"));
+    if (isolatedNestedSession) {
+        environment.remove(QStringLiteral("DISPLAY"));
+    }
     return environment;
+}
+
+QStringList ProcessLauncherService::effectiveArgumentsForLaunch(const QString &command,
+                                                                const QStringList &arguments,
+                                                                const QString &waylandDisplay,
+                                                                bool isolatedNestedSession) {
+    QStringList result = arguments;
+    if (!isolatedNestedSession) {
+        return result;
+    }
+    const QString appId = applicationIdForCommand(command);
+    if (appId != QStringLiteral("code") && appId != QStringLiteral("codium")) {
+        return result;
+    }
+
+    const bool hasUserDataDir = std::any_of(result.cbegin(), result.cend(), [](const QString &arg) {
+        return arg == QStringLiteral("--user-data-dir")
+               || arg.startsWith(QStringLiteral("--user-data-dir="));
+    });
+    if (!hasUserDataDir) {
+        const QString runtimeBase = QStandardPaths::writableLocation(QStandardPaths::RuntimeLocation);
+        const QString baseDir = runtimeBase.isEmpty() ? QDir::tempPath() : runtimeBase;
+        const QString socketSegment = waylandDisplay.trimmed().isEmpty()
+                                          ? QStringLiteral("default")
+                                          : waylandDisplay.trimmed();
+        result.append(QStringLiteral("--user-data-dir=%1/sge-nested-apps/%2/%3")
+                          .arg(baseDir, socketSegment, appId));
+    }
+    if (!result.contains(QStringLiteral("--new-window"))) {
+        result.append(QStringLiteral("--new-window"));
+    }
+    const bool hasOzone = std::any_of(result.cbegin(), result.cend(), [](const QString &arg) {
+        return arg.startsWith(QStringLiteral("--ozone-platform="));
+    });
+    if (!hasOzone) {
+        result.append(QStringLiteral("--ozone-platform=wayland"));
+    }
+    return result;
 }
 
 QString ProcessLauncherService::applicationIdForCommand(const QString &command) {

@@ -1,4 +1,5 @@
 #include "compositor/waylib/WaylibCompositorAdapter.hpp"
+#include "services/applications/AppRegistryService.hpp"
 
 #include <woutputrenderwindow.h>
 #include <wserver.h>
@@ -74,6 +75,7 @@ int main(int argc, char *argv[]) {
 
     QQmlApplicationEngine engine;
     engine.addImportPath(QStringLiteral(SGE_WAYLIB_QML_IMPORT_PATH));
+    engine.addImageProvider(QStringLiteral("desktopIcons"), new DesktopIconProvider());
     Systalia::Compositor::WaylibBackend::WaylibCompositorAdapter::registerQmlTypes();
 
     Systalia::Compositor::WaylibBackend::WaylibCompositorAdapter adapter;
