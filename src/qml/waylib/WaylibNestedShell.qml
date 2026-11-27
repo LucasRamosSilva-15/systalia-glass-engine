@@ -8,7 +8,10 @@ Item {
     id: root
     required property var compositorAdapter
     property bool filesWindowMaximized: false
-    property rect filesWindowRestoreGeometry: Qt.rect(32, 72, 701, 534)
+    property rect filesWindowRestoreGeometry: Qt.rect(48, 72, 701, 534)
+    property bool materialWindowMaximized: false
+    property rect materialWindowRestoreGeometry: Qt.rect(520, 72, 700, 534)
+    property int internalTopZ: 32
 
     Binding {
         target: ProcessLauncher
@@ -27,9 +30,24 @@ Item {
         return false
     }
 
+    function bringInternalWindowToFront(win) {
+        if (!win) {
+            return
+        }
+        if (win === filesWindow) {
+            filesWindow.z = 32
+            materialWindow.z = 31
+        } else if (win === materialWindow) {
+            materialWindow.z = 32
+            filesWindow.z = 31
+        }
+        controlCenter.close()
+    }
+
     function raiseFileWindow() {
         filesWindow.windowOpen = true
         filesWindow.visible = true
+        bringInternalWindowToFront(filesWindow)
         filesWindow.forceActiveFocus()
     }
 
@@ -65,12 +83,63 @@ Item {
         raiseFileWindow()
     }
 
+    function raiseMaterialWindow() {
+        materialWindow.windowOpen = true
+        materialWindow.visible = true
+        bringInternalWindowToFront(materialWindow)
+        materialWindow.forceActiveFocus()
+    }
+
+    function minimizeMaterialWindow() {
+        materialWindow.windowOpen = false
+        materialWindow.visible = false
+    }
+
+    function closeMaterialWindow() {
+        if (materialWindowMaximized) {
+            toggleMaterialWindowMaximized()
+        }
+        materialWindow.windowOpen = false
+        materialWindow.visible = false
+    }
+
+    function toggleMaterialWindowMaximized() {
+        if (materialWindowMaximized) {
+            materialWindow.x = materialWindowRestoreGeometry.x
+            materialWindow.y = materialWindowRestoreGeometry.y
+            materialWindow.width = materialWindowRestoreGeometry.width
+            materialWindow.height = materialWindowRestoreGeometry.height
+            materialWindowMaximized = false
+            return
+        }
+        materialWindowRestoreGeometry = Qt.rect(materialWindow.x, materialWindow.y,
+                                                materialWindow.width, materialWindow.height)
+        materialWindow.x = clientLayer.x + 8
+        materialWindow.y = clientLayer.y + 8
+        materialWindow.width = Math.max(480, clientLayer.width - 16)
+        materialWindow.height = Math.max(360, clientLayer.height - 16)
+        materialWindowMaximized = true
+        raiseMaterialWindow()
+    }
+
+    Timer {
+        id: animTimer
+        interval: 16
+        running: true
+        repeat: true
+        property real tick: 0.0
+        onTriggered: tick += 0.02
+    }
+
     OutputRenderWindow {
         id: renderWindow
         objectName: "waylibOutputRenderWindow"
         width: 1280
         height: 760
         visible: true
+
+        Component.onCompleted: SystemTelemetry.attachWindow(renderWindow)
+        onRenderEnd: SystemTelemetry.recordFrame()
 
         // Outputs Waylib (nested ou headless)
         Row {
@@ -102,48 +171,54 @@ Item {
             }
         }
 
-        // 1. Camada de conteúdo capturável (Wallpaper + Janelas Wayland XDG)
+        // 1. Camada de conteúdo capturável (Wallpaper real + Janelas Wayland XDG)
         Item {
             id: desktopContentLayer
             objectName: "desktopContentLayer"
             anchors.fill: parent
             z: 10
 
-            // Wallpaper VALO oceânico com iluminação sutil para refração/blur reais
-            Rectangle {
+            // Wallpaper oficial VALO oceânico (idêntico ao ShellRoot.qml)
+            Item {
                 id: valoWallpaper
+                objectName: "waylibWallpaper"
                 anchors.fill: parent
-                gradient: Gradient {
-                    GradientStop { position: 0.0; color: "#07111e" }
-                    GradientStop { position: 0.55; color: "#0c1d33" }
-                    GradientStop { position: 1.0; color: "#060c16" }
-                }
 
                 Rectangle {
-                    width: parent.width * 0.55
-                    height: width
-                    radius: width * 0.5
-                    x: -width * 0.15
-                    y: -height * 0.25
-                    opacity: 0.28
-                    gradient: Gradient {
-                        GradientStop { position: 0.0; color: "#1490d8" }
-                        GradientStop { position: 1.0; color: "transparent" }
-                    }
+                    anchors.fill: parent
+                    color: ValoTheme.primitiveNavy950
                 }
 
-                Rectangle {
-                    width: parent.width * 0.45
-                    height: width
-                    radius: width * 0.5
-                    x: parent.width * 0.62
-                    y: parent.height * 0.48
-                    opacity: 0.22
-                    gradient: Gradient {
-                        GradientStop { position: 0.0; color: "#00d2ff" }
-                        GradientStop { position: 1.0; color: "transparent" }
-                    }
+                Image {
+                    id: wallpaperImage
+                    objectName: "waylibWallpaperImage"
+                    anchors.fill: parent
+                    source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-ocean-atmosphere.png"
+                    fillMode: Image.PreserveAspectCrop
+                    asynchronous: true
+                    cache: true
+                    smooth: true
+                    mipmap: true
+                    visible: status === Image.Ready
                 }
+            }
+
+            // Fonte de backdrop exclusiva do wallpaper para molduras externas (sem loop com clientLayer)
+            ShaderEffectSource {
+                id: wallpaperOnlyBackdropSource
+                objectName: "waylibWallpaperBackdropSource"
+                anchors.fill: valoWallpaper
+                sourceItem: valoWallpaper
+                textureSize: Qt.size(
+                    Math.max(1, Math.round(valoWallpaper.width * renderWindow.devicePixelRatio)),
+                    Math.max(1, Math.round(valoWallpaper.height * renderWindow.devicePixelRatio)))
+                live: true
+                hideSource: false
+                visible: true
+                opacity: 0.0
+                z: -100
+                recursive: false
+                format: ShaderEffectSource.RGBA8
             }
 
             // Área útil (workarea) para janelas Wayland clientes XDG
@@ -151,8 +226,8 @@ Item {
                 id: clientLayer
                 objectName: "waylibClientLayer"
                 anchors.fill: parent
-                anchors.topMargin: 61
-                anchors.bottomMargin: valoDock.height + 20
+                anchors.topMargin: 60
+                anchors.bottomMargin: valoDock.height + 24
                 anchors.leftMargin: 8
                 anchors.rightMargin: 8
                 clip: true
@@ -173,6 +248,17 @@ Item {
                         required property int index
 
                         surfaceAdapter: root.compositorAdapter.surfaceAdapter
+                        outputLayout: root.compositorAdapter.outputAdapter.outputLayout
+                        backdropSource: wallpaperOnlyBackdropSource
+                        blurProfile: materialWindow.materialActive ? materialWindow.blurProfile : 0
+                        userHighContrast: materialWindow.opticalSurface.highContrast
+                        userPrefersReducedMotion: materialWindow.opticalSurface.prefersReducedMotion
+                        refractiveIndex: materialWindow.refractiveIndex
+                        effectiveDispersion: materialWindow.effectiveDispersion
+                        caustics: materialWindow.caustics
+                        slant: materialWindow.surfaceSlant
+                        cornerRadius: materialWindow.cornerRadius
+                        animationTime: animTimer.tick
                         waylandSurface: surface
                         windowShellSurface: shellSurface
                         windowTitle: title
@@ -189,7 +275,7 @@ Item {
             }
         }
 
-        // Fonte real do backdrop (captura apenas desktopContentLayer, sem chrome/vidro)
+        // Fonte real do backdrop (captura wallpaper + janelas clientes, sem chrome/vidro)
         ShaderEffectSource {
             id: desktopBackdropSource
             objectName: "waylibDesktopBackdropSource"
@@ -207,7 +293,58 @@ Item {
             format: ShaderEffectSource.RGBA8
         }
 
-        // 2. Camada de chrome/vidro VALO V2 (fora de desktopContentLayer -> sem feedback loop)
+        // 2. Janelas internas da shell (Files + Systalia Control Center) — sempre abaixo de TopBar/Dock
+        Item {
+            id: internalWindowsLayer
+            objectName: "waylibInternalWindowsLayer"
+            anchors.fill: parent
+            z: 40
+
+            SystaliaFilesWindowV2 {
+                id: filesWindow
+                objectName: "waylibFilesWindowV2"
+                visible: false
+                windowOpen: false
+                x: Math.max(8, Math.min(48, renderWindow.width - width - 16))
+                y: 68
+                width: Math.min(701, Math.max(480, clientLayer.width - 16))
+                height: Math.min(534, Math.max(360, clientLayer.height - 16))
+                z: 31
+                blurProfile: materialWindow.materialActive ? materialWindow.blurProfile : 0
+                backdropSource: desktopBackdropSource
+                screenResolution: Qt.vector2d(renderWindow.width * renderWindow.devicePixelRatio,
+                                              renderWindow.height * renderWindow.devicePixelRatio)
+                animationTime: animTimer.tick
+                refractiveIndex: materialWindow.refractiveIndex
+                dispersion: materialWindow.effectiveDispersion
+                caustics: materialWindow.caustics
+                surfaceOpacity: materialWindow.surfaceOpacity
+                surfaceSlant: materialWindow.surfaceSlant
+                cornerRadius: materialWindow.cornerRadius
+                materialActive: materialWindow.materialActive
+                controller: root
+            }
+
+            SystaliaMaterialWindow {
+                id: materialWindow
+                objectName: "waylibMaterialWindow"
+                visible: false
+                windowOpen: false
+                x: Math.max(8, Math.min(renderWindow.width - width - 32, Math.max(8, renderWindow.width - width - 16)))
+                y: 68
+                width: Math.min(700, Math.max(480, clientLayer.width - 16))
+                height: Math.min(534, Math.max(360, clientLayer.height - 16))
+                z: 32
+                blurProfile: 1
+                backdropSource: desktopBackdropSource
+                screenResolution: Qt.vector2d(renderWindow.width * renderWindow.devicePixelRatio,
+                                              renderWindow.height * renderWindow.devicePixelRatio)
+                animationTime: animTimer.tick
+                controller: root
+            }
+        }
+
+        // 3. Camada de chrome/vidro VALO V2 (sempre acima das janelas internas e clientes)
         Item {
             id: shellChromeLayer
             objectName: "shellChromeLayer"
@@ -223,10 +360,11 @@ Item {
                 anchors.margins: 8
                 height: 45
                 z: 100
-                blurProfile: 1
+                blurProfile: materialWindow.materialActive ? materialWindow.blurProfile : 0
                 backdropSource: desktopBackdropSource
                 screenResolution: Qt.vector2d(renderWindow.width * renderWindow.devicePixelRatio,
                                               renderWindow.height * renderWindow.devicePixelRatio)
+                animationTime: animTimer.tick
                 telemetry: SystemTelemetry
                 workspaceManager: WorkspaceManager
                 activeWindowTitle: root.compositorAdapter.surfaceAdapter.activeTitle
@@ -245,74 +383,6 @@ Item {
                 }
             }
 
-            // Faixa interativa de janelas Wayland abertas/minimizadas integrada ao Dock
-            Rectangle {
-                id: windowStrip
-                objectName: "waylibWindowStrip"
-                visible: root.compositorAdapter.surfaceAdapter.surfaceCount > 0
-                anchors.bottom: valoDock.top
-                anchors.bottomMargin: 6
-                anchors.horizontalCenter: parent.horizontalCenter
-                width: Math.min(parent.width - 48, windowStripRow.implicitWidth + 20)
-                height: 32
-                radius: 16
-                color: "#CC071628"
-                border.width: 1
-                border.color: ValoTheme.withAlpha(ValoTheme.borderHighlight, 0.30)
-                z: 96
-
-                MouseArea {
-                    anchors.fill: parent
-                    z: -1
-                    acceptedButtons: Qt.AllButtons
-                    onPressed: (mouse) => { mouse.accepted = true }
-                }
-
-                Row {
-                    id: windowStripRow
-                    anchors.centerIn: parent
-                    spacing: 8
-
-                    Repeater {
-                        model: root.compositorAdapter.surfaceAdapter.windowModel
-
-                        delegate: Rectangle {
-                            required property var shellSurface
-                            required property string title
-                            required property string appId
-                            required property bool activated
-                            required property bool minimized
-
-                            width: Math.min(180, pillLabel.implicitWidth + 20)
-                            height: 24
-                            radius: 12
-                            color: activated
-                                   ? ValoTheme.withAlpha(ValoTheme.accentPrimary, 0.25)
-                                   : (minimized ? "#40102030" : "#80102840")
-                            border.width: 1
-                            border.color: activated ? ValoTheme.accentPrimary : ValoTheme.withAlpha(ValoTheme.borderHighlight, 0.25)
-
-                            Text {
-                                id: pillLabel
-                                anchors.centerIn: parent
-                                width: Math.min(156, implicitWidth)
-                                text: title.length > 0 ? title : (appId.length > 0 ? appId : "Wayland")
-                                color: minimized ? ValoTheme.textSecondary : ValoTheme.textBright
-                                font.family: ValoTheme.fontFamily
-                                font.pixelSize: 11
-                                elide: Text.ElideRight
-                            }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: root.compositorAdapter.surfaceAdapter.focusOrRestore(shellSurface)
-                            }
-                        }
-                    }
-                }
-            }
-
             SystaliaDockV2 {
                 id: valoDock
                 objectName: "valoDockV2"
@@ -320,12 +390,18 @@ Item {
                 anchors.bottomMargin: 12
                 anchors.horizontalCenter: parent.horizontalCenter
                 z: 95
-                performanceProfile: "balanced"
+                performanceProfile: !materialWindow.materialActive || materialWindow.blurProfile === 0
+                                    ? "performance" : materialWindow.blurProfile === 1 ? "balanced" : "quality"
                 backdropSource: desktopBackdropSource
                 screenResolution: Qt.vector2d(renderWindow.width * renderWindow.devicePixelRatio,
                                               renderWindow.height * renderWindow.devicePixelRatio)
+                animationTime: animTimer.tick
                 filesVisible: filesWindow.visible
-                settingsOpen: controlCenter.opened
+                settingsOpen: materialWindow.visible
+                refractiveIndex: materialWindow.refractiveIndex
+                dispersion: materialWindow.effectiveDispersion
+                caustics: materialWindow.caustics
+                materialActive: materialWindow.materialActive
                 activeAppIds: root.compositorAdapter.surfaceAdapter.activeAppIds
 
                 onFilesRequested: {
@@ -337,7 +413,12 @@ Item {
                 onAudioRequested: root.launchDesktopApp(["pavucontrol", "pwvucontrol"], "áudio")
                 onTerminalRequested: root.launchDesktopApp(["alacritty", "foot", "konsole", "xterm"], "terminal")
                 onIdeRequested: root.launchDesktopApp(["code", "codium"], "IDE")
-                onSettingsRequested: controlCenter.toggle()
+                onSettingsRequested: {
+                    if (materialWindow.visible)
+                        root.closeMaterialWindow()
+                    else
+                        root.raiseMaterialWindow()
+                }
 
                 // Impede vazamento de cliques na região da Dock
                 MouseArea {
@@ -348,31 +429,15 @@ Item {
                 }
             }
 
-            SystaliaFilesWindowV2 {
-                id: filesWindow
-                objectName: "waylibFilesWindowV2"
-                visible: false
-                windowOpen: false
-                x: Math.max(8, Math.min(32, renderWindow.width - width - 16))
-                y: 68
-                width: Math.min(701, Math.max(480, clientLayer.width - 16))
-                height: Math.min(534, Math.max(360, clientLayer.height - 16))
-                z: 85
-                blurProfile: 1
-                backdropSource: desktopBackdropSource
-                screenResolution: Qt.vector2d(renderWindow.width * renderWindow.devicePixelRatio,
-                                              renderWindow.height * renderWindow.devicePixelRatio)
-                controller: root
-            }
-
             SystaliaControlCenterV2 {
                 id: controlCenter
                 objectName: "waylibControlCenterV2"
                 z: 115
-                blurProfile: 1
+                blurProfile: materialWindow.materialActive ? materialWindow.blurProfile : 0
                 backdropSource: desktopBackdropSource
                 screenResolution: Qt.vector2d(renderWindow.width * renderWindow.devicePixelRatio,
                                               renderWindow.height * renderWindow.devicePixelRatio)
+                animationTime: animTimer.tick
             }
         }
 
@@ -383,7 +448,7 @@ Item {
             onActivated: controlCenter.close()
         }
 
-        // 3. Camada de popups XDG (menus, tooltips, comboboxes acima de janelas e chrome)
+        // 4. Camada de popups XDG (menus, tooltips, comboboxes acima de janelas e chrome)
         Item {
             id: popupLayer
             objectName: "waylibPopupLayer"
@@ -439,7 +504,7 @@ Item {
             onActivated: root.compositorAdapter.surfaceAdapter.cycleFocus()
         }
 
-        // 4. Camada de cursor acima do wallpaper, janelas, chrome VALO e popups
+        // 5. Camada de cursor acima do wallpaper, janelas, chrome VALO e popups
         Item {
             id: cursorOverlayLayer
             objectName: "waylibCursorOverlayLayer"

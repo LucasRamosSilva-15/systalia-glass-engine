@@ -43,6 +43,7 @@ public:
     QString systemTime() const { return m_systemTime; }
 
     Q_INVOKABLE void attachWindow(QQuickWindow *window);
+    Q_INVOKABLE void recordFrame();
 
     static bool parseCpuStat(std::string_view line, CpuCounters &counters) noexcept;
     static float calculateCpuUsage(const CpuCounters &previous,

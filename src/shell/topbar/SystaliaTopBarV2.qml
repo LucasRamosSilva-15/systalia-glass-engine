@@ -129,14 +129,27 @@ Item {
             }
 
             Text {
-                objectName: "activeWindowTitleLabel"
+                objectName: "desktopBrandingLabel"
                 anchors.verticalCenter: parent.verticalCenter
-                visible: topBar.activeWindowTitle.length > 0 || topBar.showDesktopBranding
-                text: topBar.activeWindowTitle.length > 0 ? topBar.activeWindowTitle : "SDE-KWIN | VALO"
-                color: topBar.activeWindowTitle.length > 0 ? ValoTheme.textPrimary : ValoTheme.textSecondary
+                visible: topBar.showDesktopBranding
+                text: "SDE-KWIN | VALO"
+                color: ValoTheme.textSecondary
                 font.family: ValoTheme.fontFamily
                 font.pixelSize: 14
+                antialiasing: true
+            }
+
+            Text {
+                objectName: "activeWindowTitleLabel"
+                anchors.verticalCenter: parent.verticalCenter
+                visible: topBar.activeWindowTitle.length > 0 && topBar.width >= 1340
+                width: Math.min(implicitWidth, 180)
+                text: "·  " + topBar.activeWindowTitle
+                color: ValoTheme.textPrimary
+                font.family: ValoTheme.fontFamily
+                font.pixelSize: 13
                 elide: Text.ElideRight
+                maximumLineCount: 1
                 antialiasing: true
             }
 

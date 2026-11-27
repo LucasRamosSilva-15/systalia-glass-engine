@@ -13,11 +13,14 @@
 #include <QStringList>
 
 WAYLIB_SERVER_BEGIN_NAMESPACE
+class WOutput;
 class WSurface;
 class WXdgShell;
 WAYLIB_SERVER_END_NAMESPACE
 
 namespace Systalia::Compositor::WaylibBackend {
+
+class WaylibOutputAdapter;
 
 class WaylibSurfaceListModel final : public QAbstractListModel {
     Q_OBJECT
@@ -116,6 +119,7 @@ public:
 
     void attachXdgShell(WAYLIB_SERVER_NAMESPACE::WXdgShell *xdgShell);
     void attachSeat(WAYLIB_SERVER_NAMESPACE::WSeat *seat);
+    void attachOutputAdapter(WaylibOutputAdapter *outputAdapter);
     void reset();
 
     [[nodiscard]] QList<QObject *> surfaces() const;
@@ -143,6 +147,7 @@ public:
     Q_INVOKABLE int zOrderForSurface(WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *surface) const;
     Q_INVOKABLE bool isMinimized(WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *surface) const;
     Q_INVOKABLE bool isMaximized(WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *surface) const;
+    Q_INVOKABLE bool isSurfaceOpaque(WAYLIB_SERVER_NAMESPACE::WSurface *surface) const;
 
 Q_SIGNALS:
     void surfaceAdded(WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *surface);
@@ -171,6 +176,7 @@ private:
     WaylibSurfaceListModel *m_model = nullptr;
     WaylibPopupListModel *m_popupModel = nullptr;
     QPointer<WAYLIB_SERVER_NAMESPACE::WSeat> m_seat;
+    QPointer<WaylibOutputAdapter> m_outputAdapter;
     QPointer<WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface> m_activeSurface;
     quint64 m_nextSurfaceId = 0;
     int m_nextZOrder = 0;

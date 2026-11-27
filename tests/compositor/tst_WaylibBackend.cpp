@@ -2,6 +2,7 @@
 
 #include "compositor/waylib/WaylibCompositorAdapter.hpp"
 #include "services/applications/ProcessLauncherService.hpp"
+#include "services/system/SystemTelemetryService.hpp"
 
 #include <wcursor.h>
 #include <woutputrenderwindow.h>
@@ -230,31 +231,77 @@ void tst_WaylibBackend::headlessAndMultiWindowValoShellLifecycle() {
     const QString clientBin = QCoreApplication::applicationDirPath() + QStringLiteral("/tst_waylib_test_client");
     QVERIFY2(QFile::exists(clientBin), qPrintable(clientBin));
 
-    // 1b. Control Center V2, Files Window V2 e propagação de socket via ProcessLauncher
+    // 1b. Separação Control Center Window (Dock System Core) vs Quick Menu (TopBar),
+    //     Z-order abaixo da Dock, remoção de waylibWindowStrip, wallpaper real, FPS ativo e ProcessLauncher
     {
         auto *controlCenter = renderWindow->findChild<QQuickItem *>(QStringLiteral("waylibControlCenterV2"));
+        auto *materialWindow = renderWindow->findChild<QQuickItem *>(QStringLiteral("waylibMaterialWindow"));
         auto *filesWindow = renderWindow->findChild<QQuickItem *>(QStringLiteral("waylibFilesWindowV2"));
+        auto *internalLayer = renderWindow->findChild<QQuickItem *>(QStringLiteral("waylibInternalWindowsLayer"));
+        auto *chromeLayer = renderWindow->findChild<QQuickItem *>(QStringLiteral("shellChromeLayer"));
+        auto *wallpaperImg = renderWindow->findChild<QQuickItem *>(QStringLiteral("waylibWallpaperImage"));
+        auto *wallpaperBackdrop = renderWindow->findChild<QObject *>(QStringLiteral("waylibWallpaperBackdropSource"));
         QVERIFY(controlCenter != nullptr);
+        QVERIFY(materialWindow != nullptr);
         QVERIFY(filesWindow != nullptr);
+        QVERIFY(internalLayer != nullptr);
+        QVERIFY(chromeLayer != nullptr);
+        QVERIFY(wallpaperImg != nullptr);
+        QVERIFY(wallpaperBackdrop != nullptr);
 
+        // waylibWindowStrip foi removido
+        QVERIFY(renderWindow->findChild<QQuickItem *>(QStringLiteral("waylibWindowStrip")) == nullptr);
+
+        // SDE-KWIN | VALO branding permanece visível na TopBar
+        auto *brandingLabel = topBar->findChild<QQuickItem *>(QStringLiteral("desktopBrandingLabel"));
+        QVERIFY(brandingLabel != nullptr);
+        QCOMPARE(brandingLabel->property("text").toString(), QStringLiteral("SDE-KWIN | VALO"));
+
+        // Separação: Dock settingsRequested abre janela completa Systalia Control Center (SystaliaMaterialWindow)
+        QVERIFY(!materialWindow->property("visible").toBool());
+        QVERIFY(QMetaObject::invokeMethod(dockV2, "settingsRequested"));
+        QVERIFY(materialWindow->property("visible").toBool());
+        QVERIFY(dockV2->property("settingsOpen").toBool());
+        QCOMPARE(materialWindow->property("backdropSource").value<QObject *>(), backdropSource);
+        QVERIFY(internalLayer->z() < chromeLayer->z());
+        QVERIFY(materialWindow->z() < dockV2->z());
+        QVERIFY(materialWindow->x() >= 0.0 && materialWindow->y() >= 60.0);
+        QVERIFY(materialWindow->x() + materialWindow->width() <= 1280.0);
+        QVERIFY(materialWindow->y() + materialWindow->height() <= 760.0);
         QVERIFY(!controlCenter->property("opened").toBool());
+
+        // TopBar controlCenterRequested abre o menu rápido compacto sem prender sobreposição
         QVERIFY(QMetaObject::invokeMethod(topBar, "controlCenterRequested"));
         QVERIFY(controlCenter->property("opened").toBool());
         QVERIFY(controlCenter->property("visible").toBool());
         QCOMPARE(controlCenter->property("backdropSource").value<QObject *>(), backdropSource);
         QVERIFY(QMetaObject::invokeMethod(topBar, "controlCenterRequested"));
         QVERIFY(!controlCenter->property("opened").toBool());
+        QVERIFY(QMetaObject::invokeMethod(dockV2, "settingsRequested"));
+        QVERIFY(!materialWindow->property("visible").toBool());
 
+        // FilesWindow V2 abre abaixo da Dock (z-order corrigido) e dentro da workarea
         QVERIFY(!filesWindow->property("visible").toBool());
         QVERIFY(QMetaObject::invokeMethod(dockV2, "filesRequested"));
         QVERIFY(filesWindow->property("visible").toBool());
         QVERIFY(dockV2->property("filesVisible").toBool());
+        QVERIFY(filesWindow->z() < dockV2->z());
         QCOMPARE(filesWindow->property("backdropSource").value<QObject *>(), backdropSource);
-        QVERIFY(filesWindow->x() >= 0.0 && filesWindow->y() >= 61.0);
+        QVERIFY(filesWindow->x() >= 0.0 && filesWindow->y() >= 60.0);
         QVERIFY(filesWindow->x() + filesWindow->width() <= 1280.0);
         QVERIFY(filesWindow->y() + filesWindow->height() <= 760.0);
         QVERIFY(QMetaObject::invokeMethod(dockV2, "filesRequested"));
         QVERIFY(!filesWindow->property("visible").toBool());
+
+        // Telemetria FPS > 0 após ciclos reais de renderEnd no WOutputRenderWindow
+        auto *telemetry = engine.singletonInstance<SystemTelemetryService *>(
+            QStringLiteral("Systalia.System"), QStringLiteral("SystemTelemetry"));
+        QVERIFY(telemetry != nullptr);
+        for (int i = 0; i < 6; ++i) {
+            renderWindow->update();
+            QCoreApplication::processEvents();
+        }
+        QTRY_VERIFY_WITH_TIMEOUT(telemetry->fps() > 0, 2500);
 
         auto *launcher = engine.singletonInstance<ProcessLauncherService *>(
             QStringLiteral("Systalia.System"), QStringLiteral("ProcessLauncher"));
@@ -396,12 +443,20 @@ void tst_WaylibBackend::headlessAndMultiWindowValoShellLifecycle() {
     surfaceAdapter->toggleMaximize(surfA);
     QVERIFY(!surfaceAdapter->isMaximized(surfA));
 
-    // Verifica botão fechar na SSD (geometria ativa) e solicita fechamento de A; foco volta para B
-    auto *frameA = findToplevelItemInLayer(clientLayer, surfA)->parentItem()->parentItem();
+    // Verifica moldura VALO Glass V2, subsurfaces habilitadas e botão fechar na SSD (geometria ativa)
+    auto *toplevelItemA = findToplevelItemInLayer(clientLayer, surfA);
+    QVERIFY(toplevelItemA != nullptr);
+    QVERIFY(toplevelItemA->subsurfacesVisible());
+    auto *frameA = toplevelItemA->parentItem()->parentItem();
     QVERIFY(frameA != nullptr);
-    auto *closeBtn = frameA->findChild<QQuickItem *>(QStringLiteral("closeButton"));
+    QVERIFY(frameA->property("radius").toReal() > 0.0);
+    QVERIFY(frameA->findChild<QQuickItem *>(QStringLiteral("clientDecorationV2")) != nullptr);
+    QVERIFY(frameA->findChild<QQuickItem *>(QStringLiteral("sgeTitleBar")) != nullptr);
+    auto *closeBtn = frameA->findChild<QQuickItem *>(QStringLiteral("closeToplevelButton"));
     QVERIFY(closeBtn != nullptr);
-    QTRY_VERIFY(frameA->width() < 1000.0 && closeBtn->x() > 100.0 && closeBtn->x() < frameA->width());
+    QTRY_VERIFY(frameA->width() < 1000.0
+                && closeBtn->mapToItem(frameA, QPointF(0.0, 0.0)).x() > 100.0
+                && closeBtn->mapToItem(frameA, QPointF(0.0, 0.0)).x() < frameA->width());
     QVERIFY(closeBtn->isVisible());
     const QPointF closeCenter = closeBtn->mapToScene(closeBtn->boundingRect().center());
     QVERIFY(closeCenter.x() > 0.0 && closeCenter.y() > 0.0);

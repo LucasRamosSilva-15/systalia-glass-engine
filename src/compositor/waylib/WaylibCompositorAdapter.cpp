@@ -80,6 +80,7 @@ WaylibCompositorAdapter::WaylibCompositorAdapter(QObject *parent)
     m_seat->setCursor(m_cursor);
     m_cursor->setLayout(m_outputAdapter->outputLayout());
     m_surfaceAdapter->attachSeat(m_seat.data());
+    m_surfaceAdapter->attachOutputAdapter(m_outputAdapter);
     connect(m_outputAdapter, &WaylibOutputAdapter::outputReady,
             this, &WaylibCompositorAdapter::bindCursorToOutput);
 }
@@ -175,6 +176,7 @@ bool WaylibCompositorAdapter::initialize(WOutputRenderWindow *window,
     wlr_renderer_init_wl_display(m_renderer, m_server->handle());
     m_compositor = wlr_compositor_create(m_server->handle(), 6, m_renderer);
     wlr_subcompositor_create(m_server->handle());
+    wlr_viewporter_create(m_server->handle());
 
     window->init(m_renderer, m_allocator);
     if (!wlr_backend_start(m_backend->handle())) {

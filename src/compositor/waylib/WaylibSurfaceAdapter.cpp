@@ -1,9 +1,13 @@
 #include "WaylibSurfaceAdapter.hpp"
+#include "WaylibOutputAdapter.hpp"
 
+#include <woutput.h>
 #include <wseat.h>
 #include <wsurface.h>
 #include <wxdgshell.h>
 #include <wxdgtoplevelsurface.h>
+
+#include <wlr_all.h>
 
 #include <QDebug>
 
@@ -232,6 +236,34 @@ void WaylibSurfaceAdapter::attachXdgShell(WXdgShell *xdgShell) {
 
 void WaylibSurfaceAdapter::attachSeat(WSeat *seat) {
     m_seat = seat;
+}
+
+void WaylibSurfaceAdapter::attachOutputAdapter(WaylibOutputAdapter *outputAdapter) {
+    if (m_outputAdapter == outputAdapter) {
+        return;
+    }
+    if (m_outputAdapter) {
+        m_outputAdapter->disconnect(this);
+    }
+    m_outputAdapter = outputAdapter;
+    if (m_outputAdapter) {
+        connect(m_outputAdapter, &WaylibOutputAdapter::outputReady,
+                this, [this](WOutput *output) {
+            if (!output) {
+                return;
+            }
+            for (const auto &entry : m_model->entries()) {
+                if (entry.shellSurface && entry.shellSurface->surface()) {
+                    entry.shellSurface->surface()->enterOutput(output);
+                }
+            }
+            for (const auto &popupEntry : m_popupModel->entries()) {
+                if (popupEntry.popupSurface && popupEntry.popupSurface->surface()) {
+                    popupEntry.popupSurface->surface()->enterOutput(output);
+                }
+            }
+        });
+    }
 }
 
 void WaylibSurfaceAdapter::reset() {
@@ -495,6 +527,13 @@ bool WaylibSurfaceAdapter::isMaximized(WXdgToplevelSurface *surface) const {
     return false;
 }
 
+bool WaylibSurfaceAdapter::isSurfaceOpaque(WSurface *surface) const {
+    if (!surface || !surface->handle()) {
+        return false;
+    }
+    return pixman_region32_not_empty(&surface->handle()->opaque_region) != 0;
+}
+
 void WaylibSurfaceAdapter::onToplevelAdded(WXdgToplevelSurface *surface) {
     if (!surface || m_model->indexOf(surface) >= 0) {
         return;
@@ -636,6 +675,9 @@ void WaylibSurfaceAdapter::onToplevelAdded(WXdgToplevelSurface *surface) {
     });
 
     qInfo() << "[SGE-WAYLIB] XDG toplevel added:" << surface->title() << "appId=" << surface->appId();
+    if (surface->surface() && m_outputAdapter && m_outputAdapter->primaryOutput()) {
+        surface->surface()->enterOutput(m_outputAdapter->primaryOutput());
+    }
     Q_EMIT surfaceAdded(surface);
     activateSurface(surface);
 }
@@ -652,6 +694,9 @@ void WaylibSurfaceAdapter::onPopupAdded(WXdgPopupSurface *popup) {
     WaylibPopupListModel::Entry entry;
     entry.popupSurface = popup;
     m_popupModel->appendEntry(entry);
+    if (popup->surface() && m_outputAdapter && m_outputAdapter->primaryOutput()) {
+        popup->surface()->enterOutput(m_outputAdapter->primaryOutput());
+    }
 
     QPointer<WXdgPopupSurface> safePopup(popup);
     connect(popup, &WXdgPopupSurface::reposition, this, [this, safePopup]() {

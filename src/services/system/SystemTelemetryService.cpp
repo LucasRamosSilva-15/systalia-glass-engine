@@ -75,6 +75,10 @@ void SystemTelemetryService::attachWindow(QQuickWindow *window) {
     setFps(0);
 }
 
+void SystemTelemetryService::recordFrame() {
+    m_pendingFrames.fetch_add(1, std::memory_order_relaxed);
+}
+
 bool SystemTelemetryService::parseCpuStat(std::string_view line,
                                           CpuCounters &counters) noexcept {
     skipSpaces(line);
