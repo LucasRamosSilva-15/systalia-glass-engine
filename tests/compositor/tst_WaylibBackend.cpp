@@ -1,6 +1,7 @@
 #include <QtTest>
 
 #include "compositor/waylib/WaylibCompositorAdapter.hpp"
+#include "services/applications/ProcessLauncherService.hpp"
 
 #include <wcursor.h>
 #include <woutputrenderwindow.h>
@@ -228,6 +229,48 @@ void tst_WaylibBackend::headlessAndMultiWindowValoShellLifecycle() {
 
     const QString clientBin = QCoreApplication::applicationDirPath() + QStringLiteral("/tst_waylib_test_client");
     QVERIFY2(QFile::exists(clientBin), qPrintable(clientBin));
+
+    // 1b. Control Center V2, Files Window V2 e propagação de socket via ProcessLauncher
+    {
+        auto *controlCenter = renderWindow->findChild<QQuickItem *>(QStringLiteral("waylibControlCenterV2"));
+        auto *filesWindow = renderWindow->findChild<QQuickItem *>(QStringLiteral("waylibFilesWindowV2"));
+        QVERIFY(controlCenter != nullptr);
+        QVERIFY(filesWindow != nullptr);
+
+        QVERIFY(!controlCenter->property("opened").toBool());
+        QVERIFY(QMetaObject::invokeMethod(topBar, "controlCenterRequested"));
+        QVERIFY(controlCenter->property("opened").toBool());
+        QVERIFY(controlCenter->property("visible").toBool());
+        QCOMPARE(controlCenter->property("backdropSource").value<QObject *>(), backdropSource);
+        QVERIFY(QMetaObject::invokeMethod(topBar, "controlCenterRequested"));
+        QVERIFY(!controlCenter->property("opened").toBool());
+
+        QVERIFY(!filesWindow->property("visible").toBool());
+        QVERIFY(QMetaObject::invokeMethod(dockV2, "filesRequested"));
+        QVERIFY(filesWindow->property("visible").toBool());
+        QVERIFY(dockV2->property("filesVisible").toBool());
+        QCOMPARE(filesWindow->property("backdropSource").value<QObject *>(), backdropSource);
+        QVERIFY(filesWindow->x() >= 0.0 && filesWindow->y() >= 61.0);
+        QVERIFY(filesWindow->x() + filesWindow->width() <= 1280.0);
+        QVERIFY(filesWindow->y() + filesWindow->height() <= 760.0);
+        QVERIFY(QMetaObject::invokeMethod(dockV2, "filesRequested"));
+        QVERIFY(!filesWindow->property("visible").toBool());
+
+        auto *launcher = engine.singletonInstance<ProcessLauncherService *>(
+            QStringLiteral("Systalia.System"), QStringLiteral("ProcessLauncher"));
+        QVERIFY(launcher != nullptr);
+        QTRY_COMPARE(launcher->waylandDisplay(), adapter.socketName());
+        const int beforeAdded = surfaceAddedSpy.count();
+        const int beforeRemoved = surfaceRemovedSpy.count();
+        QVERIFY(launcher->launch(clientBin));
+        QVERIFY(waitUntil([&]() { return surfaceAddedSpy.count() > beforeAdded; }, 5000));
+        QCOMPARE(surfaceAdapter->surfaceCount(), 1);
+        QVERIFY(surfaceAdapter->activeSurface() != nullptr);
+        QVERIFY(waitUntil([&]() { return surfaceRemovedSpy.count() > beforeRemoved; }, 5000));
+        QCOMPARE(surfaceAdapter->surfaceCount(), 0);
+        surfaceAddedSpy.clear();
+        surfaceRemovedSpy.clear();
+    }
 
     // 2. Ciclo de cliente único + popup XDG: conecta, mapeia toplevel + XdgPopupSurfaceItem e desconecta
     {

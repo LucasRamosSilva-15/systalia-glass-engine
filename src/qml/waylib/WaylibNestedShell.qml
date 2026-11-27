@@ -7,6 +7,63 @@ import Systalia.System 1.0
 Item {
     id: root
     required property var compositorAdapter
+    property bool filesWindowMaximized: false
+    property rect filesWindowRestoreGeometry: Qt.rect(32, 72, 701, 534)
+
+    Binding {
+        target: ProcessLauncher
+        property: "waylandDisplay"
+        value: root.compositorAdapter ? root.compositorAdapter.socketName : ""
+        when: root.compositorAdapter && root.compositorAdapter.socketName.length > 0
+    }
+
+    function launchDesktopApp(candidates, label) {
+        for (let i = 0; i < candidates.length; ++i) {
+            if (ProcessLauncher.launch(candidates[i])) {
+                return true
+            }
+        }
+        console.warn("[SGE-WAYLIB] Nenhum executável disponível para " + label + ":", candidates.join(", "))
+        return false
+    }
+
+    function raiseFileWindow() {
+        filesWindow.windowOpen = true
+        filesWindow.visible = true
+        filesWindow.forceActiveFocus()
+    }
+
+    function minimizeFileWindow() {
+        filesWindow.windowOpen = false
+        filesWindow.visible = false
+    }
+
+    function closeFileWindow() {
+        if (filesWindowMaximized) {
+            toggleFileWindowMaximized()
+        }
+        filesWindow.windowOpen = false
+        filesWindow.visible = false
+    }
+
+    function toggleFileWindowMaximized() {
+        if (filesWindowMaximized) {
+            filesWindow.x = filesWindowRestoreGeometry.x
+            filesWindow.y = filesWindowRestoreGeometry.y
+            filesWindow.width = filesWindowRestoreGeometry.width
+            filesWindow.height = filesWindowRestoreGeometry.height
+            filesWindowMaximized = false
+            return
+        }
+        filesWindowRestoreGeometry = Qt.rect(filesWindow.x, filesWindow.y,
+                                             filesWindow.width, filesWindow.height)
+        filesWindow.x = clientLayer.x + 8
+        filesWindow.y = clientLayer.y + 8
+        filesWindow.width = Math.max(480, clientLayer.width - 16)
+        filesWindow.height = Math.max(360, clientLayer.height - 16)
+        filesWindowMaximized = true
+        raiseFileWindow()
+    }
 
     OutputRenderWindow {
         id: renderWindow
@@ -175,7 +232,9 @@ Item {
                 activeWindowTitle: root.compositorAdapter.surfaceAdapter.activeTitle
                 activeWindowAppId: root.compositorAdapter.surfaceAdapter.activeAppId
                 onLauncherRequested: root.compositorAdapter.surfaceAdapter.cycleFocus()
-                onPowerRequested: root.compositorAdapter.surfaceAdapter.closeActiveSurface()
+                onControlCenterRequested: controlCenter.toggle()
+                onTerminalRequested: root.launchDesktopApp(["alacritty", "foot", "konsole", "xterm"], "terminal")
+                onPowerRequested: controlCenter.open()
 
                 // Impede vazamento de cliques para janelas abaixo da TopBar
                 MouseArea {
@@ -265,11 +324,20 @@ Item {
                 backdropSource: desktopBackdropSource
                 screenResolution: Qt.vector2d(renderWindow.width * renderWindow.devicePixelRatio,
                                               renderWindow.height * renderWindow.devicePixelRatio)
-                filesVisible: false
-                settingsOpen: false
+                filesVisible: filesWindow.visible
+                settingsOpen: controlCenter.opened
                 activeAppIds: root.compositorAdapter.surfaceAdapter.activeAppIds
 
-                onTerminalRequested: root.compositorAdapter.surfaceAdapter.cycleFocus()
+                onFilesRequested: {
+                    if (filesWindow.visible)
+                        root.minimizeFileWindow()
+                    else
+                        root.raiseFileWindow()
+                }
+                onAudioRequested: root.launchDesktopApp(["pavucontrol", "pwvucontrol"], "áudio")
+                onTerminalRequested: root.launchDesktopApp(["alacritty", "foot", "konsole", "xterm"], "terminal")
+                onIdeRequested: root.launchDesktopApp(["code", "codium"], "IDE")
+                onSettingsRequested: controlCenter.toggle()
 
                 // Impede vazamento de cliques na região da Dock
                 MouseArea {
@@ -279,6 +347,40 @@ Item {
                     onPressed: (mouse) => { mouse.accepted = true }
                 }
             }
+
+            SystaliaFilesWindowV2 {
+                id: filesWindow
+                objectName: "waylibFilesWindowV2"
+                visible: false
+                windowOpen: false
+                x: Math.max(8, Math.min(32, renderWindow.width - width - 16))
+                y: 68
+                width: Math.min(701, Math.max(480, clientLayer.width - 16))
+                height: Math.min(534, Math.max(360, clientLayer.height - 16))
+                z: 85
+                blurProfile: 1
+                backdropSource: desktopBackdropSource
+                screenResolution: Qt.vector2d(renderWindow.width * renderWindow.devicePixelRatio,
+                                              renderWindow.height * renderWindow.devicePixelRatio)
+                controller: root
+            }
+
+            SystaliaControlCenterV2 {
+                id: controlCenter
+                objectName: "waylibControlCenterV2"
+                z: 115
+                blurProfile: 1
+                backdropSource: desktopBackdropSource
+                screenResolution: Qt.vector2d(renderWindow.width * renderWindow.devicePixelRatio,
+                                              renderWindow.height * renderWindow.devicePixelRatio)
+            }
+        }
+
+        Shortcut {
+            sequence: "Escape"
+            context: Qt.ApplicationShortcut
+            enabled: controlCenter.opened
+            onActivated: controlCenter.close()
         }
 
         // 3. Camada de popups XDG (menus, tooltips, comboboxes acima de janelas e chrome)

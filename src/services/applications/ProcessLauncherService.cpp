@@ -1,6 +1,7 @@
 #include "ProcessLauncherService.hpp"
 
 #include <QByteArray>
+#include <QDebug>
 #include <QFile>
 #include <QFileInfo>
 #include <QIODevice>
@@ -35,6 +36,20 @@ QStringList ProcessLauncherService::runningApplications() const {
     return result;
 }
 
+QString ProcessLauncherService::waylandDisplay() const {
+    return m_waylandDisplay;
+}
+
+void ProcessLauncherService::setWaylandDisplay(const QString &display) {
+    const QString trimmed = display.trimmed();
+    const QString next = trimmed.isEmpty() ? QStringLiteral("wayland-systalia-0") : trimmed;
+    if (m_waylandDisplay == next) {
+        return;
+    }
+    m_waylandDisplay = next;
+    emit waylandDisplayChanged();
+}
+
 bool ProcessLauncherService::launch(const QString &command, const QStringList &arguments) {
     const QString trimmedCommand = command.trimmed();
     const QString appId = applicationIdForCommand(trimmedCommand);
@@ -45,10 +60,12 @@ bool ProcessLauncherService::launch(const QString &command, const QStringList &a
     QProcess process;
     process.setProgram(trimmedCommand);
     process.setArguments(arguments);
-    process.setProcessEnvironment(waylandProcessEnvironment());
+    process.setProcessEnvironment(waylandProcessEnvironment(m_waylandDisplay));
 
     qint64 processId = 0;
     if (!process.startDetached(&processId) || processId <= 0) {
+        qWarning() << "[SGE-LAUNCHER] Falha ao iniciar aplicativo:" << trimmedCommand
+                   << "WAYLAND_DISPLAY=" << m_waylandDisplay;
         return false;
     }
 
@@ -100,10 +117,13 @@ bool ProcessLauncherService::isAppRunning(const QString &appId) const {
     return false;
 }
 
-QProcessEnvironment ProcessLauncherService::waylandProcessEnvironment() {
+QProcessEnvironment ProcessLauncherService::waylandProcessEnvironment(const QString &waylandDisplay) {
     QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
     environment.remove(QStringLiteral("QSG_RHI_BACKEND"));
-    environment.insert(QStringLiteral("WAYLAND_DISPLAY"), QStringLiteral("wayland-systalia-0"));
+    const QString resolvedDisplay = waylandDisplay.trimmed().isEmpty()
+                                        ? QStringLiteral("wayland-systalia-0")
+                                        : waylandDisplay.trimmed();
+    environment.insert(QStringLiteral("WAYLAND_DISPLAY"), resolvedDisplay);
     environment.insert(QStringLiteral("QT_QPA_PLATFORM"), QStringLiteral("wayland"));
     environment.insert(QStringLiteral("GDK_BACKEND"), QStringLiteral("wayland"));
     return environment;

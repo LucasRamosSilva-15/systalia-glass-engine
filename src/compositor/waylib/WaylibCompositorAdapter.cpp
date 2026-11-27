@@ -1,5 +1,6 @@
 #include "WaylibCompositorAdapter.hpp"
 
+#include "LiquidTilingService.hpp"
 #include "ProcessLauncherService.hpp"
 #include "SystemControlService.hpp"
 #include "SystemTelemetryService.hpp"
@@ -59,6 +60,11 @@ void WaylibCompositorAdapter::registerQmlTypes() {
         "Systalia.System", 1, 0, "WorkspaceManager",
         [](QQmlEngine *, QJSEngine *) -> QObject * {
             return new WorkspaceManagerService();
+        });
+    qmlRegisterSingletonType<LiquidTilingService>(
+        "Systalia.System", 1, 0, "LiquidTiling",
+        [](QQmlEngine *, QJSEngine *) -> QObject * {
+            return new LiquidTilingService();
         });
 }
 
