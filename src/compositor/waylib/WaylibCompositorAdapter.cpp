@@ -15,6 +15,7 @@
 #include <wseat.h>
 #include <wserver.h>
 #include <wsocket.h>
+#include <wxdgdecorationmanager.h>
 #include <wxdgshell.h>
 
 #include <wlr_all.h>
@@ -106,6 +107,8 @@ bool WaylibCompositorAdapter::initialize(WOutputRenderWindow *window,
 
     m_backend = m_server->attach<WBackend>();
     m_xdgShell = m_server->attach<WXdgShell>(5);
+    m_xdgDecorationManager = m_server->attach<WXdgDecorationManager>();
+    m_xdgDecorationManager->setPreferredMode(WXdgDecorationManager::Server);
     m_surfaceAdapter->attachXdgShell(m_xdgShell);
 
     m_server->start();

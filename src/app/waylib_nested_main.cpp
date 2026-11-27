@@ -8,11 +8,27 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlComponent>
+#include <QSocketNotifier>
 #include <QTimer>
 
+#include <csignal>
 #include <iostream>
+#include <sys/socket.h>
+#include <unistd.h>
 
 WAYLIB_SERVER_USE_NAMESPACE
+
+namespace {
+int g_waylibSignalFd[2] = {-1, -1};
+
+void handleWaylibPosixSignal(int) {
+    const char byte = 1;
+    if (g_waylibSignalFd[0] >= 0) {
+        const ssize_t ignored = ::write(g_waylibSignalFd[0], &byte, sizeof(byte));
+        Q_UNUSED(ignored);
+    }
+}
+} // namespace
 
 int main(int argc, char *argv[]) {
     WServer::initializeQPA();
@@ -23,6 +39,23 @@ int main(int argc, char *argv[]) {
 
     QGuiApplication app(argc, argv);
     app.setApplicationName(QStringLiteral("systalia_waylib_nested"));
+
+    if (::socketpair(AF_UNIX, SOCK_STREAM, 0, g_waylibSignalFd) == 0) {
+        auto *signalNotifier = new QSocketNotifier(g_waylibSignalFd[1], QSocketNotifier::Read, &app);
+        QObject::connect(signalNotifier, &QSocketNotifier::activated, &app, [signalNotifier]() {
+            signalNotifier->setEnabled(false);
+            char tmp = 0;
+            const ssize_t ignored = ::read(g_waylibSignalFd[1], &tmp, sizeof(tmp));
+            Q_UNUSED(ignored);
+            QCoreApplication::quit();
+        });
+        struct sigaction sa {};
+        sa.sa_handler = handleWaylibPosixSignal;
+        sigemptyset(&sa.sa_mask);
+        sa.sa_flags = SA_RESTART;
+        ::sigaction(SIGTERM, &sa, nullptr);
+        ::sigaction(SIGINT, &sa, nullptr);
+    }
 
     QCommandLineParser parser;
     parser.addHelpOption();

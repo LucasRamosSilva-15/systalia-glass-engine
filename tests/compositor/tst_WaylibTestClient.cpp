@@ -2,6 +2,7 @@
 #include <QGuiApplication>
 #include <QRasterWindow>
 #include <QTimer>
+#include <memory>
 
 class SolidWindow final : public QRasterWindow {
 public:
@@ -29,6 +30,16 @@ int main(int argc, char *argv[]) {
     win.setTitle(title.isEmpty() ? QStringLiteral("SGE Waylib Test Client") : title);
     win.resize(320, 220);
     win.show();
+
+    std::unique_ptr<SolidWindow> popupWin;
+    if (qEnvironmentVariableIntValue("SGE_TEST_CLIENT_POPUP") == 1) {
+        popupWin = std::make_unique<SolidWindow>();
+        popupWin->setFlags(Qt::ToolTip);
+        popupWin->setTransientParent(&win);
+        popupWin->resize(140, 90);
+        popupWin->setPosition(win.x() + 24, win.y() + 24);
+        QTimer::singleShot(150, popupWin.get(), &SolidWindow::show);
+    }
 
     if (qEnvironmentVariableIsSet("SGE_TEST_CLIENT_MS")) {
         const int lifeMs = qEnvironmentVariableIntValue("SGE_TEST_CLIENT_MS");

@@ -42,6 +42,26 @@ Rectangle {
                   : ValoTheme.withAlpha(ValoTheme.borderHighlight, 0.28)
     clip: true
 
+    function clientOriginIn(target) {
+        return toplevelItem.mapToItem(target, 0, 0)
+    }
+
+    Connections {
+        target: frame.surfaceAdapter
+        function onMoveRequested(surface) {
+            if (surface === frame.windowShellSurface) {
+                frame.surfaceAdapter.activateSurface(frame.windowShellSurface)
+                frame.surfaceAdapter.raiseSurface(frame.windowShellSurface)
+            }
+        }
+        function onResizeRequested(surface, edgeFlags) {
+            if (surface === frame.windowShellSurface) {
+                frame.surfaceAdapter.activateSurface(frame.windowShellSurface)
+                frame.surfaceAdapter.raiseSurface(frame.windowShellSurface)
+            }
+        }
+    }
+
     function syncMaximizedSurface() {
         if (!isMaximized || !windowShellSurface) {
             return

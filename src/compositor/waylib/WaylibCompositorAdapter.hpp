@@ -6,6 +6,7 @@
 #include <wcursor.h>
 #include <wglobal.h>
 #include <wseat.h>
+#include <wxdgdecorationmanager.h>
 
 #include <QObject>
 #include <QPointer>
@@ -19,6 +20,7 @@ class WOutputRenderWindow;
 class WSeat;
 class WServer;
 class WSocket;
+class WXdgDecorationManager;
 class WXdgShell;
 WAYLIB_SERVER_END_NAMESPACE
 
@@ -36,6 +38,7 @@ class WaylibCompositorAdapter final : public QObject {
     Q_PROPERTY(WaylibSurfaceAdapter *surfaceAdapter READ surfaceAdapter CONSTANT)
     Q_PROPERTY(WAYLIB_SERVER_NAMESPACE::WSeat *seat READ seat CONSTANT)
     Q_PROPERTY(WAYLIB_SERVER_NAMESPACE::WCursor *cursor READ cursor CONSTANT)
+    Q_PROPERTY(WAYLIB_SERVER_NAMESPACE::WXdgDecorationManager *xdgDecorationManager READ xdgDecorationManager CONSTANT)
     Q_PROPERTY(bool running READ isRunning NOTIFY runningChanged)
     Q_PROPERTY(QString socketName READ socketName NOTIFY socketNameChanged)
 
@@ -64,6 +67,9 @@ public:
     [[nodiscard]] WaylibSurfaceAdapter *surfaceAdapter() const noexcept { return m_surfaceAdapter; }
     [[nodiscard]] WAYLIB_SERVER_NAMESPACE::WSeat *seat() const noexcept { return m_seat.data(); }
     [[nodiscard]] WAYLIB_SERVER_NAMESPACE::WCursor *cursor() const noexcept { return m_cursor; }
+    [[nodiscard]] WAYLIB_SERVER_NAMESPACE::WXdgDecorationManager *xdgDecorationManager() const noexcept {
+        return m_xdgDecorationManager;
+    }
     [[nodiscard]] WAYLIB_SERVER_NAMESPACE::WServer *server() const noexcept { return m_server; }
     [[nodiscard]] WAYLIB_SERVER_NAMESPACE::WBackend *backend() const noexcept { return m_backend; }
 
@@ -85,6 +91,7 @@ private:
     QPointer<WAYLIB_SERVER_NAMESPACE::WSeat> m_seat;
     WAYLIB_SERVER_NAMESPACE::WBackend *m_backend = nullptr;
     WAYLIB_SERVER_NAMESPACE::WXdgShell *m_xdgShell = nullptr;
+    WAYLIB_SERVER_NAMESPACE::WXdgDecorationManager *m_xdgDecorationManager = nullptr;
     WAYLIB_SERVER_NAMESPACE::WSocket *m_socket = nullptr;
 
     wlr_renderer *m_renderer = nullptr;

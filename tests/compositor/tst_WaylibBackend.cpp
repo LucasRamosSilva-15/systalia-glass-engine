@@ -7,6 +7,9 @@
 #include <woutputviewport.h>
 #include <wseat.h>
 #include <wserver.h>
+#include <wxdgdecorationmanager.h>
+#include <wxdgpopupsurface.h>
+#include <wxdgpopupsurfaceitem.h>
 #include <wxdgtoplevelsurface.h>
 #include <wxdgtoplevelsurfaceitem.h>
 
@@ -34,6 +37,23 @@ WXdgToplevelSurfaceItem *findToplevelItemInLayer(QQuickItem *clientLayer, WXdgTo
                 if (item->shellSurface() == target) {
                     return item;
                 }
+            }
+        }
+    }
+    return nullptr;
+}
+
+WXdgPopupSurfaceItem *findPopupItemInLayer(QQuickItem *popupLayer) {
+    if (!popupLayer) {
+        return nullptr;
+    }
+    for (QQuickItem *delegateRoot : popupLayer->childItems()) {
+        if (auto *direct = qobject_cast<WXdgPopupSurfaceItem *>(delegateRoot)) {
+            return direct;
+        }
+        for (QQuickItem *child : delegateRoot->findChildren<QQuickItem *>()) {
+            if (auto *item = qobject_cast<WXdgPopupSurfaceItem *>(child)) {
+                return item;
             }
         }
     }
@@ -164,6 +184,8 @@ void tst_WaylibBackend::headlessAndMultiWindowValoShellLifecycle() {
     QCOMPARE(adapter.socketName(), customSocket);
     QCOMPARE(adapter.cursor()->eventWindow(), static_cast<QWindow *>(renderWindow));
     QCOMPARE(adapter.seat()->keyboardFocusWindow(), static_cast<QWindow *>(renderWindow));
+    QVERIFY(adapter.xdgDecorationManager() != nullptr);
+    QCOMPARE(adapter.xdgDecorationManager()->preferredMode(), WXdgDecorationManager::Server);
     // Socket isolado não deve sobrescrever WAYLAND_DISPLAY do ambiente pai
     QCOMPARE(qgetenv("WAYLAND_DISPLAY"), originalWaylandDisplay);
 
@@ -207,13 +229,17 @@ void tst_WaylibBackend::headlessAndMultiWindowValoShellLifecycle() {
     const QString clientBin = QCoreApplication::applicationDirPath() + QStringLiteral("/tst_waylib_test_client");
     QVERIFY2(QFile::exists(clientBin), qPrintable(clientBin));
 
-    // 2. Ciclo de cliente único: conecta, mapeia XdgToplevelSurfaceItem e desconecta
+    // 2. Ciclo de cliente único + popup XDG: conecta, mapeia toplevel + XdgPopupSurfaceItem e desconecta
     {
+        QSignalSpy popupAddedSpy(surfaceAdapter, &WaylibSurfaceAdapter::popupAdded);
+        QSignalSpy popupRemovedSpy(surfaceAdapter, &WaylibSurfaceAdapter::popupRemoved);
+
         QProcess soloClient;
         QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
         env.insert(QStringLiteral("QT_QPA_PLATFORM"), QStringLiteral("wayland"));
         env.insert(QStringLiteral("WAYLAND_DISPLAY"), adapter.socketName());
-        env.insert(QStringLiteral("SGE_TEST_CLIENT_MS"), QStringLiteral("800"));
+        env.insert(QStringLiteral("SGE_TEST_CLIENT_MS"), QStringLiteral("1500"));
+        env.insert(QStringLiteral("SGE_TEST_CLIENT_POPUP"), QStringLiteral("1"));
         soloClient.setProcessEnvironment(env);
         soloClient.start(clientBin);
         QVERIFY2(soloClient.waitForStarted(3000), qPrintable(soloClient.errorString()));
@@ -224,7 +250,25 @@ void tst_WaylibBackend::headlessAndMultiWindowValoShellLifecycle() {
         QVERIFY(waitUntil([&]() { return findToplevelItemInLayer(clientLayer, surf) != nullptr; }, 3000));
         QCOMPARE(surfaceAdapter->surfaceCount(), 1);
 
+        QVERIFY(waitUntil([&]() { return popupAddedSpy.count() >= 1; }, 5000));
+        QVERIFY(surfaceAdapter->popupCount() >= 1);
+        QVERIFY(surfaceAdapter->popupModel() != nullptr);
+        auto *popupLayer = renderWindow->findChild<QQuickItem *>(QStringLiteral("waylibPopupLayer"));
+        QVERIFY(popupLayer != nullptr);
+        QVERIFY(waitUntil([&]() {
+            return findPopupItemInLayer(popupLayer) != nullptr;
+        }, 3000));
+
+        QSignalSpy moveReqSpy(surfaceAdapter, &WaylibSurfaceAdapter::moveRequested);
+        QSignalSpy resizeReqSpy(surfaceAdapter, &WaylibSurfaceAdapter::resizeRequested);
+        Q_EMIT surf->requestMove(adapter.seat(), 1);
+        Q_EMIT surf->requestResize(adapter.seat(), Qt::RightEdge | Qt::BottomEdge, 2);
+        QCOMPARE(moveReqSpy.count(), 1);
+        QCOMPARE(resizeReqSpy.count(), 1);
+
         QVERIFY(waitUntil([&]() { return surfaceRemovedSpy.count() >= 1; }, 5000));
+        QVERIFY(waitUntil([&]() { return popupRemovedSpy.count() >= 1; }, 3000));
+        QCOMPARE(surfaceAdapter->popupCount(), 0);
         QVERIFY(soloClient.state() == QProcess::NotRunning || soloClient.waitForFinished(3000));
         QCOMPARE(surfaceAdapter->surfaceCount(), 0);
         QVERIFY(surfaceAdapter->activeSurface() == nullptr);

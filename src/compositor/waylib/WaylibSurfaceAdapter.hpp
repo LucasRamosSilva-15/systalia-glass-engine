@@ -2,6 +2,7 @@
 
 #include <wglobal.h>
 #include <wseat.h>
+#include <wxdgpopupsurface.h>
 #include <wxdgtoplevelsurface.h>
 
 #include <QAbstractListModel>
@@ -12,10 +13,8 @@
 #include <QStringList>
 
 WAYLIB_SERVER_BEGIN_NAMESPACE
-class WSeat;
 class WSurface;
 class WXdgShell;
-class WXdgToplevelSurface;
 WAYLIB_SERVER_END_NAMESPACE
 
 namespace Systalia::Compositor::WaylibBackend {
@@ -65,11 +64,47 @@ private:
     QList<Entry> m_entries;
 };
 
+class WaylibPopupListModel final : public QAbstractListModel {
+    Q_OBJECT
+
+public:
+    enum Role {
+        SurfaceRole = Qt::UserRole + 1,
+        PopupSurfaceRole,
+        ParentSurfaceRole,
+        PopupXRole,
+        PopupYRole
+    };
+
+    struct Entry {
+        QPointer<WAYLIB_SERVER_NAMESPACE::WXdgPopupSurface> popupSurface;
+    };
+
+    explicit WaylibPopupListModel(QObject *parent = nullptr);
+
+    int rowCount(const QModelIndex &parent = QModelIndex()) const override;
+    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+    QHash<int, QByteArray> roleNames() const override;
+
+    int indexOf(WAYLIB_SERVER_NAMESPACE::WXdgPopupSurface *popup) const;
+    const QList<Entry> &entries() const noexcept { return m_entries; }
+
+    void appendEntry(const Entry &entry);
+    void removeRowAt(int row);
+    void notifyRowChanged(int row, const QList<int> &roles = {});
+    void clearAll();
+
+private:
+    QList<Entry> m_entries;
+};
+
 class WaylibSurfaceAdapter final : public QObject {
     Q_OBJECT
     Q_PROPERTY(QList<QObject *> surfaces READ surfaces NOTIFY surfacesChanged)
     Q_PROPERTY(QAbstractListModel *windowModel READ windowModel CONSTANT)
+    Q_PROPERTY(QAbstractListModel *popupModel READ popupModel CONSTANT)
     Q_PROPERTY(int surfaceCount READ surfaceCount NOTIFY surfacesChanged)
+    Q_PROPERTY(int popupCount READ popupCount NOTIFY popupsChanged)
     Q_PROPERTY(WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *activeSurface READ activeSurface NOTIFY activeSurfaceChanged)
     Q_PROPERTY(QString activeTitle READ activeTitle NOTIFY activeSurfaceChanged)
     Q_PROPERTY(QString activeAppId READ activeAppId NOTIFY activeSurfaceChanged)
@@ -85,7 +120,9 @@ public:
 
     [[nodiscard]] QList<QObject *> surfaces() const;
     [[nodiscard]] QAbstractListModel *windowModel() const noexcept { return m_model; }
+    [[nodiscard]] QAbstractListModel *popupModel() const noexcept { return m_popupModel; }
     [[nodiscard]] int surfaceCount() const noexcept { return m_model->rowCount(); }
+    [[nodiscard]] int popupCount() const noexcept { return m_popupModel->rowCount(); }
     [[nodiscard]] WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *activeSurface() const noexcept {
         return m_activeSurface.data();
     }
@@ -111,19 +148,28 @@ Q_SIGNALS:
     void surfaceAdded(WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *surface);
     void surfaceRemoved(WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *surface);
     void surfacesChanged();
+    void popupAdded(WAYLIB_SERVER_NAMESPACE::WXdgPopupSurface *popup);
+    void popupRemoved(WAYLIB_SERVER_NAMESPACE::WXdgPopupSurface *popup);
+    void popupsChanged();
     void activeSurfaceChanged();
     void titleChanged(WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *surface, const QString &title);
     void appIdChanged(WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *surface, const QString &appId);
+    void moveRequested(WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *surface);
+    void resizeRequested(WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *surface, int edgeFlags);
 
 private:
     void onToplevelAdded(WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *surface);
     void onToplevelRemoved(WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *surface);
+    void onPopupAdded(WAYLIB_SERVER_NAMESPACE::WXdgPopupSurface *popup);
+    void onPopupRemoved(WAYLIB_SERVER_NAMESPACE::WXdgPopupSurface *popup);
     void removeSurfaceInternal(WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *surface, bool emitRemoved);
+    void removePopupInternal(WAYLIB_SERVER_NAMESPACE::WXdgPopupSurface *popup, bool emitRemoved);
     [[nodiscard]] WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *topVisibleSurface(
         WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *exclude = nullptr) const;
     void syncSeatFocus(WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *surface);
 
     WaylibSurfaceListModel *m_model = nullptr;
+    WaylibPopupListModel *m_popupModel = nullptr;
     QPointer<WAYLIB_SERVER_NAMESPACE::WSeat> m_seat;
     QPointer<WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface> m_activeSurface;
     quint64 m_nextSurfaceId = 0;

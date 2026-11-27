@@ -125,9 +125,96 @@ void WaylibSurfaceListModel::clearAll() {
     endResetModel();
 }
 
+WaylibPopupListModel::WaylibPopupListModel(QObject *parent)
+    : QAbstractListModel(parent) {}
+
+int WaylibPopupListModel::rowCount(const QModelIndex &parent) const {
+    if (parent.isValid()) {
+        return 0;
+    }
+    return static_cast<int>(m_entries.size());
+}
+
+QVariant WaylibPopupListModel::data(const QModelIndex &index, int role) const {
+    if (!index.isValid() || index.row() < 0 || index.row() >= rowCount()) {
+        return {};
+    }
+    WXdgPopupSurface *popup = m_entries.at(index.row()).popupSurface.data();
+    switch (role) {
+    case SurfaceRole:
+        return QVariant::fromValue(popup ? popup->surface() : nullptr);
+    case PopupSurfaceRole:
+        return QVariant::fromValue(popup);
+    case ParentSurfaceRole:
+        return QVariant::fromValue(popup ? popup->parentSurface() : nullptr);
+    case PopupXRole:
+        return popup ? popup->getPopupPosition().x() : 0.0;
+    case PopupYRole:
+        return popup ? popup->getPopupPosition().y() : 0.0;
+    default:
+        return {};
+    }
+}
+
+QHash<int, QByteArray> WaylibPopupListModel::roleNames() const {
+    return {
+        {SurfaceRole, "surface"},
+        {PopupSurfaceRole, "popupSurface"},
+        {ParentSurfaceRole, "parentSurface"},
+        {PopupXRole, "popupX"},
+        {PopupYRole, "popupY"},
+    };
+}
+
+int WaylibPopupListModel::indexOf(WXdgPopupSurface *popup) const {
+    if (!popup) {
+        return -1;
+    }
+    for (int i = 0; i < static_cast<int>(m_entries.size()); ++i) {
+        if (m_entries.at(i).popupSurface.data() == popup) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+void WaylibPopupListModel::appendEntry(const Entry &entry) {
+    const int row = rowCount();
+    beginInsertRows(QModelIndex(), row, row);
+    m_entries.append(entry);
+    endInsertRows();
+}
+
+void WaylibPopupListModel::removeRowAt(int row) {
+    if (row < 0 || row >= rowCount()) {
+        return;
+    }
+    beginRemoveRows(QModelIndex(), row, row);
+    m_entries.removeAt(row);
+    endRemoveRows();
+}
+
+void WaylibPopupListModel::notifyRowChanged(int row, const QList<int> &roles) {
+    if (row < 0 || row >= rowCount()) {
+        return;
+    }
+    const QModelIndex idx = index(row, 0);
+    Q_EMIT dataChanged(idx, idx, roles);
+}
+
+void WaylibPopupListModel::clearAll() {
+    if (m_entries.isEmpty()) {
+        return;
+    }
+    beginResetModel();
+    m_entries.clear();
+    endResetModel();
+}
+
 WaylibSurfaceAdapter::WaylibSurfaceAdapter(QObject *parent)
     : QObject(parent),
-      m_model(new WaylibSurfaceListModel(this)) {}
+      m_model(new WaylibSurfaceListModel(this)),
+      m_popupModel(new WaylibPopupListModel(this)) {}
 
 void WaylibSurfaceAdapter::attachXdgShell(WXdgShell *xdgShell) {
     if (!xdgShell) {
@@ -137,6 +224,10 @@ void WaylibSurfaceAdapter::attachXdgShell(WXdgShell *xdgShell) {
             this, &WaylibSurfaceAdapter::onToplevelAdded);
     connect(xdgShell, &WXdgShell::toplevelSurfaceRemoved,
             this, &WaylibSurfaceAdapter::onToplevelRemoved);
+    connect(xdgShell, &WXdgShell::popupSurfaceAdded,
+            this, &WaylibSurfaceAdapter::onPopupAdded);
+    connect(xdgShell, &WXdgShell::popupSurfaceRemoved,
+            this, &WaylibSurfaceAdapter::onPopupRemoved);
 }
 
 void WaylibSurfaceAdapter::attachSeat(WSeat *seat) {
@@ -150,11 +241,22 @@ void WaylibSurfaceAdapter::reset() {
             entry.shellSurface->disconnect(this);
         }
     }
+    const auto popups = m_popupModel->entries();
+    for (const auto &popupEntry : popups) {
+        if (popupEntry.popupSurface) {
+            popupEntry.popupSurface->disconnect(this);
+        }
+    }
+    const bool hadPopups = (m_popupModel->rowCount() > 0);
     const bool hadEntries = (m_model->rowCount() > 0);
     const bool hadActive = !m_activeSurface.isNull();
     m_activeSurface.clear();
     if (m_seat && m_seat->handle()) {
         m_seat->clearKeyboardFocusSurface();
+    }
+    if (hadPopups) {
+        m_popupModel->clearAll();
+        Q_EMIT popupsChanged();
     }
     if (hadEntries) {
         m_model->clearAll();
@@ -509,6 +611,22 @@ void WaylibSurfaceAdapter::onToplevelAdded(WXdgToplevelSurface *surface) {
         }
     });
 
+    connect(surface, &WToplevelSurface::requestMove, this, [this, safeSurface](WSeat *, quint32) {
+        if (!safeSurface) {
+            return;
+        }
+        activateSurface(safeSurface.data());
+        Q_EMIT moveRequested(safeSurface.data());
+    });
+
+    connect(surface, &WToplevelSurface::requestResize, this, [this, safeSurface](WSeat *, Qt::Edges edges, quint32) {
+        if (!safeSurface) {
+            return;
+        }
+        activateSurface(safeSurface.data());
+        Q_EMIT resizeRequested(safeSurface.data(), static_cast<int>(edges));
+    });
+
     connect(surface, &WToplevelSurface::beforeDestroy, this, [this, surface]() {
         removeSurfaceInternal(surface, true);
     });
@@ -524,6 +642,58 @@ void WaylibSurfaceAdapter::onToplevelAdded(WXdgToplevelSurface *surface) {
 
 void WaylibSurfaceAdapter::onToplevelRemoved(WXdgToplevelSurface *surface) {
     removeSurfaceInternal(surface, true);
+}
+
+void WaylibSurfaceAdapter::onPopupAdded(WXdgPopupSurface *popup) {
+    if (!popup || m_popupModel->indexOf(popup) >= 0) {
+        return;
+    }
+
+    WaylibPopupListModel::Entry entry;
+    entry.popupSurface = popup;
+    m_popupModel->appendEntry(entry);
+
+    QPointer<WXdgPopupSurface> safePopup(popup);
+    connect(popup, &WXdgPopupSurface::reposition, this, [this, safePopup]() {
+        if (!safePopup) {
+            return;
+        }
+        const int row = m_popupModel->indexOf(safePopup.data());
+        if (row >= 0) {
+            m_popupModel->notifyRowChanged(row, {
+                WaylibPopupListModel::PopupXRole,
+                WaylibPopupListModel::PopupYRole
+            });
+        }
+    });
+    connect(popup, &WToplevelSurface::beforeDestroy, this, [this, popup]() {
+        removePopupInternal(popup, true);
+    });
+    connect(popup, &QObject::destroyed, this, [this, popup]() {
+        removePopupInternal(popup, false);
+    });
+
+    Q_EMIT popupAdded(popup);
+    Q_EMIT popupsChanged();
+}
+
+void WaylibSurfaceAdapter::onPopupRemoved(WXdgPopupSurface *popup) {
+    removePopupInternal(popup, true);
+}
+
+void WaylibSurfaceAdapter::removePopupInternal(WXdgPopupSurface *popup, bool emitRemoved) {
+    const int row = m_popupModel->indexOf(popup);
+    if (row < 0) {
+        return;
+    }
+    if (emitRemoved && popup) {
+        popup->disconnect(this);
+    }
+    m_popupModel->removeRowAt(row);
+    if (emitRemoved) {
+        Q_EMIT popupRemoved(popup);
+    }
+    Q_EMIT popupsChanged();
 }
 
 void WaylibSurfaceAdapter::removeSurfaceInternal(WXdgToplevelSurface *surface, bool emitRemoved) {

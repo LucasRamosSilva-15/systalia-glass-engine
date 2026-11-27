@@ -281,7 +281,63 @@ Item {
             }
         }
 
-        // 3. Camada de cursor acima do wallpaper, janelas e chrome VALO
+        // 3. Camada de popups XDG (menus, tooltips, comboboxes acima de janelas e chrome)
+        Item {
+            id: popupLayer
+            objectName: "waylibPopupLayer"
+            anchors.fill: parent
+            z: 120
+
+            function originForParent(parentSurf) {
+                if (!parentSurf) {
+                    return Qt.point(clientLayer.x, clientLayer.y)
+                }
+                for (let i = 0; i < surfaceRepeater.count; ++i) {
+                    const frameItem = surfaceRepeater.itemAt(i)
+                    if (frameItem && frameItem.waylandSurface === parentSurf) {
+                        return frameItem.clientOriginIn(popupLayer)
+                    }
+                }
+                return Qt.point(clientLayer.x, clientLayer.y)
+            }
+
+            Repeater {
+                id: popupRepeater
+                model: root.compositorAdapter.surfaceAdapter.popupModel
+
+                delegate: Item {
+                    id: popupDelegate
+                    required property var surface
+                    required property var popupSurface
+                    required property var parentSurface
+                    required property real popupX
+                    required property real popupY
+
+                    readonly property point baseOrigin: popupLayer.originForParent(parentSurface)
+
+                    x: baseOrigin.x + popupX
+                    y: baseOrigin.y + popupY
+                    width: popupItem.implicitWidth
+                    height: popupItem.implicitHeight
+                    z: 120
+
+                    XdgPopupSurfaceItem {
+                        id: popupItem
+                        objectName: "waylibPopupItem"
+                        surface: popupDelegate.surface
+                        shellSurface: popupDelegate.popupSurface
+                    }
+                }
+            }
+        }
+
+        Shortcut {
+            sequence: "Alt+Tab"
+            context: Qt.ApplicationShortcut
+            onActivated: root.compositorAdapter.surfaceAdapter.cycleFocus()
+        }
+
+        // 4. Camada de cursor acima do wallpaper, janelas, chrome VALO e popups
         Item {
             id: cursorOverlayLayer
             objectName: "waylibCursorOverlayLayer"
