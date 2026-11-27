@@ -8,6 +8,7 @@
 #include <wbackend.h>
 #include <wcursor.h>
 #include <winputdevice.h>
+#include <woutput.h>
 #include <woutputrenderwindow.h>
 #include <wquickcursor.h>
 #include <wrenderhelper.h>
@@ -72,6 +73,8 @@ WaylibCompositorAdapter::WaylibCompositorAdapter(QObject *parent)
     m_seat->setCursor(m_cursor);
     m_cursor->setLayout(m_outputAdapter->outputLayout());
     m_surfaceAdapter->attachSeat(m_seat.data());
+    connect(m_outputAdapter, &WaylibOutputAdapter::outputReady,
+            this, &WaylibCompositorAdapter::bindCursorToOutput);
 }
 
 WaylibCompositorAdapter::~WaylibCompositorAdapter() {
@@ -232,6 +235,29 @@ void WaylibCompositorAdapter::shutdown() {
 void WaylibCompositorAdapter::onInputAdded(WInputDevice *device) {
     if (m_seat && device && !m_seat->deviceList().contains(device)) {
         m_seat->attachInputDevice(device);
+        if (device->type() == WInputDevice::Type::Pointer) {
+            if (WOutput *primary = m_outputAdapter->primaryOutput()) {
+                bindCursorToOutput(primary);
+            }
+        }
+    }
+}
+
+void WaylibCompositorAdapter::bindCursorToOutput(WOutput *output) {
+    if (!output || !m_cursor) {
+        return;
+    }
+    if (!output->cursorList().contains(m_cursor)) {
+        output->addCursor(m_cursor);
+    }
+    if (m_cursor->handle() && output->handle() && m_seat) {
+        for (WInputDevice *device : m_seat->deviceList()) {
+            if (device && device->type() == WInputDevice::Type::Pointer && device->handle()) {
+                wlr_cursor_map_input_to_output(m_cursor->handle(),
+                                               device->handle(),
+                                               output->handle());
+            }
+        }
     }
 }
 

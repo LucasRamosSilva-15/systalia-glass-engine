@@ -62,6 +62,10 @@ void WaylibOutputAdapter::reset() {
     for (WOutput *out : std::as_const(m_outputs)) {
         if (out) {
             out->disconnect(this);
+            const auto cursors = out->cursorList();
+            for (WCursor *cursor : cursors) {
+                out->removeCursor(cursor);
+            }
         }
         removeRequestStateListener(out);
         m_outputCreator->removeByOwner(out);
@@ -154,6 +158,7 @@ void WaylibOutputAdapter::onViewportInitialized(WOutputViewport *viewport) {
 
     if (!output->property("_sgeEnabled").toBool()) {
         output->setProperty("_sgeEnabled", true);
+        output->setForceSoftwareCursor(true);
         wlr_output_state newState{};
         wlr_output_state_init(&newState);
         if (!wlrOut->current_mode) {
@@ -172,6 +177,7 @@ void WaylibOutputAdapter::onViewportInitialized(WOutputViewport *viewport) {
         wlr_output_state_finish(&newState);
     }
     syncPrimaryOutputSize();
+    Q_EMIT outputReady(output);
 }
 
 void WaylibOutputAdapter::installRequestStateListener(WOutput *output) {

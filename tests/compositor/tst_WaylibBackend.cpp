@@ -169,8 +169,15 @@ void tst_WaylibBackend::headlessAndMultiWindowValoShellLifecycle() {
 
     QTRY_VERIFY(adapter.outputAdapter()->outputCount() >= 1);
     QTRY_COMPARE(adapter.outputAdapter()->primaryOutputSize(), QSize(1280, 760));
+    QVERIFY(adapter.outputAdapter()->primaryOutput() != nullptr);
+    QVERIFY(adapter.outputAdapter()->primaryOutput()->forceSoftwareCursor());
+    QVERIFY(adapter.outputAdapter()->primaryOutput()->cursorList().contains(adapter.cursor()));
+    auto *cursorLayer = renderWindow->findChild<QQuickItem *>(QStringLiteral("waylibCursorOverlayLayer"));
+    auto *cursorArrow = renderWindow->findChild<QQuickItem *>(QStringLiteral("waylibSoftwarePointer"));
+    QVERIFY(cursorLayer != nullptr && cursorArrow != nullptr);
     adapter.cursor()->setPosition(QPointF(240.0, 180.0));
     QCOMPARE(adapter.cursor()->position(), QPointF(240.0, 180.0));
+    QCOMPARE(cursorArrow->position(), QPointF(240.0, 180.0));
 
     // Simula redimensionamento dinâmico do output nested (ex.: maximização WL-1 -> 1920x1040)
     QVERIFY(adapter.outputAdapter()->requestOutputResize(1920, 1040));

@@ -31,6 +31,7 @@ class WaylibOutputAdapter final : public QObject {
     Q_PROPERTY(WAYLIB_SERVER_NAMESPACE::WQuickOutputLayout *outputLayout READ outputLayout CONSTANT)
     Q_PROPERTY(int outputCount READ outputCount NOTIFY outputCountChanged)
     Q_PROPERTY(QSize primaryOutputSize READ primaryOutputSize NOTIFY primaryOutputSizeChanged)
+    Q_PROPERTY(WAYLIB_SERVER_NAMESPACE::WOutput *primaryOutput READ primaryOutput NOTIFY outputCountChanged)
 
 public:
     explicit WaylibOutputAdapter(WAYLIB_SERVER_NAMESPACE::WServer *server, QObject *parent = nullptr);
@@ -49,11 +50,15 @@ public:
     }
     [[nodiscard]] int outputCount() const noexcept { return m_outputs.size(); }
     [[nodiscard]] QSize primaryOutputSize() const noexcept { return m_primaryOutputSize; }
+    [[nodiscard]] WAYLIB_SERVER_NAMESPACE::WOutput *primaryOutput() const noexcept {
+        return m_outputs.isEmpty() ? nullptr : m_outputs.first();
+    }
 
     Q_INVOKABLE bool requestOutputResize(int width, int height);
 
 Q_SIGNALS:
     void outputAdded(const QString &name, const QSize &size);
+    void outputReady(WAYLIB_SERVER_NAMESPACE::WOutput *output);
     void outputRemoved(const QString &name);
     void outputCountChanged();
     void primaryOutputSizeChanged(const QSize &size);

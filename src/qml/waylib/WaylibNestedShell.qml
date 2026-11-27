@@ -33,12 +33,6 @@ Item {
                     width: Math.max(renderWindow.width, waylandOutput.size.width / Math.max(1.0, waylandOutput.scale))
                     height: Math.max(renderWindow.height, waylandOutput.size.height / Math.max(1.0, waylandOutput.scale))
 
-                    cursorDelegate: Cursor {
-                        property var outputCursor
-                        cursor: root.compositorAdapter.cursor
-                        output: outputItem.output
-                    }
-
                     OutputViewport {
                         id: outputViewport
                         objectName: "waylibOutputViewport"
@@ -284,6 +278,43 @@ Item {
                     acceptedButtons: Qt.AllButtons
                     onPressed: (mouse) => { mouse.accepted = true }
                 }
+            }
+        }
+
+        // 3. Camada de cursor acima do wallpaper, janelas e chrome VALO
+        Item {
+            id: cursorOverlayLayer
+            objectName: "waylibCursorOverlayLayer"
+            anchors.fill: parent
+            z: 10000
+
+            Canvas {
+                id: softwarePointerArrow
+                objectName: "waylibSoftwarePointer"
+                visible: root.compositorAdapter.cursor && root.compositorAdapter.cursor.visible
+                width: 20
+                height: 24
+                x: root.compositorAdapter.cursor ? root.compositorAdapter.cursor.position.x : 0
+                y: root.compositorAdapter.cursor ? root.compositorAdapter.cursor.position.y : 0
+                onPaint: {
+                    var ctx = getContext("2d")
+                    ctx.reset()
+                    ctx.beginPath()
+                    ctx.moveTo(1, 1)
+                    ctx.lineTo(1, 17)
+                    ctx.lineTo(5.5, 13)
+                    ctx.lineTo(9, 20)
+                    ctx.lineTo(11.5, 18.8)
+                    ctx.lineTo(8, 12)
+                    ctx.lineTo(13.5, 12)
+                    ctx.closePath()
+                    ctx.fillStyle = "#0b1626"
+                    ctx.fill()
+                    ctx.lineWidth = 1.4
+                    ctx.strokeStyle = "#e2f1ff"
+                    ctx.stroke()
+                }
+                Component.onCompleted: requestPaint()
             }
         }
     }

@@ -76,6 +76,7 @@ Q_SIGNALS:
 private:
     void onInputAdded(WAYLIB_SERVER_NAMESPACE::WInputDevice *device);
     void onInputRemoved(WAYLIB_SERVER_NAMESPACE::WInputDevice *device);
+    void bindCursorToOutput(WAYLIB_SERVER_NAMESPACE::WOutput *output);
 
     WAYLIB_SERVER_NAMESPACE::WServer *m_server = nullptr;
     WaylibOutputAdapter *m_outputAdapter = nullptr;
