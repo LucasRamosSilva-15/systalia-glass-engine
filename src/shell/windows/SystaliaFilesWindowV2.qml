@@ -30,7 +30,7 @@ Item {
     property real refractiveIndex: 1.25
     property real dispersion: 0.040
     property real caustics: 0.18
-    property real surfaceOpacity: 0.48
+    property real surfaceOpacity: ValoTheme.opacityGlassInternalWindow
     property real surfaceSlant: 0
     property real cornerRadius: 20
     property int snapState: 0
@@ -68,7 +68,7 @@ Item {
         cornerRadius: fileWindow.cornerRadius
         specularStrokeWidth: 1.25
         surfaceOpacity: fileWindow.materialActive
-                        ? (fileWindow.highContrast ? 0.88 : fileWindow.surfaceOpacity)
+                        ? (fileWindow.highContrast ? ValoTheme.opacityGlassHighContrast : fileWindow.surfaceOpacity)
                         : 0.0
         volumetricTint: fileWindow.highContrast
                         ? Qt.rgba(0.01, 0.06, 0.12, 0.94)

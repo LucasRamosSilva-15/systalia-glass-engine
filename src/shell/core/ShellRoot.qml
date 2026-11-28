@@ -442,7 +442,7 @@ Item {
                         screenResolution: Qt.binding(() => Qt.point(
                             shellRoot.width * shellRoot.effectiveDpr,
                             shellRoot.height * shellRoot.effectiveDpr)),
-                        animTime: Qt.binding(() => animTimer.tick),
+                        animTime: 0.0,
                         x: Math.round(160 + offset),
                         y: Math.round(80 + offset)
                     })
@@ -494,7 +494,7 @@ Item {
             height: parent.height
             x: clientWindowsLayer.parallaxOffset * 0.12
             y: 0
-            source: Qt.resolvedUrl("assets/figma/valo-ocean-atmosphere.png")
+            source: Qt.resolvedUrl("assets/figma/valo-ocean-atmosphere.svg")
             fillMode: Image.PreserveAspectCrop
             asynchronous: true
             cache: true
@@ -540,15 +540,6 @@ Item {
         anchors.fill: parent
         anchors.topMargin: 60
         anchors.bottomMargin: 94
-    }
-
-    Timer {
-        id: animTimer
-        interval: 16
-        running: true
-        repeat: true
-        property real tick: 0.0
-        onTriggered: tick += 0.02
     }
 
     WorkspaceViewport {
@@ -693,7 +684,7 @@ Item {
         backdropSource: internalWindowBackdrop.sourceFor(glassChassis)
         screenResolution: Qt.vector2d(shellRoot.width * shellRoot.effectiveDpr,
                                       shellRoot.height * shellRoot.effectiveDpr)
-        animationTime: animTimer.tick
+        animationTime: 0.0
         controller: shellRoot
         waylandServer: waylandServer
         refractiveIndex: materialWindow.refractiveIndex
@@ -715,7 +706,7 @@ Item {
         backdropSource: internalWindowBackdrop.sourceFor(materialWindow)
         screenResolution: Qt.vector2d(shellRoot.width * shellRoot.effectiveDpr,
                                       shellRoot.height * shellRoot.effectiveDpr)
-        animationTime: animTimer.tick
+        animationTime: 0.0
         controller: shellRoot
     }
 
@@ -752,7 +743,7 @@ Item {
             backdropSource: backdropGrab
             screenResolution: Qt.vector2d(shellRoot.width * shellRoot.effectiveDpr,
                                           shellRoot.height * shellRoot.effectiveDpr)
-            animationTime: animTimer.tick
+            animationTime: 0.0
         }
 
         Shell.TileSplitter {
@@ -787,7 +778,7 @@ Item {
         backdropSource: overlayBackdrop.sourceFor(topBar)
         screenResolution: Qt.vector2d(shellRoot.width * shellRoot.effectiveDpr,
                                       shellRoot.height * shellRoot.effectiveDpr)
-        animationTime: animTimer.tick
+        animationTime: 0.0
     }
 
     // Réplica configurável da TopBar em monitores secundários via Instantiator
@@ -810,7 +801,7 @@ Item {
             blurProfile: materialWindow.materialActive ? materialWindow.blurProfile : 0
             backdropSource: backdropGrab
             screenResolution: OutputManager.physicalResolutionAt(index)
-            animationTime: animTimer.tick
+            animationTime: 0.0
             onLauncherRequested: flowMenu.toggle()
             onControlCenterRequested: controlCenter.toggle()
             onTerminalRequested: {
@@ -862,7 +853,7 @@ Item {
             screenResolution: Qt.vector2d(shellRoot.width * shellRoot.effectiveDpr,
                                           shellRoot.height * shellRoot.effectiveDpr)
             activeAppIds: waylandServer.activeAppIds
-            animationTime: animTimer.tick
+            animationTime: 0.0
             filesVisible: glassChassis.visible
             settingsOpen: materialWindow.visible
             refractiveIndex: materialWindow.refractiveIndex
@@ -908,7 +899,7 @@ Item {
         backdropSource: backdropGrab
         screenResolution: Qt.vector2d(shellRoot.width * shellRoot.effectiveDpr,
                                       shellRoot.height * shellRoot.effectiveDpr)
-        animationTime: animTimer.tick
+        animationTime: 0.0
     }
 
     Connections {
@@ -995,7 +986,7 @@ Item {
         backdropSource: backdropGrab
         screenResolution: Qt.vector2d(shellRoot.width * shellRoot.effectiveDpr,
                                       shellRoot.height * shellRoot.effectiveDpr)
-        animationTime: animTimer.tick
+        animationTime: 0.0
     }
 
     Shell.SystaliaNotificationHost {
@@ -1006,7 +997,7 @@ Item {
         backdropSource: backdropGrab
         screenResolution: Qt.vector2d(shellRoot.width * shellRoot.effectiveDpr,
                                       shellRoot.height * shellRoot.effectiveDpr)
-        animationTime: animTimer.tick
+        animationTime: 0.0
     }
 
     Shell.SystaliaTaskSwitcher {
@@ -1020,6 +1011,6 @@ Item {
         backdropSource: backdropGrab
         screenResolution: Qt.vector2d(shellRoot.width * shellRoot.effectiveDpr,
                                       shellRoot.height * shellRoot.effectiveDpr)
-        animationTime: animTimer.tick
+        animationTime: 0.0
     }
 }

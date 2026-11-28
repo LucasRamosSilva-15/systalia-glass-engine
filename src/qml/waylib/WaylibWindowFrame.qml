@@ -298,7 +298,7 @@ Item {
         ior: frame.refractiveIndex
         chromaticDispersion: frame.effectiveDispersion
         causticIntensity: frame.caustics
-        surfaceOpacity: frame.isActive ? 0.50 : 0.42
+        surfaceOpacity: frame.isActive ? ValoTheme.opacityGlassWindowActive : ValoTheme.opacityGlassWindowInactive
         volumetricTint: Qt.rgba(0.025, 0.12, 0.22, 0.52)
         shadowOffsetY: frame.isMaximized ? 0.0 : 16.0
         shadowIntensity: frame.isMaximized ? 0.0 : 0.38

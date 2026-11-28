@@ -492,7 +492,7 @@ Item {
             slant: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.slant : 0
             ior: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.ior : 1.25
             chromaticDispersion: windowContainer.opticalMetadata ? windowContainer.opticalMetadata.dispersion : 0.04
-            surfaceOpacity: windowContainer.isWindowActive ? 0.50 : 0.42
+            surfaceOpacity: windowContainer.isWindowActive ? ValoTheme.opacityGlassWindowActive : ValoTheme.opacityGlassWindowInactive
             // V2 active controls node lifetime, not keyboard activation.
             active: windowContainer.visible
             userHighContrast: windowContainer.userHighContrast

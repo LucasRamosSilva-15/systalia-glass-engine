@@ -645,7 +645,9 @@ private slots:
         evaluate("trackedClientContainers[0].syncOutputRouting()");
         QVERIFY(evaluate("trackedClientContainers[0].screenResolution.x === width * devicePixelRatio").toBool());
         const double timeBefore = evaluate("trackedClientContainers[0].animTime").toDouble();
-        QTRY_VERIFY(evaluate("trackedClientContainers[0].animTime").toDouble() > timeBefore);
+        QCOMPARE(timeBefore, 0.0);
+        QTest::qWait(50);
+        QCOMPARE(evaluate("trackedClientContainers[0].animTime").toDouble(), timeBefore);
         const int previousWidth = m_root->property("width").toInt();
         m_root->setProperty("width", 1100);
         QTRY_VERIFY(evaluate("trackedClientContainers[0].screenResolution.x === width * devicePixelRatio").toBool());

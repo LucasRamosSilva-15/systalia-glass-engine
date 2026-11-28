@@ -19,7 +19,8 @@ private slots:
     void materialTokensMatchSpecification();
     void compositeStylesMatchSpecification();
     void qmlValoThemeSingletonExposesAllTokens();
-    void qmlSystaliaThemeBackwardsCompatibility();
+    void qmlSystaliaThemeRemovedFromModule();
+    void glassSurfaceOpacityTokensMatchSpecification();
     void acrylicIconTokensMatchFigmaV3();
 };
 
@@ -210,32 +211,48 @@ void TestValoTheme::qmlValoThemeSingletonExposesAllTokens() {
     QVERIFY(qAbs(alphaSample.alphaF() - 0.5) < 0.001);
 }
 
-void TestValoTheme::qmlSystaliaThemeBackwardsCompatibility() {
+void TestValoTheme::qmlSystaliaThemeRemovedFromModule() {
+    QVERIFY(!QFile::exists(QStringLiteral(":/qt/qml/Systalia/Engine/src/qml/theme/SystaliaTheme.qml")));
+}
+
+void TestValoTheme::glassSurfaceOpacityTokensMatchSpecification() {
+    using namespace Systalia::ValoTokens;
+    QCOMPARE(opacityGlassTopbar, 0.50);
+    QCOMPARE(opacityGlassDock, 0.34);
+    QCOMPARE(opacityGlassWindowActive, 0.50);
+    QCOMPARE(opacityGlassWindowInactive, 0.42);
+    QCOMPARE(opacityGlassPanel, 0.52);
+    QCOMPARE(opacityGlassInternalWindow, 0.50);
+    QCOMPARE(opacityGlassOverlay, 0.88);
+    QCOMPARE(opacityGlassHighContrast, 0.92);
+    QVERIFY(opacityGlassHighContrast >= 0.92);
+
     QQmlEngine engine;
     QQmlComponent component(&engine);
     component.setData(
         "import QtQuick\n"
         "import Systalia.Engine\n"
         "Item {\n"
-        "    readonly property color ocean: SystaliaTheme.ocean\n"
-        "    readonly property color textMuted: SystaliaTheme.textMuted\n"
-        "    readonly property string family: SystaliaTheme.fontFamily\n"
-        "    readonly property color valoOcean: ValoTheme.primitiveNavy950\n"
-        "    readonly property string valoFamily: ValoTheme.fontFamily\n"
-        "    readonly property bool hasValo: SystaliaTheme.valo !== undefined\n"
+        "    readonly property real topbar: ValoTheme.opacityGlassTopbar\n"
+        "    readonly property real dock: ValoTheme.opacityGlassDock\n"
+        "    readonly property real winActive: ValoTheme.opacityGlassWindowActive\n"
+        "    readonly property real winInactive: ValoTheme.opacityGlassWindowInactive\n"
+        "    readonly property real panel: ValoTheme.opacityGlassPanel\n"
+        "    readonly property real internalWin: ValoTheme.opacityGlassInternalWindow\n"
+        "    readonly property real overlay: ValoTheme.opacityGlassOverlay\n"
+        "    readonly property real hc: ValoTheme.opacityGlassHighContrast\n"
         "}\n",
-        QUrl()
-    );
-
+        QUrl());
     QScopedPointer<QObject> obj(component.create());
     QVERIFY2(!obj.isNull(), qPrintable(component.errorString()));
-
-    QCOMPARE(obj->property("ocean").value<QColor>(), QColor("#061426"));
-    QCOMPARE(obj->property("textMuted").value<QColor>(), QColor("#9CBAD3"));
-    QCOMPARE(obj->property("family").toString(), QStringLiteral("Inter"));
-    QCOMPARE(obj->property("ocean").value<QColor>(), obj->property("valoOcean").value<QColor>());
-    QCOMPARE(obj->property("family").toString(), obj->property("valoFamily").toString());
-    QVERIFY(obj->property("hasValo").toBool());
+    QCOMPARE(obj->property("topbar").toReal(), 0.50);
+    QCOMPARE(obj->property("dock").toReal(), 0.34);
+    QCOMPARE(obj->property("winActive").toReal(), 0.50);
+    QCOMPARE(obj->property("winInactive").toReal(), 0.42);
+    QCOMPARE(obj->property("panel").toReal(), 0.52);
+    QCOMPARE(obj->property("internalWin").toReal(), 0.50);
+    QCOMPARE(obj->property("overlay").toReal(), 0.88);
+    QCOMPARE(obj->property("hc").toReal(), 0.92);
 }
 
 

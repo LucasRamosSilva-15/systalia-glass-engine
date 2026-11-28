@@ -72,7 +72,7 @@ Item {
         cornerRadii: topBar.cornerRadii
         cornerRadius: topBar.defaultRadius
         specularStrokeWidth: 1.20
-        surfaceOpacity: topBar.highContrast ? 0.85 : 0.42
+        surfaceOpacity: topBar.highContrast ? ValoTheme.opacityGlassHighContrast : ValoTheme.opacityGlassTopbar
         volumetricTint: topBar.highContrast
                         ? Qt.rgba(0.01, 0.05, 0.10, 0.92)
                         : Qt.rgba(0.02, 0.09, 0.18, 0.55)

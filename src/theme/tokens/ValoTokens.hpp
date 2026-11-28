@@ -1,3 +1,5 @@
+// GENERATED FILE — DO NOT EDIT MANUALLY.
+// Source of truth: src/theme/tokens/valo.tokens.json (via tools/codegen/generate_valo_tokens.py)
 #pragma once
 #include <QColor>
 #include <QtGlobal>
@@ -6,7 +8,7 @@
 namespace Systalia::ValoTokens {
 
 // =========================================================================
-// 1. PRIMITIVES (22 tokens)
+// 1. PRIMITIVES
 // =========================================================================
 inline const QColor primitiveNavy950 = QColor("#061426");
 inline const QColor primitiveNavy900 = QColor("#071628");
@@ -30,8 +32,6 @@ inline const QColor primitiveAmber300 = QColor("#FFCC7A");
 inline const QColor primitiveWhite = QColor("#FFFFFF");
 inline const QColor primitiveBlack = QColor("#000000");
 inline const QColor primitiveTextMuted = QColor("#9CBAD3");
-
-// VALO V3 — 11 additive acrylic icon primitives (Figma 2026-11-07)
 inline const QColor primitiveIce100 = QColor("#F6FFFF");
 inline const QColor primitiveIce200 = QColor("#CFFBFF");
 inline const QColor primitiveIce300 = QColor("#A4F6FF");
@@ -45,7 +45,7 @@ inline const QColor primitiveNavyAcrylic800 = QColor("#152C65");
 inline const QColor primitiveVioletEdge = QColor("#738ADD");
 
 // =========================================================================
-// 2. SEMANTIC COLORS (23 tokens)
+// 2. SEMANTIC COLORS
 // =========================================================================
 inline const QColor backgroundDesktop = QColor("#061426");
 inline const QColor backgroundTopbar = QColor("#071628");
@@ -70,8 +70,6 @@ inline const QColor borderSubtle = QColor("#4BAFC7");
 inline const QColor borderFocus = QColor("#49F3FC");
 inline const QColor iconDefault = QColor("#BDF5FF");
 inline const QColor iconActive = QColor("#49F3FC");
-
-// VALO V3 — 12 semantic icon roles; primitive values are retained for compatibility
 inline const QColor iconSidebarDefault = primitiveAqua400;
 inline const QColor iconSidebarSelected = primitiveIce300;
 inline const QColor iconFileEdge = primitiveAquaEdge;
@@ -86,7 +84,7 @@ inline const QColor iconFileSymbol = primitiveAqua400;
 inline const QColor iconFileEdgeShadow = primitiveVioletEdge;
 
 // =========================================================================
-// 3. METRICS (28 tokens)
+// 3. METRICS
 // =========================================================================
 inline constexpr qreal spacing2 = 2;
 inline constexpr qreal spacing4 = 4;
@@ -117,8 +115,6 @@ inline constexpr auto fontFamily = "Inter";
 inline constexpr qreal motionDurationFastMs = 120;
 inline constexpr qreal motionDurationNormalMs = 220;
 inline constexpr qreal motionDurationSpringMs = 420;
-
-// VALO V3 — 6 acrylic icon dimensions and strokes (logical pixels)
 inline constexpr qreal sizeFileIconWidth = 55;
 inline constexpr qreal sizeFileIconHeight = 67;
 inline constexpr qreal sizeFolderIconWidth = 74;
@@ -127,7 +123,7 @@ inline constexpr qreal strokeSidebarIcon = 1.65;
 inline constexpr qreal strokeFileOutline = 1.35;
 
 // =========================================================================
-// 4. MATERIAL & OPTICAL (18 tokens)
+// 4. MATERIAL & OPTICAL
 // =========================================================================
 inline constexpr qreal opacityWindowMin = 0.25;
 inline constexpr qreal opacityWindowMax = 0.41;
@@ -147,12 +143,18 @@ inline constexpr qreal shadowDockBlur = 20;
 inline constexpr qreal specularStrokeWidth = 1.5;
 inline constexpr qreal glassPrismAngleDeg = -31;
 inline constexpr qreal glassBackdropFilterEnabled = 1;
-
-// VALO V3 — 4 acrylic file icon material parameters
 inline constexpr qreal shadowFileY = 5;
 inline constexpr qreal shadowFileBlur = 7;
 inline constexpr qreal opacityFileHighlight = 0.36;
 inline constexpr qreal opacityFileGlassEdge = 0.88;
+inline constexpr qreal opacityGlassTopbar = 0.5;
+inline constexpr qreal opacityGlassDock = 0.34;
+inline constexpr qreal opacityGlassWindowActive = 0.5;
+inline constexpr qreal opacityGlassWindowInactive = 0.42;
+inline constexpr qreal opacityGlassPanel = 0.52;
+inline constexpr qreal opacityGlassInternalWindow = 0.5;
+inline constexpr qreal opacityGlassOverlay = 0.88;
+inline constexpr qreal opacityGlassHighContrast = 0.92;
 
 // =========================================================================
 // 5. COMPOSITE STYLES
@@ -174,26 +176,26 @@ struct ShadowSpec {
 };
 
 inline const std::array<GradientStop, 4> windowFillStops = {{
-    { 0.0,  QColor("#194F76"), 0.39 },
-    { 0.2,  QColor("#4BAFC7"), 0.27 },
+    { 0.0, QColor("#194F76"), 0.39 },
+    { 0.2, QColor("#4BAFC7"), 0.27 },
     { 0.53, QColor("#133A5D"), 0.27 },
-    { 1.0,  QColor("#09233F"), 0.41 }
+    { 1.0, QColor("#09233F"), 0.41 }
 }};
 
 inline const std::array<GradientStop, 4> spectralOverlayStops = {{
-    { 0.0,  QColor("#00EFFF"), 0.10 },
+    { 0.0, QColor("#00EFFF"), 0.1 },
     { 0.29, QColor("#F5FFFF"), 0.12 },
-    { 0.60, QColor("#F8C47B"), 0.07 },
-    { 1.0,  QColor("#9E77FF"), 0.08 }
+    { 0.6, QColor("#F8C47B"), 0.07 },
+    { 1.0, QColor("#9E77FF"), 0.08 }
 }};
 
 inline constexpr qreal backdropBlurRadius = 36.0;
 
 inline const std::array<ShadowSpec, 4> windowShadows = {{
-    { ShadowSpec::Type::Inner, 0.0,  1.0,  0.0, QColor("#FFFFFF"), 0.26 },
-    { ShadowSpec::Type::Inner, 0.0, -2.0,  4.0, QColor("#000A1B"), 0.40 },
-    { ShadowSpec::Type::Drop,  0.0,  8.0, 12.0, QColor("#000000"), 0.45 },
-    { ShadowSpec::Type::Drop,  0.0, 20.0, 40.0, QColor("#00E5FF"), 0.14 }
+    { ShadowSpec::Type::Inner, 0.0, 1.0, 0.0, QColor("#FFFFFF"), 0.26 },
+    { ShadowSpec::Type::Inner, 0.0, -2.0, 4.0, QColor("#000A1B"), 0.4 },
+    { ShadowSpec::Type::Drop, 0.0, 8.0, 12.0, QColor("#000000"), 0.45 },
+    { ShadowSpec::Type::Drop, 0.0, 20.0, 40.0, QColor("#00E5FF"), 0.14 }
 }};
 
 } // namespace Systalia::ValoTokens

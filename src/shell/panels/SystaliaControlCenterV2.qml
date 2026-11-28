@@ -93,7 +93,7 @@ Item {
         cornerRadii: controlCenter.cornerRadii
         cornerRadius: 22.0
         specularStrokeWidth: 1.25
-        surfaceOpacity: controlCenter.highContrast ? 0.90 : 0.52
+        surfaceOpacity: controlCenter.highContrast ? ValoTheme.opacityGlassHighContrast : ValoTheme.opacityGlassPanel
         volumetricTint: controlCenter.highContrast
                         ? Qt.rgba(0.01, 0.05, 0.10, 0.94)
                         : Qt.rgba(0.02, 0.08, 0.16, 0.62)

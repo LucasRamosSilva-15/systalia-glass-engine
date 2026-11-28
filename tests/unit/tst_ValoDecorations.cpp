@@ -180,7 +180,7 @@ void TestValoDecorations::renderWallpaperAndDecorationsComparison() {
         "        color: '#061426'\n"
         "        Image {\n"
         "            anchors.fill: parent\n"
-        "            source: 'qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-ocean-atmosphere.png'\n"
+        "            source: 'qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-ocean-atmosphere.svg'\n"
         "            fillMode: Image.PreserveAspectCrop\n"
         "        }\n"
         "        // Elementos visuais atrás das janelas para comprovar a refração óptica real\n"

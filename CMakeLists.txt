@@ -15,6 +15,7 @@ include(cmake/Dependencies.cmake)
 
 add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:-Wall;-Wextra;-Werror>")
 
+include(cmake/SgeTokens.cmake)
 include(cmake/SgeShaders.cmake)
 include(cmake/SgeCore.cmake)
 include(cmake/SgeDrmPoc.cmake)

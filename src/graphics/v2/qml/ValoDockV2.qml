@@ -156,7 +156,7 @@ Item {
         cornerRadii: Qt.vector4d(root.pillRadius, root.pillRadius, root.pillRadius, root.pillRadius)
         geometryMode: ValoGlassItemV2.CircularL2
         specularStrokeWidth: 1.25
-        surfaceOpacity: root.highContrast ? 0.82 : 0.34
+        surfaceOpacity: root.highContrast ? ValoTheme.opacityGlassHighContrast : ValoTheme.opacityGlassDock
         volumetricTint: root.highContrast
                         ? Qt.rgba(0.01, 0.06, 0.12, 0.92)
                         : Qt.rgba(0.036, 0.153, 0.255, 0.39)

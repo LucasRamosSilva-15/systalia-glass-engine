@@ -110,3 +110,4 @@ endif()
 target_compile_definitions(sge_core PRIVATE
     SGE_DATA_INSTALL_DIR="${CMAKE_INSTALL_FULL_DATADIR}/systalia"
 )
+add_dependencies(sge_core sge_tokens)

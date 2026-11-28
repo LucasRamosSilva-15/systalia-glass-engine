@@ -237,7 +237,15 @@
     "shadow/file-y": 5,
     "shadow/file-blur": 7,
     "opacity/file-highlight": 0.36,
-    "opacity/file-glass-edge": 0.88
+    "opacity/file-glass-edge": 0.88,
+    "opacity/glass-topbar": 0.50,
+    "opacity/glass-dock": 0.34,
+    "opacity/glass-window-active": 0.50,
+    "opacity/glass-window-inactive": 0.42,
+    "opacity/glass-panel": 0.52,
+    "opacity/glass-internal-window": 0.50,
+    "opacity/glass-overlay": 0.88,
+    "opacity/glass-high-contrast": 0.92
   },
   "composite_styles": {
     "windowFillStops": [

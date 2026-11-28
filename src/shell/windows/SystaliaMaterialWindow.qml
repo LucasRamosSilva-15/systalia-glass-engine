@@ -16,7 +16,7 @@ Item {
     property real dispersion: 0.04
     property real caustics: 0.85
     // Optical volumetric tint weight; inherited Item.opacity remains independent.
-    property real surfaceOpacity: 0.50
+    property real surfaceOpacity: ValoTheme.opacityGlassInternalWindow
     // Discrete GPU profiles. No persisted preference exists in the current shell.
     property int blurProfile: 1
     property real dispersionStrength: 1.0

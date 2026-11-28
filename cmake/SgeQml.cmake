@@ -1,11 +1,10 @@
 # Módulo QML Systalia.Engine 1.0, singletons, recursos Figma e preservação de aliases QRC
-set_source_files_properties(src/theme/compatibility/v1/SystaliaTheme.qml src/theme/qml/ValoTheme.qml PROPERTIES
+set_source_files_properties(src/theme/qml/ValoTheme.qml PROPERTIES
     QT_QML_SINGLETON_TYPE TRUE
 )
 
 file(GLOB sge_valo_assets RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
     "assets/figma/*.svg"
-    "assets/figma/*.png"
 )
 
 foreach(asset IN LISTS sge_valo_assets)
@@ -20,7 +19,6 @@ set_source_files_properties(src/shell/core/WorkspaceViewport.qml PROPERTIES QT_R
 set_source_files_properties(src/shell/core/WaylandClientView.qml PROPERTIES QT_RESOURCE_ALIAS "src/qml/WaylandClientView.qml")
 set_source_files_properties(src/shell/core/WaylandWindowContainer.qml PROPERTIES QT_RESOURCE_ALIAS "src/qml/WaylandWindowContainer.qml")
 
-set_source_files_properties(src/theme/compatibility/v1/SystaliaTheme.qml PROPERTIES QT_RESOURCE_ALIAS "src/qml/theme/SystaliaTheme.qml")
 set_source_files_properties(src/theme/qml/ValoTheme.qml PROPERTIES QT_RESOURCE_ALIAS "src/qml/theme/ValoTheme.qml")
 
 set_source_files_properties(src/controls/frames/SystaliaG2Frame.qml PROPERTIES QT_RESOURCE_ALIAS "src/qml/shell/SystaliaG2Frame.qml")
@@ -68,7 +66,6 @@ qt_add_qml_module(sge_core
         src/shell/core/main.qml
         src/shell/core/ShellRoot.qml
         src/shell/core/WorkspaceViewport.qml
-        src/theme/compatibility/v1/SystaliaTheme.qml
         src/theme/qml/ValoTheme.qml
         src/shell/core/WaylandClientView.qml
         src/shell/core/WaylandWindowContainer.qml

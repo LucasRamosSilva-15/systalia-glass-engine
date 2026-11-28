@@ -330,15 +330,6 @@ Item {
         }
     }
 
-    Timer {
-        id: animTimer
-        interval: 16
-        running: true
-        repeat: true
-        property real tick: 0.0
-        onTriggered: tick += 0.02
-    }
-
     OutputRenderWindow {
         id: renderWindow
         objectName: "waylibOutputRenderWindow"
@@ -417,7 +408,10 @@ Item {
                     id: wallpaperImage
                     objectName: "waylibWallpaperImage"
                     anchors.fill: parent
-                    source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-ocean-atmosphere.png"
+                    source: "qrc:/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-ocean-atmosphere.svg"
+                    sourceSize: Qt.size(
+                        Math.max(1, Math.round(renderWindow.width * renderWindow.devicePixelRatio)),
+                        Math.max(1, Math.round(renderWindow.height * renderWindow.devicePixelRatio)))
                     fillMode: Image.PreserveAspectCrop
                     asynchronous: true
                     cache: true
@@ -487,7 +481,7 @@ Item {
                         caustics: materialWindow.caustics
                         slant: materialWindow.surfaceSlant
                         cornerRadius: materialWindow.cornerRadius
-                        animationTime: animTimer.tick
+                        animationTime: 0.0
                         waylandSurface: surface
                         windowShellSurface: shellSurface
                         windowTitle: title
@@ -636,7 +630,7 @@ Item {
                 backdropSource: internalWindowBackdrop.sourceFor(filesWindow)
                 screenResolution: Qt.vector2d(renderWindow.width * renderWindow.devicePixelRatio,
                                               renderWindow.height * renderWindow.devicePixelRatio)
-                animationTime: animTimer.tick
+                animationTime: 0.0
                 refractiveIndex: materialWindow.refractiveIndex
                 dispersion: materialWindow.effectiveDispersion
                 caustics: materialWindow.caustics
@@ -676,7 +670,7 @@ Item {
                 backdropSource: internalWindowBackdrop.sourceFor(materialWindow)
                 screenResolution: Qt.vector2d(renderWindow.width * renderWindow.devicePixelRatio,
                                               renderWindow.height * renderWindow.devicePixelRatio)
-                animationTime: animTimer.tick
+                animationTime: 0.0
                 controller: root
                 transform: Translate { x: root.materialWorkspaceOffsetX }
                 onYChanged: {
@@ -758,7 +752,7 @@ Item {
                 backdropSource: overlayCompositeBackdropSource
                 screenResolution: Qt.vector2d(renderWindow.width * renderWindow.devicePixelRatio,
                                               renderWindow.height * renderWindow.devicePixelRatio)
-                animationTime: animTimer.tick
+                animationTime: 0.0
                 telemetry: SystemTelemetry
                 workspaceManager: WorkspaceManager
                 activeWindowTitle: ""
@@ -816,7 +810,7 @@ Item {
                 backdropSource: overlayCompositeBackdropSource
                 screenResolution: Qt.vector2d(renderWindow.width * renderWindow.devicePixelRatio,
                                               renderWindow.height * renderWindow.devicePixelRatio)
-                animationTime: animTimer.tick
+                animationTime: 0.0
                 filesVisible: filesWindow.visible
                 settingsOpen: materialWindow.visible
                 refractiveIndex: materialWindow.refractiveIndex
@@ -858,7 +852,7 @@ Item {
                 backdropSource: overlayCompositeBackdropSource
                 screenResolution: Qt.vector2d(renderWindow.width * renderWindow.devicePixelRatio,
                                               renderWindow.height * renderWindow.devicePixelRatio)
-                animationTime: animTimer.tick
+                animationTime: 0.0
             }
 
             SystaliaNotificationHost {
@@ -869,7 +863,7 @@ Item {
                 backdropSource: overlayCompositeBackdropSource
                 screenResolution: Qt.vector2d(renderWindow.width * renderWindow.devicePixelRatio,
                                               renderWindow.height * renderWindow.devicePixelRatio)
-                animationTime: animTimer.tick
+                animationTime: 0.0
             }
 
             SystaliaFlowMenu {
@@ -880,7 +874,7 @@ Item {
                 backdropSource: overlayCompositeBackdropSource
                 screenResolution: Qt.vector2d(renderWindow.width * renderWindow.devicePixelRatio,
                                               renderWindow.height * renderWindow.devicePixelRatio)
-                animationTime: animTimer.tick
+                animationTime: 0.0
             }
         }
 

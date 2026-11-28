@@ -30,7 +30,7 @@ Item {
     property real refractiveIndex: 1.25
     property real dispersion: 0.040
     property real caustics: 0.18
-    property real surfaceOpacity: ValoTheme.opacityDock
+    property real surfaceOpacity: ValoTheme.opacityGlassDock
     property bool materialActive: true
     readonly property real pillRadius: 47.0
     property vector4d cornerRadii: Qt.vector4d(pillRadius, pillRadius, pillRadius, pillRadius)
@@ -51,7 +51,7 @@ Item {
     readonly property var valoGlassInstance: ({
         circularCorners: true,
         cornerRadius: 47.0,
-        glassOpacity: 0.34,
+        glassOpacity: ValoTheme.opacityGlassDock,
         showShadow: false
     })
 

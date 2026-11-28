@@ -5,6 +5,7 @@
 #include "services/applications/ProcessLauncherService.hpp"
 #include "services/system/SystemTelemetryService.hpp"
 #include "services/windows/WorkspaceManagerService.hpp"
+#include "theme/tokens/ValoTokens.hpp"
 
 #include <wcursor.h>
 #include <woutputrenderwindow.h>
@@ -20,7 +21,9 @@
 #include <QAbstractListModel>
 #include <QCoreApplication>
 #include <QDir>
+#include <QFile>
 #include <QProcess>
+#include <QTimer>
 #include <QQmlApplicationEngine>
 #include <QQmlComponent>
 #include <QQuickItem>
@@ -441,6 +444,31 @@ void tst_WaylibBackend::headlessAndMultiWindowValoShellLifecycle() {
         QVERIFY(soloClient.state() == QProcess::NotRunning || soloClient.waitForFinished(3000));
         QCOMPARE(surfaceAdapter->surfaceCount(), 0);
         QVERIFY(surfaceAdapter->activeSurface() == nullptr);
+    }
+
+    // 2b. Etapa ARQ-02: wallpaper SVG, ausência de PNGs/SystaliaTheme no QRC, sem animTimer 60Hz e opacidades via ValoTheme
+    {
+        auto *wallpaperImg = renderWindow->findChild<QQuickItem *>(QStringLiteral("waylibWallpaperImage"));
+        QVERIFY(wallpaperImg != nullptr);
+        const QString wpSource = wallpaperImg->property("source").toUrl().toString();
+        QVERIFY2(wpSource.endsWith(QStringLiteral("valo-ocean-atmosphere.svg")), qPrintable(wpSource));
+        QVERIFY(!wpSource.endsWith(QStringLiteral(".png")));
+        QVERIFY(!QFile::exists(QStringLiteral(":/qt/qml/Systalia/Engine/src/qml/assets/figma/valo-ocean-atmosphere.png")));
+        QVERIFY(!QFile::exists(QStringLiteral(":/qt/qml/Systalia/Engine/src/qml/theme/SystaliaTheme.qml")));
+
+        for (QTimer *timer : rootObj->findChildren<QTimer *>()) {
+            QVERIFY2(!(timer->isActive() && timer->interval() <= 20),
+                     "Nenhum timer contínuo de 60Hz (animTimer) deve rodar em idle");
+        }
+
+        auto *topBarCheck = renderWindow->findChild<QQuickItem *>(QStringLiteral("topBar"));
+        auto *dockCheck = renderWindow->findChild<QQuickItem *>(QStringLiteral("valoDockV2"));
+        auto *filesCheck = renderWindow->findChild<QQuickItem *>(QStringLiteral("waylibFilesWindowV2"));
+        auto *matCheck = renderWindow->findChild<QQuickItem *>(QStringLiteral("waylibMaterialWindow"));
+        QVERIFY(topBarCheck && dockCheck && filesCheck && matCheck);
+        QCOMPARE(dockCheck->property("surfaceOpacity").toReal(), Systalia::ValoTokens::opacityGlassDock);
+        QCOMPARE(filesCheck->property("surfaceOpacity").toReal(), Systalia::ValoTokens::opacityGlassInternalWindow);
+        QCOMPARE(matCheck->property("surfaceOpacity").toReal(), Systalia::ValoTokens::opacityGlassInternalWindow);
     }
 
     // 3. Múltiplas janelas simultâneas (Cliente A + Cliente B): foco, z-order, TopBar, Dock, fechar
