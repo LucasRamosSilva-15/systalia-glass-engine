@@ -8,6 +8,7 @@
 
 #include "ValoGlassItemV2.hpp"
 #include "ValoGeometryEngineV2.hpp"
+#include "ValoShadowItemV2.hpp"
 
 using namespace Systalia::Gfx::V2;
 
@@ -23,6 +24,7 @@ private slots:
     void renderSquircleG2AndVerifySilhouette();
     void premultipliedAlphaIntegrityAcrossAllPixels();
     void diagnosticModesProduceValidPasses();
+    void shadowZeroIntensityProducesTransparentOutput();
     void analyticalSoftwareRasterizationCoverageVerification();
 };
 
@@ -235,6 +237,54 @@ void TestValoGlassRenderingV2::analyticalSoftwareRasterizationCoverageVerificati
             QVERIFY(coverage >= 0.0f && coverage <= 1.0f);
         }
     }
+}
+
+void TestValoGlassRenderingV2::shadowZeroIntensityProducesTransparentOutput() {
+    QQuickWindow window;
+    window.setColor(Qt::transparent);
+    window.resize(260, 180);
+
+    auto *shadow = new ValoShadowItemV2(window.contentItem());
+    shadow->setX(40);
+    shadow->setY(30);
+    shadow->setWidth(180);
+    shadow->setHeight(100);
+    shadow->setCornerRadii(QVector4D(20.0f, 20.0f, 20.0f, 20.0f));
+    shadow->setGeometryMode(ValoGlassItemV2::SquircleG2);
+    shadow->setShadowOffsetY(12.0f);
+    shadow->setShadowIntensity(0.0f);
+
+    window.show();
+    (void)QTest::qWaitForWindowExposed(&window, 1000);
+    for (int i = 0; i < 4; ++i) {
+        QCoreApplication::processEvents();
+        QTest::qWait(20);
+    }
+
+    const QImage zeroFrame = window.grabWindow();
+    QVERIFY(!zeroFrame.isNull());
+    int maxAlphaZero = 0;
+    for (int y = 0; y < zeroFrame.height(); ++y) {
+        for (int x = 0; x < zeroFrame.width(); ++x) {
+            maxAlphaZero = std::max(maxAlphaZero, qAlpha(zeroFrame.pixel(x, y)));
+        }
+    }
+    QCOMPARE(maxAlphaZero, 0);
+
+    shadow->setShadowIntensity(0.35f);
+    for (int i = 0; i < 4; ++i) {
+        QCoreApplication::processEvents();
+        QTest::qWait(20);
+    }
+    const QImage activeFrame = window.grabWindow();
+    QVERIFY(!activeFrame.isNull());
+    int maxAlphaActive = 0;
+    for (int y = 0; y < activeFrame.height(); ++y) {
+        for (int x = 0; x < activeFrame.width(); ++x) {
+            maxAlphaActive = std::max(maxAlphaActive, qAlpha(activeFrame.pixel(x, y)));
+        }
+    }
+    QVERIFY2(maxAlphaActive > 20, qPrintable(QStringLiteral("Sombra padrão deveria estar visível, alpha=%1").arg(maxAlphaActive)));
 }
 
 QTEST_MAIN(TestValoGlassRenderingV2)

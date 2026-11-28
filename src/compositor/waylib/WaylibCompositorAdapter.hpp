@@ -3,9 +3,11 @@
 #include "WaylibOutputAdapter.hpp"
 #include "WaylibSurfaceAdapter.hpp"
 
+#include <wbackend.h>
 #include <wcursor.h>
 #include <wglobal.h>
 #include <wseat.h>
+#include <wserver.h>
 #include <wxdgdecorationmanager.h>
 
 #include <QObject>
@@ -68,15 +70,15 @@ public:
     [[nodiscard]] bool isRunning() const noexcept { return m_running; }
     [[nodiscard]] QString socketName() const noexcept { return m_socketName; }
     [[nodiscard]] QString lastError() const noexcept { return m_lastError; }
-    [[nodiscard]] WaylibOutputAdapter *outputAdapter() const noexcept { return m_outputAdapter; }
-    [[nodiscard]] WaylibSurfaceAdapter *surfaceAdapter() const noexcept { return m_surfaceAdapter; }
+    [[nodiscard]] WaylibOutputAdapter *outputAdapter() const noexcept { return m_outputAdapter.data(); }
+    [[nodiscard]] WaylibSurfaceAdapter *surfaceAdapter() const noexcept { return m_surfaceAdapter.data(); }
     [[nodiscard]] WAYLIB_SERVER_NAMESPACE::WSeat *seat() const noexcept { return m_seat.data(); }
-    [[nodiscard]] WAYLIB_SERVER_NAMESPACE::WCursor *cursor() const noexcept { return m_cursor; }
+    [[nodiscard]] WAYLIB_SERVER_NAMESPACE::WCursor *cursor() const noexcept { return m_cursor.data(); }
     [[nodiscard]] WAYLIB_SERVER_NAMESPACE::WXdgDecorationManager *xdgDecorationManager() const noexcept {
-        return m_xdgDecorationManager;
+        return m_xdgDecorationManager.data();
     }
-    [[nodiscard]] WAYLIB_SERVER_NAMESPACE::WServer *server() const noexcept { return m_server; }
-    [[nodiscard]] WAYLIB_SERVER_NAMESPACE::WBackend *backend() const noexcept { return m_backend; }
+    [[nodiscard]] WAYLIB_SERVER_NAMESPACE::WServer *server() const noexcept { return m_server.data(); }
+    [[nodiscard]] WAYLIB_SERVER_NAMESPACE::WBackend *backend() const noexcept { return m_backend.data(); }
     [[nodiscard]] QString cursorShapeKey() const noexcept { return m_cursorShapeKey; }
     [[nodiscard]] QString compositorCursorOverride() const noexcept { return m_compositorCursorOverride; }
     void setCompositorCursorOverride(const QString &overrideKey);
@@ -99,15 +101,15 @@ private:
     [[nodiscard]] QString resolveCursorShapeKey() const;
     void updateCursorShapeKey();
 
-    WAYLIB_SERVER_NAMESPACE::WServer *m_server = nullptr;
-    WaylibOutputAdapter *m_outputAdapter = nullptr;
-    WaylibSurfaceAdapter *m_surfaceAdapter = nullptr;
-    WAYLIB_SERVER_NAMESPACE::WCursor *m_cursor = nullptr;
+    QPointer<WAYLIB_SERVER_NAMESPACE::WServer> m_server;
+    QPointer<WaylibOutputAdapter> m_outputAdapter;
+    QPointer<WaylibSurfaceAdapter> m_surfaceAdapter;
+    QPointer<WAYLIB_SERVER_NAMESPACE::WCursor> m_cursor;
     QPointer<WAYLIB_SERVER_NAMESPACE::WSeat> m_seat;
-    WAYLIB_SERVER_NAMESPACE::WBackend *m_backend = nullptr;
-    WAYLIB_SERVER_NAMESPACE::WXdgShell *m_xdgShell = nullptr;
-    WAYLIB_SERVER_NAMESPACE::WXdgDecorationManager *m_xdgDecorationManager = nullptr;
-    WAYLIB_SERVER_NAMESPACE::WSocket *m_socket = nullptr;
+    QPointer<WAYLIB_SERVER_NAMESPACE::WBackend> m_backend;
+    QPointer<WAYLIB_SERVER_NAMESPACE::WXdgShell> m_xdgShell;
+    QPointer<WAYLIB_SERVER_NAMESPACE::WXdgDecorationManager> m_xdgDecorationManager;
+    QPointer<WAYLIB_SERVER_NAMESPACE::WSocket> m_socket;
 
     wlr_renderer *m_renderer = nullptr;
     wlr_allocator *m_allocator = nullptr;

@@ -70,9 +70,7 @@ bool ValoGlassMaterialShaderV2::updateUniformData(RenderState &state,
   // Projeção MVP normalizada do Scene Graph do Qt
   props.matrix = state.combinedMatrix();
   // Modulação da opacidade pela opacidade herdada do item na árvore do Scene Graph
-  // The optical mix remains independent of scene opacity. Slot 124 is unused
-  // by V2 geometry; only the GPU copy aliases it as inherited opacity.
-  props.titleBarHeight = state.opacity();
+  props.inheritedOpacity = state.opacity();
   // Signed height carries framebuffer orientation without changing the ABI.
   // Qt's OpenGL layers invert the projection to make their texture top-down;
   // API orientation alone would flip the backdrop a second time in a capture.

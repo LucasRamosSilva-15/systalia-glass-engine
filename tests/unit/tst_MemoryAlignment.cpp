@@ -18,7 +18,7 @@ static_assert(offsetof(SystaliaSurfacePropsV2, causticIntensity) == 108);
 static_assert(offsetof(SystaliaSurfacePropsV2, surfaceOpacity) == 112);
 static_assert(offsetof(SystaliaSurfacePropsV2, time) == 116);
 static_assert(offsetof(SystaliaSurfacePropsV2, hasClientTexture) == 120);
-static_assert(offsetof(SystaliaSurfacePropsV2, titleBarHeight) == 124);
+static_assert(offsetof(SystaliaSurfacePropsV2, inheritedOpacity) == 124);
 static_assert(offsetof(SystaliaSurfacePropsV2, specularStrokeWidth) == 128);
 static_assert(offsetof(SystaliaSurfacePropsV2, geometryMode) == 132);
 static_assert(offsetof(SystaliaSurfacePropsV2, shadowIntensity) == 136);
@@ -61,7 +61,7 @@ void TestMemoryAlignment::memberOffsets_data() {
     QTest::newRow("surfaceOpacity") << QStringLiteral("surfaceOpacity") << quint64(112) << 8;
     QTest::newRow("time") << QStringLiteral("time") << quint64(116) << 9;
     QTest::newRow("hasClientTexture") << QStringLiteral("hasClientTexture") << quint64(120) << 10;
-    QTest::newRow("titleBarHeight") << QStringLiteral("titleBarHeight") << quint64(124) << 11;
+    QTest::newRow("inheritedOpacity") << QStringLiteral("inheritedOpacity") << quint64(124) << 11;
     QTest::newRow("specularStrokeWidth") << QStringLiteral("specularStrokeWidth") << quint64(128) << 12;
     QTest::newRow("geometryMode") << QStringLiteral("geometryMode") << quint64(132) << 13;
     QTest::newRow("shadowIntensity") << QStringLiteral("shadowIntensity") << quint64(136) << 14;
@@ -85,7 +85,7 @@ void TestMemoryAlignment::memberOffsets() {
         offsetof(SystaliaSurfacePropsV2, surfaceOpacity),
         offsetof(SystaliaSurfacePropsV2, time),
         offsetof(SystaliaSurfacePropsV2, hasClientTexture),
-        offsetof(SystaliaSurfacePropsV2, titleBarHeight),
+        offsetof(SystaliaSurfacePropsV2, inheritedOpacity),
         offsetof(SystaliaSurfacePropsV2, specularStrokeWidth),
         offsetof(SystaliaSurfacePropsV2, geometryMode),
         offsetof(SystaliaSurfacePropsV2, shadowIntensity),
@@ -105,7 +105,7 @@ void TestMemoryAlignment::surfaceDefaultsAreStable() {
     QCOMPARE(props.surfaceOpacity, 0.34f);
     QCOMPARE(props.time, 0.0f);
     QCOMPARE(props.hasClientTexture, 0.0f);
-    QCOMPARE(props.titleBarHeight, 36.0f);
+    QCOMPARE(props.inheritedOpacity, 1.0f);
     QCOMPARE(props.specularStrokeWidth, 1.25f);
     QCOMPARE(props.geometryMode, 0.0f);
     QCOMPARE(props.shadowIntensity, 0.35f);

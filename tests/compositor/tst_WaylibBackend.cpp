@@ -754,9 +754,12 @@ void tst_WaylibBackend::headlessAndMultiWindowValoShellLifecycle() {
     QCOMPARE(surfaceAdapter->activeTitle(), QStringLiteral("Window Beta"));
     QCOMPARE(topBar->property("activeWindowTitle").toString(), QString());
 
-    // 4. Encerra compositor ainda com cliente B conectado (sem crash nem use-after-free) + shutdown idempotente
+    // 4. Encerra compositor ainda com cliente B conectado após dispatch pendente (ARQ-01, sem UAF) + shutdown idempotente
+    surfaceAdapter->setSurfaceMaximized(surfB, true, 1024, 640);
+    surfaceAdapter->resizeSurface(surfB, 800, 520);
     rootObj.reset();
     adapter.shutdown();
+    QCoreApplication::processEvents();
     QVERIFY(!adapter.isRunning());
     QCOMPARE(adapter.outputAdapter()->outputCount(), 0);
     adapter.shutdown();

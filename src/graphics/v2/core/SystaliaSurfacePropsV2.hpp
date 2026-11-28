@@ -40,7 +40,7 @@ struct alignas(16) SystaliaSurfacePropsV2 {
     float surfaceOpacity = 0.34f;          // offset 112, tamanho 4  (Opacidade de base: 0.25 a 0.55)
     float time = 0.0f;                     // offset 116, tamanho 4  (Tempo decorrido em segundos)
     float hasClientTexture = 0.0f;         // offset 120, tamanho 4  (Flag 0.0f ou 1.0f)
-    float titleBarHeight = 36.0f;          // offset 124, tamanho 4 (CPU legado; upload do material V2: opacidade herdada)
+    float inheritedOpacity = 1.0f;         // offset 124, tamanho 4  (Opacidade herdada do Scene Graph)
     // --- Campos de Expansão V2 ---
     float specularStrokeWidth = 1.25f;     // offset 128, tamanho 4  (Espessura da borda especular em pixels)
     float geometryMode = 0.0f;             // offset 132, tamanho 4  (0.0f = CircularL2, 1.0f = SquircleG2)
@@ -82,8 +82,8 @@ static_assert(offsetof(SystaliaSurfacePropsV2, time) == 116,
               "Offset de time deve ser 116.");
 static_assert(offsetof(SystaliaSurfacePropsV2, hasClientTexture) == 120,
               "Offset de hasClientTexture deve ser 120.");
-static_assert(offsetof(SystaliaSurfacePropsV2, titleBarHeight) == 124,
-              "Offset de titleBarHeight deve ser 124.");
+static_assert(offsetof(SystaliaSurfacePropsV2, inheritedOpacity) == 124,
+              "Offset de inheritedOpacity deve ser 124.");
 static_assert(offsetof(SystaliaSurfacePropsV2, specularStrokeWidth) == 128,
               "Offset de specularStrokeWidth deve ser 128.");
 static_assert(offsetof(SystaliaSurfacePropsV2, geometryMode) == 132,

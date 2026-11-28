@@ -24,7 +24,7 @@ void TestUnifiedComposition::clientStd140BlockHasExpectedSize() {
     const SystaliaSurfacePropsV2 props;
     QCOMPARE(sizeof(props), size_t(160));
     QCOMPARE(offsetof(SystaliaSurfacePropsV2, hasClientTexture), size_t(120));
-    QCOMPARE(offsetof(SystaliaSurfacePropsV2, titleBarHeight), size_t(124));
+    QCOMPARE(offsetof(SystaliaSurfacePropsV2, inheritedOpacity), size_t(124));
 }
 
 void TestUnifiedComposition::clientTextureFlagDefaultsToDisabled() {
@@ -34,7 +34,8 @@ void TestUnifiedComposition::clientTextureFlagDefaultsToDisabled() {
 
 void TestUnifiedComposition::clientTitleBarHeightMatchesLayout() {
     const SystaliaSurfacePropsV2 props;
-    QCOMPARE(props.titleBarHeight, SystaliaDefaultTitleBarHeight);
+    QCOMPARE(props.inheritedOpacity, 1.0f);
+    QCOMPARE(SystaliaDefaultTitleBarHeight, 36.0f);
 }
 
 void TestUnifiedComposition::clientViewportUsesTheConfiguredInsets() {

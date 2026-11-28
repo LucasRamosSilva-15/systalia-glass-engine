@@ -59,16 +59,16 @@ void WaylibOutputAdapter::reset() {
         m_backend->disconnect(this);
         m_backend = nullptr;
     }
-    for (WOutput *out : std::as_const(m_outputs)) {
+    for (const QPointer<WOutput> &out : std::as_const(m_outputs)) {
         if (out) {
             out->disconnect(this);
             const auto cursors = out->cursorList();
             for (WCursor *cursor : cursors) {
                 out->removeCursor(cursor);
             }
+            removeRequestStateListener(out.data());
+            m_outputCreator->removeByOwner(out.data());
         }
-        removeRequestStateListener(out);
-        m_outputCreator->removeByOwner(out);
     }
     const auto remaining = m_requestListeners.keys();
     for (WOutput *out : remaining) {
@@ -85,11 +85,8 @@ void WaylibOutputAdapter::reset() {
 }
 
 bool WaylibOutputAdapter::requestOutputResize(int width, int height) {
-    if (width <= 0 || height <= 0 || m_outputs.isEmpty()) {
-        return false;
-    }
-    WOutput *primary = m_outputs.first();
-    if (!primary || !primary->handle()) {
+    WOutput *primary = primaryOutput();
+    if (width <= 0 || height <= 0 || !primary || !primary->handle()) {
         return false;
     }
     wlr_output *wlrOut = primary->handle();
@@ -109,7 +106,7 @@ void WaylibOutputAdapter::onOutputAdded(WOutput *output, QQmlEngine *qmlEngine) 
     if (!output || !qmlEngine || m_outputs.contains(output)) {
         return;
     }
-    m_outputs.append(output);
+    m_outputs.append(QPointer<WOutput>(output));
 
     installRequestStateListener(output);
     connect(output, &WOutput::effectiveSizeChanged,
@@ -199,6 +196,7 @@ void WaylibOutputAdapter::removeRequestStateListener(WOutput *output) {
     }
     if (RequestStateListener *entry = m_requestListeners.take(output)) {
         wl_list_remove(&entry->listener.link);
+        wl_list_init(&entry->listener.link);
         delete entry;
     }
 }
@@ -246,10 +244,7 @@ void WaylibOutputAdapter::handleWlrRequestState(wl_listener *listener, void *dat
 }
 
 void WaylibOutputAdapter::syncPrimaryOutputSize() {
-    if (m_outputs.isEmpty()) {
-        return;
-    }
-    WOutput *primary = m_outputs.first();
+    WOutput *primary = primaryOutput();
     if (!primary) {
         return;
     }

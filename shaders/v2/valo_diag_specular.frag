@@ -16,7 +16,7 @@ layout(std140, binding = 0) uniform buf {
     float u_SurfaceOpacity;
     float u_Time;
     float u_HasClientTexture;
-    float u_TitleBarHeight;
+    float u_InheritedOpacity;
     float u_SpecularStrokeWidth;
     float u_GeometryMode;
     float u_ShadowIntensity;

@@ -4,6 +4,7 @@
 
 #include <woutput.h>
 #include <wseat.h>
+#include <wserver.h>
 #include <wsurface.h>
 #include <wxdgshell.h>
 #include <wxdgtoplevelsurface.h>
@@ -11,6 +12,7 @@
 #include <wlr_all.h>
 
 #include <QDebug>
+#include <QTimer>
 
 WAYLIB_SERVER_USE_NAMESPACE
 
@@ -225,17 +227,28 @@ WaylibSurfaceAdapter::WaylibSurfaceAdapter(QObject *parent)
       m_popupModel(new WaylibPopupListModel(this)) {}
 
 void WaylibSurfaceAdapter::attachXdgShell(WXdgShell *xdgShell) {
-    if (!xdgShell) {
+    if (m_xdgShell == xdgShell) {
         return;
     }
-    connect(xdgShell, &WXdgShell::toplevelSurfaceAdded,
+    if (m_xdgShell) {
+        m_xdgShell->disconnect(this);
+    }
+    m_xdgShell = xdgShell;
+    if (!m_xdgShell) {
+        return;
+    }
+    connect(m_xdgShell, &WXdgShell::toplevelSurfaceAdded,
             this, &WaylibSurfaceAdapter::onToplevelAdded);
-    connect(xdgShell, &WXdgShell::toplevelSurfaceRemoved,
+    connect(m_xdgShell, &WXdgShell::toplevelSurfaceRemoved,
             this, &WaylibSurfaceAdapter::onToplevelRemoved);
-    connect(xdgShell, &WXdgShell::popupSurfaceAdded,
+    connect(m_xdgShell, &WXdgShell::popupSurfaceAdded,
             this, &WaylibSurfaceAdapter::onPopupAdded);
-    connect(xdgShell, &WXdgShell::popupSurfaceRemoved,
+    connect(m_xdgShell, &WXdgShell::popupSurfaceRemoved,
             this, &WaylibSurfaceAdapter::onPopupRemoved);
+}
+
+void WaylibSurfaceAdapter::attachServer(WServer *server) {
+    m_server = server;
 }
 
 void WaylibSurfaceAdapter::attachSeat(WSeat *seat) {
@@ -271,6 +284,11 @@ void WaylibSurfaceAdapter::attachOutputAdapter(WaylibOutputAdapter *outputAdapte
 }
 
 void WaylibSurfaceAdapter::reset() {
+    ++m_flushGeneration;
+    if (m_xdgShell) {
+        m_xdgShell->disconnect(this);
+        m_xdgShell.clear();
+    }
     const auto entries = m_model->entries();
     for (const auto &entry : entries) {
         if (entry.shellSurface) {
@@ -448,16 +466,7 @@ void WaylibSurfaceAdapter::setSurfaceMaximized(WXdgToplevelSurface *surface,
     if (clientWidth > 0 && clientHeight > 0) {
         surface->resize(QSize(clientWidth, clientHeight));
     }
-    if (surface->handle() && surface->handle()->base && surface->handle()->base->client
-        && surface->handle()->base->client->client) {
-        wl_display *display = wl_client_get_display(surface->handle()->base->client->client);
-        QTimer::singleShot(0, this, [display]() {
-            if (display) {
-                wl_event_loop_dispatch(wl_display_get_event_loop(display), 0);
-                wl_display_flush_clients(display);
-            }
-        });
-    }
+    scheduleDisplayFlush();
     m_model->notifyRowChanged(row, {WaylibSurfaceListModel::MaximizedRole});
     ++m_maximizedRevision;
     Q_EMIT maximizedStateChanged();
@@ -507,16 +516,24 @@ void WaylibSurfaceAdapter::resizeSurface(WXdgToplevelSurface *surface, int width
         return;
     }
     surface->resize(QSize(width, height));
-    if (surface->handle() && surface->handle()->base && surface->handle()->base->client
-        && surface->handle()->base->client->client) {
-        wl_display *display = wl_client_get_display(surface->handle()->base->client->client);
-        QTimer::singleShot(0, this, [display]() {
-            if (display) {
-                wl_event_loop_dispatch(wl_display_get_event_loop(display), 0);
-                wl_display_flush_clients(display);
-            }
-        });
+    scheduleDisplayFlush();
+}
+
+void WaylibSurfaceAdapter::scheduleDisplayFlush() {
+    if (!m_server || !m_server->isRunning() || !m_server->handle()) {
+        return;
     }
+    const quint64 generation = m_flushGeneration;
+    const QPointer<WServer> safeServer(m_server);
+    QTimer::singleShot(0, this, [this, safeServer, generation]() {
+        if (generation != m_flushGeneration || !safeServer || !safeServer->isRunning()) {
+            return;
+        }
+        if (wl_display *display = safeServer->handle()) {
+            wl_event_loop_dispatch(wl_display_get_event_loop(display), 0);
+            wl_display_flush_clients(display);
+        }
+    });
 }
 
 void WaylibSurfaceAdapter::closeActiveSurface() {

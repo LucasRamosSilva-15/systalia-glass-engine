@@ -22,6 +22,7 @@ bool ValoShadowMaterialShaderV2::updateUniformData(RenderState &state,
 
     SystaliaSurfacePropsV2 props = mat->props();
     props.matrix = state.combinedMatrix();
+    props.inheritedOpacity = state.opacity();
     props.shadowIntensity = mat->props().shadowIntensity * state.opacity();
 
     constexpr qsizetype uboSize = static_cast<qsizetype>(sizeof(SystaliaSurfacePropsV2));

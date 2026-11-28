@@ -16,7 +16,7 @@ layout(std140, binding = 0) uniform buf {
     float u_SurfaceOpacity;
     float u_Time;
     float u_HasClientTexture;
-    float u_TitleBarHeight;
+    float u_InheritedOpacity;
     float u_SpecularStrokeWidth;
     float u_GeometryMode;
     float u_ShadowIntensity;
@@ -42,9 +42,15 @@ void main() {
     // Posição local em relação ao centro da cápsula (0, 0 no centro)
     vec2 pGlass = v_Position - (u_WindowSize * 0.5);
 
-    // Posição relativa ao centro da sombra deslocada em Y
-    float offsetY = (u_ShadowOffsetY > 0.0) ? u_ShadowOffsetY : 12.0;
+    // Posição relativa ao centro da sombra deslocada em Y (0.0 é respeitado explicitamente)
+    float offsetY = max(u_ShadowOffsetY, 0.0);
     vec2 pShadow = pGlass - vec2(0.0, offsetY);
+
+    float opacity = max(u_ShadowIntensity, 0.0);
+    if (opacity <= 0.0001) {
+        fragColor = vec4(0.0);
+        return;
+    }
 
     float dShadow = evaluateSignedDistance(pShadow, u_WindowSize, u_Radii, u_GeometryMode);
     float dGlass  = evaluateSignedDistance(pGlass,  u_WindowSize, u_Radii, u_GeometryMode);
@@ -57,7 +63,6 @@ void main() {
     // Se u_Slant > 0.5 (modo isolado G), renderiza sombra completa sem recorte
     float externalFactor = (u_Slant > 0.5) ? 1.0 : smoothstep(-2.0, 1.0, dGlass);
 
-    float opacity = (u_ShadowIntensity > 0.0) ? u_ShadowIntensity : 0.35;
     vec3 shadowRgb = vec3(0.0, 0.051, 0.129); // #000D21
 
     float alpha = opacity * shadowFactor * externalFactor;

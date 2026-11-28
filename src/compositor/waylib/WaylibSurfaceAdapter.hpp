@@ -14,6 +14,7 @@
 
 WAYLIB_SERVER_BEGIN_NAMESPACE
 class WOutput;
+class WServer;
 class WSurface;
 class WXdgShell;
 WAYLIB_SERVER_END_NAMESPACE
@@ -121,6 +122,7 @@ public:
     ~WaylibSurfaceAdapter() override = default;
 
     void attachXdgShell(WAYLIB_SERVER_NAMESPACE::WXdgShell *xdgShell);
+    void attachServer(WAYLIB_SERVER_NAMESPACE::WServer *server);
     void attachSeat(WAYLIB_SERVER_NAMESPACE::WSeat *seat);
     void attachOutputAdapter(WaylibOutputAdapter *outputAdapter);
     void reset();
@@ -187,13 +189,17 @@ private:
     [[nodiscard]] WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *topVisibleSurface(
         WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *exclude = nullptr) const;
     void syncSeatFocus(WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface *surface);
+    void scheduleDisplayFlush();
 
     WaylibSurfaceListModel *m_model = nullptr;
     WaylibPopupListModel *m_popupModel = nullptr;
+    QPointer<WAYLIB_SERVER_NAMESPACE::WServer> m_server;
+    QPointer<WAYLIB_SERVER_NAMESPACE::WXdgShell> m_xdgShell;
     QPointer<WAYLIB_SERVER_NAMESPACE::WSeat> m_seat;
     QPointer<WaylibOutputAdapter> m_outputAdapter;
     QPointer<WAYLIB_SERVER_NAMESPACE::WXdgToplevelSurface> m_activeSurface;
     quint64 m_nextSurfaceId = 0;
+    quint64 m_flushGeneration = 0;
     int m_nextZOrder = 0;
     int m_maximizedRevision = 0;
 };

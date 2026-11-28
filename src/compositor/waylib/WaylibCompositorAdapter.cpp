@@ -95,8 +95,9 @@ WaylibCompositorAdapter::WaylibCompositorAdapter(QObject *parent)
     m_cursor->setVisible(true);
     m_seat->setCursor(m_cursor);
     m_cursor->setLayout(m_outputAdapter->outputLayout());
+    m_surfaceAdapter->attachServer(m_server.data());
     m_surfaceAdapter->attachSeat(m_seat.data());
-    m_surfaceAdapter->attachOutputAdapter(m_outputAdapter);
+    m_surfaceAdapter->attachOutputAdapter(m_outputAdapter.data());
     connect(m_outputAdapter, &WaylibOutputAdapter::outputReady,
             this, &WaylibCompositorAdapter::bindCursorToOutput);
     connect(m_cursor, &WCursor::cursorChanged,
@@ -241,14 +242,21 @@ void WaylibCompositorAdapter::shutdown() {
     if (m_cursor) {
         m_cursor->setEventWindow(nullptr);
     }
-    m_surfaceAdapter->reset();
-    m_outputAdapter->reset();
+    if (m_surfaceAdapter) {
+        m_surfaceAdapter->reset();
+    }
+    if (m_outputAdapter) {
+        m_outputAdapter->reset();
+    }
 
     if (m_socket) {
         m_socket->close();
         m_socket->deleteLater();
-        m_socket = nullptr;
+        m_socket.clear();
     }
+    m_xdgDecorationManager.clear();
+    m_xdgShell.clear();
+    m_backend.clear();
     if (!m_socketName.isEmpty()) {
         m_socketName.clear();
         Q_EMIT socketNameChanged();

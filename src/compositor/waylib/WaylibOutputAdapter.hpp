@@ -51,7 +51,12 @@ public:
     [[nodiscard]] int outputCount() const noexcept { return m_outputs.size(); }
     [[nodiscard]] QSize primaryOutputSize() const noexcept { return m_primaryOutputSize; }
     [[nodiscard]] WAYLIB_SERVER_NAMESPACE::WOutput *primaryOutput() const noexcept {
-        return m_outputs.isEmpty() ? nullptr : m_outputs.first();
+        for (const auto &out : m_outputs) {
+            if (out) {
+                return out.data();
+            }
+        }
+        return nullptr;
     }
 
     Q_INVOKABLE bool requestOutputResize(int width, int height);
@@ -66,8 +71,8 @@ Q_SIGNALS:
 private:
     struct RequestStateListener {
         wl_listener listener{};
-        WaylibOutputAdapter *adapter = nullptr;
-        WAYLIB_SERVER_NAMESPACE::WOutput *output = nullptr;
+        QPointer<WaylibOutputAdapter> adapter;
+        QPointer<WAYLIB_SERVER_NAMESPACE::WOutput> output;
     };
 
     void onOutputAdded(WAYLIB_SERVER_NAMESPACE::WOutput *output, QQmlEngine *qmlEngine);
@@ -83,7 +88,7 @@ private:
     WAYLIB_SERVER_NAMESPACE::WQuickOutputLayout *m_outputLayout = nullptr;
     QPointer<WAYLIB_SERVER_NAMESPACE::WOutputRenderWindow> m_window;
     QPointer<WAYLIB_SERVER_NAMESPACE::WBackend> m_backend;
-    QList<WAYLIB_SERVER_NAMESPACE::WOutput *> m_outputs;
+    QList<QPointer<WAYLIB_SERVER_NAMESPACE::WOutput>> m_outputs;
     QHash<WAYLIB_SERVER_NAMESPACE::WOutput *, RequestStateListener *> m_requestListeners;
     QSize m_primaryOutputSize;
     bool m_windowConnected = false;
